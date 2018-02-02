@@ -14,7 +14,7 @@ api := eosapi.New("http://testnet1.eos.io")
 
 infoResp, _ := api.GetInfo()
 accountResp, _ := api.GetAccount("initn")
-fmt.Println("Permission for initn:", accountResp.Permissions[0].RequiredAuth)
+fmt.Println("Permission for initn:", accountResp.Permissions[0].RequiredAuth.Keys)
 ```
 
 Contributing

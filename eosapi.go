@@ -40,6 +40,16 @@ func (api *EOSAPI) GetInfo() (out *InfoResp, err error) {
 	return
 }
 
+func (api *EOSAPI) GetBlockByID(id string) (out *BlockResp, err error) {
+	err = api.call("POST", "chain", "get_block", M{"block_num_or_id": id}, &out)
+	return
+}
+
+func (api *EOSAPI) GetBlockByNum(num uint64) (out *BlockResp, err error) {
+	err = api.call("POST", "chain", "get_block", M{"block_num_or_id": fmt.Sprintf("%d", num)}, &out)
+	return
+}
+
 // See more here: libraries/chain/contracts/abi_serializer.cpp:58...
 
 func (api *EOSAPI) call(method string, baseAPI string, endpoint string, body interface{}, out interface{}) error {
