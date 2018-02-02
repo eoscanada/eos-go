@@ -37,9 +37,10 @@ type Contract struct {
 	ABI         ABI         `json:"abi"`
 }
 
+// see: libraries/chain/contracts/abi_serializer.cpp:53...
 type ABI struct {
 	Types   []ABIType   `json:"types"`
-	Structs []ABIStruct `json:"structs"`
+	Structs []StructDef `json:"structs"`
 	Actions []Action    `json:"actions"`
 	Tables  []Table     `json:"tables"`
 }
@@ -49,7 +50,7 @@ type ABIType struct {
 	Type        string `json:"type"`
 }
 
-type ABIStruct struct {
+type StructDef struct {
 	Name   string            `json:"name"`
 	Base   string            `json:"base"`
 	Fields map[string]string `json:"fields"` // WARN: UNORDERED!!! Should use `https://github.com/virtuald/go-ordered-json/blob/master/example_test.go`

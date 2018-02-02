@@ -33,6 +33,8 @@ func (api *EOSAPI) GetCode(name AccountName) (out *Contract, err error) {
 	return
 }
 
+// See more here: libraries/chain/contracts/abi_serializer.cpp:58...
+
 func (api *EOSAPI) call(method string, baseAPI string, endpoint string, body interface{}, out interface{}) error {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint), enc(body))
 	if err != nil {
