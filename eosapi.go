@@ -23,6 +23,8 @@ func New(baseURL string) *EOSAPI {
 // Chain APIs
 // Wallet APIs
 
+// List here: https://github.com/Netherdrake/py-eos-api/blob/master/eosapi/client.py
+
 func (api *EOSAPI) GetAccount(name AccountName) (out *AccountResp, err error) {
 	err = api.call("POST", "chain", "get_account", M{"account_name": name}, &out)
 	return
@@ -30,6 +32,11 @@ func (api *EOSAPI) GetAccount(name AccountName) (out *AccountResp, err error) {
 
 func (api *EOSAPI) GetCode(name AccountName) (out *Contract, err error) {
 	err = api.call("POST", "chain", "get_code", M{"account_name": name}, &out)
+	return
+}
+
+func (api *EOSAPI) GetInfo() (out *InfoResp, err error) {
+	err = api.call("POST", "chain", "get_info", nil, &out)
 	return
 }
 
