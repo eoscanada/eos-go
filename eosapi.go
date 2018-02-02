@@ -30,7 +30,7 @@ func (api *EOSAPI) GetAccount(name AccountName) (out *AccountResp, err error) {
 	return
 }
 
-func (api *EOSAPI) GetCode(name AccountName) (out *Contract, err error) {
+func (api *EOSAPI) GetCode(name AccountName) (out *Code, err error) {
 	err = api.call("POST", "chain", "get_code", M{"account_name": name}, &out)
 	return
 }
@@ -52,6 +52,11 @@ func (api *EOSAPI) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 
 func (api *EOSAPI) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
 	err = api.call("POST", "chain", "get_table_rows", params, &out)
+	return
+}
+
+func (api *EOSAPI) GetRequiredKeys(tx Transaction, availableKeys ...PublicKey) (out *GetRequiredKeysResp, err error) {
+	err = api.call("POST", "chain", "get_required_keys", M{"transaction": tx, "available_keys": availableKeys}, &out)
 	return
 }
 

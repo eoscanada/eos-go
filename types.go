@@ -16,18 +16,28 @@ type AssetNG struct {
 } // decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: "EOS", Precision: 4}`
 
 type AccountResp struct {
-	AccountName       AccountName  `json:"account_name"`
-	EOSBalance        Asset        `json:"eos_balance"`
-	StakedBalance     Asset        `json:"staked_balance"`
-	UnstakingBalance  Asset        `json:"unstaking_balance"`
-	LastUnstakingTime JSONTime     `json:"last_unstaking_time"`
-	Permissions       []Permission `json:"permissions"`
+	AccountName AccountName  `json:"account"`
+	Permissions []Permission `json:"permissions"`
 }
+
+type CurrencyBalanceResp struct {
+	EOSBalance        Asset    `json:"eos_balance"`
+	StakedBalance     Asset    `json:"staked_balance"`
+	UnstakingBalance  Asset    `json:"unstaking_balance"`
+	LastUnstakingTime JSONTime `json:"last_unstaking_time"`
+}
+
+type PublicKey string
 
 type Permission struct {
 	PermName     string `json:"perm_name"`
 	Parent       string `json:"parent"`
 	RequiredAuth Auth   `json:"required_auth"`
+}
+
+type PermissionLevel struct {
+	Account    AccountName `json:"account"`
+	Permission string      `json:"permission"`
 }
 
 type Auth struct {
@@ -37,15 +47,15 @@ type Auth struct {
 }
 
 type WeightedKey struct {
-	Key    string `json:"key"`
-	Weight int    `json:"weight"`
+	Key    PublicKey `json:"key"`
+	Weight int       `json:"weight"`
 }
 
-type Contract struct {
+type Code struct {
 	AccountName AccountName `json:"account_name"`
 	CodeHash    string      `json:"code_hash"`
 	WAST        string      `json:"wast"` // TODO: decode into Go ast, see https://github.com/go-interpreter/wagon
-	ABI         ABI         `json:"abi"`  // TODO: decode ABI into structs too
+	ABI         ABI         `json:"abi"`
 }
 
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
@@ -68,12 +78,18 @@ type StructDef struct {
 }
 
 type Action struct {
-	ActionName string `json:"action_name"`
-	Type       string `json:"type"`
+	Account       AccountName       `json:"account"`
+	Name          string            `json:"name"`
+	Authorization []PermissionLevel `json:"authorization"`
+	Data          string            `json:"data"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
+
+	Type       string        `json:"type"`       // dawn-2
+	Code       string        `json:"code"`       // dawn-2
+	Recipients []AccountName `json:"recipients"` // dawn-2 ?
 }
 
 type Table struct {
-	TableName string   `json:"table_name"`
+	Name      string   `json:"name"`
 	IndexType string   `json:"index_type"`
 	KeyNames  []string `json:"key_names"`
 	KeyTypes  []string `json:"key_types"`
@@ -100,14 +116,14 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 }
 
 type InfoResp struct {
-	ServerVersion            string   `json:"server_version"`              // "2cc40a4e"
-	HeadBlockRun             int64    `json:"head_block_num"`              // 2465669,
-	LastIrreversibleBlockNum int64    `json:"last_irreversible_block_num"` // 2465655
-	HeadBlockID              string   `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
-	HeadBlockTime            JSONTime `json:"head_block_time"`             //  "2018-02-02T04:19:32"
-	HeadBlockProducer        string   `json:"head_block_producer"`         // "inita"
-	RecentSlots              string   `json:"recent_slots"`                //  "1111111111111111111111111111111111111111111111111111111111111111"
-	ParticipationRate        string   `json:"participation_rate"`          // "1.00000000000000000"
+	ServerVersion            string      `json:"server_version"`              // "2cc40a4e"
+	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
+	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
+	HeadBlockID              string      `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
+	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
+	RecentSlots              string      `json:"recent_slots"`                //  "1111111111111111111111111111111111111111111111111111111111111111"
+	ParticipationRate        string      `json:"participation_rate"`          // "1.00000000000000000" // this should be a `double`, or a decimal of some sort..
 
 }
 
@@ -145,4 +161,31 @@ type GetTableRowsRequest struct {
 type GetTableRowsResp struct {
 	More bool              `json:"more"`
 	Rows []json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
+}
+
+type GetRequiredKeysResp struct {
+	RequiredKeys []PublicKey `json:"required_keys"`
+}
+
+type Transaction struct { // WARN: is a `variant` in C++
+	RefBlockNum    string   `json:"ref_block_num"`
+	RefBlockPrefix string   `json:"ref_block_prefix"`
+	Expiration     JSONTime `json:"expiration"`
+	Scope          []string `json:"scope"`
+	Actions        []Action `json:"actions"`
+	Signatures     []string `json:"signatures"`
+	Authorizations []string `json:"authorizations"`
+}
+
+type DeferredTransaction struct {
+	Transaction
+
+	SenderID   uint32      `json:"sender_id"`
+	Sender     AccountName `json:"sender"`
+	DelayUntil JSONTime    `json:"delay_until"`
+}
+
+type PushTransactionResp struct {
+	TransactionID string `json:"transaction_id"`
+	Processed     bool   `json:"processed"` // WARN: is an `fc::variant` in server..
 }
