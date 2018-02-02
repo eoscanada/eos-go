@@ -1,6 +1,7 @@
 package eosapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -128,4 +129,20 @@ type ProducerChange struct {
 }
 
 type Cycle struct {
+}
+
+type GetTableRowsRequest struct {
+	JSON       bool   `json:"json"`
+	Scope      string `json:"scope"`
+	Code       string `json:"code"`
+	Table      string `json:"table"`
+	TableKey   string `json:"table_key"`
+	LowerBound string `json:"lower_bound"`
+	UpperBound string `json:"upper_bount"`
+	Limit      uint32 `json:"limit,omitempty"` // defaults to 10 => chain_plugin.hpp:struct get_table_rows_params
+}
+
+type GetTableRowsResp struct {
+	More bool              `json:"more"`
+	Rows []json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
 }

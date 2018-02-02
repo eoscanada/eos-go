@@ -11,7 +11,13 @@ import (
 func main() {
 	api := eosapi.New("http://testnet1.eos.io")
 
-	out, err := api.GetBlockByID("0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b")
+	out, err := api.GetTableRows(eosapi.GetTableRowsRequest{
+		Scope:    "currency",
+		Code:     "currency",
+		Table:    "account",
+		TableKey: "currency",
+		JSON:     true,
+	})
 	if err != nil {
 		log.Fatalln("error:", err)
 	}
@@ -19,6 +25,12 @@ func main() {
 
 	cnt, err := json.MarshalIndent(out, "", "  ")
 	fmt.Println("JSON:", string(cnt))
+
+	// out, err := api.GetBlockByID("0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b")
+	// if err != nil {
+	// 	log.Fatalln("error:", err)
+	// }
+	// fmt.Println("GetBlockNum", out)
 
 	// out, err := api.GetInfo()
 	// if err != nil {

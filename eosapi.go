@@ -50,6 +50,11 @@ func (api *EOSAPI) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	return
 }
 
+func (api *EOSAPI) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
+	err = api.call("POST", "chain", "get_table_rows", params, &out)
+	return
+}
+
 // See more here: libraries/chain/contracts/abi_serializer.cpp:58...
 
 func (api *EOSAPI) call(method string, baseAPI string, endpoint string, body interface{}, out interface{}) error {
@@ -90,7 +95,10 @@ func enc(v interface{}) io.Reader {
 		return nil
 	}
 
-	cnt, _ := json.Marshal(v)
+	cnt, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
 
 	return bytes.NewReader(cnt)
 }
