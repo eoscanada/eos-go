@@ -137,7 +137,6 @@ type M map[string]interface{}
 
 func enc(v interface{}) io.Reader {
 	if v == nil {
-		fmt.Println("empty")
 		return nil
 	}
 
