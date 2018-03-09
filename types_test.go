@@ -9,20 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test(t *testing.T) {
-	tests := []struct {
-		in  string
-		out string
-	}{
-		{"in", "out"},
-	}
-
-	for _, test := range tests {
-		res := (test.in)
-		assert.Equal(t, test.out, res)
-	}
-}
-
 func TestUnpackBinaryTableRows(t *testing.T) {
 	resp := &GetTableRowsResp{
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
