@@ -1,19 +1,70 @@
 package eosapi
 
 import (
+	"bytes"
+	"encoding/base32"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/lunixbochs/struc"
 )
 
-type AccountName string
-type Asset string // make it a struct
+var base32Encoding = base32.NewEncoding(".12345abcdefghijklmnopqrstuvwxyz").WithPadding(base32.NoPadding)
 
-type AssetNG struct {
-	Amount    uint64
-	Symbol    string
-	Precision int
+type AccountName string
+
+func (acct *AccountName) Pack(p []byte, opt *struc.Options) (int, error) {
+	_, err := base32Encoding.Decode(p[:8], []byte(*acct))
+	if err != nil {
+		return 8, err
+	}
+	return 8, nil
+}
+
+func (acct *AccountName) Unpack(r io.Reader, length int, opt *struc.Options) error {
+	data := make([]byte, 0, 8)
+	_, err := r.Read(data[:8])
+	if err != nil {
+		return err
+	}
+
+	var out []byte
+	base32Encoding.Encode(out, data)
+
+	*acct = AccountName(out)
+	return nil
+}
+
+func (acct *AccountName) Size(opt *struc.Options) int {
+	return 8
+}
+
+func (acct AccountName) String() string {
+	return string(acct)
+}
+
+type Asset struct {
+	Precision int    `struc:"uint8"`
+	Symbol    string `struc:"[7]byte"`
 } // decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: "EOS", Precision: 4}`
+
+func (a *Asset) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// NOT RIGHT SIGNATURE:
+func (a *Asset) MarshalJSON() (data []byte, err error) {
+	return nil, nil
+}
 
 type AccountResp struct {
 	AccountName AccountName  `json:"account"`
@@ -159,8 +210,45 @@ type GetTableRowsRequest struct {
 }
 
 type GetTableRowsResp struct {
-	More bool              `json:"more"`
-	Rows []json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
+	More bool            `json:"more"`
+	Rows json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
+}
+
+func (resp *GetTableRowsResp) JSONToStructs(v interface{}) error {
+	return json.Unmarshal(resp.Rows, v)
+}
+
+func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
+	var rows []string
+
+	err := json.Unmarshal(resp.Rows, &rows)
+	if err != nil {
+		return err
+	}
+
+	for _, row := range rows {
+		bin, err := hex.DecodeString(row)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("MAMA", bin)
+
+		ourstruct := &MyStruct{}
+		if err := struc.Unpack(bytes.NewReader(bin), ourstruct); err != nil {
+			return err
+		}
+
+		spew.Dump(ourstruct)
+	}
+
+	return nil
+}
+
+type MyStruct struct {
+	Key      string `struc:"[8]int8,little"`
+	Balance  uint64 `struc:"uint64,little"`
+	Currency string `struc:"[8]int8,little"`
 }
 
 type GetRequiredKeysResp struct {

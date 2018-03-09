@@ -41,7 +41,7 @@ func TestGetTableRows(t *testing.T) {
 		Code:     "currency",
 		Table:    "account",
 		TableKey: "currency",
-		JSON:     true,
+		JSON:     false,
 	})
 	cnt, err := json.MarshalIndent(out, "", "  ")
 
