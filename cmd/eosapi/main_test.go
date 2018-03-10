@@ -62,7 +62,7 @@ func TestGetTableRows(t *testing.T) {
 		Code:     "currency",
 		Table:    "account",
 		TableKey: "currency",
-		JSON:     true,
+		JSON:     false,
 	})
 
 	assert.NoError(t, err)
