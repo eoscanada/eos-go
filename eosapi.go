@@ -66,7 +66,7 @@ func (api *EOSAPI) GetAccount(name AccountName) (out *AccountResp, err error) {
 }
 
 func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
-	err = api.call("chain", "get_code", M{"account": account}, &out)
+	err = api.call("chain", "get_code", M{"account_name": account}, &out)
 	return
 }
 
@@ -107,6 +107,13 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 	if err != nil {
 		return fmt.Errorf("NewRequest: %s", err)
 	}
+
+	// Useful when debugging API calls
+	// requestDump, err := httputil.DumpRequest(req, true)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(string(requestDump))
 
 	resp, err := api.HttpClient.Do(req)
 	if err != nil {
