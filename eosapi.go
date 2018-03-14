@@ -70,6 +70,62 @@ func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
 	return
 }
 
+func (api *EOSAPI) PushTransaction(tx *Transaction) (out *PushTransactionResp, err error) {
+	if err := tx.Fill(api); err != nil {
+		return nil, err
+	}
+
+	err = api.call("chain", "push_transaction", M{"transaction": tx}, &out)
+	return
+}
+
+func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
+	err = api.call("chain", "push_transaction", M{"transaction": tx}, &out)
+	return
+}
+
+// func (api *EOSAPI) NewAccount(creator, newAccount AccountName, owner, active, recovery Authority) (out *NewAccountResp, err error) {
+// 	tx := &Transaction{
+// 		Actions: []*Action{
+// 			{
+// 				Account,
+// 			},
+// 		},
+// 	}
+// }
+
+func (api *EOSAPI) SetCode(account AccountName, wastPath, abiPath string, keybag *KeyBag) (out *PushTransactionResp, err error) {
+	// SetCode will create a transaction, call GetRequiredKeys, and sign the transaction with keybag.AvailableKeys().
+
+	tx := &Transaction{
+		Actions: []*Action{
+			{
+				Account: AccountName("eosio"),
+				Name:    ActionName("transfer"),
+				Authorization: []PermissionLevel{
+					{AccountName("eosio"), PermissionName("active")},
+				},
+			},
+		},
+	}
+	if err := tx.Fill(api); err != nil {
+		return nil, err
+	}
+
+	resp, err := api.GetRequiredKeys(tx, keybag)
+	//log.Println("MAMA", resp, err)
+	if err != nil {
+		return nil, err
+	}
+
+	signed, err := keybag.Sign(tx, resp.RequiredKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.PushSignedTransaction(signed)
+}
+
 func (api *EOSAPI) GetInfo() (out *InfoResp, err error) {
 	err = api.call("chain", "get_info", nil, &out)
 	return
@@ -90,8 +146,8 @@ func (api *EOSAPI) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsRe
 	return
 }
 
-func (api *EOSAPI) GetRequiredKeys(tx Transaction, availableKeys ...PublicKey) (out *GetRequiredKeysResp, err error) {
-	err = api.call("chain", "get_required_keys", M{"transaction": tx, "available_keys": availableKeys}, &out)
+func (api *EOSAPI) GetRequiredKeys(tx *Transaction, keybag *KeyBag) (out *GetRequiredKeysResp, err error) {
+	err = api.call("chain", "get_required_keys", M{"transaction": tx, "available_keys": keybag.AvailableKeys()}, &out)
 	return
 }
 
@@ -151,6 +207,8 @@ func enc(v interface{}) io.Reader {
 	if err != nil {
 		panic(err)
 	}
+
+	//fmt.Println("BODY", string(cnt))
 
 	return bytes.NewReader(cnt)
 }

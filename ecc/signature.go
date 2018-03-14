@@ -1,6 +1,10 @@
 package ecc
 
-import "github.com/btcsuite/btcd/btcec"
+import (
+	"encoding/hex"
+
+	"github.com/btcsuite/btcd/btcec"
+)
 
 type Signature struct {
 	sig *btcec.Signature
@@ -12,6 +16,14 @@ func (s *Signature) Verify(hash []byte, pubKey *PublicKey) bool {
 
 func (s *Signature) IsEqual(otherSig *Signature) bool {
 	return s.sig.IsEqual(otherSig.sig)
+}
+
+func (s *Signature) String() string {
+	return hex.EncodeToString(s.sig.Serialize())
+}
+
+func (s *Signature) Serialize() []byte {
+	return s.sig.Serialize()
 }
 
 func ParseSignature(sigStr []byte) (*Signature, error) {

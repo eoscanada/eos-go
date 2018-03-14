@@ -1,49 +1,56 @@
 package eosapi
 
 import (
-	"bytes"
-	"encoding/base32"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lunixbochs/struc"
 )
 
-var base32Encoding = base32.NewEncoding(".12345abcdefghijklmnopqrstuvwxyz").WithPadding(base32.NoPadding)
+type Name string
 
-type AccountName string
+type AccountName Name
+type PermissionName Name
+type ActionName Name
+type TableName Name
 
-func (acct *AccountName) Pack(p []byte, opt *struc.Options) (int, error) {
-	_, err := base32Encoding.Decode(p[:8], []byte(*acct))
+func (acct *Name) Pack(p []byte, opt *struc.Options) (int, error) {
+	val, err := StringToName(string(*acct))
 	if err != nil {
-		return 8, err
+		return 0, err
 	}
+	opt.Order.PutUint64(p[:8], val)
 	return 8, nil
 }
 
-func (acct *AccountName) Unpack(r io.Reader, length int, opt *struc.Options) error {
-	data := make([]byte, 0, 8)
-	_, err := r.Read(data[:8])
-	if err != nil {
+// FIXME: This won't exist for `AccountName` nor `PermissionName` though.. would it ?
+func (acct *Name) Unpack(r io.Reader, length int, opt *struc.Options) error {
+	data := make([]byte, 8)
+
+	if _, err := r.Read(data[:8]); err != nil {
 		return err
 	}
 
-	var out []byte
-	base32Encoding.Encode(out, data)
+	val := opt.Order.Uint64(data[:8])
 
-	*acct = AccountName(out)
+	*acct = Name(NameToString(val))
+
+	spew.Dump(*acct)
+
 	return nil
 }
 
-func (acct *AccountName) Size(opt *struc.Options) int {
+func (acct *Name) Size(opt *struc.Options) int {
 	return 8
 }
 
-func (acct AccountName) String() string {
+func (acct Name) String() string {
 	return string(acct)
 }
 
@@ -81,25 +88,30 @@ type CurrencyBalanceResp struct {
 type PublicKey string
 
 type Permission struct {
-	PermName     string `json:"perm_name"`
-	Parent       string `json:"parent"`
-	RequiredAuth Auth   `json:"required_auth"`
+	PermName     string    `json:"perm_name"`
+	Parent       string    `json:"parent"`
+	RequiredAuth Authority `json:"required_auth"`
 }
 
 type PermissionLevel struct {
-	Account    AccountName `json:"account"`
-	Permission string      `json:"permission"`
+	Actor      AccountName    `json:"actor"`
+	Permission PermissionName `json:"permission"`
 }
 
-type Auth struct {
-	Threshold int           `json:"threshold"`
-	Keys      []WeightedKey `json:"keys"`
-	Accounts  []AccountName `json:"accounts"`
+type PermissionLevelWeight struct {
+	Permission PermissionLevel `json:"permission"`
+	Weight     uint16          `json:"weight"`
 }
 
-type WeightedKey struct {
-	Key    PublicKey `json:"key"`
-	Weight int       `json:"weight"`
+type Authority struct {
+	Threshold uint32                  `json:"threshold"`
+	Accounts  []PermissionLevelWeight `json:"accounts"`
+	Keys      []KeyWeight             `json:"keys"`
+}
+
+type KeyWeight struct {
+	PublicKey PublicKey `json:"public_key"`
+	Weight    uint16    `json:"weight"`
 }
 
 type Code struct {
@@ -109,43 +121,113 @@ type Code struct {
 	ABI         ABI         `json:"abi"`
 }
 
-// see: libraries/chain/contracts/abi_serializer.cpp:53...
-type ABI struct {
-	Types   []ABIType   `json:"types"`
-	Structs []StructDef `json:"structs"`
-	Actions []Action    `json:"actions"`
-	Tables  []Table     `json:"tables"`
-}
-
-type ABIType struct {
-	NewTypeName string `json:"new_type_name"`
-	Type        string `json:"type"`
-}
-
-type StructDef struct {
-	Name   string            `json:"name"`
-	Base   string            `json:"base"`
-	Fields map[string]string `json:"fields"` // WARN: UNORDERED!!! Should use `https://github.com/virtuald/go-ordered-json/blob/master/example_test.go`
-}
-
 type Action struct {
 	Account       AccountName       `json:"account"`
-	Name          string            `json:"name"`
-	Authorization []PermissionLevel `json:"authorization"`
-	Data          string            `json:"data"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
-
-	Type       string        `json:"type"`       // dawn-2
-	Code       string        `json:"code"`       // dawn-2
-	Recipients []AccountName `json:"recipients"` // dawn-2 ?
+	Name          ActionName        `json:"name"`
+	Authorization []PermissionLevel `json:"authorization,omitempty"`
+	Data          HexBytes          `json:"data,omitempty"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
+	Fields         interface{}       `json:"-"`
 }
 
-type Table struct {
-	Name      string   `json:"name"`
-	IndexType string   `json:"index_type"`
-	KeyNames  []string `json:"key_names"`
-	KeyTypes  []string `json:"key_types"`
-	Type      string   `json:"type"`
+type action struct {
+	Account       AccountName       `json:"account"`
+	Name          ActionName        `json:"name"`
+	Authorization []PermissionLevel `json:"authorization,omitempty"`
+	Data          HexBytes          `json:"data,omitempty"`
 }
+
+// with an action type registry somewhere ?
+
+var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
+
+func init() {
+	RegisterAction(AccountName("eosio"), ActionName("transfer"), &Transfer{})
+	RegisterAction(AccountName("eosio"), ActionName("issue"), &Issue{})
+}
+
+// Registers Action objects..
+func RegisterAction(accountName AccountName, actionName ActionName, obj interface{}) {
+	// TODO: lock or som'th.. unless we never call after boot time..
+	if registeredActions[accountName] == nil {
+		registeredActions[accountName] = make(map[ActionName]reflect.Type)
+	}
+	registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
+}
+
+func (a *Action) UnmarshalJSON(v []byte) (err error) {
+	// load Account, Name, Authorization, Data
+	// and then unpack other fields in a struct based on `Name` and `AccountName`..
+	var newAct *action
+	if err = json.Unmarshal(v, &newAct); err != nil {
+		return
+	}
+
+	a.Account = newAct.Account
+	a.Name = newAct.Name
+	a.Authorization = newAct.Authorization
+	a.Data = newAct.Data
+
+	actionMap := registeredActions[a.Account]
+	if actionMap == nil {
+		return nil
+	}
+
+	objMap := actionMap[a.Name]
+	if objMap == nil {
+		return nil
+	}
+
+	obj := reflect.New(reflect.TypeOf(objMap))
+	err = json.Unmarshal(v, &obj)
+	if err != nil {
+		return err
+	}
+
+	a.Fields = obj.Elem().Interface()
+
+	return nil
+}
+
+func (a *Action) MarshalJSON() ([]byte, error) {
+	// Start with the base-line Action fields.
+
+	cnt, err := json.Marshal(&action{
+		Account:       a.Account,
+		Name:          a.Name,
+		Authorization: a.Authorization,
+		Data:          a.Data,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var keys1 map[string]interface{}
+	err = json.Unmarshal(cnt, &keys1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Merge in the `a.Fields` fields.
+
+	cnt, err = json.Marshal(a.Fields)
+	if err != nil {
+		return nil, err
+	}
+
+	var keys2 map[string]interface{}
+	err = json.Unmarshal(cnt, &keys2)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range keys2 {
+		keys1[k] = v
+	}
+
+	return json.Marshal(keys1)
+}
+
+// JSONTime
 
 type JSONTime struct {
 	time.Time
@@ -166,30 +248,23 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
-type InfoResp struct {
-	ServerVersion            string      `json:"server_version"`              // "2cc40a4e"
-	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
-	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
-	HeadBlockID              string      `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
-	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
-	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
-	RecentSlots              string      `json:"recent_slots"`                //  "1111111111111111111111111111111111111111111111111111111111111111"
-	ParticipationRate        string      `json:"participation_rate"`          // "1.00000000000000000" // this should be a `double`, or a decimal of some sort..
+// HexBytes
 
+type HexBytes []byte
+
+func (t HexBytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
 }
 
-type BlockResp struct {
-	Previous              string           `json:"previous"`                // : "0000007a9dde66f1666089891e316ac4cb0c47af427ae97f93f36a4f1159a194",
-	Timestamp             JSONTime         `json:"timestamp"`               // : "2017-12-04T17:12:08",
-	TransactionMerkleRoot string           `json:"transaction_merkle_root"` // : "0000000000000000000000000000000000000000000000000000000000000000",
-	Producer              AccountName      `json:"producer"`                // : "initj",
-	ProducerChanges       []ProducerChange `json:"producer_changes"`        // : [],
-	ProducerSignature     string           `json:"producer_signature"`      // : "203dbf00b0968bfc47a8b749bbfdb91f8362b27c3e148a8a3c2e92f42ec55e9baa45d526412c8a2fc0dd35b484e4262e734bea49000c6f9c8dbac3d8861c1386c0",
-	Cycles                []Cycle          `json:"cycles"`                  // : [],
-	ID                    string           `json:"id"`                      // : "0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b",
-	BlockNum              uint64           `json:"block_num"`               // : 123,
-	RefBlockPrefix        uint64           `json:"ref_block_prefix"`        // : 2624744919
+func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
 
+	*t, err = hex.DecodeString(s)
+	return
 }
 
 type ProducerChange struct {
@@ -209,60 +284,47 @@ type GetTableRowsRequest struct {
 	Limit      uint32 `json:"limit,omitempty"` // defaults to 10 => chain_plugin.hpp:struct get_table_rows_params
 }
 
-type GetTableRowsResp struct {
-	More bool            `json:"more"`
-	Rows json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
+type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
+	Expiration     JSONTime `json:"expiration,omitempty"`
+	Region         uint16   `json:"region,omitempty"`
+	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
+	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
+	// number of 8 byte words this transaction can compress into
+	PackedBandwidthWords    uint16    `json:"packed_bandwidth_words,omitempty"`
+	ContextFreeCPUBandwidth uint16    `json:"context_free_cpu_bandwidth,omitempty"`
+	ContextFreeActions      []*Action `json:"context_free_actions,omitempty"`
+	Actions                 []*Action `json:"actions,omitempty"`
 }
 
-func (resp *GetTableRowsResp) JSONToStructs(v interface{}) error {
-	return json.Unmarshal(resp.Rows, v)
-}
+func (tx *Transaction) Fill(api *EOSAPI) error {
+	if tx.RefBlockNum != 0 {
+		return nil
+	}
 
-func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
-	var rows []string
-
-	err := json.Unmarshal(resp.Rows, &rows)
+	info, err := api.GetInfo()
 	if err != nil {
 		return err
 	}
 
-	for _, row := range rows {
-		bin, err := hex.DecodeString(row)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("MAMA", bin)
-
-		ourstruct := &MyStruct{}
-		if err := struc.Unpack(bytes.NewReader(bin), ourstruct); err != nil {
-			return err
-		}
-
-		spew.Dump(ourstruct)
+	blockID, err := hex.DecodeString(info.HeadBlockID)
+	if err != nil {
+		return fmt.Errorf("Transaction::Fill: %s", err)
 	}
 
+	tx.RefBlockNum = uint16(binary.LittleEndian.Uint64(blockID[:8]))
+	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[8:16]))
+	/// TODO: configure somewhere the default time for transactions,
+	/// etc.. add a `.Timeout` with that duration, default to 30
+	/// seconds ?
+	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
 	return nil
 }
 
-type MyStruct struct {
-	Key      string `struc:"[8]int8,little"`
-	Balance  uint64 `struc:"uint64,little"`
-	Currency string `struc:"[8]int8,little"`
-}
+type SignedTransaction struct {
+	*Transaction
 
-type GetRequiredKeysResp struct {
-	RequiredKeys []PublicKey `json:"required_keys"`
-}
-
-type Transaction struct { // WARN: is a `variant` in C++
-	RefBlockNum    string   `json:"ref_block_num"`
-	RefBlockPrefix string   `json:"ref_block_prefix"`
-	Expiration     JSONTime `json:"expiration"`
-	Scope          []string `json:"scope"`
-	Actions        []Action `json:"actions"`
-	Signatures     []string `json:"signatures"`
-	Authorizations []string `json:"authorizations"`
+	Signatures      []string `json:"signatures"`
+	ContextFreeData HexBytes `json:"context_free_data,omitempty"`
 }
 
 type DeferredTransaction struct {

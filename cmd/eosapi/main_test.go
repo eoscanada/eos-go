@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/eosioca/eosapi"
 	"github.com/stretchr/testify/assert"
@@ -70,33 +71,36 @@ func TestGetTableRows(t *testing.T) {
 
 }
 
-// func (api *EOSAPI) GetRequiredKeys(tx Transaction, availableKeys ...PublicKey) (out *GetRequiredKeysResp, err error) {
+// func (api *EOSAPI) GetRequiredKeys(tx *Transaction, availableKeys ...PublicKey) (out *GetRequiredKeysResp, err error) {
 // 	err = api.call("chain", "get_required_keys", M{"transaction": tx, "available_keys": availableKeys}, &out)
 // 	return
 // }
-// func TestGetRequiredKeys(t *testing.T) {
-// 	api := newAPI()
-// 	tomorrow := time.Now().AddDate(0, 0, 1)
-// 	out, err := api.GetRequiredKeys(eosapi.Transaction{
-// 		RefBlockNum:    "1",
-// 		RefBlockPrefix: "",
-// 		Expiration:     eosapi.JSONTime(tomorrow),
-// 		Scope:          []string{},
-// 		Actions: []eosapi.Action{
-// 			Account:       eosapi.AccountName("currency"),
-// 			Name:          "currency",
-// 			Authorization: []string{},
-// 			Data:          "",
+func TestGetRequiredKeys(t *testing.T) {
+	api := newAPI()
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	out, err := api.GetRequiredKeys(eosapi.Transaction{
+		// RefBlockNum:    "1",
+		// RefBlockPrefix: "",
+		// Expiration:     eosapi.JSONTime{tomorrow},
+		// Scope:          []string{},
+		// Actions: []eosapi.Action{
+		// 	{
+		// 		Account: eosapi.AccountName("currency"),
+		// 		Name:    "currency",
+		// 		// Authorization: []string{},
+		// 		Data: "",
 
-// 			Type:       "dawn-2",
-// 			Code:       "dawn-2",
-// 			Recipients: []string{"currency"},
-// 		},
-// 		Signatures:     []string{},
-// 		Authorizations: []string{},
-// 	}, "EOS")
-// 	assert.NoError(t, err)
-// }
+		// 		Type: "dawn-2",
+		// 		Code: "dawn-2",
+		// 		// Recipients: []string{"currency"},
+		// 	},
+		// },
+		// Signatures:     []string{},
+		// Authorizations: []string{},
+	}, "EOS")
+	assert.NoError(t, err)
+	assert.Equal(t, "mama", out.RequiredKeys)
+}
 
 func TestGetCurrencyBalance(t *testing.T) {
 	api := newAPI()
