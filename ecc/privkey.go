@@ -2,6 +2,7 @@ package ecc
 
 import (
 	cryptorand "crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"io"
 
@@ -28,7 +29,9 @@ func newRandomPrivateKey(randSource io.Reader) (*PrivateKey, error) {
 		return nil, fmt.Errorf("couldn't write 32 bytes of randomness to seed ephemeral private key")
 	}
 
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), rawPrivKey)
+	h := sha256.New()
+	h.Write(rawPrivKey)
+	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), h.Sum(nil))
 
 	return &PrivateKey{privKey: privKey}, nil
 }
@@ -64,6 +67,6 @@ func (p *PrivateKey) String() string {
 	// var private_wif = Buffer.concat([private_key, checksum]);
 	// return base58.encode(private_wif);
 
-	wif, _ := btcutil.NewWIF(p.privKey, &chaincfg.Params{PrivateKeyID: '\x80'}, true) // no error possible
+	wif, _ := btcutil.NewWIF(p.privKey, &chaincfg.Params{PrivateKeyID: '\x80'}, false) // no error possible
 	return wif.String()
 }
