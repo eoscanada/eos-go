@@ -63,13 +63,25 @@ func TestPublicKeyValidity(t *testing.T) {
 		{"EOS859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhTo", fmt.Errorf("checkDecode: invalid checksum")},
 	}
 
-	for _, test := range tests {
+	for idx, test := range tests {
 		_, err := NewPublicKey(test.in)
 		if test.err == nil {
-			assert.NoError(t, err)
+			assert.NoError(t, err, fmt.Sprintf("test %d with key %q", idx, test.in))
 		} else {
 			assert.Error(t, err)
 			assert.Equal(t, test.err.Error(), err.Error())
 		}
 	}
+}
+
+func TestSignature(t *testing.T) {
+	wif := "5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"
+	privKey, err := NewPrivateKey(wif)
+	require.NoError(t, err)
+
+	cnt := []byte("hi")
+	signature, err := privKey.Sign(cnt)
+	require.NoError(t, err)
+
+	assert.True(t, signature.Verify(cnt, privKey.PublicKey().Key()))
 }

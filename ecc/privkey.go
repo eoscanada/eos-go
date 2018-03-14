@@ -10,10 +10,6 @@ import (
 	"github.com/btcsuite/btcutil"
 )
 
-/**
- * PrivateKey
- */
-
 func NewRandomPrivateKey() (*PrivateKey, error) {
 	return newRandomPrivateKey(cryptorand.Reader)
 }
@@ -52,6 +48,10 @@ type PrivateKey struct {
 
 func (p *PrivateKey) PublicKey() *PublicKey {
 	return &PublicKey{pubKey: p.privKey.PubKey()}
+}
+
+func (p *PrivateKey) Sign(payload []byte) (*btcec.Signature, error) {
+	return p.privKey.Sign(payload)
 }
 
 func (p *PrivateKey) String() string {
