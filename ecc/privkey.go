@@ -53,20 +53,15 @@ func (p *PrivateKey) PublicKey() *PublicKey {
 	return &PublicKey{pubKey: p.privKey.PubKey()}
 }
 
-func (p *PrivateKey) Sign(payload []byte) (*btcec.Signature, error) {
-	return p.privKey.Sign(payload)
+func (p *PrivateKey) Sign(payload []byte) (*Signature, error) {
+	sig, err := p.privKey.Sign(payload)
+	if err != nil {
+		return nil, err
+	}
+	return &Signature{sig: sig}, nil
 }
 
 func (p *PrivateKey) String() string {
-	//     var private_key = toBuffer();
-	// // checksum includes the version
-	// private_key = Buffer.concat([new Buffer([0x80]), private_key]);
-	// var checksum = hash.sha256(private_key);
-	// checksum = hash.sha256(checksum);
-	// checksum = checksum.slice(0, 4);
-	// var private_wif = Buffer.concat([private_key, checksum]);
-	// return base58.encode(private_wif);
-
 	wif, _ := btcutil.NewWIF(p.privKey, &chaincfg.Params{PrivateKeyID: '\x80'}, false) // no error possible
 	return wif.String()
 }

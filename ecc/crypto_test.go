@@ -83,5 +83,5 @@ func TestSignature(t *testing.T) {
 	signature, err := privKey.Sign(cnt)
 	require.NoError(t, err)
 
-	assert.True(t, signature.Verify(cnt, privKey.PublicKey().Key()))
+	assert.True(t, signature.Verify(cnt, privKey.PublicKey()))
 }
