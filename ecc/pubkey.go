@@ -22,9 +22,7 @@ func NewPublicKey(pubKey string) (*PublicKey, error) {
 		return nil, fmt.Errorf("invalid format")
 	}
 
-	fmt.Println("PUBKEY", pubKey, PublicKeyPrefix)
 	if !strings.HasPrefix(pubKey, PublicKeyPrefix) {
-		fmt.Println("hmm....")
 		return nil, fmt.Errorf("public key should start with %q", PublicKeyPrefix)
 	}
 
