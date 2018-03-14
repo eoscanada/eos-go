@@ -69,10 +69,20 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 	return nil
 }
 
+// type MyStruct struct {
+// 	Key      string `struc:"[8]int8,little"`
+// 	Balance  uint64 `struc:"uint64,little"`
+// 	Currency string `struc:"[8]int8,little"`
+// }
+
 type MyStruct struct {
-	Key      string `struc:"[8]int8,little"`
-	Balance  uint64 `struc:"uint64,little"`
-	Currency string `struc:"[8]int8,little"`
+	Currency
+	Balance uint64 `struc:"uint64,little"`
+}
+
+type Currency struct {
+	Precision byte   `struc:"uint8"`
+	Name      string `struc:"[7]uint8"`
 }
 
 type GetRequiredKeysResp struct {
