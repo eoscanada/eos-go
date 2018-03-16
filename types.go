@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -58,6 +59,23 @@ func (PermissionName) UnmarshalBinarySize() int { return 8 }
 func (ActionName) UnmarshalBinarySize() int     { return 8 }
 func (TableName) UnmarshalBinarySize() int      { return 8 }
 func (Name) UnmarshalBinarySize() int           { return 8 }
+
+// CurrencyName
+
+type CurrencyName string
+
+func (c CurrencyName) MarshalBinary() ([]byte, error) {
+	out := make([]byte, 7, 7)
+	fmt.Println("AMAM", out)
+	copy(out, []byte(c))
+	return out, nil
+}
+
+func (c *CurrencyName) UnmarshalBinary(data []byte) error {
+	*c = CurrencyName(strings.TrimRight(string(data), "\x00"))
+	return nil
+}
+func (CurrencyName) UnmarshalBinarySize() int { return 7 }
 
 // Asset
 

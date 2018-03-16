@@ -11,7 +11,6 @@ import (
 )
 
 func TestSimplePacking(t *testing.T) {
-
 	type S struct {
 		P string
 	}
@@ -20,25 +19,15 @@ func TestSimplePacking(t *testing.T) {
 		A    []*S
 	}
 	cnt, err := MarshalBinary(&M{
-		Acct: AccountName("."),
-		A:    []*S{},
+		Acct: AccountName("bob"),
+		A:    []*S{&S{"hello"}, &S{"world"}},
 	})
 
-	// type M struct {
-	// 	NumA Varint `struc:"sizeof=A"`
-	// 	A    []string
-	// }
-
-	// var buf bytes.Buffer
-	// err := struc.Pack(&buf, &M{
-	// 	A: []string{"hello", "world"},
-	// })
 	require.NoError(t, err)
-	assert.Equal(t, `000000`, hex.EncodeToString(cnt))
+	assert.Equal(t, "0000000000000e3d020568656c6c6f05776f726c64", hex.EncodeToString(cnt))
 }
 
 func TestUnpackBinaryTableRows(t *testing.T) {
-
 	resp := &GetTableRowsResp{
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
 	}
@@ -81,21 +70,21 @@ func TestUnpackActionTransfer(t *testing.T) {
 		out Transfer
 	}{
 		{
-			"00000003884ed1c900000000884ed1c9090000000000000000000000000000000000000000000000",
-			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, ""},
-		},
-		{
 			"00000003884ed1c900000000884ed1c9090000000000000000",
 			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, ""},
 		},
+		{
+			"00000003884ed1c900000000884ed1c9090000000000000004616c6c6f",
+			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, "allo"},
+		},
 	}
 
-	for _, test := range tests {
+	for idx, test := range tests {
 		buf, err := hex.DecodeString(test.in)
 		assert.NoError(t, err)
 
 		var res Transfer
-		assert.NoError(t, UnmarshalBinary(buf, &res))
+		assert.NoError(t, UnmarshalBinary(buf, &res), fmt.Sprintf("Index %d", idx))
 		assert.Equal(t, test.out, res)
 	}
 

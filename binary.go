@@ -174,11 +174,20 @@ type byteReader struct {
 }
 
 func (b *byteReader) ReadByte() (byte, error) {
+	//fmt.Println("Reading a byte")
 	var buf [1]byte
 	if _, err := io.ReadFull(b, buf[:]); err != nil {
 		return 0, err
 	}
 	return buf[0], nil
+}
+
+func (b *byteReader) Read(p []byte) (int, error) {
+	//fmt.Println("Reading a chunk", cap(p))
+	if cap(p) == 0 {
+		return 0, nil
+	}
+	return b.Reader.Read(p)
 }
 
 type Decoder struct {

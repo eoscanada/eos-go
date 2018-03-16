@@ -1,12 +1,10 @@
 package eosapi
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/lunixbochs/struc"
 )
 
 type InfoResp struct {
@@ -59,7 +57,7 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 		}
 
 		ourstruct := &MyStruct{}
-		if err := struc.Unpack(bytes.NewReader(bin), ourstruct); err != nil {
+		if err := UnmarshalBinary(bin, ourstruct); err != nil {
 			return err
 		}
 
@@ -77,12 +75,12 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 
 type MyStruct struct {
 	Currency
-	Balance uint64 `struc:"uint64,little"`
+	Balance uint64
 }
 
 type Currency struct {
-	Precision byte   `struc:"uint8"`
-	Name      string `struc:"[7]uint8"`
+	Precision uint8
+	Name      CurrencyName
 }
 
 type GetRequiredKeysResp struct {
