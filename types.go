@@ -349,8 +349,13 @@ func (tx *Transaction) Fill(api *EOSAPI) error {
 		return fmt.Errorf("decode hex: %s", err)
 	}
 
-	tx.RefBlockNum = uint16(binary.LittleEndian.Uint64(blockID[:8]))
-	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[8:16]))
+	fmt.Println("WOAH", blockID, blockID[16:24])
+
+	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
+	fmt.Println("YO MAN", tx.RefBlockNum)
+	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[16:24]))
+
+	fmt.Println("refblockprefix:", tx.RefBlockPrefix)
 	/// TODO: configure somewhere the default time for transactions,
 	/// etc.. add a `.Timeout` with that duration, default to 30
 	/// seconds ?

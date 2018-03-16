@@ -9,7 +9,7 @@ import (
 func main() {
 	api := eosapi.New("http://testnet-dawn3.eosio.ca")
 
-	keybag := eosapi.NewKeyBag()
+	keybag := eosapi.NewKeyBag([]byte("hello-world-get-this-from-get-info-and-hex-decode-it"))
 	if err := keybag.Add("5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"); err != nil {
 		log.Fatalln("Couldn't load private key:", err)
 	}

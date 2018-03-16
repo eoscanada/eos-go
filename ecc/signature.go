@@ -1,9 +1,8 @@
 package ecc
 
 import (
-	"encoding/hex"
-
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcutil/base58"
 )
 
 type Signature struct {
@@ -19,7 +18,10 @@ func (s *Signature) IsEqual(otherSig *Signature) bool {
 }
 
 func (s *Signature) String() string {
-	return hex.EncodeToString(s.sig.Serialize())
+	buf := s.sig.Serialize()
+	checksum := ripemd160checksum(buf)
+	buf = append(buf, checksum[:4]...)
+	return "EOS" + base58.Encode(buf)
 }
 
 func (s *Signature) Serialize() []byte {

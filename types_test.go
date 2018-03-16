@@ -1,10 +1,12 @@
 package eosapi
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,6 +27,34 @@ func TestSimplePacking(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "0000000000000e3d020568656c6c6f05776f726c64", hex.EncodeToString(cnt))
+}
+
+func TestPackTransaction(t *testing.T) {
+	stamp := time.Date(1970, time.September, 1, 1, 1, 1, 1, time.UTC)
+	blockID, _ := hex.DecodeString("00106438d58d4fcab54cf89ca8308e5971cff735979d6050c6c1b45d8aadcad6")
+	tx := &Transaction{
+		RefBlockNum:    uint16(binary.LittleEndian.Uint64(blockID[:8])),
+		RefBlockPrefix: uint32(binary.LittleEndian.Uint64(blockID[16:24])),
+		Expiration:     JSONTime{stamp},
+		Actions: []*Action{
+			{
+				Account: AccountName("eosio"),
+				Name:    ActionName("transfer"),
+				Authorization: []PermissionLevel{
+					{AccountName("eosio"), PermissionName("active")},
+				},
+			},
+		},
+	}
+
+	buf, err := MarshalBinary(tx)
+	assert.NoError(t, err)
+	// "cd6a4001  0000  0010  b54cf89c  0000  0000  00  01  0000000000ea3055  000000572d3ccdcd
+	// 01
+	// permission level: 0000000000ea3055  00000000a8ed3232
+	// data: 00"
+	assert.Equal(t, `0000000000000000000000000`, hex.EncodeToString(buf))
+
 }
 
 func TestUnpackBinaryTableRows(t *testing.T) {

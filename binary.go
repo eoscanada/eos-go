@@ -83,6 +83,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 
 	default:
 		rv := reflect.Indirect(reflect.ValueOf(v))
+		//fmt.Printf("Whatzthat %#v\n", rv)
 		t := rv.Type()
 		switch t.Kind() {
 		case reflect.Ptr:
@@ -112,8 +113,12 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 			n := 0
 			for i := 0; i < l; i++ {
 				if v := rv.Field(i); t.Field(i).Name != "_" {
-					if err = b.Encode(v.Interface()); err != nil {
-						return
+					//fmt.Println("MLLL", t.Field(i).Name)
+					iface := v.Interface()
+					if iface != nil {
+						if err = b.Encode(iface); err != nil {
+							return
+						}
 					}
 					n++
 				}

@@ -82,7 +82,7 @@ func (api *EOSAPI) PushTransaction(tx *Transaction) (out *PushTransactionResp, e
 }
 
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
-	err = api.call("chain", "push_transaction", M{"transaction": tx}, &out)
+	err = api.call("chain", "push_transaction", M{"transaction": tx.Transaction, "signatures": tx.Signatures, "compression": true}, &out)
 	return
 }
 

@@ -1,6 +1,7 @@
 package eosapi
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	"github.com/eosioca/eosapi/ecc"
@@ -8,12 +9,14 @@ import (
 
 // KeyBag holds private keys in memory, for signing transactions.
 type KeyBag struct {
-	Keys []*ecc.PrivateKey
+	ChainID []byte
+	Keys    []*ecc.PrivateKey
 }
 
-func NewKeyBag() *KeyBag {
+func NewKeyBag(chainID []byte) *KeyBag {
 	return &KeyBag{
-		Keys: make([]*ecc.PrivateKey, 0),
+		ChainID: chainID,
+		Keys:    make([]*ecc.PrivateKey, 0),
 	}
 }
 
@@ -40,7 +43,16 @@ func (b *KeyBag) Sign(tx *Transaction, requiredKeys ...PublicKey) (*SignedTransa
 
 	keyMap := b.keyMap()
 
-	hashdata := []byte("hashed-data-of-tx--we-need-to-serialize-the-whole-thing-thank-you")
+	txdata, err := MarshalBinary(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := sha256.New()
+	_, _ = hash.Write(b.ChainID)
+	_, _ = hash.Write(txdata)
+	hashdata := hash.Sum(nil)
+
 	for _, key := range requiredKeys {
 		privKey := keyMap[string(key)]
 		if privKey == nil {
