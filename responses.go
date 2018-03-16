@@ -88,3 +88,8 @@ type Currency struct {
 type GetRequiredKeysResp struct {
 	RequiredKeys []PublicKey `json:"required_keys"`
 }
+
+type PushTransactionResp struct {
+	TransactionID string `json:"transaction_id"`
+	Processed     bool   `json:"processed"` // WARN: is an `fc::variant` in server..
+}

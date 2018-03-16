@@ -13,6 +13,9 @@ import (
 	"github.com/lunixbochs/struc"
 )
 
+// For reference:
+// https://github.com/mithrilcoin-io/EosCommander/blob/master/app/src/main/java/io/mithrilcoin/eoscommander/data/remote/model/types/EosByteWriter.java
+
 type Name string
 
 type AccountName Name
@@ -46,13 +49,28 @@ func (acct *Name) Unpack(r io.Reader, length int, opt *struc.Options) error {
 	return nil
 }
 
-func (acct *Name) Size(opt *struc.Options) int {
-	return 8
+func (acct AccountName) MarshalBinary() ([]byte, error)    { return Name(acct).MarshalBinary() }
+func (acct PermissionName) MarshalBinary() ([]byte, error) { return Name(acct).MarshalBinary() }
+func (acct ActionName) MarshalBinary() ([]byte, error)     { return Name(acct).MarshalBinary() }
+func (acct TableName) MarshalBinary() ([]byte, error)      { return Name(acct).MarshalBinary() }
+func (acct Name) MarshalBinary() ([]byte, error) {
+	val, err := StringToName(string(acct))
+	if err != nil {
+		return nil, err
+	}
+	var out [8]byte
+	binary.LittleEndian.PutUint64(out[:8], val)
+	return out[:], nil
 }
 
-func (acct Name) String() string {
-	return string(acct)
+func (acct *Name) UnmarshalBinary(data []byte) error {
+	*acct = Name(NameToString(binary.LittleEndian.Uint64(data)))
+	return nil
 }
+
+func (acct Name) UnmarshalBinarySize() int { return 8 }
+
+// Asset
 
 type Asset struct {
 	Precision int    `struc:"uint8"`
@@ -126,7 +144,7 @@ type Action struct {
 	Name          ActionName        `json:"name"`
 	Authorization []PermissionLevel `json:"authorization,omitempty"`
 	Data          HexBytes          `json:"data,omitempty"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
-	Fields         interface{}       `json:"-"`
+	Fields        interface{}       `json:"-"`
 }
 
 type action struct {
@@ -308,7 +326,7 @@ func (tx *Transaction) Fill(api *EOSAPI) error {
 
 	blockID, err := hex.DecodeString(info.HeadBlockID)
 	if err != nil {
-		return fmt.Errorf("Transaction::Fill: %s", err)
+		return fmt.Errorf("decode hex: %s", err)
 	}
 
 	tx.RefBlockNum = uint16(binary.LittleEndian.Uint64(blockID[:8]))
@@ -328,14 +346,9 @@ type SignedTransaction struct {
 }
 
 type DeferredTransaction struct {
-	Transaction
+	*Transaction
 
 	SenderID   uint32      `json:"sender_id"`
 	Sender     AccountName `json:"sender"`
 	DelayUntil JSONTime    `json:"delay_until"`
-}
-
-type PushTransactionResp struct {
-	TransactionID string `json:"transaction_id"`
-	Processed     bool   `json:"processed"` // WARN: is an `fc::variant` in server..
 }

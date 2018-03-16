@@ -12,7 +12,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSimplePacking(t *testing.T) {
+	type S struct {
+		P string
+	}
+	type M struct {
+		Acct AccountName
+		A    []*S
+	}
+
+	cnt, err := Marshal(&M{
+		Acct: AccountName("."),
+		A: []*S{
+		},
+	})
+	// type M struct {
+	// 	NumA Varint `struc:"sizeof=A"`
+	// 	A    []string
+	// }
+
+	// var buf bytes.Buffer
+	// err := struc.Pack(&buf, &M{
+	// 	A: []string{"hello", "world"},
+	// })
+	require.NoError(t, err)
+	assert.Equal(t, `000000`, hex.EncodeToString(cnt))
+}
+
 func TestUnpackBinaryTableRows(t *testing.T) {
+
 	resp := &GetTableRowsResp{
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
 	}

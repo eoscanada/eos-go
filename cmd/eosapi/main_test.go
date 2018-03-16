@@ -78,7 +78,7 @@ func TestGetTableRows(t *testing.T) {
 func TestGetRequiredKeys(t *testing.T) {
 	api := newAPI()
 	tomorrow := time.Now().AddDate(0, 0, 1)
-	out, err := api.GetRequiredKeys(eosapi.Transaction{
+	out, err := api.GetRequiredKeys(&eosapi.Transaction{
 		// RefBlockNum:    "1",
 		// RefBlockPrefix: "",
 		// Expiration:     eosapi.JSONTime{tomorrow},
@@ -97,7 +97,7 @@ func TestGetRequiredKeys(t *testing.T) {
 		// },
 		// Signatures:     []string{},
 		// Authorizations: []string{},
-	}, "EOS")
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, "mama", out.RequiredKeys)
 }

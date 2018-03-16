@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/http/httputil"
 )
 
 type EOSAPI struct {
@@ -113,7 +115,7 @@ func (api *EOSAPI) SetCode(account AccountName, wastPath, abiPath string, keybag
 	}
 
 	resp, err := api.GetRequiredKeys(tx, keybag)
-	//log.Println("MAMA", resp, err)
+	log.Println("GetRequiredKeys", resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -165,11 +167,11 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 	}
 
 	// Useful when debugging API calls
-	// requestDump, err := httputil.DumpRequest(req, true)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// fmt.Println(string(requestDump))
+	requestDump, err := httputil.DumpRequest(req, true)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(requestDump))
 
 	resp, err := api.HttpClient.Do(req)
 	if err != nil {
