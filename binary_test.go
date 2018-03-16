@@ -24,14 +24,14 @@ var (
 )
 
 func TestBinaryEncodeStruct(t *testing.T) {
-	b, err := Marshal(s0v)
+	b, err := MarshalBinary(s0v)
 	assert.NoError(t, err)
 	assert.Equal(t, s0b, b)
 }
 
 func TestBinaryDecodeStruct(t *testing.T) {
 	s := &s0{}
-	err := Unmarshal(s0b, s)
+	err := UnmarshalBinary(s0b, s)
 	assert.NoError(t, err)
 	assert.Equal(t, s0v, s)
 }
@@ -39,9 +39,9 @@ func TestBinaryDecodeStruct(t *testing.T) {
 func TestBinaryDecodeToValueErrors(t *testing.T) {
 	b := []byte{1, 0, 0, 0}
 	var v uint32
-	err := Unmarshal(b, v)
+	err := UnmarshalBinary(b, v)
 	assert.Error(t, err)
-	err = Unmarshal(b, &v)
+	err = UnmarshalBinary(b, &v)
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(1), v)
 }
@@ -78,11 +78,11 @@ var (
 )
 
 func TestBinaryEncodeComplex(t *testing.T) {
-	b, err := Marshal(s1v)
+	b, err := MarshalBinary(s1v)
 	assert.NoError(t, err)
 	assert.Equal(t, svb, b)
 	s := &s1{}
-	err = Unmarshal(svb, s)
+	err = UnmarshalBinary(svb, s)
 	assert.NoError(t, err)
 	assert.Equal(t, s1v, s)
 }
@@ -105,7 +105,7 @@ func (s *s2) MarshalBinary() (data []byte, err error) {
 
 func TestBinaryMarshalUnMarshaler(t *testing.T) {
 	s2v := &s2{[]byte{0x13}}
-	b, err := Marshal(s2v)
+	b, err := MarshalBinary(s2v)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{0x1, 0x13}, b)
 }
@@ -113,7 +113,7 @@ func TestBinaryMarshalUnMarshaler(t *testing.T) {
 func TestMarshalUnMarshalTypeAliases(t *testing.T) {
 	type Foo int64
 	f := Foo(32)
-	b, err := Marshal(f)
+	b, err := MarshalBinary(f)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, b)
 }
@@ -263,12 +263,12 @@ func TestMarshalNonPointer(t *testing.T) {
 		A int
 	}
 	s := S{A: 1}
-	data, err := Marshal(s)
+	data, err := MarshalBinary(s)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var res S
-	if err := Unmarshal(data, &res); err != nil {
+	if err := UnmarshalBinary(data, &res); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(res, s) {

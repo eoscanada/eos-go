@@ -71,17 +71,14 @@ func TestGetTableRows(t *testing.T) {
 
 }
 
-// func (api *EOSAPI) GetRequiredKeys(tx *Transaction, availableKeys ...PublicKey) (out *GetRequiredKeysResp, err error) {
-// 	err = api.call("chain", "get_required_keys", M{"transaction": tx, "available_keys": availableKeys}, &out)
-// 	return
-// }
 func TestGetRequiredKeys(t *testing.T) {
 	api := newAPI()
 	tomorrow := time.Now().AddDate(0, 0, 1)
+	keybag := eosapi.NewKeyBag()
 	out, err := api.GetRequiredKeys(&eosapi.Transaction{
 		// RefBlockNum:    "1",
 		// RefBlockPrefix: "",
-		// Expiration:     eosapi.JSONTime{tomorrow},
+		Expiration: eosapi.JSONTime{tomorrow},
 		// Scope:          []string{},
 		// Actions: []eosapi.Action{
 		// 	{
@@ -97,7 +94,7 @@ func TestGetRequiredKeys(t *testing.T) {
 		// },
 		// Signatures:     []string{},
 		// Authorizations: []string{},
-	})
+	}, keybag)
 	assert.NoError(t, err)
 	assert.Equal(t, "mama", out.RequiredKeys)
 }

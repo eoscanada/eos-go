@@ -1,18 +1,17 @@
 package eosapi
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"testing"
 
-	"github.com/lunixbochs/struc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimplePacking(t *testing.T) {
+
 	type S struct {
 		P string
 	}
@@ -20,12 +19,11 @@ func TestSimplePacking(t *testing.T) {
 		Acct AccountName
 		A    []*S
 	}
-
-	cnt, err := Marshal(&M{
+	cnt, err := MarshalBinary(&M{
 		Acct: AccountName("."),
-		A: []*S{
-		},
+		A:    []*S{},
 	})
+
 	// type M struct {
 	// 	NumA Varint `struc:"sizeof=A"`
 	// 	A    []string
@@ -63,17 +61,17 @@ func TestPackAccountName(t *testing.T) {
 		in  string
 		out []byte
 	}{
-		{"eosio", []byte{0x55, 0x30, 0xea, 0x00, 0x00, 0x00, 0x00, 0x00}},
-		{"eosio.system", []byte{0x55, 0x30, 0xea, 0x03, 0x1e, 0xc6, 0x55, 0x00}},
-		{"tbcox2.3", []byte{0x00, 0x00, 0x00, 0x08, 0x84, 0xed, 0x1c, 0x90}},
-		{"tbcox2.", []byte{0x00, 0x00, 0x00, 0x08, 0x84, 0xed, 0x1c, 0x90}},
+		{"eosio", []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0xea, 0x30, 0x55}},
+		{"eosio.system", []byte{0x20, 0x55, 0xc6, 0x1e, 0x3, 0xea, 0x30, 0x55}},
+		{"tbcox2.3", []byte{0x0, 0x0, 0x0, 0x3, 0x88, 0x4e, 0xd1, 0xc9}},
+		{"tbcox2.", []byte{0x0, 0x0, 0x0, 0x0, 0x88, 0x4e, 0xd1, 0xc9}},
 	}
 
 	for idx, test := range tests {
 		acct := AccountName(test.in)
-		var buf bytes.Buffer
-		assert.NoError(t, struc.Pack(&buf, &acct))
-		assert.Equal(t, test.out, buf.Bytes(), fmt.Sprintf("index %d", idx))
+		buf, err := MarshalBinary(acct)
+		assert.NoError(t, err)
+		assert.Equal(t, test.out, buf, fmt.Sprintf("index %d", idx))
 	}
 }
 
@@ -84,11 +82,11 @@ func TestUnpackActionTransfer(t *testing.T) {
 	}{
 		{
 			"00000003884ed1c900000000884ed1c9090000000000000000000000000000000000000000000000",
-			Transfer{AccountName("tbcox"), AccountName("tbcox2.3"), 9, 0, ""},
+			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, ""},
 		},
 		{
 			"00000003884ed1c900000000884ed1c9090000000000000000",
-			Transfer{AccountName("tbcox"), AccountName("tbcox2.3"), 9, 0, ""},
+			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, ""},
 		},
 	}
 
@@ -97,7 +95,7 @@ func TestUnpackActionTransfer(t *testing.T) {
 		assert.NoError(t, err)
 
 		var res Transfer
-		assert.NoError(t, struc.Unpack(bytes.NewReader(buf), &res))
+		assert.NoError(t, UnmarshalBinary(buf, &res))
 		assert.Equal(t, test.out, res)
 	}
 

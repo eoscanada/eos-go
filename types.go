@@ -5,49 +5,18 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"reflect"
 	"time"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/lunixbochs/struc"
 )
 
 // For reference:
 // https://github.com/mithrilcoin-io/EosCommander/blob/master/app/src/main/java/io/mithrilcoin/eoscommander/data/remote/model/types/EosByteWriter.java
 
 type Name string
-
 type AccountName Name
 type PermissionName Name
 type ActionName Name
 type TableName Name
-
-func (acct *Name) Pack(p []byte, opt *struc.Options) (int, error) {
-	val, err := StringToName(string(*acct))
-	if err != nil {
-		return 0, err
-	}
-	opt.Order.PutUint64(p[:8], val)
-	return 8, nil
-}
-
-// FIXME: This won't exist for `AccountName` nor `PermissionName` though.. would it ?
-func (acct *Name) Unpack(r io.Reader, length int, opt *struc.Options) error {
-	data := make([]byte, 8)
-
-	if _, err := r.Read(data[:8]); err != nil {
-		return err
-	}
-
-	val := opt.Order.Uint64(data[:8])
-
-	*acct = Name(NameToString(val))
-
-	spew.Dump(*acct)
-
-	return nil
-}
 
 func (acct AccountName) MarshalBinary() ([]byte, error)    { return Name(acct).MarshalBinary() }
 func (acct PermissionName) MarshalBinary() ([]byte, error) { return Name(acct).MarshalBinary() }
@@ -63,12 +32,32 @@ func (acct Name) MarshalBinary() ([]byte, error) {
 	return out[:], nil
 }
 
-func (acct *Name) UnmarshalBinary(data []byte) error {
-	*acct = Name(NameToString(binary.LittleEndian.Uint64(data)))
+func (n *AccountName) UnmarshalBinary(data []byte) error {
+	*n = AccountName(NameToString(binary.LittleEndian.Uint64(data)))
+	return nil
+}
+func (n *Name) UnmarshalBinary(data []byte) error {
+	*n = Name(NameToString(binary.LittleEndian.Uint64(data)))
+	return nil
+}
+func (n *PermissionName) UnmarshalBinary(data []byte) error {
+	*n = PermissionName(NameToString(binary.LittleEndian.Uint64(data)))
+	return nil
+}
+func (n *ActionName) UnmarshalBinary(data []byte) error {
+	*n = ActionName(NameToString(binary.LittleEndian.Uint64(data)))
+	return nil
+}
+func (n *TableName) UnmarshalBinary(data []byte) error {
+	*n = TableName(NameToString(binary.LittleEndian.Uint64(data)))
 	return nil
 }
 
-func (acct Name) UnmarshalBinarySize() int { return 8 }
+func (AccountName) UnmarshalBinarySize() int    { return 8 }
+func (PermissionName) UnmarshalBinarySize() int { return 8 }
+func (ActionName) UnmarshalBinarySize() int     { return 8 }
+func (TableName) UnmarshalBinarySize() int      { return 8 }
+func (Name) UnmarshalBinarySize() int           { return 8 }
 
 // Asset
 
@@ -265,6 +254,19 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 	t.Time, err = time.Parse(`"`+JSONTimeFormat+`"`, string(data))
 	return err
 }
+
+func (t JSONTime) UnmarshalBinary(data []byte) error {
+	t.Time = time.Unix(int64(binary.LittleEndian.Uint32(data)), 0)
+	return nil
+}
+
+func (t JSONTime) MarshalBinary() ([]byte, error) {
+	out := []byte{0, 0, 0, 0}
+	binary.LittleEndian.PutUint32(out, uint32(t.Unix()))
+	return out, nil
+}
+
+func (t JSONTime) MarshalBinarySize() int { return 4 }
 
 // HexBytes
 

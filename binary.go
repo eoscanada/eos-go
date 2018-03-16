@@ -18,7 +18,7 @@ var (
 	DefaultEndian = LittleEndian
 )
 
-func Marshal(v interface{}) ([]byte, error) {
+func MarshalBinary(v interface{}) ([]byte, error) {
 	b := &bytes.Buffer{}
 	if err := NewEncoder(b).Encode(v); err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func Unmarshal(b []byte, v interface{}) error {
+func UnmarshalBinary(b []byte, v interface{}) error {
 	return NewDecoder(bytes.NewReader(b)).Decode(v)
 }
 
@@ -64,14 +64,15 @@ func (e *Encoder) writeVarint(v int) error {
 func (b *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
 	case encoding.BinaryMarshaler:
-		fmt.Println("you,re a marshaller")
 		buf, err := cv.MarshalBinary()
 		if err != nil {
 			return err
 		}
-		if err = b.writeVarint(len(buf)); err != nil {
-			return err
-		}
+		// let the Marshaller deal with varints..
+		//
+		// if err = b.writeVarint(len(buf)); err != nil {
+		// 	return err
+		// }
 		_, err = b.w.Write(buf)
 
 	case []byte: // fast-path byte arrays
@@ -192,6 +193,9 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
+// UnmarshalBinarySizer determines the size of what we need to read to
+// unmarshal this object. If not specified, and not a native type,
+// falls back to a uvarint prefix.
 type UnmarshalBinarySizer interface {
 	UnmarshalBinarySize() int
 }
@@ -199,6 +203,8 @@ type UnmarshalBinarySizer interface {
 func (d *Decoder) Decode(v interface{}) (err error) {
 	// Check if the type implements the encoding.BinaryUnmarshaler interface, and use it if so.
 	if i, ok := v.(encoding.BinaryUnmarshaler); ok {
+		// if we need, we'll implement an UnmarshalBinaryRead() that'll take precedence over this
+		// and that will read byte-per-byte on its own..
 		var l uint64
 		if sizer, ok := v.(UnmarshalBinarySizer); ok {
 			l = uint64(sizer.UnmarshalBinarySize())
