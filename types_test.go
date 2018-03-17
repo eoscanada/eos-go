@@ -29,13 +29,21 @@ func TestSimplePacking(t *testing.T) {
 	assert.Equal(t, "0000000000000e3d020568656c6c6f05776f726c64", hex.EncodeToString(cnt))
 }
 
+func TestSetRefBlock(t *testing.T) {
+	tx := &Transaction{}
+	blockID, err := hex.DecodeString("0012cf6247be7e2050090bd83b473369b705ba1d280cd55d3aef79998c784b9b")
+	//                                    ^^^^        ^^....^^
+	require.NoError(t, err)
+	tx.setRefBlock(blockID)
+	assert.Equal(t, uint16(0xcf62), tx.RefBlockNum)        // 53090
+	assert.Equal(t, uint32(0xd80b0950), tx.RefBlockPrefix) // 3624601936
+}
+
 func TestPackTransaction(t *testing.T) {
 	stamp := time.Date(1970, time.September, 1, 1, 1, 1, 1, time.UTC)
 	blockID, _ := hex.DecodeString("00106438d58d4fcab54cf89ca8308e5971cff735979d6050c6c1b45d8aadcad6")
 	tx := &Transaction{
-		RefBlockNum:    uint16(binary.LittleEndian.Uint64(blockID[:8])),
-		RefBlockPrefix: uint32(binary.LittleEndian.Uint64(blockID[16:24])),
-		Expiration:     JSONTime{stamp},
+		Expiration: JSONTime{stamp},
 		Actions: []*Action{
 			{
 				Account: AccountName("eosio"),
@@ -46,6 +54,7 @@ func TestPackTransaction(t *testing.T) {
 			},
 		},
 	}
+	tx.setRefBlock(blockID)
 
 	buf, err := MarshalBinary(tx)
 	assert.NoError(t, err)

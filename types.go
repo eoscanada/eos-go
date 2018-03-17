@@ -247,8 +247,7 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 		return nil, fmt.Errorf("decode hex: %s", err)
 	}
 
-	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
-	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[16:24]))
+	tx.setRefBlock(blockID)
 
 	fmt.Println("refblockprefix:", tx.RefBlockPrefix)
 	/// TODO: configure somewhere the default time for transactions,
@@ -256,6 +255,11 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 	/// seconds ?
 	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
 	return blockID, nil
+}
+
+func (tx *Transaction) setRefBlock(blockID []byte) {
+	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
+	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[8:16]))
 }
 
 type SignedTransaction struct {
