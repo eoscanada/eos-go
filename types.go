@@ -84,11 +84,13 @@ func (CurrencyName) UnmarshalBinarySize() int { return 7 }
 
 // Asset
 
+// NOTE: there's also ExtendedAsset which is a quantity with the attached contract (AccountName)
 type Asset struct {
 	Amount int64
 	Symbol
 }
 
+// NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
 type Symbol struct {
 	Precision int
 	Symbol    string
@@ -138,8 +140,8 @@ type PermissionLevelWeight struct {
 
 type Authority struct {
 	Threshold uint32                  `json:"threshold"`
-	Accounts  []PermissionLevelWeight `json:"accounts"`
 	Keys      []KeyWeight             `json:"keys"`
+	Accounts  []PermissionLevelWeight `json:"accounts"`
 }
 
 type KeyWeight struct {

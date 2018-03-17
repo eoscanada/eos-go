@@ -80,36 +80,15 @@ func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
 	return
 }
 
-// func (api *EOSAPI) PushTransaction(tx *Transaction) (out *PushTransactionResp, err error) {
-// 	if err := tx.Fill(api); err != nil {
-// 		return nil, err
-// 	}
-
-// 	err = api.call("chain", "push_transaction", M{"transaction": tx}, &out)
-// 	return
-// }
-
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
 	data, err := MarshalBinary(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
 
-	// addedChunk := "010000000000ea305500000000a8ed3232010000"
-	// err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data) + addedChunk, "signatures": tx.Signatures, "compression": "none"}, &out)
 	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
 	return
 }
-
-// func (api *EOSAPI) NewAccount(creator, newAccount AccountName, owner, active, recovery Authority) (out *NewAccountResp, err error) {
-// 	tx := &Transaction{
-// 		Actions: []*Action{
-// 			{
-// 				Account,
-// 			},
-// 		},
-// 	}
-// }
 
 func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey PublicKey) (out *PushTransactionResp, err error) {
 	a := &Action{

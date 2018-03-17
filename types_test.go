@@ -97,17 +97,11 @@ func TestPackAction(t *testing.T) {
 
 	buf, err := MarshalBinary(a)
 	assert.NoError(t, err)
-	// 0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed3232
-	// data: 32 (50 chars, the length of the data)
-	//   from: 00000059b1abe931
-	//   to: 0000000000ea3055
-	//   quantity: f3e0010000000000   (quantity)
-	//   memo: 00  (string)
-	assert.Equal(t, `0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32323200000059b1abe9310000000000ea3055f3e001000000000000`, hex.EncodeToString(buf))
+	assert.Equal(t, `0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32321900000059b1abe9310000000000ea3055f3e001000000000000`, hex.EncodeToString(buf))
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32323200000059b1abe9310000000000ea3055f3e001000000000000","from":"abourget","memo":"","name":"transfer","quantity":123123,"to":"eosio"}`, string(buf))
+	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32321900000059b1abe9310000000000ea3055f3e001000000000000","from":"abourget","memo":"","name":"transfer","quantity":123123,"to":"eosio"}`, string(buf))
 }
 
 func TestUnpackBinaryTableRows(t *testing.T) {
@@ -209,7 +203,7 @@ func TestActionMetaTypes(t *testing.T) {
 	cnt, err := json.Marshal(a)
 	require.NoError(t, err)
 	assert.Equal(t,
-		`{"account":"eosio","from":"abourget","memo":"","name":"transfer","quantity":0,"to":"mama"}`,
+		`{"account":"eosio","data":"0000000000ea3055000000572d3ccdcd001900000059b1abe931000000000060a491000000000000000000","name":"transfer"}`,
 		string(cnt),
 	)
 
@@ -231,11 +225,11 @@ func TestAuthorityBinaryMarshal(t *testing.T) {
 	require.NoError(t, err)
 
 	// threshold: 02000000
-	// []accounts: 00
 	// []keys: 01
 	// - pubkey: 0002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf
 	//   weight: 0500
-	assert.Equal(t, `0200000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0500`, hex.EncodeToString(cnt))
+	// []accounts: 00
+	assert.Equal(t, `02000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf050000`, hex.EncodeToString(cnt))
 }
 
 func TestActionNoFields(t *testing.T) {
@@ -246,8 +240,9 @@ func TestActionNoFields(t *testing.T) {
 
 	cnt, err := json.Marshal(a)
 	require.NoError(t, err)
+	// account + name + emptylist + emptylist
 	assert.Equal(t,
-		`{"account":"eosio","name":"transfer"}`,
+		`{"account":"eosio","data":"0000000000ea3055000000572d3ccdcd0000","name":"transfer"}`,
 		string(cnt),
 	)
 
