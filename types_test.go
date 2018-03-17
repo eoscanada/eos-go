@@ -93,13 +93,36 @@ func TestUnpackBinaryTableRows(t *testing.T) {
 }
 
 func TestStringToName(t *testing.T) {
+
 	i, err := StringToName("tbcox2.3")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(0xc9d14e8803000000), i)
+
+	//h, _ := hex.DecodeString("00409e9a2264b89a")
+	h, _ := hex.DecodeString("0000001e4d75af46")
+	fmt.Println("NAMETOSTRING", NameToString(binary.LittleEndian.Uint64(h)))
 }
 
 func TestNameToString(t *testing.T) {
-	assert.Equal(t, "tbcox2.3", NameToString(uint64(0xc9d14e8803000000)))
+	tests := []struct {
+		in  string
+		out string
+	}{
+		{"0000001e4d75af46", "currency"},
+		{"0000000000ea3055", "eosio"},
+		{"00409e9a2264b89a", "newaccount"},
+		{"00000003884ed1c9", "tbcox2.3"},
+		{"00000000a8ed3232", "active"},
+		{"000000572d3ccdcd", "transfer"},
+		{"00000059b1abe931", "abourget"},
+	}
+
+	for _, test := range tests {
+		h, err := hex.DecodeString(test.in)
+		require.NoError(t, err)
+		res := NameToString(binary.LittleEndian.Uint64(h))
+		assert.Equal(t, test.out, res)
+	}
 }
 
 func TestPackAccountName(t *testing.T) {
@@ -167,6 +190,27 @@ func TestActionMetaTypes(t *testing.T) {
 
 	var newAction *Action
 	require.NoError(t, json.Unmarshal(cnt, &newAction))
+}
+
+func TestAuthorityBinaryMarshal(t *testing.T) {
+	a := Authority{
+		Threshold: 2,
+		Keys: []KeyWeight{
+			KeyWeight{
+				PublicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+				Weight:    5,
+			},
+		},
+	}
+	cnt, err := MarshalBinary(a)
+	require.NoError(t, err)
+
+	// threshold: 02000000
+	// []accounts: 00
+	// []keys: 01
+	// - pubkey: 0002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf
+	//   weight: 0500
+	assert.Equal(t, `0200000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0500`, hex.EncodeToString(cnt))
 }
 
 func TestActionNoFields(t *testing.T) {

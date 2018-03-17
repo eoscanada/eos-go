@@ -1,14 +1,15 @@
 package eosapi
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"reflect"
 	"strings"
 	"time"
+
+	"github.com/btcsuite/btcutil/base58"
 )
 
 // For reference:
@@ -83,37 +84,40 @@ func (CurrencyName) UnmarshalBinarySize() int { return 7 }
 // Asset
 
 type Asset struct {
-	Precision int    `struc:"uint8"`
-	Symbol    string `struc:"[7]byte"`
-} // decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: "EOS", Precision: 4}`
+	Amount int64
+	Symbol
+}
 
+type Symbol struct {
+	Precision int
+	Symbol    string
+}
+
+func (a *Asset) UnmarshalBinary(data []byte) error {
+	// pick up uint64 for amount
+	// then one byte for Precision, and another 7 bytes as string for currency
+	return nil
+}
 func (a *Asset) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-
+	// decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: {Precision: 4, Symbol: "EOS"}`
+	// deal with the underlying `Symbol`
 	return nil
 }
 
-// NOT RIGHT SIGNATURE:
-func (a *Asset) MarshalJSON() (data []byte, err error) {
-	return nil, nil
-}
-
-type AccountResp struct {
-	AccountName AccountName  `json:"account"`
-	Permissions []Permission `json:"permissions"`
-}
-
-type CurrencyBalanceResp struct {
-	EOSBalance        Asset    `json:"eos_balance"`
-	StakedBalance     Asset    `json:"staked_balance"`
-	UnstakingBalance  Asset    `json:"unstaking_balance"`
-	LastUnstakingTime JSONTime `json:"last_unstaking_time"`
-}
-
 type PublicKey string
+
+func (a PublicKey) MarshalBinary() ([]byte, error) {
+	raw := base58.Decode(string(a[3:]))
+	raw = raw[:33]
+	return append(bytes.Repeat([]byte{0}, 34-len(raw)), raw...), nil
+}
+
+func (a *PublicKey) UnmarshalBinary(data []byte) error {
+	*a = PublicKey("EOS" + base58.Encode(data))
+	return nil
+}
+
+func (a *PublicKey) UnmarshalBinarySize() int { return 34 }
 
 type Permission struct {
 	PermName     string    `json:"perm_name"`
@@ -147,172 +151,6 @@ type Code struct {
 	CodeHash    string      `json:"code_hash"`
 	WAST        string      `json:"wast"` // TODO: decode into Go ast, see https://github.com/go-interpreter/wagon
 	ABI         ABI         `json:"abi"`
-}
-
-type Action struct {
-	Account       AccountName       `json:"account"`
-	Name          ActionName        `json:"name"`
-	Authorization []PermissionLevel `json:"authorization,omitempty"`
-	Data          ActionData        `json:"data,omitempty"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
-}
-
-type action struct {
-	Account       AccountName       `json:"account"`
-	Name          ActionName        `json:"name"`
-	Authorization []PermissionLevel `json:"authorization,omitempty"`
-}
-
-type ActionData interface{}
-
-func (a *Action) UnmarshalBinaryRead(r io.Reader) error {
-	length, err := binary.ReadUvarint(&ByteReader{r})
-	if err != nil {
-		return err
-	}
-
-	data := make([]byte, length)
-	_, err = io.ReadFull(r, data)
-	if err != nil {
-		return err
-	}
-
-	actionMap := registeredActions[a.Account]
-	if actionMap == nil {
-		return nil
-	}
-
-	objMap := actionMap[a.Name]
-	if objMap == nil {
-		return nil
-	}
-
-	obj := reflect.New(reflect.TypeOf(objMap))
-
-	err = UnmarshalBinary(data, &obj)
-	if err != nil {
-		return err
-	}
-
-	a.Data = obj.Elem().Interface()
-
-	return nil
-}
-
-// with an action type registry somewhere ?
-
-var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
-
-func init() {
-	RegisterAction(AccountName("eosio"), ActionName("transfer"), &Transfer{})
-	RegisterAction(AccountName("eosio"), ActionName("issue"), &Issue{})
-}
-
-// Registers Action objects..
-func RegisterAction(accountName AccountName, actionName ActionName, obj interface{}) {
-	// TODO: lock or som'th.. unless we never call after boot time..
-	if registeredActions[accountName] == nil {
-		registeredActions[accountName] = make(map[ActionName]reflect.Type)
-	}
-	registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
-}
-
-func (a *Action) UnmarshalJSON(v []byte) (err error) {
-	// load Account, Name, Authorization, Data
-	// and then unpack other fields in a struct based on `Name` and `AccountName`..
-	var newAct *action
-	if err = json.Unmarshal(v, &newAct); err != nil {
-		return
-	}
-
-	a.Account = newAct.Account
-	a.Name = newAct.Name
-	a.Authorization = newAct.Authorization
-
-	actionMap := registeredActions[a.Account]
-	if actionMap == nil {
-		return nil
-	}
-
-	objMap := actionMap[a.Name]
-	if objMap == nil {
-		return nil
-	}
-
-	obj := reflect.New(reflect.TypeOf(objMap))
-	err = json.Unmarshal(v, &obj)
-	if err != nil {
-		return err
-	}
-
-	a.Data = obj.Elem().Interface()
-
-	return nil
-}
-
-func (a *Action) MarshalBinary() ([]byte, error) {
-	// marshal binary a short action, then data
-	common, err := MarshalBinary(&action{
-		Account:       a.Account,
-		Name:          a.Name,
-		Authorization: a.Authorization,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var data []byte
-	if a.Data != nil {
-		data, err = MarshalBinary(a.Data)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	varint := make([]byte, 4, 4)
-	varintLen := binary.PutVarint(varint, int64(len(data)))
-
-	common = append(common, varint[:varintLen]...)
-	common = append(common, data...)
-	return common, nil
-}
-
-func (a *Action) MarshalJSON() ([]byte, error) {
-	// Start with the base-line Action fields.
-
-	cnt, err := json.Marshal(&action{
-		Account:       a.Account,
-		Name:          a.Name,
-		Authorization: a.Authorization,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var keys1 map[string]interface{}
-	err = json.Unmarshal(cnt, &keys1)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := MarshalBinary(a)
-
-	cnt, err = json.Marshal(a.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	var keys2 map[string]interface{}
-	err = json.Unmarshal(cnt, &keys2)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range keys1 {
-		keys2[k] = v
-	}
-	keys2["data"] = hex.EncodeToString(data)
-
-	return json.Marshal(keys2)
 }
 
 // JSONTime

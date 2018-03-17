@@ -33,6 +33,18 @@ type BlockResp struct {
 
 }
 
+type AccountResp struct {
+	AccountName AccountName  `json:"account"`
+	Permissions []Permission `json:"permissions"`
+}
+
+type CurrencyBalanceResp struct {
+	EOSBalance        Asset    `json:"eos_balance"`
+	StakedBalance     Asset    `json:"staked_balance"`
+	UnstakingBalance  Asset    `json:"unstaking_balance"`
+	LastUnstakingTime JSONTime `json:"last_unstaking_time"`
+}
+
 type GetTableRowsResp struct {
 	More bool            `json:"more"`
 	Rows json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
