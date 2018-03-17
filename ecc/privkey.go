@@ -53,12 +53,16 @@ func (p *PrivateKey) PublicKey() *PublicKey {
 	return &PublicKey{pubKey: p.privKey.PubKey()}
 }
 
-func (p *PrivateKey) Sign(payload []byte) (*Signature, error) {
-	sig, err := p.privKey.Sign(payload)
+func (p *PrivateKey) Sign(payload []byte) (Signature, error) {
+	h := sha256.New()
+	h.Write(payload)
+	hash := h.Sum(nil)
+
+	compactSig, err := btcec.SignCompact(btcec.S256(), p.privKey, hash, true)
 	if err != nil {
 		return nil, err
 	}
-	return &Signature{sig: sig}, nil
+	return Signature(compactSig), nil
 }
 
 func (p *PrivateKey) String() string {

@@ -1,47 +1,62 @@
 package ecc
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil/base58"
 )
 
-type Signature struct {
-	sig *btcec.Signature
+// Signature represents a signature for some hash
+type Signature []byte
+
+// Verify checks the signature against the pubKey. `hash` is a sha256
+// hash of the payload to verify.
+func (s Signature) Verify(hash []byte, pubKey *PublicKey) bool {
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash)
+	if err != nil {
+		return false
+	}
+	if recoveredKey.IsEqual(pubKey.pubKey) {
+		return true
+	}
+	return false
 }
 
-func (s *Signature) Verify(hash []byte, pubKey *PublicKey) bool {
-	return s.sig.Verify(hash, pubKey.pubKey)
-}
-
-func (s *Signature) IsEqual(otherSig *Signature) bool {
-	return s.sig.IsEqual(otherSig.sig)
-}
-
-func (s *Signature) String() string {
-	buf := s.sig.Serialize()
-	checksum := ripemd160checksum(buf)
-	buf = append(buf, checksum[:4]...)
+func (s Signature) String() string {
+	checksum := ripemd160checksum(s)
+	buf := append(s[:], checksum[:4]...)
 	return "EOS" + base58.Encode(buf)
 }
 
-func (s *Signature) Serialize() []byte {
-	return s.sig.Serialize()
+func NewSignature(fromText string) Signature {
+	return Signature(base58.Decode(fromText[3:]))
 }
 
-func ParseSignature(sigStr []byte) (*Signature, error) {
-	sig, err := btcec.ParseSignature(sigStr, btcec.S256())
-	if err != nil {
-		return nil, err
-	}
-
-	return &Signature{sig: sig}, nil
+func (a Signature) MarshalBinary() ([]byte, error) {
+	return append(bytes.Repeat([]byte{0}, 66-len(a)), a...), nil
 }
 
-func ParseDERSignature(sigStr []byte) (*Signature, error) {
-	sig, err := btcec.ParseDERSignature(sigStr, btcec.S256())
+func (a *Signature) UnmarshalBinary(data []byte) error {
+	*a = Signature(data)
+	return nil
+}
+
+func (a *Signature) UnmarshalBinarySize() int { return 66 }
+
+func (a Signature) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.String())
+}
+
+func (a *Signature) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	return &Signature{sig: sig}, nil
+	*a = NewSignature(s)
+
+	return
 }

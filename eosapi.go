@@ -2,6 +2,7 @@ package eosapi
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -82,7 +83,12 @@ func (api *EOSAPI) PushTransaction(tx *Transaction) (out *PushTransactionResp, e
 }
 
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
-	err = api.call("chain", "push_transaction", M{"transaction": tx.Transaction, "signatures": tx.Signatures, "compression": true}, &out)
+	data, err := MarshalBinary(tx.Transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
 	return
 }
 
@@ -106,6 +112,12 @@ func (api *EOSAPI) SetCode(account AccountName, wastPath, abiPath string, keybag
 				Name:    ActionName("transfer"),
 				Authorization: []PermissionLevel{
 					{AccountName("eosio"), PermissionName("active")},
+				},
+				Data: Transfer{
+					From:     AccountName("eosio"),
+					To:       AccountName("abourget"),
+					Quantity: 123123,
+					Memo:     "heeemm.",
 				},
 			},
 		},

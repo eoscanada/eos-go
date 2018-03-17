@@ -64,7 +64,7 @@ func (b *KeyBag) Sign(tx *Transaction, requiredKeys ...PublicKey) (*SignedTransa
 			return nil, err
 		}
 
-		s.Signatures = append(s.Signatures, sig.String())
+		s.Signatures = append(s.Signatures, sig)
 	}
 
 	return s, nil

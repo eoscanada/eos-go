@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/eosioca/eosapi/ecc"
 )
 
 // For reference:
@@ -251,7 +252,6 @@ func (tx *Transaction) Fill(api *EOSAPI) error {
 	}
 
 	fmt.Println("WOAH", blockID, blockID[16:24])
-
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
 	fmt.Println("YO MAN", tx.RefBlockNum)
 	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[16:24]))
@@ -267,8 +267,8 @@ func (tx *Transaction) Fill(api *EOSAPI) error {
 type SignedTransaction struct {
 	*Transaction
 
-	Signatures      []string `json:"signatures"`
-	ContextFreeData HexBytes `json:"context_free_data,omitempty"`
+	Signatures      []ecc.Signature `json:"signatures"`
+	ContextFreeData HexBytes        `json:"context_free_data,omitempty"`
 }
 
 type DeferredTransaction struct {
@@ -277,4 +277,10 @@ type DeferredTransaction struct {
 	SenderID   uint32      `json:"sender_id"`
 	Sender     AccountName `json:"sender"`
 	DelayUntil JSONTime    `json:"delay_until"`
+}
+
+type Signature string
+
+func SignatureFromData(sigData []byte) {
+
 }

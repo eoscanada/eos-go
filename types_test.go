@@ -53,6 +53,22 @@ func TestPackTransaction(t *testing.T) {
 	// 01
 	// permission level: 0000000000ea3055  00000000a8ed3232
 	// data: 00"
+
+	// Une tx:
+	// expiration: 82a3ac5a
+	// region: 0000
+	// refblocknum: 2a2a
+	// refblockprefix: 06e90b85
+	// packedbandwidth: 0000
+	// contextfreecpubandwidth: 0000
+	// contextfreeactions: 00
+	// actions: 01
+	// - account: 0000000000ea3055 (eosio)
+	//   action: 000000572d3ccdcd (transfer)
+	//   []auths: 01
+	//     - acct: 0000000000ea3055 (eosio)
+	//       perm: 00000000a8ed3232 (active)
+	// ... missing Transfer !
 	assert.Equal(t, `0000000000000000000000000`, hex.EncodeToString(buf))
 }
 
