@@ -122,6 +122,22 @@ func (api *EOSAPI) SetCode(account AccountName, wastPath, abiPath string, keybag
 			},
 		},
 	}
+	tx = &Transaction{
+		Actions: []*Action{
+			{
+				Account: AccountName("eosio"),
+				Name:    ActionName("issue"),
+				Authorization: []PermissionLevel{
+					{AccountName("eosio"), PermissionName("active")},
+				},
+				Data: Issue{
+					To:       AccountName("abourget"),
+					Quantity: 123123,
+				},
+			},
+		},
+	}
+
 	if err := tx.Fill(api); err != nil {
 		return nil, err
 	}

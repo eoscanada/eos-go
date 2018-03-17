@@ -58,10 +58,11 @@ func (p *PrivateKey) Sign(payload []byte) (Signature, error) {
 	h.Write(payload)
 	hash := h.Sum(nil)
 
-	compactSig, err := btcec.SignCompact(btcec.S256(), p.privKey, hash, true)
+	compactSig, err := btcec.SignCompact(btcec.S256(), p.privKey, hash, false)
 	if err != nil {
 		return nil, err
 	}
+
 	return Signature(compactSig), nil
 }
 
