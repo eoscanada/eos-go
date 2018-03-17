@@ -88,7 +88,8 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 		return nil, err
 	}
 
-	//addedChunk := "010000000000ea305500000000a8ed3232010000"  + addedChunk
+	// addedChunk := "010000000000ea305500000000a8ed3232010000"
+	// err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data) + addedChunk, "signatures": tx.Signatures, "compression": "none"}, &out)
 	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
 	return
 }
@@ -215,7 +216,7 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("status code = %d, body=%q", resp.StatusCode, cnt.String())
+		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
 	}
 
 	//fmt.Println("STRING", cnt.String())

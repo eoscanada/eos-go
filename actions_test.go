@@ -36,6 +36,15 @@ func TestActionNewAccount(t *testing.T) {
 					},
 				},
 			},
+			Recovery: Authority{
+				Threshold: 1,
+				Accounts: []PermissionLevelWeight{
+					PermissionLevelWeight{
+						Permission: PermissionLevel{AccountName("eosio"), PermissionName("active")},
+						Weight:     1,
+					},
+				},
+			},
 		},
 	}
 
@@ -74,12 +83,13 @@ func TestActionNewAccount(t *testing.T) {
 	//     - publickey: 0002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf
 	//       weight: 0100
 	//  recovery authority:
-	//    threshold: 0100
-	//    []accounts: 00
+	//    threshold: 01000000
+	//    []accounts: 01
+	//    - name: 0000000000ea3055 (eosio)
 	//    []keys: 00
 	// now the `newaccount` struct is done.. what,s that ?
 	// a list of a new object: 01
-	// an account name: 0000000000ea3055 (eosio)
+	// an account name:
 	// a permission name: 00000000a8ed3232 (active)
 	// some list with one thing: 01
 	//   - an empty list: 00
@@ -108,12 +118,12 @@ func TestActionNewAccount(t *testing.T) {
 	//  []keys: 01
 	//  - pubkey: 0002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf
 	//    weight: 0100
-	// recovery-authority:
+	// recovery-authority:  // the last bit is the Recovery authority.. it works :)
 	//  threshold: 00000000
 	//  []accounts: 00
 	//  []keys: 00
 
-	assert.Equal(t, `0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32326a0000000000ea305500000059b1abe9310100000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000100000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000000000000`, hex.EncodeToString(buf))
+	assert.Equal(t, `0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea305500000059b1abe9310100000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000100000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf010001000000010000000000ea305500000000a8ed3232010000`, hex.EncodeToString(buf))
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
