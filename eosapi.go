@@ -88,6 +88,7 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 		return nil, err
 	}
 
+	//addedChunk := "010000000000ea305500000000a8ed3232010000"  + addedChunk
 	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
 	return
 }
@@ -102,7 +103,7 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 // 	}
 // }
 
-func (api *EOSAPI) SetCode(account AccountName, wastPath, abiPath string, keybag *KeyBag) (out *PushTransactionResp, err error) {
+func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag *KeyBag) (out *PushTransactionResp, err error) {
 	// SetCode will create a transaction, call GetRequiredKeys, and sign the transaction with keybag.AvailableKeys().
 
 	tx := &Transaction{
@@ -145,12 +146,12 @@ func (api *EOSAPI) SetCode(account AccountName, wastPath, abiPath string, keybag
 	resp, err := api.GetRequiredKeys(tx, keybag)
 	log.Println("GetRequiredKeys", resp, err)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
 
 	signed, err := keybag.Sign(tx, resp.RequiredKeys...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Sign: %s", err)
 	}
 
 	return api.PushSignedTransaction(signed)
