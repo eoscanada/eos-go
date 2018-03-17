@@ -36,23 +36,27 @@ func (b *KeyBag) AvailableKeys() (out []string) {
 	return
 }
 
-func (b *KeyBag) Sign(tx *Transaction, requiredKeys ...PublicKey) (*SignedTransaction, error) {
+func (b *KeyBag) Sign(tx *Transaction, chainID []byte, requiredKeys ...PublicKey) (*SignedTransaction, error) {
 	s := &SignedTransaction{
 		Transaction: tx,
 	}
-
-	keyMap := b.keyMap()
 
 	txdata, err := MarshalBinary(tx)
 	if err != nil {
 		return nil, err
 	}
 
+	// chainID, err := hex.DecodeString(hexChainID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	hash := sha256.New()
-	_, _ = hash.Write(b.ChainID)
+	_, _ = hash.Write(chainID)
 	_, _ = hash.Write(txdata)
 	hashdata := hash.Sum(nil)
 
+	keyMap := b.keyMap()
 	for _, key := range requiredKeys {
 		privKey := keyMap[string(key)]
 		if privKey == nil {

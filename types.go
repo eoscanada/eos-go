@@ -236,24 +236,18 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 	Actions                 []*Action `json:"actions,omitempty"`
 }
 
-func (tx *Transaction) Fill(api *EOSAPI) error {
-	if tx.RefBlockNum != 0 {
-		return nil
-	}
-
+func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 	info, err := api.GetInfo()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	blockID, err := hex.DecodeString(info.HeadBlockID)
 	if err != nil {
-		return fmt.Errorf("decode hex: %s", err)
+		return nil, fmt.Errorf("decode hex: %s", err)
 	}
 
-	fmt.Println("WOAH", blockID, blockID[16:24])
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
-	fmt.Println("YO MAN", tx.RefBlockNum)
 	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[16:24]))
 
 	fmt.Println("refblockprefix:", tx.RefBlockPrefix)
@@ -261,7 +255,7 @@ func (tx *Transaction) Fill(api *EOSAPI) error {
 	/// etc.. add a `.Timeout` with that duration, default to 30
 	/// seconds ?
 	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
-	return nil
+	return blockID, nil
 }
 
 type SignedTransaction struct {

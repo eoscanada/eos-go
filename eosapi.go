@@ -14,12 +14,19 @@ import (
 type EOSAPI struct {
 	HttpClient *http.Client
 	BaseURL    string
+	KeyBag     *KeyBag
 }
 
-func New(baseURL string) *EOSAPI {
+func New(baseURL string, chainID string) *EOSAPI {
+	chainIDRaw, err := hex.DecodeString(chainID)
+	if err != nil {
+		panic(err)
+	}
+
 	return &EOSAPI{
 		HttpClient: http.DefaultClient,
 		BaseURL:    baseURL,
+		KeyBag:     NewKeyBag(chainIDRaw),
 	}
 }
 
@@ -73,14 +80,14 @@ func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
 	return
 }
 
-func (api *EOSAPI) PushTransaction(tx *Transaction) (out *PushTransactionResp, err error) {
-	if err := tx.Fill(api); err != nil {
-		return nil, err
-	}
+// func (api *EOSAPI) PushTransaction(tx *Transaction) (out *PushTransactionResp, err error) {
+// 	if err := tx.Fill(api); err != nil {
+// 		return nil, err
+// 	}
 
-	err = api.call("chain", "push_transaction", M{"transaction": tx}, &out)
-	return
-}
+// 	err = api.call("chain", "push_transaction", M{"transaction": tx}, &out)
+// 	return
+// }
 
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
 	data, err := MarshalBinary(tx.Transaction)
@@ -103,6 +110,68 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 // 		},
 // 	}
 // }
+
+func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey PublicKey) (out *PushTransactionResp, err error) {
+	a := &Action{
+		Account: AccountName("eosio"),
+		Name:    ActionName("newaccount"),
+		Authorization: []PermissionLevel{
+			{creator, PermissionName("active")},
+		},
+		Data: NewAccount{
+			Creator: creator,
+			Name:    newAccount,
+			Owner: Authority{
+				Threshold: 1,
+				Keys: []KeyWeight{
+					KeyWeight{
+						PublicKey: publicKey,
+						Weight:    1,
+					},
+				},
+			},
+			Active: Authority{
+				Threshold: 1,
+				Keys: []KeyWeight{
+					KeyWeight{
+						PublicKey: publicKey,
+						Weight:    1,
+					},
+				},
+			},
+			Recovery: Authority{
+				Threshold: 1,
+				Accounts: []PermissionLevelWeight{
+					PermissionLevelWeight{
+						Permission: PermissionLevel{creator, PermissionName("active")},
+						Weight:     1,
+					},
+				},
+			},
+		},
+	}
+	tx := &Transaction{
+		Actions: []*Action{a},
+	}
+
+	chainID, err := tx.Fill(api)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := api.GetRequiredKeys(tx, api.KeyBag)
+	log.Println("GetRequiredKeys", resp, err)
+	if err != nil {
+		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
+	}
+
+	signed, err := api.KeyBag.Sign(tx, chainID, resp.RequiredKeys...)
+	if err != nil {
+		return nil, fmt.Errorf("Sign: %s", err)
+	}
+
+	return api.PushSignedTransaction(signed)
+}
 
 func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag *KeyBag) (out *PushTransactionResp, err error) {
 	// SetCode will create a transaction, call GetRequiredKeys, and sign the transaction with keybag.AvailableKeys().
@@ -140,7 +209,8 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag
 		},
 	}
 
-	if err := tx.Fill(api); err != nil {
+	chainID, err := tx.Fill(api)
+	if err != nil {
 		return nil, err
 	}
 
@@ -150,7 +220,7 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
 
-	signed, err := keybag.Sign(tx, resp.RequiredKeys...)
+	signed, err := keybag.Sign(tx, chainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}

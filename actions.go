@@ -8,6 +8,8 @@ import (
 	"reflect"
 )
 
+// See the other ones here: /home/abourget/build/eos3/libraries/chain/include/eosio/chain/contracts/types.hpp:203
+
 type Transfer struct {
 	From     AccountName `json:"from"`
 	To       AccountName `json:"to"`
