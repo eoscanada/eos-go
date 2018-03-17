@@ -174,11 +174,11 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 	return
 }
 
-type byteReader struct {
+type ByteReader struct {
 	io.Reader
 }
 
-func (b *byteReader) ReadByte() (byte, error) {
+func (b *ByteReader) ReadByte() (byte, error) {
 	//fmt.Println("Reading a byte")
 	var buf [1]byte
 	if _, err := io.ReadFull(b, buf[:]); err != nil {
@@ -187,7 +187,7 @@ func (b *byteReader) ReadByte() (byte, error) {
 	return buf[0], nil
 }
 
-func (b *byteReader) Read(p []byte) (int, error) {
+func (b *ByteReader) Read(p []byte) (int, error) {
 	//fmt.Println("Reading a chunk", cap(p))
 	if cap(p) == 0 {
 		return 0, nil
@@ -197,13 +197,13 @@ func (b *byteReader) Read(p []byte) (int, error) {
 
 type Decoder struct {
 	Order binary.ByteOrder
-	r     *byteReader
+	r     *ByteReader
 }
 
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		Order: DefaultEndian,
-		r:     &byteReader{r},
+		r:     &ByteReader{r},
 	}
 }
 
@@ -214,8 +214,17 @@ type UnmarshalBinarySizer interface {
 	UnmarshalBinarySize() int
 }
 
+// UnmarshalBinaryReader will read by-per-by (implementing a varint of
+// some sort), and consume what it needs out of the stream.
+type UnmarshalBinaryReader interface {
+	UnmarshalBinaryRead(io.ByteReader) error
+}
+
 func (d *Decoder) Decode(v interface{}) (err error) {
 	// Check if the type implements the encoding.BinaryUnmarshaler interface, and use it if so.
+	if i, ok := v.(UnmarshalBinaryReader); ok {
+		return i.UnmarshalBinaryRead(d.r)
+	}
 	if i, ok := v.(encoding.BinaryUnmarshaler); ok {
 		// if we need, we'll implement an UnmarshalBinaryRead() that'll take precedence over this
 		// and that will read byte-per-byte on its own..

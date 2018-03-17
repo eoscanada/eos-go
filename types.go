@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -59,6 +60,8 @@ func (PermissionName) UnmarshalBinarySize() int { return 8 }
 func (ActionName) UnmarshalBinarySize() int     { return 8 }
 func (TableName) UnmarshalBinarySize() int      { return 8 }
 func (Name) UnmarshalBinarySize() int           { return 8 }
+
+// OTHER TYPES: eosjs/src/structs.js
 
 // CurrencyName
 
@@ -150,15 +153,49 @@ type Action struct {
 	Account       AccountName       `json:"account"`
 	Name          ActionName        `json:"name"`
 	Authorization []PermissionLevel `json:"authorization,omitempty"`
-	Data          HexBytes          `json:"data,omitempty"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
-	Fields        interface{}       `json:"-"`
+	Data          ActionData        `json:"data,omitempty"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
 }
 
 type action struct {
 	Account       AccountName       `json:"account"`
 	Name          ActionName        `json:"name"`
 	Authorization []PermissionLevel `json:"authorization,omitempty"`
-	Data          HexBytes          `json:"data,omitempty"`
+}
+
+type ActionData interface{}
+
+func (a *Action) UnmarshalBinaryRead(r io.Reader) error {
+	length, err := binary.ReadUvarint(&ByteReader{r})
+	if err != nil {
+		return err
+	}
+
+	data := make([]byte, length)
+	_, err = io.ReadFull(r, data)
+	if err != nil {
+		return err
+	}
+
+	actionMap := registeredActions[a.Account]
+	if actionMap == nil {
+		return nil
+	}
+
+	objMap := actionMap[a.Name]
+	if objMap == nil {
+		return nil
+	}
+
+	obj := reflect.New(reflect.TypeOf(objMap))
+
+	err = UnmarshalBinary(data, &obj)
+	if err != nil {
+		return err
+	}
+
+	a.Data = obj.Elem().Interface()
+
+	return nil
 }
 
 // with an action type registry somewhere ?
@@ -190,7 +227,6 @@ func (a *Action) UnmarshalJSON(v []byte) (err error) {
 	a.Account = newAct.Account
 	a.Name = newAct.Name
 	a.Authorization = newAct.Authorization
-	a.Data = newAct.Data
 
 	actionMap := registeredActions[a.Account]
 	if actionMap == nil {
@@ -208,9 +244,36 @@ func (a *Action) UnmarshalJSON(v []byte) (err error) {
 		return err
 	}
 
-	a.Fields = obj.Elem().Interface()
+	a.Data = obj.Elem().Interface()
 
 	return nil
+}
+
+func (a *Action) MarshalBinary() ([]byte, error) {
+	// marshal binary a short action, then data
+	common, err := MarshalBinary(&action{
+		Account:       a.Account,
+		Name:          a.Name,
+		Authorization: a.Authorization,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var data []byte
+	if a.Data != nil {
+		data, err = MarshalBinary(a.Data)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	varint := make([]byte, 4, 4)
+	varintLen := binary.PutVarint(varint, int64(len(data)))
+
+	common = append(common, varint[:varintLen]...)
+	common = append(common, data...)
+	return common, nil
 }
 
 func (a *Action) MarshalJSON() ([]byte, error) {
@@ -220,7 +283,6 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 		Account:       a.Account,
 		Name:          a.Name,
 		Authorization: a.Authorization,
-		Data:          a.Data,
 	})
 	if err != nil {
 		return nil, err
@@ -232,9 +294,9 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	// Merge in the `a.Fields` fields.
+	data, err := MarshalBinary(a)
 
-	cnt, err = json.Marshal(a.Fields)
+	cnt, err = json.Marshal(a.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -245,11 +307,12 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	for k, v := range keys2 {
-		keys1[k] = v
+	for k, v := range keys1 {
+		keys2[k] = v
 	}
+	keys2["data"] = hex.EncodeToString(data)
 
-	return json.Marshal(keys1)
+	return json.Marshal(keys2)
 }
 
 // JSONTime

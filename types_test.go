@@ -54,7 +54,35 @@ func TestPackTransaction(t *testing.T) {
 	// permission level: 0000000000ea3055  00000000a8ed3232
 	// data: 00"
 	assert.Equal(t, `0000000000000000000000000`, hex.EncodeToString(buf))
+}
 
+func TestPackAction(t *testing.T) {
+	a := &Action{
+		Account: AccountName("eosio"),
+		Name:    ActionName("transfer"),
+		Authorization: []PermissionLevel{
+			{AccountName("eosio"), PermissionName("active")},
+		},
+		Data: Transfer{
+			From:     AccountName("abourget"),
+			To:       AccountName("eosio"),
+			Quantity: 123123,
+		},
+	}
+
+	buf, err := MarshalBinary(a)
+	assert.NoError(t, err)
+	// 0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed3232
+	// data: 32 (50 chars, the length of the data)
+	//   from: 00000059b1abe931
+	//   to: 0000000000ea3055
+	//   quantity: f3e0010000000000   (quantity)
+	//   memo: 00  (string)
+	assert.Equal(t, `0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32323200000059b1abe9310000000000ea3055f3e001000000000000`, hex.EncodeToString(buf))
+
+	buf, err = json.Marshal(a)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32323200000059b1abe9310000000000ea3055f3e001000000000000","from":"abourget","memo":"","name":"transfer","quantity":123123,"to":"eosio"}`, string(buf))
 }
 
 func TestUnpackBinaryTableRows(t *testing.T) {
@@ -124,7 +152,7 @@ func TestActionMetaTypes(t *testing.T) {
 	a := &Action{
 		Account: AccountName("eosio"),
 		Name:    ActionName("transfer"),
-		Fields: &Transfer{
+		Data: &Transfer{
 			From: AccountName("abourget"),
 			To:   AccountName("mama"),
 		},
