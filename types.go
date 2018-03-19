@@ -211,7 +211,7 @@ type GetTableRowsRequest struct {
 
 type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
 	Expiration     JSONTime `json:"expiration,omitempty"`
-	Region         uint16   `json:"region,omitempty"`
+	Region         uint16   `json:"region"`
 	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
 	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
 	// number of 8 byte words this transaction can compress into
@@ -251,13 +251,15 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 type SignedTransaction struct {
 	*Transaction
 
-	Signatures      []string `json:"signatures,omitempty"`
-	ContextFreeData HexBytes `json:"context_free_data,omitempty"`
+	Signatures      []string   `json:"signatures"`
+	ContextFreeData []HexBytes `json:"context_free_data"`
 }
 
 func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 	return &SignedTransaction{
-		Transaction: tx,
+		Transaction:     tx,
+		Signatures:      make([]string, 0),
+		ContextFreeData: make([]HexBytes, 0),
 	}
 }
 

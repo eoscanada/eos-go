@@ -81,7 +81,7 @@ func (b *KeyBag) AvailableKeys() (out []*ecc.PublicKey, err error) {
 }
 
 func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ecc.PublicKey) (*SignedTransaction, error) {
-	txdata, err := MarshalBinary(tx)
+	txdata, err := MarshalBinary(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}

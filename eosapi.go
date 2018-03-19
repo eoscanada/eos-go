@@ -122,10 +122,14 @@ func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...*ecc.
 }
 
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
+
+	fmt.Println("PUSHING signed transaction", tx.Transaction)
 	data, err := MarshalBinary(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("hex data", hex.EncodeToString(data))
 
 	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
 	return
@@ -184,6 +188,8 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey *ecc.Pu
 	if err != nil {
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
+
+	fmt.Println("OK, attempting to serialize the thing")
 
 	signedTx, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
 	if err != nil {
@@ -319,7 +325,7 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
 	}
 
-	//fmt.Println("STRING", cnt.String())
+	fmt.Println("SERVER RESPONSE", cnt.String())
 
 	if err := json.Unmarshal(cnt.Bytes(), &out); err != nil {
 		return fmt.Errorf("Unmarshal: %s", err)

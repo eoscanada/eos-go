@@ -184,9 +184,14 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	data, err := MarshalBinary(a)
+	if a.Data != nil {
+		data, err := MarshalBinary(a.Data)
+		if err != nil {
+			return nil, err
+		}
 
-	keys1["data"] = hex.EncodeToString(data)
+		keys1["data"] = hex.EncodeToString(data)
+	}
 
 	return json.Marshal(keys1)
 }

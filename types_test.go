@@ -36,8 +36,8 @@ func TestSetRefBlock(t *testing.T) {
 	//                                    ^^^^        ^^....^^
 	require.NoError(t, err)
 	tx.setRefBlock(blockID)
-	assert.Equal(t, uint16(0xcf62), tx.RefBlockNum)        // 53090
-	assert.Equal(t, uint32(0xd80b0950), tx.RefBlockPrefix) // 3624601936
+	assert.Equal(t, uint16(0xcf62), tx.RefBlockNum) // 53090
+	assert.Equal(t, uint32(0x6933473b), tx.RefBlockPrefix)
 }
 
 func TestPackTransaction(t *testing.T) {
@@ -79,7 +79,7 @@ func TestPackTransaction(t *testing.T) {
 	//     - acct: 0000000000ea3055 (eosio)
 	//       perm: 00000000a8ed3232 (active)
 	// ... missing Transfer !
-	assert.Equal(t, `0000000000000000000000000`, hex.EncodeToString(buf))
+	assert.Equal(t, `cd6a400100003864a8308e590000000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed323200`, hex.EncodeToString(buf))
 }
 
 func TestPackAction(t *testing.T) {
@@ -102,7 +102,7 @@ func TestPackAction(t *testing.T) {
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32321900000059b1abe9310000000000ea3055f3e001000000000000","from":"abourget","memo":"","name":"transfer","quantity":123123,"to":"eosio"}`, string(buf))
+	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"00000059b1abe9310000000000ea3055f3e001000000000000","name":"transfer"}`, string(buf))
 }
 
 func TestUnpackBinaryTableRows(t *testing.T) {
@@ -204,7 +204,7 @@ func TestActionMetaTypes(t *testing.T) {
 	cnt, err := json.Marshal(a)
 	require.NoError(t, err)
 	assert.Equal(t,
-		`{"account":"eosio","data":"0000000000ea3055000000572d3ccdcd001900000059b1abe931000000000060a491000000000000000000","name":"transfer"}`,
+		`{"account":"eosio","data":"00000059b1abe931000000000060a491000000000000000000","name":"transfer"}`,
 		string(cnt),
 	)
 
@@ -235,7 +235,7 @@ func TestAuthorityBinaryMarshal(t *testing.T) {
 	assert.Equal(t, `02000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf050000`, hex.EncodeToString(cnt))
 }
 
-func TestActionNoFields(t *testing.T) {
+func TestActionNoData(t *testing.T) {
 	a := &Action{
 		Account: AccountName("eosio"),
 		Name:    ActionName("transfer"),
@@ -245,7 +245,7 @@ func TestActionNoFields(t *testing.T) {
 	require.NoError(t, err)
 	// account + name + emptylist + emptylist
 	assert.Equal(t,
-		`{"account":"eosio","data":"0000000000ea3055000000572d3ccdcd0000","name":"transfer"}`,
+		`{"account":"eosio","name":"transfer"}`,
 		string(cnt),
 	)
 
