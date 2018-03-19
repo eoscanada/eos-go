@@ -9,25 +9,34 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+
+	"github.com/eosioca/eosapi/ecc"
 )
 
 type EOSAPI struct {
 	HttpClient *http.Client
 	BaseURL    string
-	KeyBag     *KeyBag
+	ChainID    []byte
+	Signer     Signer
 }
 
-func New(baseURL string, chainID string) *EOSAPI {
+func New(baseURL string, chainID string) (*EOSAPI, error) {
 	chainIDRaw, err := hex.DecodeString(chainID)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return &EOSAPI{
+	api := &EOSAPI{
 		HttpClient: http.DefaultClient,
 		BaseURL:    baseURL,
-		KeyBag:     NewKeyBag(chainIDRaw),
+		ChainID:    chainIDRaw,
 	}
+
+	return api, nil
+}
+
+func (api *EOSAPI) SetSigner(s Signer) {
+	api.Signer = s
 }
 
 // Chain APIs
@@ -80,6 +89,38 @@ func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
 	return
 }
 
+func (api *EOSAPI) WalletPublicKeys() (out []*ecc.PublicKey, err error) {
+	var textKeys []string
+	err = api.call("wallet", "get_public_keys", nil, &textKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, k := range textKeys {
+		newKey, err := ecc.NewPublicKey(k)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, newKey)
+	}
+	return
+}
+
+func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...*ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
+	var textKeys []string
+	for _, key := range pubKeys {
+		textKeys = append(textKeys, key.String())
+	}
+
+	err = api.call("wallet", "sign_transaction", []interface{}{
+		tx,
+		textKeys,
+		hex.EncodeToString(api.ChainID),
+	}, &out)
+	return
+}
+
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
 	data, err := MarshalBinary(tx.Transaction)
 	if err != nil {
@@ -90,7 +131,7 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 	return
 }
 
-func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey PublicKey) (out *PushTransactionResp, err error) {
+func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey *ecc.PublicKey) (out *PushTransactionResp, err error) {
 	a := &Action{
 		Account: AccountName("eosio"),
 		Name:    ActionName("newaccount"),
@@ -138,18 +179,18 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey PublicK
 		return nil, err
 	}
 
-	resp, err := api.GetRequiredKeys(tx, api.KeyBag)
+	resp, err := api.GetRequiredKeys(tx, api.Signer)
 	log.Println("GetRequiredKeys", resp, err)
 	if err != nil {
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
 
-	signed, err := api.KeyBag.Sign(tx, chainID, resp.RequiredKeys...)
+	signedTx, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
 
-	return api.PushSignedTransaction(signed)
+	return api.PushSignedTransaction(signedTx)
 }
 
 func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag *KeyBag) (out *PushTransactionResp, err error) {
@@ -193,13 +234,13 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag
 		return nil, err
 	}
 
-	resp, err := api.GetRequiredKeys(tx, keybag)
+	resp, err := api.GetRequiredKeys(tx, api.Signer)
 	log.Println("GetRequiredKeys", resp, err)
 	if err != nil {
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
 
-	signed, err := keybag.Sign(tx, chainID, resp.RequiredKeys...)
+	signed, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
@@ -227,8 +268,13 @@ func (api *EOSAPI) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsRe
 	return
 }
 
-func (api *EOSAPI) GetRequiredKeys(tx *Transaction, keybag *KeyBag) (out *GetRequiredKeysResp, err error) {
-	err = api.call("chain", "get_required_keys", M{"transaction": tx, "available_keys": keybag.AvailableKeys()}, &out)
+func (api *EOSAPI) GetRequiredKeys(tx *Transaction, signer Signer) (out *GetRequiredKeysResp, err error) {
+	keys, err := signer.AvailableKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	err = api.call("chain", "get_required_keys", M{"transaction": tx, "available_keys": keys}, &out)
 	return
 }
 
@@ -240,7 +286,12 @@ func (api *EOSAPI) GetCurrencyBalance(account AccountName, symbol string, code A
 // See more here: libraries/chain/contracts/abi_serializer.cpp:58...
 
 func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out interface{}) error {
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint), enc(body))
+	jsonBody, err := enc(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint), jsonBody)
 	if err != nil {
 		return fmt.Errorf("NewRequest: %s", err)
 	}
@@ -264,7 +315,7 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 		return fmt.Errorf("Copy: %s", err)
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode > 299 {
 		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
 	}
 
@@ -279,17 +330,17 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 
 type M map[string]interface{}
 
-func enc(v interface{}) io.Reader {
+func enc(v interface{}) (io.Reader, error) {
 	if v == nil {
-		return nil
+		return nil, nil
 	}
 
 	cnt, err := json.Marshal(v)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	//fmt.Println("BODY", string(cnt))
 
-	return bytes.NewReader(cnt)
+	return bytes.NewReader(cnt), nil
 }

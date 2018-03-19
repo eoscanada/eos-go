@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/eosioca/eosapi/ecc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -212,11 +213,13 @@ func TestActionMetaTypes(t *testing.T) {
 }
 
 func TestAuthorityBinaryMarshal(t *testing.T) {
+	key, err := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+	require.NoError(t, err)
 	a := Authority{
 		Threshold: 2,
 		Keys: []KeyWeight{
 			KeyWeight{
-				PublicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+				PublicKey: key,
 				Weight:    5,
 			},
 		},

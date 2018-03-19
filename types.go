@@ -1,7 +1,6 @@
 package eosapi
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/eosioca/eosapi/ecc"
 )
 
@@ -107,21 +105,6 @@ func (a *Asset) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type PublicKey string
-
-func (a PublicKey) MarshalBinary() ([]byte, error) {
-	raw := base58.Decode(string(a[3:]))
-	raw = raw[:33]
-	return append(bytes.Repeat([]byte{0}, 34-len(raw)), raw...), nil
-}
-
-func (a *PublicKey) UnmarshalBinary(data []byte) error {
-	*a = PublicKey("EOS" + base58.Encode(data))
-	return nil
-}
-
-func (a *PublicKey) UnmarshalBinarySize() int { return 34 }
-
 type Permission struct {
 	PermName     string    `json:"perm_name"`
 	Parent       string    `json:"parent"`
@@ -145,8 +128,8 @@ type Authority struct {
 }
 
 type KeyWeight struct {
-	PublicKey PublicKey `json:"public_key"`
-	Weight    uint16    `json:"weight"`
+	PublicKey *ecc.PublicKey `json:"public_key"`
+	Weight    uint16         `json:"weight"`
 }
 
 type Code struct {
@@ -256,19 +239,28 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 	/// etc.. add a `.Timeout` with that duration, default to 30
 	/// seconds ?
 	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
+
 	return blockID, nil
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
-	tx.RefBlockPrefix = uint32(binary.LittleEndian.Uint64(blockID[8:16]))
+	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[12:16])
 }
 
 type SignedTransaction struct {
 	*Transaction
 
-	Signatures      []ecc.Signature `json:"signatures"`
+	Signatures      []ecc.Signature `json:"signatures,omitempty"`
 	ContextFreeData HexBytes        `json:"context_free_data,omitempty"`
+}
+
+func NewSignedTransaction(tx *Transaction) *SignedTransaction {
+	return &SignedTransaction{
+		Transaction: tx,
+		//Signatures:      make([]ecc.Signature, 0),
+		ContextFreeData: make(HexBytes, 0),
+	}
 }
 
 type DeferredTransaction struct {
@@ -277,10 +269,4 @@ type DeferredTransaction struct {
 	SenderID   uint32      `json:"sender_id"`
 	Sender     AccountName `json:"sender"`
 	DelayUntil JSONTime    `json:"delay_until"`
-}
-
-type Signature string
-
-func SignatureFromData(sigData []byte) {
-
 }

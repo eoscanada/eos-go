@@ -3,6 +3,7 @@ package ecc
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -37,6 +38,14 @@ func NewPublicKey(pubKey string) (*PublicKey, error) {
 	}
 
 	return &PublicKey{pubKey: key}, nil
+}
+
+func MustNewPublicKey(pubKey string) *PublicKey {
+	key, err := NewPublicKey(pubKey)
+	if err != nil {
+		panic(err.Error())
+	}
+	return key
 }
 
 // CheckDecode decodes a string that was encoded with CheckEncode and verifies the checksum.
@@ -76,3 +85,46 @@ func (p *PublicKey) String() string {
 func (p *PublicKey) ToHex() string {
 	return hex.EncodeToString(p.pubKey.SerializeCompressed())
 }
+
+func (a *PublicKey) MarshalJSON() ([]byte, error) {
+	s := a.String()
+	return json.Marshal(s)
+}
+
+func (a *PublicKey) UnmarshalJSON(data []byte) error {
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		return err
+	}
+
+	newKey, err := NewPublicKey(s)
+	if err != nil {
+		return err
+	}
+
+	a.pubKey = newKey.pubKey
+	//*a = newKey
+
+	return nil
+}
+
+func (a PublicKey) MarshalBinary() ([]byte, error) {
+	str := a.String()
+	raw := base58.Decode(str[3:])
+	raw = raw[:33]
+	return append(bytes.Repeat([]byte{0}, 34-len(raw)), raw...), nil
+}
+
+func (a *PublicKey) UnmarshalBinary(data []byte) (err error) {
+	newKey, err := NewPublicKey("EOS" + base58.Encode(data))
+	if err != nil {
+		return err
+	}
+
+	a.pubKey = newKey.pubKey
+
+	return nil
+}
+
+func (a *PublicKey) UnmarshalBinarySize() int { return 34 }

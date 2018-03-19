@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/eosioca/eosapi/ecc"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActionNewAccount(t *testing.T) {
+	pubKey, err := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+	require.NoError(t, err)
 	a := &Action{
 		Account: AccountName("eosio"),
 		Name:    ActionName("newaccount"),
@@ -22,7 +26,7 @@ func TestActionNewAccount(t *testing.T) {
 				Threshold: 1,
 				Keys: []KeyWeight{
 					KeyWeight{
-						PublicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+						PublicKey: pubKey,
 						Weight:    1,
 					},
 				},
@@ -31,7 +35,7 @@ func TestActionNewAccount(t *testing.T) {
 				Threshold: 1,
 				Keys: []KeyWeight{
 					KeyWeight{
-						PublicKey: "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+						PublicKey: pubKey,
 						Weight:    1,
 					},
 				},
@@ -124,6 +128,8 @@ func TestActionNewAccount(t *testing.T) {
 	//  threshold: 00000000
 	//  []keys: 00
 	//  []accounts: 00
+
+	// 0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed3232a4010000000000ea305500000059b1abe9310100000001   BINARY SERIALIZER FAILED: 35454f53364d5279416a51713875643768564e5963666e56504a7163567073634e35536f384268744875475971455435474457354356010000010000000135454f53364d5279416a51713875643768564e5963666e56504a7163567073634e35536f3842687448754759714554354744573543560100000100000000010000000000ea305500000000a8ed32320100
 
 	assert.Equal(t, `0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100`, hex.EncodeToString(buf))
 

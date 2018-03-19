@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/eosioca/eosapi/ecc"
 )
 
 type InfoResp struct {
@@ -96,10 +97,19 @@ type Currency struct {
 }
 
 type GetRequiredKeysResp struct {
-	RequiredKeys []PublicKey `json:"required_keys"`
+	RequiredKeys []*ecc.PublicKey `json:"required_keys"`
 }
 
 type PushTransactionResp struct {
 	TransactionID string `json:"transaction_id"`
 	Processed     bool   `json:"processed"` // WARN: is an `fc::variant` in server..
+}
+
+type WalletSignTransactionResp struct {
+	// Ignore the rest of the transaction, so the wallet server
+	// doesn't forge some transactions on your behalf, and you send it
+	// to the network..  ... although.. it's better if you can trust
+	// your wallet !
+
+	Signatures []ecc.Signature `json:"signatures"`
 }

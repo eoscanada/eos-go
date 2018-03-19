@@ -3,6 +3,7 @@ package ecc
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil/base58"
@@ -30,8 +31,18 @@ func (s Signature) String() string {
 	return "EOS" + base58.Encode(buf)
 }
 
-func NewSignature(fromText string) Signature {
-	return Signature(base58.Decode(fromText[3:]))
+func NewSignature(fromText string) (Signature, error) {
+	sigbytes := base58.Decode(fromText[3:]) // simply remove the `EOS` in front..
+
+	content := sigbytes[:len(sigbytes)-4]
+	checksum := sigbytes[len(sigbytes)-4:]
+	verifyChecksum := ripemd160checksum(content)
+	if !bytes.Equal(verifyChecksum, checksum) {
+		return nil, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
+	}
+
+	// TODO: validate the checksum..
+	return Signature(content), nil
 }
 
 func (a Signature) MarshalBinary() ([]byte, error) {
@@ -56,7 +67,7 @@ func (a *Signature) UnmarshalJSON(data []byte) (err error) {
 		return
 	}
 
-	*a = NewSignature(s)
+	*a, err = NewSignature(s)
 
 	return
 }
