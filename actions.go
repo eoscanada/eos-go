@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 )
@@ -156,6 +157,8 @@ func (a *Action) MarshalBinary() ([]byte, error) {
 
 	varint := make([]byte, 4, 4)
 	varintLen := binary.PutUvarint(varint, uint64(len(data)))
+	fmt.Println("****************************")
+	fmt.Println("ok mama", len(data))
 	common = append(common, varint[:varintLen]...)
 	common = append(common, data...)
 	return common, nil

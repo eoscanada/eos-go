@@ -2,6 +2,7 @@ package ecc
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -14,8 +15,11 @@ type Signature []byte
 
 // Verify checks the signature against the pubKey. `hash` is a sha256
 // hash of the payload to verify.
-func (s Signature) Verify(hash []byte, pubKey *PublicKey) bool {
-	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash)
+func (s Signature) Verify(payload []byte, pubKey *PublicKey) bool {
+	hash := sha256.New()
+	hash.Write(payload)
+
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash.Sum(nil))
 	if err != nil {
 		return false
 	}
@@ -23,6 +27,21 @@ func (s Signature) Verify(hash []byte, pubKey *PublicKey) bool {
 		return true
 	}
 	return false
+}
+
+// PublicKey retrieves the public key, but requires the
+// payload.. that's the way to validate the signature. Use Verify() if
+// you only want to validate.
+func (s Signature) PublicKey(payload []byte) (*PublicKey, error) {
+	hash := sha256.New()
+	hash.Write(payload)
+
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash.Sum(nil))
+	if err != nil {
+		return nil, err
+	}
+
+	return &PublicKey{recoveredKey}, err
 }
 
 func (s Signature) String() string {
