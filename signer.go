@@ -103,7 +103,7 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ec
 			return nil, err
 		}
 
-		tx.Signatures = append(tx.Signatures, sig)
+		tx.Signatures = append(tx.Signatures, sig.String())
 	}
 
 	return tx, nil

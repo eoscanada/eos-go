@@ -251,15 +251,13 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 type SignedTransaction struct {
 	*Transaction
 
-	Signatures      []ecc.Signature `json:"signatures,omitempty"`
-	ContextFreeData HexBytes        `json:"context_free_data,omitempty"`
+	Signatures      []string `json:"signatures,omitempty"`
+	ContextFreeData HexBytes `json:"context_free_data,omitempty"`
 }
 
 func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 	return &SignedTransaction{
 		Transaction: tx,
-		//Signatures:      make([]ecc.Signature, 0),
-		ContextFreeData: make(HexBytes, 0),
 	}
 }
 

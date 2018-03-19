@@ -62,8 +62,10 @@ func (e *Encoder) writeVarint(v int) error {
 }
 
 func (b *Encoder) Encode(v interface{}) (err error) {
+	// fmt.Println("yeah, we've got a ", v, "here")
 	switch cv := v.(type) {
 	case encoding.BinaryMarshaler:
+		// fmt.Println("  - that's an Marshaler")
 		buf, err := cv.MarshalBinary()
 		if err != nil {
 			return err

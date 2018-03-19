@@ -51,8 +51,11 @@ func TestActionNewAccount(t *testing.T) {
 			},
 		},
 	}
+	tx := &Transaction{
+		Actions: []*Action{a},
+	}
 
-	buf, err := MarshalBinary(a)
+	buf, err := MarshalBinary(tx)
 	assert.NoError(t, err)
 
 	// FETCHED FROM A SIMILAR TRANSACTION VIA `eosioc`, includes the Transaction headers though:

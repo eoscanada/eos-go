@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"reflect"
 )
@@ -136,7 +135,8 @@ func (a *Action) UnmarshalJSON(v []byte) (err error) {
 	return nil
 }
 
-func (a *Action) MarshalBinary() ([]byte, error) {
+func (a Action) MarshalBinary() ([]byte, error) {
+	//fmt.Println("ENTERING MARSHALBINARY FOR ACTION!", a)
 	// marshal binary a short action, then data
 	common, err := MarshalBinary(&action{
 		Account:       a.Account,
@@ -157,10 +157,12 @@ func (a *Action) MarshalBinary() ([]byte, error) {
 
 	varint := make([]byte, 4, 4)
 	varintLen := binary.PutUvarint(varint, uint64(len(data)))
-	fmt.Println("****************************")
-	fmt.Println("ok mama", len(data))
+	// fmt.Println("****************************")
+	// fmt.Println("ok mama", len(data), varint, varintLen)
 	common = append(common, varint[:varintLen]...)
+	// fmt.Println("ok mama", hex.EncodeToString(common))
 	common = append(common, data...)
+	// fmt.Println("ok mama", hex.EncodeToString(common))
 	return common, nil
 }
 

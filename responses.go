@@ -111,5 +111,5 @@ type WalletSignTransactionResp struct {
 	// to the network..  ... although.. it's better if you can trust
 	// your wallet !
 
-	Signatures []ecc.Signature `json:"signatures"`
+	Signatures []string `json:"signatures"`
 }
