@@ -3,8 +3,9 @@ package eosapi
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"reflect"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eosioca/eosapi/ecc"
 )
 
@@ -63,19 +64,30 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 		return err
 	}
 
+	outSlice := reflect.ValueOf(v).Elem()
+	structType := reflect.TypeOf(v).Elem().Elem()
+	fmt.Println("MAMA", outSlice, structType)
+
 	for _, row := range rows {
 		bin, err := hex.DecodeString(row)
 		if err != nil {
 			return err
 		}
 
-		ourstruct := &MyStruct{}
-		if err := UnmarshalBinary(bin, ourstruct); err != nil {
+		// access the type of the `Slice`, create a bunch of them..
+		newStruct := reflect.New(structType)
+		fmt.Println("TEEN", newStruct, structType)
+		if err := UnmarshalBinary(bin, newStruct.Interface()); err != nil {
 			return err
 		}
 
-		spew.Dump(ourstruct)
+		fmt.Println("BOBO", outSlice, newStruct)
+
+		outSlice = reflect.Append(outSlice, reflect.Indirect(newStruct))
 	}
+
+	fmt.Println("OH yeah", outSlice.Interface())
+	reflect.ValueOf(v).Elem().Set(outSlice)
 
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/eosioca/eosapi/ecc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,7 +110,10 @@ func TestUnpackBinaryTableRows(t *testing.T) {
 	resp := &GetTableRowsResp{
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
 	}
-	assert.NoError(t, resp.BinaryToStructs(true))
+	var out []MyStruct
+	assert.NoError(t, resp.BinaryToStructs(&out))
+	assert.Equal(t, "CUR", string(out[0].Currency.Name))
+	spew.Dump(out)
 }
 
 func TestStringToName(t *testing.T) {
