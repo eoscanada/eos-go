@@ -171,7 +171,7 @@ func (t JSONTime) MarshalBinary() ([]byte, error) {
 	return out, nil
 }
 
-func (t JSONTime) MarshalBinarySize() int { return 4 }
+func (t JSONTime) UnmarshalBinarySize() int { return 4 }
 
 // HexBytes
 

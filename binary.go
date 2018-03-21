@@ -62,7 +62,6 @@ func (e *Encoder) writeVarint(v int) error {
 }
 
 func (b *Encoder) Encode(v interface{}) (err error) {
-	// fmt.Println("yeah, we've got a ", v, "here")
 	switch cv := v.(type) {
 	case encoding.BinaryMarshaler:
 		// fmt.Println("  - that's an Marshaler")
@@ -70,11 +69,14 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 		if err != nil {
 			return err
 		}
-		// let the Marshaller deal with varints..
-		//
-		// if err = b.writeVarint(len(buf)); err != nil {
-		// 	return err
-		// }
+		_, hasReader := cv.(UnmarshalBinaryReader)
+		_, hasFixedSize := cv.(UnmarshalBinarySizer)
+		if !hasFixedSize && !hasReader {
+			// fmt.Printf("yeah, we've got a %#v\n", v)
+			if err = b.writeVarint(len(buf)); err != nil {
+				return err
+			}
+		}
 		_, err = b.w.Write(buf)
 
 	case []byte: // fast-path byte arrays
@@ -94,7 +96,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Array:
 			l := t.Len()
 			for i := 0; i < l; i++ {
-				if err = b.Encode(rv.Index(i).Addr().Interface()); err != nil {
+				if err = b.Encode(rv.Index(i).Interface()); err != nil {
 					return
 				}
 			}
@@ -105,7 +107,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 				return
 			}
 			for i := 0; i < l; i++ {
-				if err = b.Encode(rv.Index(i).Addr().Interface()); err != nil {
+				if err = b.Encode(rv.Index(i).Interface()); err != nil {
 					return
 				}
 			}
@@ -219,7 +221,7 @@ type UnmarshalBinarySizer interface {
 // UnmarshalBinaryReader will read by-per-by (implementing a varint of
 // some sort), and consume what it needs out of the stream.
 type UnmarshalBinaryReader interface {
-	UnmarshalBinaryRead(io.ByteReader) error
+	UnmarshalBinaryRead(io.Reader) error
 }
 
 func (d *Decoder) Decode(v interface{}) (err error) {

@@ -163,6 +163,7 @@ func (a Action) MarshalBinary() ([]byte, error) {
 	// fmt.Println("ok mama", hex.EncodeToString(common))
 	common = append(common, data...)
 	// fmt.Println("ok mama", hex.EncodeToString(common))
+
 	return common, nil
 }
 
