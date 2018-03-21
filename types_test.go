@@ -110,21 +110,19 @@ func TestUnpackBinaryTableRows(t *testing.T) {
 	resp := &GetTableRowsResp{
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
 	}
-	var out []MyStruct
+	var out []*MyStruct
 	assert.NoError(t, resp.BinaryToStructs(&out))
 	assert.Equal(t, "CUR", string(out[0].Currency.Name))
 	spew.Dump(out)
 }
 
 func TestStringToName(t *testing.T) {
-
 	i, err := StringToName("tbcox2.3")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(0xc9d14e8803000000), i)
 
-	//h, _ := hex.DecodeString("00409e9a2264b89a")
-	h, _ := hex.DecodeString("0000001e4d75af46")
-	fmt.Println("NAMETOSTRING", NameToString(binary.LittleEndian.Uint64(h)))
+	//h, _ := hex.DecodeString("0000001e4d75af46")
+	//fmt.Println("NAMETOSTRING", NameToString(binary.LittleEndian.Uint64(h)))
 }
 
 func TestNameToString(t *testing.T) {

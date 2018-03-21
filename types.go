@@ -69,7 +69,6 @@ type CurrencyName string
 
 func (c CurrencyName) MarshalBinary() ([]byte, error) {
 	out := make([]byte, 7, 7)
-	fmt.Println("AMAM", out)
 	copy(out, []byte(c))
 	return out, nil
 }

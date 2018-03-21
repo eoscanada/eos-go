@@ -64,7 +64,6 @@ func (e *Encoder) writeVarint(v int) error {
 func (b *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
 	case encoding.BinaryMarshaler:
-		// fmt.Println("  - that's an Marshaler")
 		buf, err := cv.MarshalBinary()
 		if err != nil {
 			return err
@@ -72,7 +71,6 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 		_, hasReader := cv.(UnmarshalBinaryReader)
 		_, hasFixedSize := cv.(UnmarshalBinarySizer)
 		if !hasFixedSize && !hasReader {
-			// fmt.Printf("yeah, we've got a %#v\n", v)
 			if err = b.writeVarint(len(buf)); err != nil {
 				return err
 			}
@@ -87,7 +85,6 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 
 	default:
 		rv := reflect.Indirect(reflect.ValueOf(v))
-		//fmt.Printf("Whatzthat %#v\n", rv)
 		t := rv.Type()
 		switch t.Kind() {
 		case reflect.Ptr:
@@ -117,7 +114,6 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 			n := 0
 			for i := 0; i < l; i++ {
 				if v := rv.Field(i); t.Field(i).Name != "_" {
-					//fmt.Println("MLLL", t.Field(i).Name)
 					iface := v.Interface()
 					if iface != nil {
 						if err = b.Encode(iface); err != nil {
@@ -183,7 +179,6 @@ type ByteReader struct {
 }
 
 func (b *ByteReader) ReadByte() (byte, error) {
-	//fmt.Println("Reading a byte")
 	var buf [1]byte
 	if _, err := io.ReadFull(b, buf[:]); err != nil {
 		return 0, err
@@ -192,7 +187,6 @@ func (b *ByteReader) ReadByte() (byte, error) {
 }
 
 func (b *ByteReader) Read(p []byte) (int, error) {
-	//fmt.Println("Reading a chunk", cap(p))
 	if cap(p) == 0 {
 		return 0, nil
 	}
@@ -245,12 +239,18 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		return i.UnmarshalBinary(buf)
 	}
 
-	// Otherwise, use reflection.
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
 		return errors.New("binary: can only Decode to pointer type")
 	}
 	t := rv.Type()
+
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		newRV := reflect.New(t)
+		rv.Set(newRV)
+		rv = reflect.Indirect(newRV)
+	}
 
 	switch t.Kind() {
 	case reflect.Array:

@@ -123,13 +123,13 @@ func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...*ecc.
 
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
 
-	fmt.Println("PUSHING signed transaction", tx.Transaction)
+	//fmt.Println("PUSHING signed transaction", tx.Transaction)
 	data, err := MarshalBinary(tx.Transaction)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("hex data", hex.EncodeToString(data))
+	//fmt.Println("hex data", hex.EncodeToString(data))
 
 	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
 	return
