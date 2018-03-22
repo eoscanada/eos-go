@@ -80,8 +80,9 @@ func TestSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	cnt := []byte("hi")
-	signature, err := privKey.Sign(cnt)
+	digest := sigDigest([]byte{}, cnt)
+	signature, err := privKey.Sign(digest)
 	require.NoError(t, err)
 
-	assert.True(t, signature.Verify(cnt, privKey.PublicKey()))
+	assert.True(t, signature.Verify(digest, privKey.PublicKey()))
 }

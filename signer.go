@@ -29,7 +29,7 @@ func NewWalletSigner(api *EOSAPI) *WalletSigner {
 	return &WalletSigner{api}
 }
 
-func (s *WalletSigner) AvailableKeys() (out []*ecc.PublicKey, err error) {
+func (s *WalletSigner) AvailableKeys() (out []ecc.PublicKey, err error) {
 	return s.api.WalletPublicKeys()
 }
 
@@ -73,7 +73,7 @@ func (b *KeyBag) Add(wifKey string) error {
 	return nil
 }
 
-func (b *KeyBag) AvailableKeys() (out []*ecc.PublicKey, err error) {
+func (b *KeyBag) AvailableKeys() (out []ecc.PublicKey, err error) {
 	for _, k := range b.Keys {
 		out = append(out, k.PublicKey())
 	}
@@ -86,11 +86,6 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ec
 		return nil, err
 	}
 
-	hash := sha256.New()
-	_, _ = hash.Write(chainID)
-	_, _ = hash.Write(txdata)
-	hashdata := hash.Sum(nil)
-
 	keyMap := b.keyMap()
 	for _, key := range requiredKeys {
 		privKey := keyMap[key.String()]
@@ -98,7 +93,7 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ec
 			return nil, fmt.Errorf("private key for %q not in keybag", key)
 		}
 
-		sig, err := privKey.Sign(hashdata)
+		sig, err := privKey.Sign(SigDigest(chainID, txdata))
 		if err != nil {
 			return nil, err
 		}
@@ -115,4 +110,11 @@ func (b *KeyBag) keyMap() map[string]*ecc.PrivateKey {
 		out[key.PublicKey().String()] = key
 	}
 	return out
+}
+
+func SigDigest(chainID, payload []byte) []byte {
+	h := sha256.New()
+	_, _ = h.Write(chainID)
+	_, _ = h.Write(payload)
+	return h.Sum(nil)
 }

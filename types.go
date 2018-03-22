@@ -127,7 +127,7 @@ type Authority struct {
 }
 
 type KeyWeight struct {
-	PublicKey *ecc.PublicKey `json:"public_key"`
+	PublicKey ecc.PublicKey `json:"public_key"`
 	Weight    uint16         `json:"weight"`
 }
 
@@ -189,12 +189,6 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 
 	*t, err = hex.DecodeString(s)
 	return
-}
-
-type ProducerChange struct {
-}
-
-type Cycle struct {
 }
 
 type GetTableRowsRequest struct {

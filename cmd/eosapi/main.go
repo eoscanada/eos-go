@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"net/url"
 
 	"github.com/eosioca/eosapi"
 	"github.com/eosioca/eosapi/ecc"
@@ -10,7 +12,7 @@ import (
 
 func main() {
 	//api := eosapi.New("http://testnet-dawn3.eosio.ca", "0000000000000000000000000000000000000000000000000000000000000000")
-	api, _ := eosapi.New("http://localhost:8888", "0000000000000000000000000000000000000000000000000000000000000000")
+	api := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:8888"}, bytes.Repeat([]byte{0}, 32))
 
 	keyBag := eosapi.NewKeyBag()
 	if err := keyBag.Add("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"); err != nil {
@@ -22,7 +24,7 @@ func main() {
 
 	api.SetSigner(keyBag)
 
-	walletAPI, _ := eosapi.New("http://localhost:6666", "0000000000000000000000000000000000000000000000000000000000000000")
+	walletAPI := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:6666"}, bytes.Repeat([]byte{0}, 32))
 	api.SetSigner(eosapi.NewWalletSigner(walletAPI))
 	// Corresponding to the wallet, so we can sign on the live node.
 

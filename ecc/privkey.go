@@ -49,16 +49,17 @@ type PrivateKey struct {
 	privKey *btcec.PrivateKey
 }
 
-func (p *PrivateKey) PublicKey() *PublicKey {
-	return &PublicKey{pubKey: p.privKey.PubKey()}
+func (p *PrivateKey) PublicKey() PublicKey {
+	return PublicKey(p.privKey.PubKey().SerializeCompressed())
 }
 
-func (p *PrivateKey) Sign(payload []byte) (Signature, error) {
-	h := sha256.New()
-	h.Write(payload)
-	hash := h.Sum(nil)
+// Sign signs a 32 bytes SHA256 hash..
+func (p *PrivateKey) Sign(hash []byte) (Signature, error) {
+	if len(hash) != 32 {
+		return nil, fmt.Errorf("hash should be 32 bytes")
+	}
 
-	compactSig, err := btcec.SignCompact(btcec.S256(), p.privKey, hash, false)
+	compactSig, err := btcec.SignCompact(btcec.S256(), p.privKey, hash, true)
 	if err != nil {
 		return nil, err
 	}

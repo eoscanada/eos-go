@@ -2,7 +2,6 @@ package ecc
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -15,15 +14,16 @@ type Signature []byte
 
 // Verify checks the signature against the pubKey. `hash` is a sha256
 // hash of the payload to verify.
-func (s Signature) Verify(payload []byte, pubKey *PublicKey) bool {
-	hash := sha256.New()
-	hash.Write(payload)
-
-	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash.Sum(nil))
+func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash)
 	if err != nil {
 		return false
 	}
-	if recoveredKey.IsEqual(pubKey.pubKey) {
+	key, err := pubKey.Key()
+	if err != nil {
+		return false
+	}
+	if recoveredKey.IsEqual(key) {
 		return true
 	}
 	return false
@@ -32,21 +32,18 @@ func (s Signature) Verify(payload []byte, pubKey *PublicKey) bool {
 // PublicKey retrieves the public key, but requires the
 // payload.. that's the way to validate the signature. Use Verify() if
 // you only want to validate.
-func (s Signature) PublicKey(payload []byte) (*PublicKey, error) {
-	hash := sha256.New()
-	hash.Write(payload)
-
-	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash.Sum(nil))
+func (s Signature) PublicKey(hash []byte) (PublicKey, error) {
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PublicKey{recoveredKey}, err
+	return PublicKey(recoveredKey.SerializeCompressed()), nil
 }
 
 func (s Signature) String() string {
 	checksum := ripemd160checksum(s)
-	buf := append(s[:], checksum[:4]...)
+	buf := append(s[:], checksum...)
 	return "EOS" + base58.Encode(buf)
 }
 
@@ -60,7 +57,6 @@ func NewSignature(fromText string) (Signature, error) {
 		return nil, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
 	}
 
-	// TODO: validate the checksum..
 	return Signature(content), nil
 }
 

@@ -7,32 +7,84 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
+	"time"
 
 	"github.com/eosioca/eosapi/ecc"
 )
 
 type EOSAPI struct {
 	HttpClient *http.Client
-	BaseURL    string
+	BaseURL    *url.URL
 	ChainID    []byte
 	Signer     Signer
 }
 
-func New(baseURL string, chainID string) (*EOSAPI, error) {
-	chainIDRaw, err := hex.DecodeString(chainID)
-	if err != nil {
-		return nil, err
+func New(baseURL *url.URL, chainID []byte) *EOSAPI {
+	if len(chainID) != 32 {
+		panic("chainID must be 32 bytes")
 	}
 
 	api := &EOSAPI{
-		HttpClient: http.DefaultClient,
-		BaseURL:    baseURL,
-		ChainID:    chainIDRaw,
+		HttpClient: &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				DisableKeepAlives:     true, // default behavior, because of `nodeos`'s lack of support for Keep alives.
+			},
+		},
+		BaseURL: baseURL,
+		ChainID: chainID,
 	}
 
-	return api, nil
+	return api
+}
+
+// FixKeepAlives tests the remote server for keepalive support (the
+// main `nodeos` software doesn't in the version from March 22nd
+// 2018).  Some endpoints front their node with a keep-alive
+// supporting web server.  Adjust the `KeepAlive` support of the
+// client accordingly.
+func (api *EOSAPI) FixKeepAlives() bool {
+	// Yeah, to provoke a keep alive, you need to query twice.
+	for i := 0; i < 5; i++ {
+		_, err := api.GetInfo()
+		log.Println("err", err)
+		if err == io.EOF {
+			if tr, ok := api.HttpClient.Transport.(*http.Transport); ok {
+				tr.DisableKeepAlives = true
+				return true
+			}
+		}
+		_, err = api.GetNetConnections()
+		log.Println("err", err)
+		if err == io.EOF {
+			if tr, ok := api.HttpClient.Transport.(*http.Transport); ok {
+				tr.DisableKeepAlives = true
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (api *EOSAPI) EnableKeepAlives() bool {
+	if tr, ok := api.HttpClient.Transport.(*http.Transport); ok {
+		tr.DisableKeepAlives = false
+		return true
+	}
+	return false
 }
 
 func (api *EOSAPI) SetSigner(s Signer) {
@@ -89,7 +141,7 @@ func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
 	return
 }
 
-func (api *EOSAPI) WalletPublicKeys() (out []*ecc.PublicKey, err error) {
+func (api *EOSAPI) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	var textKeys []string
 	err = api.call("wallet", "get_public_keys", nil, &textKeys)
 	if err != nil {
@@ -135,7 +187,11 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 	return
 }
 
-func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey *ecc.PublicKey) (out *PushTransactionResp, err error) {
+func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionResp, err error) {
+	if api.Signer == nil {
+		return nil, fmt.Errorf("no Signer configured")
+	}
+
 	a := &Action{
 		Account: AccountName("eosio"),
 		Name:    ActionName("newaccount"),
@@ -188,8 +244,6 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey *ecc.Pu
 	if err != nil {
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
-
-	fmt.Println("OK, attempting to serialize the thing")
 
 	signedTx, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
 	if err != nil {
@@ -259,6 +313,27 @@ func (api *EOSAPI) GetInfo() (out *InfoResp, err error) {
 	return
 }
 
+func (api *EOSAPI) GetNetConnections() (out []*NetConnectionsResp, err error) {
+	err = api.call("net", "connections", nil, &out)
+	return
+}
+
+func (api *EOSAPI) NetConnect(host string) (out *NetConnectResp, err error) {
+	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNNNET", host)
+	err = api.call("net", "connect", host, &out)
+	return
+}
+
+func (api *EOSAPI) NetDisconnect(host string) (out *NetDisconnectResp, err error) {
+	err = api.call("net", "disconnect", M{"host": host}, &out)
+	return
+}
+
+func (api *EOSAPI) GetNetStatus(host string) (out *NetStatusResp, err error) {
+	err = api.call("net", "status", M{"host": host}, &out)
+	return
+}
+
 func (api *EOSAPI) GetBlockByID(id string) (out *BlockResp, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": id}, &out)
 	return
@@ -297,7 +372,12 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 		return err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint), jsonBody)
+	baseURL := &url.URL{
+		Scheme: api.BaseURL.Scheme,
+		Host:   api.BaseURL.Host,
+		Path:   fmt.Sprintf("/v1/%s/%s", baseAPI, endpoint),
+	}
+	req, err := http.NewRequest("POST", baseURL.String(), jsonBody)
 	if err != nil {
 		return fmt.Errorf("NewRequest: %s", err)
 	}

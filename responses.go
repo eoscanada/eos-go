@@ -34,6 +34,12 @@ type BlockResp struct {
 
 }
 
+type ProducerChange struct {
+}
+
+type Cycle struct {
+}
+
 type AccountResp struct {
 	AccountName AccountName  `json:"account"`
 	Permissions []Permission `json:"permissions"`
@@ -86,17 +92,6 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 	return nil
 }
 
-// type MyStruct struct {
-// 	Key      string `struc:"[8]int8,little"`
-// 	Balance  uint64 `struc:"uint64,little"`
-// 	Currency string `struc:"[8]int8,little"`
-// }
-
-type MyStruct struct {
-	Currency
-	Balance uint64
-}
-
 type Currency struct {
 	Precision uint8
 	Name      CurrencyName
@@ -118,4 +113,47 @@ type WalletSignTransactionResp struct {
 	// your wallet !
 
 	Signatures []string `json:"signatures"`
+}
+
+type MyStruct struct {
+	Currency
+	Balance uint64
+}
+
+// NetConnectionResp
+type NetConnectionsResp struct {
+	Peer          string           `json:"peer"`
+	Connecting    bool             `json:"connecting"`
+	Syncing       bool             `json:"syncing"`
+	LastHandshake HandshakeMessage `json:"last_handshake"`
+}
+
+// Decode the `Key`. FIXME: this is unsatisfactory.. we should be able to handle
+// broken keys.. perhaps keep the raw PubKey data and decode when we need it instead of.
+type HandshakeMessage struct {
+	// net_plugin/protocol.hpp handshake_message
+	NetworkVersion           int16         `json:"network_version"`
+	ChainID                  HexBytes      `json:"chain_id"`
+	NodeID                   HexBytes      `json:"node_id"` // sha256
+	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
+	Time                     int           `json:"time"`    // time?!
+	Token                    HexBytes      `json:"token"`   // digest of time to prove we own the private `key`
+	Signature                ecc.Signature `json:"sig"`     // can be empty if no key, signature of the digest above
+	P2PAddress               string        `json:"p2p_address"`
+	LastIrreversibleBlockNum uint32        `json:"last_irreversible_block_num"`
+	LastIrreversibleBlockID  HexBytes      `json:"last_irreversible_block_id"`
+	HeadNum                  uint32        `json:"head_num"`
+	HeadID                   HexBytes      `json:"head_id"`
+	OS                       string        `json:"os"`
+	Agent                    string        `json:"agent"`
+	Generation               int16         `json:"generaiton"`
+}
+
+type NetStatusResp struct {
+}
+
+type NetConnectResp struct {
+}
+
+type NetDisconnectResp struct {
 }

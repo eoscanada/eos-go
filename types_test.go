@@ -42,7 +42,7 @@ func TestSetRefBlock(t *testing.T) {
 }
 
 func TestPackTransaction(t *testing.T) {
-	stamp := time.Date(1970, time.September, 1, 1, 1, 1, 1, time.UTC)
+	stamp := time.Date(2018, time.March, 22, 1, 1, 1, 1, time.UTC)
 	blockID, _ := hex.DecodeString("00106438d58d4fcab54cf89ca8308e5971cff735979d6050c6c1b45d8aadcad6")
 	tx := &Transaction{
 		Expiration: JSONTime{stamp},
@@ -80,7 +80,7 @@ func TestPackTransaction(t *testing.T) {
 	//     - acct: 0000000000ea3055 (eosio)
 	//       perm: 00000000a8ed3232 (active)
 	// ... missing Transfer !
-	assert.Equal(t, `cd6a400100003864a8308e590000000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed323200`, hex.EncodeToString(buf))
+	assert.Equal(t, `4d00b35a00003864a8308e590000000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed323200`, hex.EncodeToString(buf))
 }
 
 func TestPackAction(t *testing.T) {
