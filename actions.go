@@ -29,6 +29,11 @@ type SetCode struct {
 	Code      HexBytes    `json:"bytes"`
 }
 
+type SetABI struct {
+	Account AccountName `json:"account"`
+	ABI     ABI         `json:"abi"`
+}
+
 type NewAccount struct {
 	Creator  AccountName `json:"creator"`
 	Name     AccountName `json:"name"`

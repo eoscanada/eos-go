@@ -12,7 +12,7 @@ import (
 
 func main() {
 	//api := eosapi.New("http://testnet-dawn3.eosio.ca", "0000000000000000000000000000000000000000000000000000000000000000")
-	api := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:8888"}, bytes.Repeat([]byte{0}, 32))
+	api := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:18888"}, bytes.Repeat([]byte{0}, 32))
 
 	keyBag := eosapi.NewKeyBag()
 	if err := keyBag.Add("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"); err != nil {
@@ -24,7 +24,7 @@ func main() {
 
 	api.SetSigner(keyBag)
 
-	walletAPI := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:6666"}, bytes.Repeat([]byte{0}, 32))
+	walletAPI := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:6667"}, bytes.Repeat([]byte{0}, 32))
 	api.SetSigner(eosapi.NewWalletSigner(walletAPI))
 	// Corresponding to the wallet, so we can sign on the live node.
 
@@ -35,7 +35,7 @@ func main() {
 	// 	fmt.Println("RESP:", resp)
 	// }
 
-	resp, err := api.NewAccount(eosapi.AccountName("eosio"), eosapi.AccountName("abourget1"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
+	resp, err := api.NewAccount(eosapi.AccountName("eosio"), eosapi.AccountName("abourget2"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
 	if err != nil {
 		fmt.Println("ERROR calling NewAccount:", err)
 	} else {

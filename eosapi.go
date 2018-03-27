@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -159,7 +160,7 @@ func (api *EOSAPI) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
-func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...*ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
+func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
 	var textKeys []string
 	for _, key := range pubKeys {
 		textKeys = append(textKeys, key.String())
@@ -173,7 +174,7 @@ func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...*ecc.
 	return
 }
 
-func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionResp, err error) {
+func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionFullResp, err error) {
 
 	//fmt.Println("PUSHING signed transaction", tx.Transaction)
 	data, err := MarshalBinary(tx.Transaction)
@@ -187,7 +188,7 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 	return
 }
 
-func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionResp, err error) {
+func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionFullResp, err error) {
 	if api.Signer == nil {
 		return nil, fmt.Errorf("no Signer configured")
 	}
@@ -253,22 +254,38 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.Pub
 	return api.PushSignedTransaction(signedTx)
 }
 
-func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string, keybag *KeyBag) (out *PushTransactionResp, err error) {
-	// SetCode will create a transaction, call GetRequiredKeys, and sign the transaction with keybag.AvailableKeys().
+func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *PushTransactionFullResp, err error) {
+	codeContent, err := ioutil.ReadFile(wasmPath)
+	if err != nil {
+		return nil, err
+	}
 
 	tx := &Transaction{
 		Actions: []*Action{
 			{
 				Account: AccountName("eosio"),
-				Name:    ActionName("transfer"),
+				Name:    ActionName("setcode"),
 				Authorization: []PermissionLevel{
-					{AccountName("eosio"), PermissionName("active")},
+					{account, PermissionName("active")},
 				},
-				Data: Transfer{
-					From:     AccountName("eosio"),
-					To:       AccountName("abourget"),
-					Quantity: 123123,
-					Memo:     "heeemm.",
+				Data: SetCode{
+					Account:   account,
+					VMType:    0,
+					VMVersion: 0,
+					Code:      HexBytes(codeContent),
+				},
+			},
+			{
+				Account: AccountName("eosio"),
+				Name:    ActionName("setabi"),
+				Authorization: []PermissionLevel{
+					{account, PermissionName("active")},
+				},
+				Data: SetCode{
+					Account:   account,
+					VMType:    0,
+					VMVersion: 0,
+					Code:      HexBytes(codeContent),
 				},
 			},
 		},
@@ -318,14 +335,13 @@ func (api *EOSAPI) GetNetConnections() (out []*NetConnectionsResp, err error) {
 	return
 }
 
-func (api *EOSAPI) NetConnect(host string) (out *NetConnectResp, err error) {
-	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNNNET", host)
+func (api *EOSAPI) NetConnect(host string) (out NetConnectResp, err error) {
 	err = api.call("net", "connect", host, &out)
 	return
 }
 
-func (api *EOSAPI) NetDisconnect(host string) (out *NetDisconnectResp, err error) {
-	err = api.call("net", "disconnect", M{"host": host}, &out)
+func (api *EOSAPI) NetDisconnect(host string) (out NetDisconnectResp, err error) {
+	err = api.call("net", "disconnect", host, &out)
 	return
 }
 

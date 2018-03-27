@@ -128,7 +128,7 @@ type Authority struct {
 
 type KeyWeight struct {
 	PublicKey ecc.PublicKey `json:"public_key"`
-	Weight    uint16         `json:"weight"`
+	Weight    uint16        `json:"weight"`
 }
 
 type Code struct {
@@ -191,16 +191,26 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-type GetTableRowsRequest struct {
-	JSON       bool   `json:"json"`
-	Scope      string `json:"scope"`
-	Code       string `json:"code"`
-	Table      string `json:"table"`
-	TableKey   string `json:"table_key"`
-	LowerBound string `json:"lower_bound"`
-	UpperBound string `json:"upper_bount"`
-	Limit      uint32 `json:"limit,omitempty"` // defaults to 10 => chain_plugin.hpp:struct get_table_rows_params
+// SHA256Bytes
+
+type SHA256Bytes []byte // should always be 32 bytes
+
+func (t SHA256Bytes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
 }
+
+func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+// TODO: SHA256Bytes, implement the Binary encoder... fixed size.
 
 type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
 	Expiration     JSONTime `json:"expiration,omitempty"`

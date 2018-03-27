@@ -52,6 +52,17 @@ type CurrencyBalanceResp struct {
 	LastUnstakingTime JSONTime `json:"last_unstaking_time"`
 }
 
+type GetTableRowsRequest struct {
+	JSON       bool   `json:"json"`
+	Scope      string `json:"scope"`
+	Code       string `json:"code"`
+	Table      string `json:"table"`
+	TableKey   string `json:"table_key"`
+	LowerBound string `json:"lower_bound"`
+	UpperBound string `json:"upper_bount"`
+	Limit      uint32 `json:"limit,omitempty"` // defaults to 10 => chain_plugin.hpp:struct get_table_rows_params
+}
+
 type GetTableRowsResp struct {
 	More bool            `json:"more"`
 	Rows json.RawMessage `json:"rows"` // defer loading, as it depends on `JSON` being true/false.
@@ -98,13 +109,45 @@ type Currency struct {
 }
 
 type GetRequiredKeysResp struct {
-	RequiredKeys []*ecc.PublicKey `json:"required_keys"`
+	RequiredKeys []ecc.PublicKey `json:"required_keys"`
 }
 
-type PushTransactionResp struct {
+// PushTransactionFullResp unwraps the responses from a successful `push_transaction`.
+
+type PushTransactionFullResp struct {
+	TransactionID string               `json:"transaction_id"`
+	Processed     TransactionProcessed `json:"processed"` // WARN: is an `fc::variant` in server..
+}
+
+type TransactionProcessed struct {
+	Status               string        `json:"status"`
+	ID                   SHA256Bytes   `json:"id"`
+	ActionTraces         []ActionTrace `json:"action_traces"`
+	DeferredTransactions []string      `json:"deferred_transactions"` // that's not right... dig to find what's there..
+}
+
+type ActionTrace struct {
+	Receiver   AccountName  `json:"receiver"`
+	Action     Action       `json:"act"`
+	Console    string       `json:"console"`
+	RegionID   uint16       `json:"region_id"`
+	CycleIndex int          `json:"cycle_index"`
+	DataAccess []DataAccess `json:"data_access"`
+}
+
+type DataAccess struct {
+	Type     string      `json:"type"` // "write", "read"?
+	Code     AccountName `json:"code"`
+	Scope    AccountName `json:"scope"`
+	Sequence int         `json:"sequence"`
+}
+
+type PushTransactionShortResp struct {
 	TransactionID string `json:"transaction_id"`
 	Processed     bool   `json:"processed"` // WARN: is an `fc::variant` in server..
 }
+
+//
 
 type WalletSignTransactionResp struct {
 	// Ignore the rest of the transaction, so the wallet server
@@ -128,32 +171,9 @@ type NetConnectionsResp struct {
 	LastHandshake HandshakeMessage `json:"last_handshake"`
 }
 
-// Decode the `Key`. FIXME: this is unsatisfactory.. we should be able to handle
-// broken keys.. perhaps keep the raw PubKey data and decode when we need it instead of.
-type HandshakeMessage struct {
-	// net_plugin/protocol.hpp handshake_message
-	NetworkVersion           int16         `json:"network_version"`
-	ChainID                  HexBytes      `json:"chain_id"`
-	NodeID                   HexBytes      `json:"node_id"` // sha256
-	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
-	Time                     int           `json:"time"`    // time?!
-	Token                    HexBytes      `json:"token"`   // digest of time to prove we own the private `key`
-	Signature                ecc.Signature `json:"sig"`     // can be empty if no key, signature of the digest above
-	P2PAddress               string        `json:"p2p_address"`
-	LastIrreversibleBlockNum uint32        `json:"last_irreversible_block_num"`
-	LastIrreversibleBlockID  HexBytes      `json:"last_irreversible_block_id"`
-	HeadNum                  uint32        `json:"head_num"`
-	HeadID                   HexBytes      `json:"head_id"`
-	OS                       string        `json:"os"`
-	Agent                    string        `json:"agent"`
-	Generation               int16         `json:"generaiton"`
-}
-
 type NetStatusResp struct {
 }
 
-type NetConnectResp struct {
-}
+type NetConnectResp string
 
-type NetDisconnectResp struct {
-}
+type NetDisconnectResp string

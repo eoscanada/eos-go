@@ -8,13 +8,13 @@ import (
 )
 
 type Signer interface {
-	AvailableKeys() (out []*ecc.PublicKey, err error)
+	AvailableKeys() (out []ecc.PublicKey, err error)
 
 	// Sign signs a `tx` transaction. It gets passed a
 	// SignedTransaction because it is possible that it holds a few
 	// signatures and requests this wallet only to add one or more
 	// signatures it requires.
-	Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ecc.PublicKey) (*SignedTransaction, error)
+	Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error)
 }
 
 // `eosiowd` wallet-based signer
@@ -33,7 +33,7 @@ func (s *WalletSigner) AvailableKeys() (out []ecc.PublicKey, err error) {
 	return s.api.WalletPublicKeys()
 }
 
-func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ecc.PublicKey) (*SignedTransaction, error) {
+func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
 	// Fetch the available keys over there... and ask this wallet
 	// provider to sign with the keys he has..
 
@@ -80,7 +80,7 @@ func (b *KeyBag) AvailableKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
-func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...*ecc.PublicKey) (*SignedTransaction, error) {
+func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
 	txdata, err := MarshalBinary(tx.Transaction)
 	if err != nil {
 		return nil, err

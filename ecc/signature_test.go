@@ -3,8 +3,10 @@ package ecc
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"testing"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,6 +107,10 @@ func TestNodeosSignatureComparison(t *testing.T) {
 	// from that tx:
 	fromEOSIOCTx := "EOSKkwLhwDoRF8gpGFbcUKiaPdeeKo6U7eDuXQw9szMiNE4K4cFe17sffk6hmy3mWf1ogtzd5J5kvnvFD3Lq5cF6VyYb3KsGy"
 	assert.Equal(t, fromEOSIOCTx, sig.String())
+
+	// decode
+	fmt.Println("From EOSIO sig:", hex.EncodeToString(base58.Decode(fromEOSIOCTx[3:])))
+	fmt.Println("From GO sig:", hex.EncodeToString(base58.Decode(sig.String()[3:])))
 }
 
 func TestSignatureUnmarshalChecksum(t *testing.T) {
