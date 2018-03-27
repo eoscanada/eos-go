@@ -1,11 +1,12 @@
 package eosapi
 
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
+// see: libraries/chain/include/eosio/chain/contracts/types.hpp:100
 type ABI struct {
-	Types   []ABIType   `json:"types"`
-	Structs []StructDef `json:"structs"`
-	Actions []Action    `json:"actions"`
-	Tables  []Table     `json:"tables"`
+	Types   []ABIType   `json:"types,omitempty"`
+	Structs []StructDef `json:"structs,omitempty"`
+	Actions []ActionDef `json:"actions,omitempty"`
+	Tables  []TableDef  `json:"tables,omitempty"`
 }
 
 type ABIType struct {
@@ -14,15 +15,26 @@ type ABIType struct {
 }
 
 type StructDef struct {
-	Name   string            `json:"name"`
-	Base   string            `json:"base"`
-	Fields map[string]string `json:"fields"` // WARN: UNORDERED!!! Should use `https://github.com/virtuald/go-ordered-json/blob/master/example_test.go`
+	Name   string     `json:"name"`
+	Base   string     `json:"base"`
+	Fields []FieldDef `json:"fields,omitempty"` // WARN: UNORDERED!!! Should use `https://github.com/virtuald/go-ordered-json/blob/master/example_test.go`
 }
 
-type Table struct {
+type FieldDef struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type ActionDef struct {
+	Name AccountName `json:"name"`
+	Type string      `json:"type"`
+}
+
+// TableDef defines a table. See libraries/chain/include/eosio/chain/contracts/types.hpp:78
+type TableDef struct {
 	Name      string   `json:"name"`
 	IndexType string   `json:"index_type"`
-	KeyNames  []string `json:"key_names"`
-	KeyTypes  []string `json:"key_types"`
+	KeyNames  []string `json:"key_names,omitempty"`
+	KeyTypes  []string `json:"key_types,omitempty"`
 	Type      string   `json:"type"`
 }

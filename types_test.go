@@ -137,6 +137,7 @@ func TestNameToString(t *testing.T) {
 		{"00000000a8ed3232", "active"},
 		{"000000572d3ccdcd", "transfer"},
 		{"00000059b1abe931", "abourget"},
+		{"c08fca86a9a8d2d4", "undelegatebw"},
 	}
 
 	for _, test := range tests {
@@ -151,19 +152,27 @@ func TestPackAccountName(t *testing.T) {
 	// SHOULD IMPLEMENT: string_to_name from contracts/eosiolib/types.hpp
 	tests := []struct {
 		in  string
-		out []byte
+		out string
 	}{
-		{"eosio", []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0xea, 0x30, 0x55}},
-		{"eosio.system", []byte{0x20, 0x55, 0xc6, 0x1e, 0x3, 0xea, 0x30, 0x55}},
-		{"tbcox2.3", []byte{0x0, 0x0, 0x0, 0x3, 0x88, 0x4e, 0xd1, 0xc9}},
-		{"tbcox2.", []byte{0x0, 0x0, 0x0, 0x0, 0x88, 0x4e, 0xd1, 0xc9}},
+		{"eosio",
+			"0000000000ea3055"},
+		{"eosio.system",
+			"2055c61e03ea3055"},
+		{"tbcox2.3",
+			"00000003884ed1c9"},
+		{"tbcox2.",
+			"00000000884ed1c9"},
+		{"quantity",
+			"0000003ebb3c8db6"},
 	}
 
 	for idx, test := range tests {
 		acct := AccountName(test.in)
+		out, err := hex.DecodeString(test.out)
+		require.NoError(t, err)
 		buf, err := MarshalBinary(acct)
 		assert.NoError(t, err)
-		assert.Equal(t, test.out, buf, fmt.Sprintf("index %d", idx))
+		assert.Equal(t, out, buf, fmt.Sprintf("index %d, was %q", idx, hex.EncodeToString(buf)))
 	}
 }
 

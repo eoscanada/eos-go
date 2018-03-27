@@ -254,9 +254,29 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.Pub
 	return api.PushSignedTransaction(signedTx)
 }
 
+// SetCode applies the given `wasm` file to an account.  Once this is done, the account's code cannot be changed.
+//
+// EOS.IO Software uses an older version of the WAST file forma
+// (breaks with the introduction of
+// https://github.com/WebAssembly/wabt/commit/500b617b1c8ea88a2cf46f60205071da9c7569bc)
+// so trying to convert .wast to .wasm with standard tooling will
+// fail.
+//
+// Over here, we use the `wasm` file directly.. so it is your
+// responsibility to provide a compiled file.
 func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *PushTransactionFullResp, err error) {
 	codeContent, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
+		return nil, err
+	}
+
+	abiContent, err := ioutil.ReadFile(abiPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var abiDef ABI
+	if err := json.Unmarshal(abiContent, &abiDef); err != nil {
 		return nil, err
 	}
 
@@ -281,32 +301,30 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *
 				Authorization: []PermissionLevel{
 					{account, PermissionName("active")},
 				},
-				Data: SetCode{
-					Account:   account,
-					VMType:    0,
-					VMVersion: 0,
-					Code:      HexBytes(codeContent),
+				Data: SetABI{
+					Account: account,
+					ABI:     abiDef,
 				},
 			},
 		},
 	}
-	tx = &Transaction{
-		Actions: []*Action{
-			{
-				Account: AccountName("eosio"),
-				Name:    ActionName("issue"),
-				Authorization: []PermissionLevel{
-					{AccountName("eosio"), PermissionName("active")},
-				},
-				Data: Issue{
-					To:       AccountName("abourget"),
-					Quantity: 123123,
-				},
-			},
-		},
-	}
+	// tx = &Transaction{
+	// 	Actions: []*Action{
+	// 		{
+	// 			Account: AccountName("eosio"),
+	// 			Name:    ActionName("issue"),
+	// 			Authorization: []PermissionLevel{
+	// 				{AccountName("eosio"), PermissionName("active")},
+	// 			},
+	// 			Data: Issue{
+	// 				To:       AccountName("abourget"),
+	// 				Quantity: 123123,
+	// 			},
+	// 		},
+	// 	},
+	// }
 
-	chainID, err := tx.Fill(api)
+	_, err = tx.Fill(api)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +335,7 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
 
-	signed, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
+	signed, err := api.Signer.Sign(NewSignedTransaction(tx), make([]byte, 32, 32), resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
@@ -403,7 +421,9 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println("-------------------------------")
 	fmt.Println(string(requestDump))
+	fmt.Println("")
 
 	resp, err := api.HttpClient.Do(req)
 	if err != nil {
@@ -421,7 +441,9 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
 	}
 
-	fmt.Println("SERVER RESPONSE", cnt.String())
+	fmt.Println("RESPONSE:")
+	fmt.Println(cnt.String())
+	fmt.Println("")
 
 	if err := json.Unmarshal(cnt.Bytes(), &out); err != nil {
 		return fmt.Errorf("Unmarshal: %s", err)

@@ -7,12 +7,11 @@ import (
 	"net/url"
 
 	"github.com/eosioca/eosapi"
-	"github.com/eosioca/eosapi/ecc"
 )
 
 func main() {
 	//api := eosapi.New("http://testnet-dawn3.eosio.ca", "0000000000000000000000000000000000000000000000000000000000000000")
-	api := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:18888"}, bytes.Repeat([]byte{0}, 32))
+	api := eosapi.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
 	keyBag := eosapi.NewKeyBag()
 	if err := keyBag.Add("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"); err != nil {
@@ -35,11 +34,17 @@ func main() {
 	// 	fmt.Println("RESP:", resp)
 	// }
 
-	resp, err := api.NewAccount(eosapi.AccountName("eosio"), eosapi.AccountName("abourget2"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
+	resp, err := api.SetCode(AC("eosio"), "/home/abourget/build/eos/build/contracts/eosio.system/eosio.system.wasm", "/home/abourget/build/eos/build/contracts/eosio.system/eosio.system.abi")
 	if err != nil {
-		fmt.Println("ERROR calling NewAccount:", err)
+		fmt.Println("ERROR calling SetCode:", err)
 	} else {
 		fmt.Println("RESP:", resp)
 	}
 
+	// resp, err := api.NewAccount(AC("eosio"), AC("abourget2"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
+	// if err != nil {
+	// 	fmt.Println("ERROR calling NewAccount:", err)
+	// } else {
+	// 	fmt.Println("RESP:", resp)
+	// }
 }
