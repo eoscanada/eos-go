@@ -247,8 +247,8 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
-	tx.RefBlockNum = uint16(binary.BigEndian.Uint16(blockID[2:4]))
-	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[12:16])
+	tx.RefBlockNum = uint16(binary.BigEndian.Uint32(blockID[:4]))
+	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
 }
 
 type SignedTransaction struct {

@@ -93,7 +93,11 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, fmt.Errorf("private key for %q not in keybag", key)
 		}
 
-		sig, err := privKey.Sign(SigDigest(chainID, txdata))
+		// TODO: handle ContextFreeData later.. will be added to
+		// signature if it exists in tx.ContextFreeData .. and there
+		// can be many []byte in there.. so the serialization isn't
+		// clear to me yet.  Shouldn't be very complex though.
+		sig, err := privKey.Sign(SigDigest(chainID, txdata, nil))
 		if err != nil {
 			return nil, err
 		}
@@ -112,9 +116,12 @@ func (b *KeyBag) keyMap() map[string]*ecc.PrivateKey {
 	return out
 }
 
-func SigDigest(chainID, payload []byte) []byte {
+func SigDigest(chainID, payload, contextFreeData []byte) []byte {
 	h := sha256.New()
 	_, _ = h.Write(chainID)
 	_, _ = h.Write(payload)
+	if len(contextFreeData) > 0 {
+		_, _ = h.Write(contextFreeData)
+	}
 	return h.Sum(nil)
 }
