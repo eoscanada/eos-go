@@ -17,7 +17,7 @@ import (
 type Transfer struct {
 	From     AccountName `json:"from"`
 	To       AccountName `json:"to"`
-	Quantity uint64      `json:"quantity"`
+	Quantity Asset       `json:"quantity"`
 	Memo     string      `json:"memo"`
 }
 

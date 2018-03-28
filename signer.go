@@ -15,18 +15,25 @@ type Signer interface {
 	// signatures and requests this wallet only to add one or more
 	// signatures it requires.
 	Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error)
+
+	ImportPrivateKey(wifPrivKey string) error
 }
 
 // `eosiowd` wallet-based signer
 type WalletSigner struct {
-	api *EOSAPI
+	api        *EOSAPI
+	walletName string
 }
 
 // NewWalletSigner takes an `api`, because often the wallet will be a
 // second endpoint, and not the server node with whom you're pushing
 // transactions to.
-func NewWalletSigner(api *EOSAPI) *WalletSigner {
-	return &WalletSigner{api}
+func NewWalletSigner(api *EOSAPI, walletName string) *WalletSigner {
+	return &WalletSigner{api, walletName}
+}
+
+func (s *WalletSigner) ImportPrivateKey(wifKey string) (err error) {
+	return s.api.WalletImportKey(s.walletName, wifKey)
 }
 
 func (s *WalletSigner) AvailableKeys() (out []ecc.PublicKey, err error) {
@@ -78,6 +85,10 @@ func (b *KeyBag) AvailableKeys() (out []ecc.PublicKey, err error) {
 		out = append(out, k.PublicKey())
 	}
 	return
+}
+
+func (b *KeyBag) ImportPrivateKey(wifPrivKey string) (err error) {
+	return b.Add(wifPrivKey)
 }
 
 func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {

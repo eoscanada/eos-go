@@ -250,7 +250,8 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 
 	tx.setRefBlock(blockID)
 
-	fmt.Println("refblockprefix:", tx.RefBlockPrefix)
+	//fmt.Println("refblockprefix:", tx.RefBlockPrefix)
+
 	/// TODO: configure somewhere the default time for transactions,
 	/// etc.. add a `.Timeout` with that duration, default to 30
 	/// seconds ?

@@ -121,7 +121,7 @@ func TestPackAction(t *testing.T) {
 		Data: Transfer{
 			From:     AccountName("abourget"),
 			To:       AccountName("eosio"),
-			Quantity: 123123,
+			Quantity: Asset{Amount: 123123},
 		},
 	}
 
@@ -192,6 +192,12 @@ func TestPackAccountName(t *testing.T) {
 			"00000000884ed1c9"},
 		{"quantity",
 			"0000003ebb3c8db6"},
+		{"genesis.1",
+			"000008003baca662"},
+		{"genesis.z",
+			"0000f8003baca662"},
+		{"genesis.zzzz",
+			"f0ffff003baca662"},
 	}
 
 	for idx, test := range tests {
@@ -211,11 +217,11 @@ func TestUnpackActionTransfer(t *testing.T) {
 	}{
 		{
 			"00000003884ed1c900000000884ed1c9090000000000000000",
-			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, ""},
+			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), Asset{Amount: 9}, ""},
 		},
 		{
 			"00000003884ed1c900000000884ed1c9090000000000000004616c6c6f",
-			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), 9, "allo"},
+			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), Asset{Amount: 9}, "allo"},
 		},
 	}
 

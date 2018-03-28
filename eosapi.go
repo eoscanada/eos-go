@@ -22,6 +22,7 @@ type EOSAPI struct {
 	BaseURL    *url.URL
 	ChainID    []byte
 	Signer     Signer
+	Debug      bool
 }
 
 func New(baseURL *url.URL, chainID []byte) *EOSAPI {
@@ -61,7 +62,9 @@ func (api *EOSAPI) FixKeepAlives() bool {
 	// Yeah, to provoke a keep alive, you need to query twice.
 	for i := 0; i < 5; i++ {
 		_, err := api.GetInfo()
-		log.Println("err", err)
+		if api.Debug {
+			log.Println("err", err)
+		}
 		if err == io.EOF {
 			if tr, ok := api.HttpClient.Transport.(*http.Transport); ok {
 				tr.DisableKeepAlives = true
@@ -69,7 +72,9 @@ func (api *EOSAPI) FixKeepAlives() bool {
 			}
 		}
 		_, err = api.GetNetConnections()
-		log.Println("err", err)
+		if api.Debug {
+			log.Println("err", err)
+		}
 		if err == io.EOF {
 			if tr, ok := api.HttpClient.Transport.(*http.Transport); ok {
 				tr.DisableKeepAlives = true
@@ -142,6 +147,11 @@ func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
 	return
 }
 
+// WalletImportKey loads a new WIF-encoded key into the wallet.
+func (api *EOSAPI) WalletImportKey(walletName, wifPrivKey string) (err error) {
+	return api.call("wallet", "import_key", []string{walletName, wifPrivKey}, nil)
+}
+
 func (api *EOSAPI) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	var textKeys []string
 	err = api.call("wallet", "get_public_keys", nil, &textKeys)
@@ -188,7 +198,7 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 	return
 }
 
-// Issue pushes an `issue` transaction
+// Issue pushes an `issue` transaction.  This belongs to a contract abstraction, not directly the API.
 func (api *EOSAPI) Issue(to AccountName, quantity Asset) (out *PushTransactionFullResp, err error) {
 	if api.Signer == nil {
 		return nil, fmt.Errorf("no Signer configured")
@@ -203,6 +213,48 @@ func (api *EOSAPI) Issue(to AccountName, quantity Asset) (out *PushTransactionFu
 		Data: Issue{
 			To:       to,
 			Quantity: quantity,
+		},
+	}
+	tx := &Transaction{
+		Actions: []*Action{a},
+	}
+
+	chainID, err := tx.Fill(api)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := api.GetRequiredKeys(tx, api.Signer)
+	if err != nil {
+		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
+	}
+
+	signedTx, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
+	if err != nil {
+		return nil, fmt.Errorf("Sign: %s", err)
+	}
+
+	return api.PushSignedTransaction(signedTx)
+}
+
+// Transfer pushes a `transfer` transaction.  This belongs to a
+// contract abstraction, not directly the API.
+func (api *EOSAPI) Transfer(from, to AccountName, quantity Asset, memo string) (out *PushTransactionFullResp, err error) {
+	if api.Signer == nil {
+		return nil, fmt.Errorf("no Signer configured")
+	}
+
+	a := &Action{
+		Account: AccountName("eosio"),
+		Name:    ActionName("transfer"),
+		Authorization: []PermissionLevel{
+			{from, PermissionName("active")},
+		},
+		Data: Transfer{
+			From:     from,
+			To:       to,
+			Quantity: quantity,
+			Memo:     memo,
 		},
 	}
 	tx := &Transaction{
@@ -287,7 +339,6 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.Pub
 	}
 
 	resp, err := api.GetRequiredKeys(tx, api.Signer)
-	log.Println("GetRequiredKeys", resp, err)
 	if err != nil {
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
@@ -376,7 +427,6 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *
 	}
 
 	resp, err := api.GetRequiredKeys(tx, api.Signer)
-	log.Println("GetRequiredKeys", resp, err)
 	if err != nil {
 		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
@@ -462,14 +512,16 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 		return fmt.Errorf("NewRequest: %s", err)
 	}
 
-	// Useful when debugging API calls
-	requestDump, err := httputil.DumpRequest(req, true)
-	if err != nil {
-		fmt.Println(err)
+	if api.Debug {
+		// Useful when debugging API calls
+		requestDump, err := httputil.DumpRequest(req, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("-------------------------------")
+		fmt.Println(string(requestDump))
+		fmt.Println("")
 	}
-	fmt.Println("-------------------------------")
-	fmt.Println(string(requestDump))
-	fmt.Println("")
 
 	resp, err := api.HttpClient.Do(req)
 	if err != nil {
@@ -487,9 +539,11 @@ func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out i
 		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
 	}
 
-	fmt.Println("RESPONSE:")
-	fmt.Println(cnt.String())
-	fmt.Println("")
+	if api.Debug {
+		fmt.Println("RESPONSE:")
+		fmt.Println(cnt.String())
+		fmt.Println("")
+	}
 
 	if err := json.Unmarshal(cnt.Bytes(), &out); err != nil {
 		return fmt.Errorf("Unmarshal: %s", err)
