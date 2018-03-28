@@ -24,7 +24,7 @@ type Transfer struct {
 // Issue represents the `eosio.system::issue` action.
 type Issue struct {
 	To       AccountName `json:"to"`
-	Quantity uint64      `json:"quantity" struc:"uint64,little"`
+	Quantity Asset       `json:"quantity" struc:"uint64,little"`
 }
 
 // SetCode represents the hard-coded `setcode` action.
@@ -107,22 +107,22 @@ type Nonce struct {
 
 // belongs to `system`  structs
 type EOSIOParameters struct {
-	TargetBlockSize              uint32 `json:"target_block_size"`
-	MaxBlockSize                 uint32 `json:"max_block_size"`
-	TargetBlockActsPerScope      uint32 `json:"target_block_acts_per_scope"`
-	MaxBlockActsPerScope         uint32 `json:"max_block_acts_per_scope"`
-	TargetBlockActs              uint32 `json:"target_block_acts"`
-	MaxBlockActs                 uint32 `json:"max_block_acts"`
-	MaxStorageSize               uint64 `json:"max_storage_size"`
-	MaxTransactionLifetime       uint32 `json:"max_transaction_lifetime"`
-	MaxTransactionExecTime       uint32 `json:"max_transaction_exec_time"`
-	MaxAuthorityDepth            uint16 `json:"max_authority_depth"`
-	MaxInlineDepth               uint16 `json:"max_inline_depth"`
-	MaxInlineActionSize          uint32 `json:"max_inline_action_size"`
-	MaxGeneratedTransactionSize  uint32 `json:"max_generated_transaction_size"`
-	MaxGeneratedTransactionCount uint32 `json:"max_generated_transaction_count"`
-	PercentOfMaxInflationRate    uint32 `json:"percent_of_max_inflation_rate"`
-	StorageReserveRatio          uint32 `json:"storage_reserve_ratio"`
+	TargetBlockSize              uint32 `json:"target_block_size" yaml:"target_block_size"`
+	MaxBlockSize                 uint32 `json:"max_block_size" yaml:"max_block_size"`
+	TargetBlockActsPerScope      uint32 `json:"target_block_acts_per_scope" yaml:"target_block_acts_per_scope"`
+	MaxBlockActsPerScope         uint32 `json:"max_block_acts_per_scope" yaml:"max_block_acts_per_scope"`
+	TargetBlockActs              uint32 `json:"target_block_acts" yaml:"target_block_acts"`
+	MaxBlockActs                 uint32 `json:"max_block_acts" yaml:"max_block_acts"`
+	MaxStorageSize               uint64 `json:"max_storage_size" yaml:"max_storage_size"`
+	MaxTransactionLifetime       uint32 `json:"max_transaction_lifetime" yaml:"max_transaction_lifetime"`
+	MaxTransactionExecTime       uint32 `json:"max_transaction_exec_time" yaml:"max_transaction_exec_time"`
+	MaxAuthorityDepth            uint16 `json:"max_authority_depth" yaml:"max_authority_depth"`
+	MaxInlineDepth               uint16 `json:"max_inline_depth" yaml:"max_inline_depth"`
+	MaxInlineActionSize          uint32 `json:"max_inline_action_size" yaml:"max_inline_action_size"`
+	MaxGeneratedTransactionSize  uint32 `json:"max_generated_transaction_size" yaml:"max_generated_transaction_size"`
+	MaxGeneratedTransactionCount uint32 `json:"max_generated_transaction_count" yaml:"max_generated_transaction_count"`
+	PercentOfMaxInflationRate    uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
+	StorageReserveRatio          uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
 }
 
 // belongs to the `system` structs

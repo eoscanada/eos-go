@@ -188,6 +188,52 @@ func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransa
 	return
 }
 
+// Issue pushes an `issue` transaction
+func (api *EOSAPI) Issue(to AccountName, quantity Asset) (out *PushTransactionFullResp, err error) {
+	if api.Signer == nil {
+		return nil, fmt.Errorf("no Signer configured")
+	}
+
+	a := &Action{
+		Account: AccountName("eosio"),
+		Name:    ActionName("issue"),
+		Authorization: []PermissionLevel{
+			{AccountName("eosio"), PermissionName("active")},
+		},
+		Data: Issue{
+			To:       to,
+			Quantity: quantity,
+		},
+	}
+	tx := &Transaction{
+		Actions: []*Action{a},
+	}
+
+	chainID, err := tx.Fill(api)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := api.GetRequiredKeys(tx, api.Signer)
+	log.Println("GetRequiredKeys", resp, err)
+	if err != nil {
+		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
+	}
+
+	signedTx, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
+	if err != nil {
+		return nil, fmt.Errorf("Sign: %s", err)
+	}
+
+	return api.PushSignedTransaction(signedTx)
+}
+
+// NewAccount belongs to a `system` or `chain` package.. it wraps
+// certain actions and makes it easy to use.. but doesn't belong
+// top-level.. since it's not an API call per se.
+//
+// NewAccount pushes a `newaccount` transaction on the `eosio`
+// contract.
 func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionFullResp, err error) {
 	if api.Signer == nil {
 		return nil, fmt.Errorf("no Signer configured")

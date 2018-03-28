@@ -14,6 +14,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAssetPack(t *testing.T) {
+	tests := []struct {
+		in  string
+		out Asset
+	}{
+		// Haven't seen such a thing yet though..
+		{"808d5b000000000004454f5300000000",
+			Asset{6000000, Symbol{Precision: 4, Symbol: "EOS"}}},
+	}
+
+	for _, test := range tests {
+		bin, err := hex.DecodeString(test.in)
+		require.NoError(t, err)
+
+		var a Asset
+		require.NoError(t, UnmarshalBinary(bin, &a))
+
+		assert.Equal(t, test.out, a)
+	}
+
+	/*
+		18 = len
+		808d5b0000000000 quantity = 6000000
+		04  precision = 4
+		454f5300000000  "EOS"
+	*/
+}
+
 func TestSimplePacking(t *testing.T) {
 	type S struct {
 		P string

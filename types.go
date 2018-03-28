@@ -89,19 +89,32 @@ type Asset struct {
 
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
 type Symbol struct {
-	Precision int
+	Precision uint8
 	Symbol    string
 }
 
 func (a *Asset) UnmarshalBinary(data []byte) error {
-	// pick up uint64 for amount
-	// then one byte for Precision, and another 7 bytes as string for currency
+	newAsset := Asset{}
+	if err := UnmarshalBinary(data[:8], &newAsset.Amount); err != nil {
+		return err
+	}
+	if err := UnmarshalBinary(data[8:9], &newAsset.Precision); err != nil {
+		return err
+	}
+	newAsset.Symbol.Symbol = strings.Trim(string(data[9:16]), "\x00")
+
+	*a = newAsset
+
 	return nil
 }
 func (a *Asset) UnmarshalJSON(data []byte) error {
 	// decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: {Precision: 4, Symbol: "EOS"}`
 	// deal with the underlying `Symbol`
 	return nil
+}
+
+func (Asset) UnmarshalBinarySize() int {
+	return 16
 }
 
 type Permission struct {
