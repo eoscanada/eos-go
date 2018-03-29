@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAssetPack(t *testing.T) {
+func TestAssetMarshalUnmarshal(t *testing.T) {
 	tests := []struct {
 		in  string
 		out Asset
@@ -32,6 +32,11 @@ func TestAssetPack(t *testing.T) {
 		require.NoError(t, UnmarshalBinary(bin, &a))
 
 		assert.Equal(t, test.out, a)
+
+		marshaled, err := MarshalBinary(test.out)
+		require.NoError(t, err)
+
+		assert.Equal(t, test.in, hex.EncodeToString(marshaled))
 	}
 
 	/*

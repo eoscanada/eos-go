@@ -27,6 +27,9 @@ type Issue struct {
 	Quantity Asset       `json:"quantity" struc:"uint64,little"`
 }
 
+// 00000059b1abe931 808d5b0000000000 04 454f5300000000
+// 0000000000ea3055 00a0724e18090000 04 03454f53
+
 // SetCode represents the hard-coded `setcode` action.
 type SetCode struct {
 	Account   AccountName `json:"account"`

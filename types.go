@@ -107,6 +107,17 @@ func (a *Asset) UnmarshalBinary(data []byte) error {
 
 	return nil
 }
+
+func (a Asset) MarshalBinary() ([]byte, error) {
+	binAsset := struct {
+		Amount    int64
+		Precision uint8
+		Symbol    [7]byte
+	}{Amount: a.Amount, Precision: a.Precision, Symbol: [7]byte{}}
+	copy(binAsset.Symbol[:], []byte(a.Symbol.Symbol))
+	return MarshalBinary(binAsset)
+}
+
 func (a *Asset) UnmarshalJSON(data []byte) error {
 	// decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: {Precision: 4, Symbol: "EOS"}`
 	// deal with the underlying `Symbol`
