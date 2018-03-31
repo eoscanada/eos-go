@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newAPI() (api *eosapi.EOSAPI) {
-	api = eosapi.New("http://testnet-dawn3.eosio.ca")
+func newAPI() (api *eos.EOSAPI) {
+	api = eos.New("http://testnet-dawn3.eosio.ca")
 	tr := &http.Transport{}
 	api.HttpClient = &http.Client{Transport: tr}
 
@@ -58,7 +58,7 @@ func TestGetBlockByNum(t *testing.T) {
 func TestGetTableRows(t *testing.T) {
 	api := newAPI()
 
-	out, err := api.GetTableRows(eosapi.GetTableRowsRequest{
+	out, err := api.GetTableRows(eos.GetTableRowsRequest{
 		Scope:    "currency",
 		Code:     "currency",
 		Table:    "account",
@@ -74,15 +74,15 @@ func TestGetTableRows(t *testing.T) {
 func TestGetRequiredKeys(t *testing.T) {
 	api := newAPI()
 	tomorrow := time.Now().AddDate(0, 0, 1)
-	keybag := eosapi.NewKeyBag()
-	out, err := api.GetRequiredKeys(&eosapi.Transaction{
+	keybag := eos.NewKeyBag()
+	out, err := api.GetRequiredKeys(&eos.Transaction{
 		// RefBlockNum:    "1",
 		// RefBlockPrefix: "",
-		Expiration: eosapi.JSONTime{tomorrow},
+		Expiration: eos.JSONTime{tomorrow},
 		// Scope:          []string{},
-		// Actions: []eosapi.Action{
+		// Actions: []eos.Action{
 		// 	{
-		// 		Account: eosapi.AccountName("currency"),
+		// 		Account: eos.AccountName("currency"),
 		// 		Name:    "currency",
 		// 		// Authorization: []string{},
 		// 		Data: "",

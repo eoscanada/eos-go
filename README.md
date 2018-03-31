@@ -10,7 +10,7 @@ Basic usage
 -----------
 
 ```go
-api := eosapi.New("http://testnet1.eos.io")
+api := eos.New("http://testnet1.eos.io")
 
 infoResp, _ := api.GetInfo()
 accountResp, _ := api.GetAccount("initn")

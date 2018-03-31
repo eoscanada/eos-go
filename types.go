@@ -1,10 +1,11 @@
-package eosapi
+package eos
 
 import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,10 @@ type AccountName Name
 type PermissionName Name
 type ActionName Name
 type TableName Name
+
+func AN(in string) AccountName    { return AccountName(in) }
+func ActN(in string) ActionName   { return ActionName(in) }
+func PN(in string) PermissionName { return PermissionName(in) }
 
 func (acct AccountName) MarshalBinary() ([]byte, error)    { return Name(acct).MarshalBinary() }
 func (acct PermissionName) MarshalBinary() ([]byte, error) { return Name(acct).MarshalBinary() }
@@ -91,6 +96,22 @@ type Asset struct {
 type Symbol struct {
 	Precision uint8
 	Symbol    string
+}
+
+// EOSSymbol represents the standard EOS symbol on the chain.  It's
+// here just to speed up things.
+var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
+
+func NewEOSAssetFromString(amount string) (out Asset, err error) {
+	val, err := strconv.ParseInt(strings.Replace(amount, ".", "", 1), 10, 64)
+	if err != nil {
+		return out, err
+	}
+	return NewEOSAsset(val), nil
+}
+
+func NewEOSAsset(amount int64) Asset {
+	return Asset{Amount: amount, Symbol: EOSSymbol}
 }
 
 func (a *Asset) UnmarshalBinary(data []byte) error {
@@ -242,8 +263,12 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
 	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
 	// number of 8 byte words this transaction can compress into
+	// FIXME / TODO: these have changed name and type.. they're not `unsigned_int`, is that 16 bits or 32 now ?
+	// These become Varuint32, both of them
 	PackedBandwidthWords    uint16    `json:"packed_bandwidth_words,omitempty"`
 	ContextFreeCPUBandwidth uint16    `json:"context_free_cpu_bandwidth,omitempty"`
+	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
+
 	ContextFreeActions      []*Action `json:"context_free_actions,omitempty"`
 	Actions                 []*Action `json:"actions,omitempty"`
 }

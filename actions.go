@@ -1,4 +1,4 @@
-package eosapi
+package eos
 
 import (
 	"encoding/binary"
@@ -127,6 +127,7 @@ type EOSIOParameters struct {
 	PercentOfMaxInflationRate    uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
 	StorageReserveRatio          uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
 }
+// Sync with: /home/abourget/build/eos/patch1.patch
 
 // belongs to the `system` structs
 type EOSIOGlobalState struct {
@@ -159,7 +160,8 @@ type NewAccount struct {
 	Recovery Authority   `json:"recovery"`
 }
 
-//
+
+// Action
 type Action struct {
 	Account       AccountName       `json:"account"`
 	Name          ActionName        `json:"name"`
@@ -176,6 +178,13 @@ type action struct {
 type ActionData interface{}
 
 func (a *Action) UnmarshalBinaryRead(r io.Reader) error {
+	// Ok, we need to find a way to unmarshal those transactions.. to
+	// do verification and/or introspection of blockchain data.
+	//
+	// There are two ways we can completely decode an incoming Action,
+	// through a local map of structs (sort of a hard-coded ABI), or
+	// through the ABI definitions and building an agnostic
+	// map[string]interface{}.
 	length, err := binary.ReadUvarint(&ByteReader{r})
 	if err != nil {
 		return err

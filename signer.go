@@ -1,4 +1,4 @@
-package eosapi
+package eos
 
 import (
 	"crypto/sha256"

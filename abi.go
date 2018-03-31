@@ -1,4 +1,4 @@
-package eosapi
+package eos
 
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
 // see: libraries/chain/include/eosio/chain/contracts/types.hpp:100

@@ -1,4 +1,4 @@
-package eosapi
+package eos
 
 import (
 	"encoding/binary"
@@ -171,6 +171,8 @@ func TestNameToString(t *testing.T) {
 		{"000000572d3ccdcd", "transfer"},
 		{"00000059b1abe931", "abourget"},
 		{"c08fca86a9a8d2d4", "undelegatebw"},
+		{"0040cbdaa86c52d5", "updateauth"},
+		{"0000000080ab26a7", "owner"},
 	}
 
 	for _, test := range tests {
