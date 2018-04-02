@@ -14,3 +14,23 @@ type UpdateAuth struct {
 	Data       eos.Authority      `json:"data"`
 	Delay      uint32             `json:"delay"` // this represents what exactly?
 }
+
+// SetPriv sets privileged account status. Used in the bios boot mechanism.
+type SetPriv struct {
+	Account eos.AccountName `json:"account"`
+	IsPriv  int8            `json:"is_priv"`
+}
+
+// SetCode represents the hard-coded `setcode` action.
+type SetCode struct {
+	Account   eos.AccountName `json:"account"`
+	VMType    byte            `json:"vmtype"`
+	VMVersion byte            `json:"vmversion"`
+	Code      eos.HexBytes    `json:"bytes"`
+}
+
+// SetABI represents the hard-coded `setabi` action.
+type SetABI struct {
+	Account eos.AccountName `json:"account"`
+	ABI     eos.ABI         `json:"abi"`
+}

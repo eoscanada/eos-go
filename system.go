@@ -67,7 +67,7 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.Pub
 //
 // Over here, we use the `wasm` file directly.. so it is your
 // responsibility to provide a compiled file.
-func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *PushTransactionFullResp, err error) {
+func (api *EOSAPI) SetCode(forAccount AccountName, wasmPath, abiPath string) (out *PushTransactionFullResp, err error) {
 	codeContent, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return nil, err
@@ -88,10 +88,10 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *
 			Account: AccountName("eosio"),
 			Name:    ActionName("setcode"),
 			Authorization: []PermissionLevel{
-				{account, PermissionName("active")},
+				{forAccount, PermissionName("active")},
 			},
 			Data: SetCode{
-				Account:   account,
+				Account:   forAccount,
 				VMType:    0,
 				VMVersion: 0,
 				Code:      HexBytes(codeContent),
@@ -101,10 +101,10 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *
 			Account: AccountName("eosio"),
 			Name:    ActionName("setabi"),
 			Authorization: []PermissionLevel{
-				{account, PermissionName("active")},
+				{forAccount, PermissionName("active")},
 			},
 			Data: SetABI{
-				Account: account,
+				Account: forAccount,
 				ABI:     abiDef,
 			},
 		},
