@@ -15,9 +15,6 @@ type InfoResp struct {
 	HeadBlockID              string      `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
 	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
 	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
-	RecentSlots              string      `json:"recent_slots"`                //  "1111111111111111111111111111111111111111111111111111111111111111"
-	ParticipationRate        string      `json:"participation_rate"`          // "1.00000000000000000" // this should be a `double`, or a decimal of some sort..
-
 }
 
 type BlockResp struct {
