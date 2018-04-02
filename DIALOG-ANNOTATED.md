@@ -699,3 +699,175 @@ this is `eosioc`:
 
 with data being:
 0000000000ea3055 00003059b1abe931 01 000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100
+
+
+
+
+
+
+
+
+
+
+------------------------
+
+GO LANG:
+
+POST /v1/chain/push_transaction HTTP/1.1
+Host: localhost:8889
+User-Agent: Go-http-client/1.1
+Content-Length: 421
+Accept-Encoding: gzip
+Connection: close
+
+{"signatures":[],"context_free_data":[],"compression":"none","data":"70e1c15a00000200e2976d0300000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100"}HTTP/1.1 401 Unauthorized
+Content-Length: 553
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"code":401,"message":"UnAuthorized","error":{"code":3030002,"name":"tx_missing_sigs","what":"signatures do not satisfy declared authorizations","details":[{"message":"transaction declares authority '{\"actor\":\"eosio\",\"permission\":\"active\"}', but does not have signatures for it.","file":"chain_controller.cpp","line_number":972,"method":"check_authorization"},{"message":"","file":"chain_controller.cpp","line_number":346,"method":"_push_transaction"},{"message":"","file":"chain_controller.cpp","line_number":271,"method":"push_transaction"}]}}
+
+
+CLEOS:
+
+
+POST /v1/chain/push_transaction HTTP/1.0
+Host: localhost
+content-length: 522
+Accept: */*
+Connection: close
+
+{"signatures":["EOSKigRNhVVat7ZpumFgbqnRmFPJisJNVr2zvYWqcfop2u9QJ2KGViZGYakMyUz2UsxndoCB9ZKCBwk5tdtydQLcZ73XpVrQy"],"context_free_data":[],"compression":"none","data":"81e1c15a00002300be63087b21e8070000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"}HTTP/1.1 202 Accepted
+Content-Length: 956
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"transaction_id":"10768cb66940db434a23b477675ec884b5c835a43bbeca6a09b5fcacbe82cf2a","processed":{"status":"executed","id":"10768cb66940db434a23b477675ec884b5c835a43bbeca6a09b5fcacbe82cf2a","action_traces":[{"receiver":"eosio","context_free":false,"cpu_usage":0,"act":{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"},"console":"","region_id":0,"cycle_index":0,"data_access":[{"type":"write","code":"eosio","scope":"eosio.auth","sequence":0}],"_profiling_us":87}],"deferred_transaction_requests":[],"read_locks":[],"write_locks":[{"account":"eosio","scope":"eosio.auth"}],"cpu_usage":1000,"net_usage":364,"_profiling_us":188,"_setup_profiling_us":0}}
+
+
+
+
+
+70e1c15a 0000 0200 e2976d03 00000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100
+
+91e2c15a 0000 0200 8c87d0de 17 02 00 00 01 0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100
+
+81e1c15a 0000 2300 be63087b 21 e807 00 00 010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100
+
+
+
+
+---------------
+
+GO
+
+POST /v1/chain/push_transaction HTTP/1.1
+Host: localhost:8889
+User-Agent: Go-http-client/1.1
+Content-Length: 520
+Accept-Encoding: gzip
+Connection: close
+
+{"signatures":["EOSJxw7WFxgM5xTCfU79wkk8RCy1b8u5D5GWE4VX7fx8ThTB2tBLktXaZgoYeKD9xjX5n3jydvy2NJGuJAJu2ccnxBCXgJzny"],"context_free_data":[],"compression":"none","data":"86e4c15a0000020019e992a700000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100"}HTTP/1.1 401 Unauthorized
+Content-Length: 553
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"code":401,"message":"UnAuthorized","error":{"code":3030002,"name":"tx_missing_sigs","what":"signatures do not satisfy declared authorizations","details":[{"message":"transaction declares authority '{\"actor\":\"eosio\",\"permission\":\"active\"}', but does not have signatures for it.","file":"chain_controller.cpp","line_number":972,"method":"check_authorization"},{"message":"","file":"chain_controller.cpp","line_number":346,"method":"_push_transaction"},{"message":"","file":"chain_controller.cpp","line_number":271,"method":"push_transaction"}]}}
+
+
+CLEOS
+
+
+POST /v1/chain/push_transaction HTTP/1.0
+Host: localhost
+content-length: 522
+Accept: */*
+Connection: close
+
+{"signatures":["EOSKfA5xarhtSop6v5s2Cse1QdBxTcGufvpzx7wZ4bNrp6s2yVU5gcRPzafyoEDKxEpzFyaQzFAYDUzDAqxMXx5jUc5z6tgEN"],"context_free_data":[],"compression":"none","data":"8ae4c15a00000a00f150f7ca21e8070000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"}HTTP/1.1 202 Accepted
+Content-Length: 955
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"transaction_id":"3908e02af8f2b829b22daa5e4ff55bc1f83d301147667d56b03def2a9665421b","processed":{"status":"executed","id":"3908e02af8f2b829b22daa5e4ff55bc1f83d301147667d56b03def2a9665421b","action_traces":[{"receiver":"eosio","context_free":false,"cpu_usage":0,"act":{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"},"console":"","region_id":0,"cycle_index":0,"data_access":[{"type":"write","code":"eosio","scope":"eosio.auth","sequence":0}],"_profiling_us":24}],"deferred_transaction_requests":[],"read_locks":[],"write_locks":[{"account":"eosio","scope":"eosio.auth"}],"cpu_usage":1000,"net_usage":364,"_profiling_us":49,"_setup_profiling_us":0}}
+
+
+86e4c15a 0000 0200 19e992a7 00 00 00 00 01 0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100
+
+8ae4c15a 0000 0a00 f150f7ca 21 e807 00 00 01 0000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100
+
+-------------------
+
+POST /v1/wallet/sign_transaction HTTP/1.1
+Host: localhost:6667
+User-Agent: Go-http-client/1.1
+Content-Length: 679
+Accept-Encoding: gzip
+Connection: close
+
+[{"expiration":"2018-04-02T08:06:30","region":0,"ref_block_num":2,"ref_block_prefix":2811423001,"net_usage_words":23,"kcpu_usage":2,"delay_sec":0,"actions":[{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100","name":"newaccount"}],"signatures":[],"context_free_data":[]},["EOS5qAuqXNnYSsofL32CEkexzr4qrHBP33BNsPZqPxhEzvJmze7DE"],"0000000000000000000000000000000000000000000000000000000000000000"]HTTP/1.1 201 Created
+Content-Length: 677
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"expiration":"2018-04-02T08:06:30","region":0,"ref_block_num":2,"ref_block_prefix":2811423001,"net_usage_words":23,"kcpu_usage":2,"delay_sec":0,"context_free_actions":[],"actions":[{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100"}],"signatures":["EOSJxw7WFxgM5xTCfU79wkk8RCy1b8u5D5GWE4VX7fx8ThTB2tBLktXaZgoYeKD9xjX5n3jydvy2NJGuJAJu2ccnxBCXgJzny"],"context_free_data":[]}
+
+
+POST /v1/wallet/sign_transaction HTTP/1.0
+Host: localhost
+content-length: 709
+Accept: */*
+Connection: close
+
+[{"expiration":"2018-04-02T08:06:34","region":0,"ref_block_num":10,"ref_block_prefix":3405205745,"net_usage_words":33,"kcpu_usage":1000,"delay_sec":0,"context_free_actions":[],"actions":[{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"}],"signatures":[],"context_free_data":[]},["EOS5qAuqXNnYSsofL32CEkexzr4qrHBP33BNsPZqPxhEzvJmze7DE"],"0000000000000000000000000000000000000000000000000000000000000000"]HTTP/1.1 201 Created
+Content-Length: 681
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"expiration":"2018-04-02T08:06:34","region":0,"ref_block_num":10,"ref_block_prefix":3405205745,"net_usage_words":33,"kcpu_usage":1000,"delay_sec":0,"context_free_actions":[],"actions":[{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"}],"signatures":["EOSKfA5xarhtSop6v5s2Cse1QdBxTcGufvpzx7wZ4bNrp6s2yVU5gcRPzafyoEDKxEpzFyaQzFAYDUzDAqxMXx5jUc5z6tgEN"],"context_free_data":[]}
+
+IN:
+0000000000ea3055 000030c94c833055 01000000 01 00 02 3bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a 01000001000000010002 3bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a
+0100000100000000010000000000ea3055 00000000a8ed32320100
+
+0000000000ea3055 000030c94c833055 01000000 01 00 02 c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e 01000001000000010002 c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e
+0100000100000000010000000000ea3055 00000000a8ed32320100
+
+
+---------
+
+
+
+POST /v1/chain/push_transaction HTTP/1.1
+Host: localhost:8889
+User-Agent: Go-http-client/1.1
+Content-Length: 520
+Accept-Encoding: gzip
+Connection: close
+
+{"signatures":["EOSJxw7WFxgM5xTCfU79wkk8RCy1b8u5D5GWE4VX7fx8ThTB2tBLktXaZgoYeKD9xjX5n3jydvy2NJGuJAJu2ccnxBCXgJzny"],"context_free_data":[],"compression":"none","data":"86e4c15a0000020019e992a700000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100"}HTTP/1.1 401 Unauthorized
+Content-Length: 553
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"code":401,"message":"UnAuthorized","error":{"code":3030002,"name":"tx_missing_sigs","what":"signatures do not satisfy declared authorizations","details":[{"message":"transaction declares authority '{\"actor\":\"eosio\",\"permission\":\"active\"}', but does not have signatures for it.","file":"chain_controller.cpp","line_number":972,"method":"check_authorization"},{"message":"","file":"chain_controller.cpp","line_number":346,"method":"_push_transaction"},{"message":"","file":"chain_controller.cpp","line_number":271,"method":"push_transaction"}]}}
+
+
+
+POST /v1/chain/push_transaction HTTP/1.0
+Host: localhost
+content-length: 522
+Accept: */*
+Connection: close
+
+{"signatures":["EOSKfA5xarhtSop6v5s2Cse1QdBxTcGufvpzx7wZ4bNrp6s2yVU5gcRPzafyoEDKxEpzFyaQzFAYDUzDAqxMXx5jUc5z6tgEN"],"context_free_data":[],"compression":"none","data":"8ae4c15a00000a00f150f7ca21e8070000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"}HTTP/1.1 202 Accepted
+Content-Length: 955
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"transaction_id":"3908e02af8f2b829b22daa5e4ff55bc1f83d301147667d56b03def2a9665421b","processed":{"status":"executed","id":"3908e02af8f2b829b22daa5e4ff55bc1f83d301147667d56b03def2a9665421b","action_traces":[{"receiver":"eosio","context_free":false,"cpu_usage":0,"act":{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100"},"console":"","region_id":0,"cycle_index":0,"data_access":[{"type":"write","code":"eosio","scope":"eosio.auth","sequence":0}],"_profiling_us":24}],"deferred_transaction_requests":[],"read_locks":[],"write_locks":[{"account":"eosio","scope":"eosio.auth"}],"cpu_usage":1000,"net_usage":364,"_profiling_us":49,"_setup_profiling_us":0}}
+
+86e4c15a 0000 0200 19e992a7 00000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c833055010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a010000010000000100023bf0afb1a36116a70276d69920d4b8a50c039af08aafe6e096be61328f953f9a0100000100000000010000000000ea305500000000a8ed32320100
+
+8ae4c15a 0000 0a00 f150f7ca 21e8070000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea3055000030c94c83305501000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e01000001000000010002c3fd81035735eb1685705524a59f6dd4f1c799012736d219f790ad5b7641ba4e0100000100000000010000000000ea305500000000a8ed32320100

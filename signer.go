@@ -109,7 +109,7 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 		// signature if it exists in tx.ContextFreeData .. and there
 		// can be many []byte in there.. so the serialization isn't
 		// clear to me yet.  Shouldn't be very complex though.
-		sig, err := privKey.Sign(SigDigest(chainID, txdata, nil))
+		sig, err := privKey.Sign(SigDigest(chainID, txdata, []byte{0x00}))
 		if err != nil {
 			return nil, err
 		}

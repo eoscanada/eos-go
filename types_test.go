@@ -139,10 +139,9 @@ func TestPackAction(t *testing.T) {
 	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"00000059b1abe9310000000000ea3055f3e001000000000004454f530000000000","name":"transfer"}`, string(buf))
 
 	/* 0000000000ea3055 000000572d3ccdcd 01 0000000000ea3055 00000000a8ed3232
-       21
-       00000059b1abe931 0000000000ea3055 f3e0010000000000 04 454f5300000000 00 */
+	   21
+	   00000059b1abe931 0000000000ea3055 f3e0010000000000 04 454f5300000000 00 */
 }
-
 
 func TestUnpackBinaryTableRows(t *testing.T) {
 	resp := &GetTableRowsResp{
@@ -289,6 +288,16 @@ func TestActionMetaTypes(t *testing.T) {
 
 	var newAction Action
 	require.NoError(t, json.Unmarshal(cnt, &newAction))
+
+	tx := &Transaction{Actions: []*Action{a}}
+	stx := NewSignedTransaction(tx)
+	require.NoError(t, stx.Pack(TxOptions{}))
+	fmt.Println("MAMA1", stx.NetUsageWords)
+	fmt.Println("MAMA2", stx.Transaction.NetUsageWords)
+	assert.Equal(t, 123, stx.NetUsageWords)
+	packedData, err := json.Marshal(stx.packed)
+	fmt.Println("MAMA3", stx.Transaction.NetUsageWords)
+	assert.Equal(t, `000000000000000000000`, string(packedData))
 }
 
 func TestAuthorityBinaryMarshal(t *testing.T) {

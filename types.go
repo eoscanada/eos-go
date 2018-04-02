@@ -98,7 +98,7 @@ func (c CompressionType) String() string {
 }
 
 func (c CompressionType) MarshalJSON() ([]byte, error) {
-	return []byte(c.String()), nil
+	return json.Marshal(c.String())
 }
 
 func (c *CompressionType) UnmarshalJSON(data []byte) error {

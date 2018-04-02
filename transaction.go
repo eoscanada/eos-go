@@ -70,14 +70,14 @@ func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 	}
 }
 
-func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
-	if s.packed != nil {
-		return s.packed, nil
-	}
+func (s *SignedTransaction) Pack(opts TxOptions) error {
+	return s.pack(opts, -1)
+}
 
+func (s *SignedTransaction) pack(opts TxOptions, packedLen int) error {
 	data, err := MarshalBinary(s.Transaction)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	switch opts.Compress {
@@ -96,9 +96,22 @@ func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 
 	s.packed = packed
 
-	s.estimateResources(opts)
+	if err := s.estimateResources(opts); err != nil {
+		return err
+	}
 
-	return packed, nil
+	if packedLen == -1 {
+		return s.pack(opts, len(data))
+	}
+	return nil
+}
+
+func (tx *SignedTransaction) Repack(opts TxOptions) error {
+	tx.NetUsageWords = 0
+	tx.packed = nil
+	tx.KCPUUsage = 0
+
+	return tx.Pack(opts)
 }
 
 func (tx *SignedTransaction) estimateResources(opts TxOptions) error {
@@ -110,7 +123,7 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions) error {
 		// for this resources varints, not yet accounted for
 		base += 4
 
-		if tx.packed.Compression == CompressionZlib {
+		if opts.Compress == CompressionZlib {
 			// for new data (see C++ code .. not sure why here)
 			base += 252 // 4 + 252 = 256
 		}
@@ -133,7 +146,7 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions) error {
 		base := 2048 /* for good measure :P */
 		// Estimated per context-free actions usage..
 		base += 10000 * len(tx.ContextFreeActions)
-		tx.KCPUUsage = Varuint32(base / 1024)
+		tx.KCPUUsage = Varuint32(base)  // should divide by 1024 ?!
 	}
 	return nil
 }

@@ -198,19 +198,19 @@ func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *Pu
 		return nil, fmt.Errorf("no Signer configured")
 	}
 
-	resp, err := api.GetRequiredKeys(tx)
-	if err != nil {
-		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
-	}
-
 	chainID, err := tx.Fill(api)
 	if err != nil {
 		return nil, err
 	}
 
+	resp, err := api.GetRequiredKeys(tx)
+	if err != nil {
+		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
+	}
+
 	stx := NewSignedTransaction(tx)
 
-	if _, err := stx.Pack(opts); err != nil {
+	if err := stx.Pack(opts); err != nil {
 		return nil, err
 	}
 
@@ -219,6 +219,10 @@ func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *Pu
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
 
+	// Repack with signatures
+	if err := stx.Repack(opts); err != nil {
+		return nil, err
+	}
 	return api.PushSignedTransaction(signedTx)
 }
 
