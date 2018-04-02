@@ -48,7 +48,7 @@ func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys 
 	// and the available keys, return something about
 	// `SignatureIncomplete`.
 
-	resp, err := s.api.WalletSignTransaction(tx, requiredKeys...)
+	resp, err := s.api.WalletSignTransaction(tx, chainID, requiredKeys...)
 	if err != nil {
 		return nil, err
 	}

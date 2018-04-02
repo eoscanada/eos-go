@@ -171,7 +171,7 @@ func (api *EOSAPI) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
-func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
+func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
 	var textKeys []string
 	for _, key := range pubKeys {
 		textKeys = append(textKeys, key.String())
@@ -180,7 +180,7 @@ func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...ecc.P
 	err = api.call("wallet", "sign_transaction", []interface{}{
 		tx,
 		textKeys,
-		hex.EncodeToString(api.ChainID),
+		hex.EncodeToString(api.ChainID), // eventually, we should receive the `chainID` from somewhere instead.
 	}, &out)
 	return
 }
@@ -210,27 +210,23 @@ func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *Pu
 
 	stx := NewSignedTransaction(tx)
 
-	if err := stx.Pack(opts); err != nil {
-		return nil, err
-	}
+	stx.estimateResources(opts, len(resp.RequiredKeys))
 
 	signedTx, err := api.Signer.Sign(stx, chainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
 
-	// Repack with signatures
-	if err := stx.Repack(opts); err != nil {
+	packed, err := signedTx.Pack(opts)
+	if err != nil {
 		return nil, err
 	}
-	return api.PushSignedTransaction(signedTx)
+
+	return api.PushSignedTransaction(packed)
 }
 
-func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionFullResp, err error) {
-	if tx.packed == nil {
-		return nil, fmt.Errorf("signed transaction not packed, call Pack() first")
-	}
-	err = api.call("chain", "push_transaction", tx.packed, &out)
+func (api *EOSAPI) PushSignedTransaction(tx *PackedTransaction) (out *PushTransactionFullResp, err error) {
+	err = api.call("chain", "push_transaction", tx, &out)
 	return
 }
 

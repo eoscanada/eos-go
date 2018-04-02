@@ -74,14 +74,10 @@ func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 	}
 }
 
-func (s *SignedTransaction) Pack(opts TxOptions) error {
-	return s.pack(opts, -1)
-}
-
-func (s *SignedTransaction) pack(opts TxOptions, packedLen int) error {
+func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 	data, err := MarshalBinary(s.Transaction)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	switch opts.Compress {
@@ -98,31 +94,16 @@ func (s *SignedTransaction) pack(opts TxOptions, packedLen int) error {
 		Data:            data,
 	}
 
-	s.packed = packed
-
-	if err := s.estimateResources(opts); err != nil {
-		return err
-	}
-
-	if packedLen == -1 {
-		return s.pack(opts, len(data))
-	}
-	return nil
+	return packed, nil
 }
 
-func (tx *SignedTransaction) Repack(opts TxOptions) error {
-	tx.NetUsageWords = 0
-	tx.packed = nil
-	tx.KCPUUsage = 0
-
-	return tx.Pack(opts)
-}
-
-func (tx *SignedTransaction) estimateResources(opts TxOptions) error {
+func (tx *SignedTransaction) estimateResources(opts TxOptions, numKeys int) error {
 	// see programs/cleos/main.cpp for an estimation algo..
-	if tx.NetUsageWords == 0 {
+	if opts.NetUsageWords != 0 {
+		tx.NetUsageWords = Varuint32(opts.NetUsageWords)
+	} else {
 		// for signatures
-		base := 5 /* varint for sig count */ + len(tx.Signatures)*65 /* bytes per sig */
+		base := 5 /* varint for sig count */ + numKeys*65 /* bytes per sig */
 
 		// for this resources varints, not yet accounted for
 		base += 4
@@ -139,19 +120,25 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions) error {
 			base += 7 // for alignment ?
 		}
 
-		base += len(tx.packed.Data)
+		packed, err := tx.Pack(opts)
+		if err != nil {
+			return err
+		}
+		base += len(packed.Data)
 
 		tx.NetUsageWords = Varuint32(base / 8) // because it's a count of 8-bytes words.
 	}
+
 	if opts.KCPUUsage != 0 {
 		tx.KCPUUsage = Varuint32(opts.KCPUUsage)
-	}
-	if tx.KCPUUsage == 0 {
+	} else {
 		base := 2048 /* for good measure :P */
 		// Estimated per context-free actions usage..
 		base += 10000 * len(tx.ContextFreeActions)
+		base += 2000 * len(tx.Actions)
 		tx.KCPUUsage = Varuint32(base) // should divide by 1024 ?!
 	}
+
 	return nil
 }
 
@@ -176,8 +163,9 @@ type DeferredTransaction struct {
 // TxOptions represents options you want to pass to the transaction
 // you're sending.
 type TxOptions struct {
-	Delay     time.Duration
-	KCPUUsage uint32 // If you want to override the CPU usage (in counts of 1024)
+	NetUsageWords uint32
+	Delay         time.Duration
+	KCPUUsage     uint32 // If you want to override the CPU usage (in counts of 1024)
 	//ExtraKCPUUsage uint32 // If you want to *add* some CPU usage to the estimated amount (in counts of 1024)
 	Compress CompressionType
 }
