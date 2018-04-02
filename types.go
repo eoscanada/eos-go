@@ -305,6 +305,7 @@ type Varuint32 uint32
 func (a Varuint32) MarshalBinary() ([]byte, error) {
 	data := make([]byte, 8, 8)
 	l := binary.PutUvarint(data, uint64(a))
+	//fmt.Println("VARUINT MARSHAL", a, data, data[:l])
 	return data[:l], nil
 }
 

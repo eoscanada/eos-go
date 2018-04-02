@@ -33,6 +33,10 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 		return nil, err
 	}
 
+	if tx.ContextFreeActions == nil {
+		tx.ContextFreeActions = make([]*Action, 0, 0)
+	}
+
 	blockID, err := hex.DecodeString(info.HeadBlockID)
 	if err != nil {
 		return nil, fmt.Errorf("decode hex: %s", err)
@@ -146,7 +150,7 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions) error {
 		base := 2048 /* for good measure :P */
 		// Estimated per context-free actions usage..
 		base += 10000 * len(tx.ContextFreeActions)
-		tx.KCPUUsage = Varuint32(base)  // should divide by 1024 ?!
+		tx.KCPUUsage = Varuint32(base) // should divide by 1024 ?!
 	}
 	return nil
 }
