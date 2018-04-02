@@ -68,13 +68,11 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 		if err != nil {
 			return err
 		}
-		_, hasReader := cv.(UnmarshalBinaryReader)
-		_, hasFixedSize := cv.(UnmarshalBinarySizer)
-		if !hasFixedSize && !hasReader {
-			if err = b.writeVarint(len(buf)); err != nil {
-				return err
-			}
-		}
+		// let the Marshallers write their own prefix.. we already support
+		// handling unmarshallers..
+		// if err = b.writeVarint(len(buf)); err != nil {
+		// 	return err
+		// }
 		_, err = b.w.Write(buf)
 
 	case []byte: // fast-path byte arrays

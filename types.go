@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -25,10 +26,18 @@ func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
-func (acct AccountName) MarshalBinary() ([]byte, error)    { return Name(acct).MarshalBinary() }
-func (acct PermissionName) MarshalBinary() ([]byte, error) { return Name(acct).MarshalBinary() }
-func (acct ActionName) MarshalBinary() ([]byte, error)     { return Name(acct).MarshalBinary() }
-func (acct TableName) MarshalBinary() ([]byte, error)      { return Name(acct).MarshalBinary() }
+func (acct AccountName) MarshalBinary() ([]byte, error) {
+	return Name(acct).MarshalBinary()
+}
+func (acct PermissionName) MarshalBinary() ([]byte, error) {
+	return Name(acct).MarshalBinary()
+}
+func (acct ActionName) MarshalBinary() ([]byte, error) {
+	return Name(acct).MarshalBinary()
+}
+func (acct TableName) MarshalBinary() ([]byte, error) {
+	return Name(acct).MarshalBinary()
+}
 func (acct Name) MarshalBinary() ([]byte, error) {
 	val, err := StringToName(string(acct))
 	if err != nil {
@@ -129,6 +138,10 @@ func (a *Asset) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+func (Asset) UnmarshalBinarySize() int {
+	return 16
+}
+
 func (a Asset) MarshalBinary() ([]byte, error) {
 	binAsset := struct {
 		Amount    int64
@@ -143,10 +156,6 @@ func (a *Asset) UnmarshalJSON(data []byte) error {
 	// decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: {Precision: 4, Symbol: "EOS"}`
 	// deal with the underlying `Symbol`
 	return nil
-}
-
-func (Asset) UnmarshalBinarySize() int {
-	return 16
 }
 
 type Permission struct {
@@ -262,15 +271,15 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 	Region         uint16   `json:"region"`
 	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
 	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
-	// number of 8 byte words this transaction can compress into
-	// FIXME / TODO: these have changed name and type.. they're not `unsigned_int`, is that 16 bits or 32 now ?
-	// These become Varuint32, both of them
-	PackedBandwidthWords    uint16    `json:"packed_bandwidth_words,omitempty"`
-	ContextFreeCPUBandwidth uint16    `json:"context_free_cpu_bandwidth,omitempty"`
+
+	NetUsageWords Varuint32 `json:"net_usage_words"`
+	KCPUUsage     Varuint32 `json:"kcpu_usage"`
+	DelaySec      Varuint32 `json:"delay_sec"` // number of secs to delay, making it cancellable for that duration
+
 	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
 
-	ContextFreeActions      []*Action `json:"context_free_actions,omitempty"`
-	Actions                 []*Action `json:"actions,omitempty"`
+	ContextFreeActions []*Action `json:"context_free_actions,omitempty"`
+	Actions            []*Action `json:"actions,omitempty"`
 }
 
 func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
@@ -299,6 +308,23 @@ func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
 func (tx *Transaction) setRefBlock(blockID []byte) {
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint32(blockID[:4]))
 	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
+}
+
+type Varuint32 uint32
+
+func (a Varuint32) MarshalBinary() ([]byte, error) {
+	data := make([]byte, 8, 8)
+	l := binary.PutUvarint(data, uint64(a))
+	return data[:l], nil
+}
+
+func (a *Varuint32) UnmarshalBinaryRead(r io.Reader) error {
+	size, err := binary.ReadUvarint(&ByteReader{r})
+	if err != nil {
+		return err
+	}
+	*a = Varuint32(size)
+	return nil
 }
 
 type SignedTransaction struct {

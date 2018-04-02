@@ -71,7 +71,7 @@ func TestSetRefBlock(t *testing.T) {
 	require.NoError(t, err)
 	tx.setRefBlock(blockID)
 	assert.Equal(t, uint16(0xcf62), tx.RefBlockNum) // 53090
-	assert.Equal(t, uint32(0x6933473b), tx.RefBlockPrefix)
+	assert.Equal(t, uint32(0xd80b0950), tx.RefBlockPrefix)
 }
 
 func TestPackTransaction(t *testing.T) {
@@ -113,7 +113,7 @@ func TestPackTransaction(t *testing.T) {
 	//     - acct: 0000000000ea3055 (eosio)
 	//       perm: 00000000a8ed3232 (active)
 	// ... missing Transfer !
-	assert.Equal(t, `4d00b35a00003864a8308e590000000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed323200`, hex.EncodeToString(buf))
+	assert.Equal(t, `4d00b35a00003864b54cf89c00000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed323200`, hex.EncodeToString(buf))
 }
 
 func TestPackAction(t *testing.T) {
@@ -126,18 +126,23 @@ func TestPackAction(t *testing.T) {
 		Data: Transfer{
 			From:     AccountName("abourget"),
 			To:       AccountName("eosio"),
-			Quantity: Asset{Amount: 123123},
+			Quantity: Asset{Amount: 123123, Symbol: EOSSymbol},
 		},
 	}
 
 	buf, err := MarshalBinary(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32321900000059b1abe9310000000000ea3055f3e001000000000000`, hex.EncodeToString(buf))
+	assert.Equal(t, `0000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32322100000059b1abe9310000000000ea3055f3e001000000000004454f530000000000`, hex.EncodeToString(buf))
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"00000059b1abe9310000000000ea3055f3e001000000000000","name":"transfer"}`, string(buf))
+	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"00000059b1abe9310000000000ea3055f3e001000000000004454f530000000000","name":"transfer"}`, string(buf))
+
+	/* 0000000000ea3055 000000572d3ccdcd 01 0000000000ea3055 00000000a8ed3232
+       21
+       00000059b1abe931 0000000000ea3055 f3e0010000000000 04 454f5300000000 00 */
 }
+
 
 func TestUnpackBinaryTableRows(t *testing.T) {
 	resp := &GetTableRowsResp{
@@ -156,6 +161,28 @@ func TestStringToName(t *testing.T) {
 
 	//h, _ := hex.DecodeString("0000001e4d75af46")
 	//fmt.Println("NAMETOSTRING", NameToString(binary.LittleEndian.Uint64(h)))
+}
+
+func TestVaruint32MarshalUnmarshal(t *testing.T) {
+	tests := []struct {
+		in  uint32
+		out string
+	}{
+		{0, "00"},
+		{1, "01"},
+		{128, "8001"},
+		{127, "7f"},
+	}
+
+	for _, test := range tests {
+		v := Varuint32(test.in)
+		res, err := MarshalBinary(v)
+		require.NoError(t, err)
+		assert.Equal(t, test.out, hex.EncodeToString(res))
+
+		require.NoError(t, UnmarshalBinary(res, &v))
+		assert.Equal(t, test.in, uint32(v))
+	}
 }
 
 func TestNameToString(t *testing.T) {
@@ -223,11 +250,11 @@ func TestUnpackActionTransfer(t *testing.T) {
 		out Transfer
 	}{
 		{
-			"00000003884ed1c900000000884ed1c9090000000000000000",
+			"00000003884ed1c900000000884ed1c90900000000000000000000000000000000",
 			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), Asset{Amount: 9}, ""},
 		},
 		{
-			"00000003884ed1c900000000884ed1c9090000000000000004616c6c6f",
+			"00000003884ed1c900000000884ed1c90900000000000000000000000000000004616c6c6f",
 			Transfer{AccountName("tbcox2.3"), AccountName("tbcox2"), Asset{Amount: 9}, "allo"},
 		},
 	}
@@ -256,11 +283,11 @@ func TestActionMetaTypes(t *testing.T) {
 	cnt, err := json.Marshal(a)
 	require.NoError(t, err)
 	assert.Equal(t,
-		`{"account":"eosio","data":"00000059b1abe931000000000060a491000000000000000000","name":"transfer"}`,
+		`{"account":"eosio","data":"00000059b1abe931000000000060a4910000000000000000000000000000000000","name":"transfer"}`,
 		string(cnt),
 	)
 
-	var newAction *Action
+	var newAction Action
 	require.NoError(t, json.Unmarshal(cnt, &newAction))
 }
 

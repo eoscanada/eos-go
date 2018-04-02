@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 )
@@ -127,6 +128,7 @@ type EOSIOParameters struct {
 	PercentOfMaxInflationRate    uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
 	StorageReserveRatio          uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
 }
+
 // Sync with: /home/abourget/build/eos/patch1.patch
 
 // belongs to the `system` structs
@@ -160,7 +162,6 @@ type NewAccount struct {
 	Recovery Authority   `json:"recovery"`
 }
 
-
 // Action
 type Action struct {
 	Account       AccountName       `json:"account"`
@@ -185,6 +186,7 @@ func (a *Action) UnmarshalBinaryRead(r io.Reader) error {
 	// through a local map of structs (sort of a hard-coded ABI), or
 	// through the ABI definitions and building an agnostic
 	// map[string]interface{}.
+	fmt.Println("MAMA")
 	length, err := binary.ReadUvarint(&ByteReader{r})
 	if err != nil {
 		return err
