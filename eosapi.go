@@ -22,6 +22,7 @@ type EOSAPI struct {
 	ChainID    []byte
 	Signer     Signer
 	Debug      bool
+	Compress   CompressionType
 }
 
 func New(baseURL *url.URL, chainID []byte) *EOSAPI {
@@ -45,8 +46,9 @@ func New(baseURL *url.URL, chainID []byte) *EOSAPI {
 				DisableKeepAlives:     true, // default behavior, because of `nodeos`'s lack of support for Keep alives.
 			},
 		},
-		BaseURL: baseURL,
-		ChainID: chainID,
+		BaseURL:  baseURL,
+		ChainID:  chainID,
+		Compress: CompressionZlib,
 	}
 
 	return api
@@ -183,13 +185,22 @@ func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, pubKeys ...ecc.P
 	return
 }
 
-func (api *EOSAPI) SignPushAction(a ...*Action) (out *PushTransactionFullResp, err error) {
+func (api *EOSAPI) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err error) {
+	return api.SignPushTransaction(&Transaction{Actions: a}, TxOptions{})
+}
+
+func (api *EOSAPI) SignPushActionsWithOpts(opts TxOptions, a ...*Action) (out *PushTransactionFullResp, err error) {
+	return api.SignPushTransaction(&Transaction{Actions: a}, opts)
+}
+
+func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *PushTransactionFullResp, err error) {
 	if api.Signer == nil {
 		return nil, fmt.Errorf("no Signer configured")
 	}
 
-	tx := &Transaction{
-		Actions: a,
+	resp, err := api.GetRequiredKeys(tx)
+	if err != nil {
+		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
 	}
 
 	chainID, err := tx.Fill(api)
@@ -197,12 +208,13 @@ func (api *EOSAPI) SignPushAction(a ...*Action) (out *PushTransactionFullResp, e
 		return nil, err
 	}
 
-	resp, err := api.GetRequiredKeys(tx, api.Signer)
-	if err != nil {
-		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
+	stx := NewSignedTransaction(tx)
+
+	if _, err := stx.Pack(opts); err != nil {
+		return nil, err
 	}
 
-	signedTx, err := api.Signer.Sign(NewSignedTransaction(tx), chainID, resp.RequiredKeys...)
+	signedTx, err := api.Signer.Sign(stx, chainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
@@ -211,16 +223,10 @@ func (api *EOSAPI) SignPushAction(a ...*Action) (out *PushTransactionFullResp, e
 }
 
 func (api *EOSAPI) PushSignedTransaction(tx *SignedTransaction) (out *PushTransactionFullResp, err error) {
-
-	//fmt.Println("PUSHING signed transaction", tx.Transaction)
-	data, err := MarshalBinary(tx.Transaction)
-	if err != nil {
-		return nil, err
+	if tx.packed == nil {
+		return nil, fmt.Errorf("signed transaction not packed, call Pack() first")
 	}
-
-	fmt.Println("hex data", hex.EncodeToString(data))
-
-	err = api.call("chain", "push_transaction", M{"data": hex.EncodeToString(data), "signatures": tx.Signatures, "compression": "none"}, &out)
+	err = api.call("chain", "push_transaction", tx.packed, &out)
 	return
 }
 
@@ -264,8 +270,8 @@ func (api *EOSAPI) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsRe
 	return
 }
 
-func (api *EOSAPI) GetRequiredKeys(tx *Transaction, signer Signer) (out *GetRequiredKeysResp, err error) {
-	keys, err := signer.AvailableKeys()
+func (api *EOSAPI) GetRequiredKeys(tx *Transaction) (out *GetRequiredKeysResp, err error) {
+	keys, err := api.Signer.AvailableKeys()
 	if err != nil {
 		return nil, err
 	}

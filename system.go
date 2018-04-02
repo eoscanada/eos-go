@@ -54,7 +54,7 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.Pub
 		},
 	}
 
-	return api.SignPushAction(a)
+	return api.SignPushActions(a)
 }
 
 // SetCode applies the given `wasm` file to an account.  Once this is done, the account's code cannot be changed.
@@ -110,7 +110,7 @@ func (api *EOSAPI) SetCode(account AccountName, wasmPath, abiPath string) (out *
 		},
 	}
 
-	return api.SignPushAction(actions...)
+	return api.SignPushActions(actions...)
 }
 
 // Issue pushes an `issue` transaction.  This belongs to a contract abstraction, not directly the API.
@@ -126,7 +126,7 @@ func (api *EOSAPI) Issue(to AccountName, quantity Asset) (out *PushTransactionFu
 			Quantity: quantity,
 		},
 	}
-	return api.SignPushAction(a)
+	return api.SignPushActions(a)
 }
 
 // Transfer pushes a `transfer` transaction.  This belongs to a
@@ -145,5 +145,5 @@ func (api *EOSAPI) Transfer(from, to AccountName, quantity Asset, memo string) (
 			Memo:     memo,
 		},
 	}
-	return api.SignPushAction(a)
+	return api.SignPushActions(a)
 }

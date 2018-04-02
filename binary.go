@@ -112,10 +112,12 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 			n := 0
 			for i := 0; i < l; i++ {
 				if v := rv.Field(i); t.Field(i).Name != "_" {
-					iface := v.Interface()
-					if iface != nil {
-						if err = b.Encode(iface); err != nil {
-							return
+					if v.CanInterface() {
+						iface := v.Interface()
+						if iface != nil {
+							if err = b.Encode(iface); err != nil {
+								return
+							}
 						}
 					}
 					n++

@@ -64,6 +64,9 @@ func TestActionNewAccount(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100","name":"newaccount"}`, string(buf))
 
+	buf, err = json.Marshal(a.Data)
+	assert.NoError(t, err)
+	assert.Equal(t, `mama`, string(buf))
 	// 00096e88 0000 0000 00000000 00 00 00 00 01 0000000000ea3055
 }
 

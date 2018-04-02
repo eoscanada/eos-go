@@ -75,6 +75,7 @@ func TestGetRequiredKeys(t *testing.T) {
 	api := newAPI()
 	tomorrow := time.Now().AddDate(0, 0, 1)
 	keybag := eos.NewKeyBag()
+	api.SetSigner(keybag)
 	out, err := api.GetRequiredKeys(&eos.Transaction{
 		// RefBlockNum:    "1",
 		// RefBlockPrefix: "",
@@ -94,7 +95,7 @@ func TestGetRequiredKeys(t *testing.T) {
 		// },
 		// Signatures:     []string{},
 		// Authorizations: []string{},
-	}, keybag)
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, "mama", out.RequiredKeys)
 }

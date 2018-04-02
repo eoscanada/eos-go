@@ -77,6 +77,40 @@ func (Name) UnmarshalBinarySize() int           { return 8 }
 
 // OTHER TYPES: eosjs/src/structs.js
 
+// Compression
+
+type CompressionType uint8
+
+const (
+	CompressionNone = CompressionType(iota)
+	CompressionZlib
+)
+
+func (c CompressionType) String() string {
+	switch c {
+	case CompressionNone:
+		return "none"
+	case CompressionZlib:
+		return "zlib"
+	default:
+		return ""
+	}
+}
+
+func (c CompressionType) MarshalJSON() ([]byte, error) {
+	return []byte(c.String()), nil
+}
+
+func (c *CompressionType) UnmarshalJSON(data []byte) error {
+	switch string(data) {
+	case "zlib":
+		*c = CompressionZlib
+	default:
+		*c = CompressionNone
+	}
+	return nil
+}
+
 // CurrencyName
 
 type CurrencyName string
@@ -266,50 +300,6 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 
 // TODO: SHA256Bytes, implement the Binary encoder... fixed size.
 
-type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
-	Expiration     JSONTime `json:"expiration,omitempty"`
-	Region         uint16   `json:"region"`
-	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
-	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
-
-	NetUsageWords Varuint32 `json:"net_usage_words"`
-	KCPUUsage     Varuint32 `json:"kcpu_usage"`
-	DelaySec      Varuint32 `json:"delay_sec"` // number of secs to delay, making it cancellable for that duration
-
-	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
-
-	ContextFreeActions []*Action `json:"context_free_actions,omitempty"`
-	Actions            []*Action `json:"actions,omitempty"`
-}
-
-func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
-	info, err := api.GetInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	blockID, err := hex.DecodeString(info.HeadBlockID)
-	if err != nil {
-		return nil, fmt.Errorf("decode hex: %s", err)
-	}
-
-	tx.setRefBlock(blockID)
-
-	//fmt.Println("refblockprefix:", tx.RefBlockPrefix)
-
-	/// TODO: configure somewhere the default time for transactions,
-	/// etc.. add a `.Timeout` with that duration, default to 30
-	/// seconds ?
-	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
-
-	return blockID, nil
-}
-
-func (tx *Transaction) setRefBlock(blockID []byte) {
-	tx.RefBlockNum = uint16(binary.BigEndian.Uint32(blockID[:4]))
-	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
-}
-
 type Varuint32 uint32
 
 func (a Varuint32) MarshalBinary() ([]byte, error) {
@@ -325,27 +315,4 @@ func (a *Varuint32) UnmarshalBinaryRead(r io.Reader) error {
 	}
 	*a = Varuint32(size)
 	return nil
-}
-
-type SignedTransaction struct {
-	*Transaction
-
-	Signatures      []string   `json:"signatures"`
-	ContextFreeData []HexBytes `json:"context_free_data"`
-}
-
-func NewSignedTransaction(tx *Transaction) *SignedTransaction {
-	return &SignedTransaction{
-		Transaction:     tx,
-		Signatures:      make([]string, 0),
-		ContextFreeData: make([]HexBytes, 0),
-	}
-}
-
-type DeferredTransaction struct {
-	*Transaction
-
-	SenderID   uint32      `json:"sender_id"`
-	Sender     AccountName `json:"sender"`
-	DelayUntil JSONTime    `json:"delay_until"`
 }

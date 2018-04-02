@@ -92,6 +92,7 @@ func (b *KeyBag) ImportPrivateKey(wifPrivKey string) (err error) {
 }
 
 func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
+	// TODO: probably want to use `tx.packed` and hash the ContextFreeData also.
 	txdata, err := MarshalBinary(tx.Transaction)
 	if err != nil {
 		return nil, err
