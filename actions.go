@@ -14,23 +14,6 @@ import (
 
 // Top-level actions
 
-// Transfer represents the `eosio.system::transfer` action.
-type Transfer struct {
-	From     AccountName `json:"from"`
-	To       AccountName `json:"to"`
-	Quantity Asset       `json:"quantity"`
-	Memo     string      `json:"memo"`
-}
-
-// Issue represents the `eosio.system::issue` action.
-type Issue struct {
-	To       AccountName `json:"to"`
-	Quantity Asset       `json:"quantity" struc:"uint64,little"`
-}
-
-// 00000059b1abe931 808d5b0000000000 04 454f5300000000
-// 0000000000ea3055 00a0724e18090000 04 03454f53
-
 // SetCode represents the hard-coded `setcode` action.
 type SetCode struct {
 	Account   AccountName `json:"account"`
@@ -43,70 +26,6 @@ type SetCode struct {
 type SetABI struct {
 	Account AccountName `json:"account"`
 	ABI     ABI         `json:"abi"`
-}
-
-// DelegateBW represents the `eosio.system::delegatebw` action.
-type DelegateBW struct {
-	From         AccountName `json:"from"`
-	Receiver     AccountName `json:"receiver"`
-	StakeNet     Asset       `json:"stake_net"`
-	StakeCPU     Asset       `json:"stake_cpu"`
-	StakeStorage Asset       `json:"stake_storage"`
-}
-
-// UndelegateBW represents the `eosio.system::undelegatebw` action.
-type UndelegateBW struct {
-	From         AccountName `json:"from"`
-	Receiver     AccountName `json:"receiver"`
-	UnstakeNet   Asset       `json:"unstake_net"`
-	UnstakeCPU   Asset       `json:"unstake_cpu"`
-	UnstakeBytes uint64      `json:"unstake_bytes"`
-}
-
-// Refund represents the `eosio.system::refund` action
-type Refund struct {
-	Owner AccountName `json:"owner"`
-}
-
-// RegisterProducer represents the `eosio.system::regproducer` action
-type RegisterProducer struct {
-	Producer    AccountName     `json:"producer"`
-	ProducerKey []byte          `json:"producer_key"`
-	Prefs       EOSIOParameters `json:"eosio_parameters"`
-}
-
-// UnregisterProducer represents the `eosio.system::unregprod` action
-type UnregisterProducer struct {
-	Producer AccountName `json:"producer"`
-}
-
-// RegisterProxy represents the `eosio.system::regproxy` action
-type RegisterProxy struct {
-	Proxy AccountName `json:"proxy"`
-}
-
-// UnregisterProxy represents the `eosio.system::unregproxy` action
-type UnregisterProxy struct {
-	Proxy AccountName `json:"proxy"`
-}
-
-// VoteProducer represents the `eosio.system::voteproducer` action
-type VoteProducer struct {
-	Voter     AccountName   `json:"voter"`
-	Proxy     AccountName   `json:"proxy"`
-	Producers []AccountName `json:"producers"`
-}
-
-// ClaimRewards repreents the `eosio.system::claimrewards` action
-type ClaimRewards struct {
-	Owner AccountName `json:"owner"`
-}
-
-// Nonce represents the `eosio.system::nonce` action. It is used to
-// add variability in a transaction, so you can send the same many
-// times in the same block, without it having the same Tx hash.
-type Nonce struct {
-	Value string `json:"value"`
 }
 
 // belongs to `system`  structs
@@ -221,24 +140,6 @@ func (a *Action) UnmarshalBinaryRead(r io.Reader) error {
 }
 
 var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
-
-func init() {
-	RegisterAction(AccountName("eosio"), ActionName("transfer"), &Transfer{})
-	RegisterAction(AccountName("eosio"), ActionName("issue"), &Issue{})
-	RegisterAction(AccountName("eosio"), ActionName("setcode"), &SetCode{})
-	RegisterAction(AccountName("eosio"), ActionName("setabi"), &SetABI{})
-	RegisterAction(AccountName("eosio"), ActionName("newaccount"), &SetABI{})
-	RegisterAction(AccountName("eosio"), ActionName("delegatebw"), &DelegateBW{})
-	RegisterAction(AccountName("eosio"), ActionName("undelegatebw"), &UndelegateBW{})
-	RegisterAction(AccountName("eosio"), ActionName("refund"), &Refund{})
-	RegisterAction(AccountName("eosio"), ActionName("regproducer"), &RegisterProducer{})
-	RegisterAction(AccountName("eosio"), ActionName("unregprod"), &UnregisterProducer{})
-	RegisterAction(AccountName("eosio"), ActionName("regproxy"), &RegisterProxy{})
-	RegisterAction(AccountName("eosio"), ActionName("unregproxy"), &UnregisterProxy{})
-	RegisterAction(AccountName("eosio"), ActionName("voteproducer"), &VoteProducer{})
-	RegisterAction(AccountName("eosio"), ActionName("claimrewards"), &ClaimRewards{})
-	RegisterAction(AccountName("eosio"), ActionName("nonce"), &Nonce{})
-}
 
 // Registers Action objects..
 func RegisterAction(accountName AccountName, actionName ActionName, obj interface{}) {

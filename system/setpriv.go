@@ -15,7 +15,7 @@ func NewSetPriv(account eos.AccountName) *eos.Action {
 		},
 		Data: SetPriv{
 			Account: account,
-			IsPriv:  0x01,
+			IsPriv:  true,
 		},
 	}
 	return a

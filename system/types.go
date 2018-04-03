@@ -21,7 +21,7 @@ type UpdateAuth struct {
 // SetPriv sets privileged account status. Used in the bios boot mechanism.
 type SetPriv struct {
 	Account eos.AccountName `json:"account"`
-	IsPriv  int8            `json:"is_priv"`
+	IsPriv  bool            `json:"is_priv"`
 }
 
 // SetCode represents the hard-coded `setcode` action.
@@ -47,4 +47,77 @@ type SetProds struct {
 type ProducerKey struct {
 	ProducerName    eos.AccountName `json:"producer_name"`
 	BlockSigningKey ecc.PublicKey   `json:"block_signing_key"`
+}
+
+// NewAccount represents the `newaccount` on the `eosio.system` contract / hard-coded in the chain.
+type NewAccount struct {
+	Creator  eos.AccountName `json:"creator"`
+	Name     eos.AccountName `json:"name"`
+	Owner    eos.Authority   `json:"owner"`
+	Active   eos.Authority   `json:"active"`
+	Recovery eos.Authority   `json:"recovery"`
+}
+
+// DelegateBW represents the `eosio.system::delegatebw` action.
+type DelegateBW struct {
+	From         eos.AccountName `json:"from"`
+	Receiver     eos.AccountName `json:"receiver"`
+	StakeNet     eos.Asset       `json:"stake_net"`
+	StakeCPU     eos.Asset       `json:"stake_cpu"`
+	StakeStorage eos.Asset       `json:"stake_storage"`
+}
+
+// UndelegateBW represents the `eosio.system::undelegatebw` action.
+type UndelegateBW struct {
+	From         eos.AccountName `json:"from"`
+	Receiver     eos.AccountName `json:"receiver"`
+	UnstakeNet   eos.Asset       `json:"unstake_net"`
+	UnstakeCPU   eos.Asset       `json:"unstake_cpu"`
+	UnstakeBytes uint64          `json:"unstake_bytes"`
+}
+
+// Refund represents the `eosio.system::refund` action
+type Refund struct {
+	Owner eos.AccountName `json:"owner"`
+}
+
+// RegisterProducer represents the `eosio.system::regproducer` action
+type RegisterProducer struct {
+	Producer    eos.AccountName     `json:"producer"`
+	ProducerKey []byte              `json:"producer_key"`
+	Prefs       eos.EOSIOParameters `json:"eosio_parameters"`
+}
+
+// UnregisterProducer represents the `eosio.system::unregprod` action
+type UnregisterProducer struct {
+	Producer eos.AccountName `json:"producer"`
+}
+
+// RegisterProxy represents the `eosio.system::regproxy` action
+type RegisterProxy struct {
+	Proxy eos.AccountName `json:"proxy"`
+}
+
+// UnregisterProxy represents the `eosio.system::unregproxy` action
+type UnregisterProxy struct {
+	Proxy eos.AccountName `json:"proxy"`
+}
+
+// VoteProducer represents the `eosio.system::voteproducer` action
+type VoteProducer struct {
+	Voter     eos.AccountName   `json:"voter"`
+	Proxy     eos.AccountName   `json:"proxy"`
+	Producers []eos.AccountName `json:"producers"`
+}
+
+// ClaimRewards repreents the `eosio.system::claimrewards` action
+type ClaimRewards struct {
+	Owner eos.AccountName `json:"owner"`
+}
+
+// Nonce represents the `eosio.system::nonce` action. It is used to
+// add variability in a transaction, so you can send the same many
+// times in the same block, without it having the same Tx hash.
+type Nonce struct {
+	Value string `json:"value"`
 }

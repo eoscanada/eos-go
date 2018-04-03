@@ -102,11 +102,10 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions, numKeys int) erro
 	if opts.NetUsageWords != 0 {
 		tx.NetUsageWords = Varuint32(opts.NetUsageWords)
 	} else {
-		// for signatures
-		base := 5 /* varint for sig count */ + numKeys*65 /* bytes per sig */
+		base := 10 // for good measure.. this resource's varint, and some..
 
-		// for this resources varints, not yet accounted for
-		base += 4
+		// for signatures
+		base += 5 /* varint for sig count */ + numKeys*65 /* bytes per sig */
 
 		if opts.Compress == CompressionZlib {
 			// for new data (see C++ code .. not sure why here)
