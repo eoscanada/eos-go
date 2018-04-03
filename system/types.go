@@ -1,6 +1,9 @@
 package system
 
-import eos "github.com/eosioca/eosapi"
+import (
+	eos "github.com/eosioca/eosapi"
+	"github.com/eosioca/eosapi/ecc"
+)
 
 // UpdateAuth represents the hard-coded `updateauth` action.
 //
@@ -33,4 +36,15 @@ type SetCode struct {
 type SetABI struct {
 	Account eos.AccountName `json:"account"`
 	ABI     eos.ABI         `json:"abi"`
+}
+
+// SetProds is present in `eosio.bios` contract. Used only at boot time.
+type SetProds struct {
+	Version   uint32        `json:"version"`
+	Producers []ProducerKey `json:"producers"`
+}
+
+type ProducerKey struct {
+	ProducerName    eos.AccountName `json:"producer_name"`
+	BlockSigningKey ecc.PublicKey   `json:"block_signing_key"`
 }

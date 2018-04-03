@@ -28,7 +28,7 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 			Account: AN("eosio"),
 			Name:    ActN("setcode"),
 			Authorization: []eos.PermissionLevel{
-				{account, PN("active")},
+				{account, eos.PermissionName("active")},
 			},
 			Data: SetCode{
 				Account:   account,

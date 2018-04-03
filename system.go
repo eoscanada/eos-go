@@ -116,7 +116,7 @@ func (api *EOSAPI) SetCode(forAccount AccountName, wasmPath, abiPath string) (ou
 // Issue pushes an `issue` transaction.  This belongs to a contract abstraction, not directly the API.
 func (api *EOSAPI) Issue(to AccountName, quantity Asset) (out *PushTransactionFullResp, err error) {
 	a := &Action{
-		Account: AccountName("eosio"),
+		Account: AccountName("eosio.token"),
 		Name:    ActionName("issue"),
 		Authorization: []PermissionLevel{
 			{AccountName("eosio"), PermissionName("active")},
@@ -133,7 +133,7 @@ func (api *EOSAPI) Issue(to AccountName, quantity Asset) (out *PushTransactionFu
 // contract abstraction, not directly the API.
 func (api *EOSAPI) Transfer(from, to AccountName, quantity Asset, memo string) (out *PushTransactionFullResp, err error) {
 	a := &Action{
-		Account: AccountName("eosio"),
+		Account: AccountName("eosio.token"),
 		Name:    ActionName("transfer"),
 		Authorization: []PermissionLevel{
 			{from, PermissionName("active")},

@@ -6,16 +6,16 @@ import eos "github.com/eosioca/eosapi"
 // `eosio.bios` contract. It should exist only when booting a new
 // network, as it is replaced using the `eos-bios` boot process by the
 // `eosio.system` contract.
-func NewSetPriv(account eos.AccountName) *eos.Action {
+func NewSetProds(version uint32, producers []ProducerKey) *eos.Action {
 	a := &eos.Action{
 		Account: AN("eosio"),
-		Name:    ActN("setpriv"),
+		Name:    ActN("setprods"),
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: SetPriv{
-			Account: account,
-			IsPriv:  0x01,
+		Data: SetProds{
+			Version:   version,
+			Producers: producers,
 		},
 	}
 	return a

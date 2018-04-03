@@ -291,13 +291,15 @@ func TestActionMetaTypes(t *testing.T) {
 
 	tx := &Transaction{Actions: []*Action{a}}
 	stx := NewSignedTransaction(tx)
-	require.NoError(t, stx.Pack(TxOptions{}))
+	packed, err := stx.Pack(TxOptions{})
+	require.NoError(t, err)
 	fmt.Println("MAMA1", stx.NetUsageWords)
 	fmt.Println("MAMA2", stx.Transaction.NetUsageWords)
 	assert.Equal(t, 123, stx.NetUsageWords)
 	packedData, err := json.Marshal(stx.packed)
 	fmt.Println("MAMA3", stx.Transaction.NetUsageWords)
 	assert.Equal(t, `000000000000000000000`, string(packedData))
+	assert.Equal(t, `000000000000000000000`, hex.EncodeToString(packed.Data))
 }
 
 func TestAuthorityBinaryMarshal(t *testing.T) {

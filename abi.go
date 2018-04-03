@@ -26,15 +26,15 @@ type FieldDef struct {
 }
 
 type ActionDef struct {
-	Name AccountName `json:"name"`
-	Type string      `json:"type"`
+	Name ActionName `json:"name"`
+	Type string     `json:"type"`
 }
 
 // TableDef defines a table. See libraries/chain/include/eosio/chain/contracts/types.hpp:78
 type TableDef struct {
-	Name      string   `json:"name"`
-	IndexType string   `json:"index_type"`
-	KeyNames  []string `json:"key_names,omitempty"`
-	KeyTypes  []string `json:"key_types,omitempty"`
-	Type      string   `json:"type"`
+	Name      TableName `json:"name"`
+	IndexType string    `json:"index_type"`
+	KeyNames  []string  `json:"key_names,omitempty"`
+	KeyTypes  []string  `json:"key_types,omitempty"`
+	Type      string    `json:"type"`
 }
