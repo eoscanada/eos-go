@@ -30,22 +30,33 @@ type SetABI struct {
 
 // belongs to `system`  structs
 type EOSIOParameters struct {
-	TargetBlockSize              uint32 `json:"target_block_size" yaml:"target_block_size"`
-	MaxBlockSize                 uint32 `json:"max_block_size" yaml:"max_block_size"`
-	TargetBlockActsPerScope      uint32 `json:"target_block_acts_per_scope" yaml:"target_block_acts_per_scope"`
-	MaxBlockActsPerScope         uint32 `json:"max_block_acts_per_scope" yaml:"max_block_acts_per_scope"`
-	TargetBlockActs              uint32 `json:"target_block_acts" yaml:"target_block_acts"`
-	MaxBlockActs                 uint32 `json:"max_block_acts" yaml:"max_block_acts"`
-	MaxStorageSize               uint64 `json:"max_storage_size" yaml:"max_storage_size"`
+	BasePerTransactionNetUsage     uint32 `json:"base_per_transaction_net_usage" yaml:"base_per_transaction_net_usage"`
+	BasePerTransactionCPUUsage     uint32 `json:"base_per_transaction_cpu_usage" yaml:"base_per_transaction_cpu_usage"`
+	BasePerActionCPUUsage          uint32 `json:"base_per_action_cpu_usage" yaml:"base_per_action_cpu_usage"`
+	BaseSetcodeCPUUsage            uint32 `json:"base_setcode_cpu_usage" yaml:"base_setcode_cpu_usage"`
+	PerSignatureCPUUsage           uint32 `json:"per_signature_cpu_usage" yaml:"per_signature_cpu_usage"`
+	PerLockNetUsage                uint32 `json:"per_lock_net_usage" yaml:"per_lock_net_usage"`
+	ContextFreeDiscountCPUUsageNum uint64 `json:"context_free_discount_cpu_usage_num" yaml:"context_free_discount_cpu_usage_num"`
+	ContextFreeDiscountCPUUsageDen uint64 `json:"context_free_discount_cpu_usage_den" yaml:"context_free_discount_cpu_usage_den"`
+	MaxTransactionCPUUsage         uint32 `json:"max_transaction_cpu_usage" yaml:"max_transaction_cpu_usage"`
+	MaxTransactionNetUsage         uint32 `json:"max_transaction_net_usage" yaml:"max_transaction_net_usage"`
+
+	MaxBlockCPUUsage       uint64 `json:"max_block_cpu_usage" yaml:"max_block_cpu_usage"`
+	TargetBlockCPUUsagePct uint32 `json:"target_block_cpu_usage_pct" yaml:"target_block_cpu_usage_pct"` //< the target percent (1% == 100, 100%= 10,000) of maximum cpu usage; exceeding this triggers congestion handling
+	MaxBblockNetUsage      uint64 `json:"max_block_net_usage" yaml:"max_block_net_usage"`               //< the maxiumum net usage in instructions for a block
+	TargetBlockNetUsagePct uint32 `json:"target_block_net_usage_pct" yaml:"target_block_net_usage_pct"` //< the target percent (1% == 100, 100%= 10,000) of maximum net usage; exceeding this triggers congestion handling
+
 	MaxTransactionLifetime       uint32 `json:"max_transaction_lifetime" yaml:"max_transaction_lifetime"`
 	MaxTransactionExecTime       uint32 `json:"max_transaction_exec_time" yaml:"max_transaction_exec_time"`
 	MaxAuthorityDepth            uint16 `json:"max_authority_depth" yaml:"max_authority_depth"`
 	MaxInlineDepth               uint16 `json:"max_inline_depth" yaml:"max_inline_depth"`
 	MaxInlineActionSize          uint32 `json:"max_inline_action_size" yaml:"max_inline_action_size"`
-	MaxGeneratedTransactionSize  uint32 `json:"max_generated_transaction_size" yaml:"max_generated_transaction_size"`
 	MaxGeneratedTransactionCount uint32 `json:"max_generated_transaction_count" yaml:"max_generated_transaction_count"`
-	PercentOfMaxInflationRate    uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
-	StorageReserveRatio          uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
+
+	// FIXME: does not appear in the `abi` for `eosio.system`.
+	// MaxStorageSize uint64 `json:"max_storage_size" yaml:"max_storage_size"`
+	PercentOfMaxInflationRate uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
+	StorageReserveRatio       uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
 }
 
 // Sync with: /home/abourget/build/eos/patch1.patch

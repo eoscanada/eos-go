@@ -81,25 +81,25 @@ type Refund struct {
 	Owner eos.AccountName `json:"owner"`
 }
 
-// RegisterProducer represents the `eosio.system::regproducer` action
-type RegisterProducer struct {
+// RegProducer represents the `eosio.system::regproducer` action
+type RegProducer struct {
 	Producer    eos.AccountName     `json:"producer"`
 	ProducerKey []byte              `json:"producer_key"`
 	Prefs       eos.EOSIOParameters `json:"eosio_parameters"`
 }
 
-// UnregisterProducer represents the `eosio.system::unregprod` action
-type UnregisterProducer struct {
+// UnregProducer represents the `eosio.system::unregprod` action
+type UnregProducer struct {
 	Producer eos.AccountName `json:"producer"`
 }
 
-// RegisterProxy represents the `eosio.system::regproxy` action
-type RegisterProxy struct {
+// RegProxy represents the `eosio.system::regproxy` action
+type RegProxy struct {
 	Proxy eos.AccountName `json:"proxy"`
 }
 
-// UnregisterProxy represents the `eosio.system::unregproxy` action
-type UnregisterProxy struct {
+// UnregProxy represents the `eosio.system::unregproxy` action
+type UnregProxy struct {
 	Proxy eos.AccountName `json:"proxy"`
 }
 
