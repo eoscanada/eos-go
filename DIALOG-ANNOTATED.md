@@ -1027,3 +1027,46 @@ Pushing ABI for eosio.msig
 0000735802ea3055010c6163636f756e745f6e616d65046e616d65050770726f706f736500040870726f706f7365720c6163636f756e745f6e616d650d70726f706f73616c5f6e616d65046e616d65037472780b7472616e73616374696f6e09726571756573746564127065726d697373696f6e5f6c6576656c5b5d07617070726f766500030870726f706f7365720c6163636f756e745f6e616d650d70726f706f73616c5f6e616d65046e616d65056c6576656c107065726d697373696f6e5f6c6576656c09756e617070726f766500030870726f706f7365720c6163636f756e745f6e616d650d70726f706f73616c5f6e616d65046e616d65056c6576656c107065726d697373696f6e5f6c6576656c0663616e63656c00030870726f706f7365720c6163636f756e745f6e616d650d70726f706f73616c5f6e616d65046e616d650863616e63656c65720c6163636f756e745f6e616d65046578656300030870726f706f7365720c6163636f756e745f6e616d650d70726f706f73616c5f6e616d65046e616d650863616e63656c65720865786563757465720500000040615ae9ad0770726f706f7365000000406d7a6b3507617070726f76650000509bde5acdd409756e617070726f7665000000004485a6410663616e63656c0000000000
 
 805457046578656301000000d1605ae9ad03693634010d70726f706f73616c5f6e616d6501046e616d650870726f706f73616c
+
+
+
+
+------------------------
+
+
+$ ec transfer eoscanada eosarctic 1000
+
+
+POST /v1/wallet/sign_transaction HTTP/1.0
+Host: localhost
+content-length: 534
+Accept: */*
+Connection: close
+
+[{"expiration":"2018-04-06T19:17:18","region":0,"ref_block_num":350,"ref_block_prefix":2277385774,"max_net_usage_words":0,"max_kcpu_usage":0,"delay_sec":0,"context_free_actions":[],"actions":[{"account":"eosio","name":"transfer","authorization":[{"actor":"eoscanada","permission":"active"}],"data":"000030c94c8330550000402ea36b3055e80300000000000004454f530000000000"}],"signatures":[],"context_free_data":[]},["EOS8NijGLHT8WyDmt2nqMwfP1hr8EiYx5JCYBWSP9S26WgbeugvSJ"],"0000000000000000000000000000000000000000000000000000000000000000"]HTTP/1.1 201 Created
+Content-Length: 506
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"expiration":"2018-04-06T19:17:18","region":0,"ref_block_num":350,"ref_block_prefix":2277385774,"max_net_usage_words":0,"max_kcpu_usage":0,"delay_sec":0,"context_free_actions":[],"actions":[{"account":"eosio","name":"transfer","authorization":[{"actor":"eoscanada","permission":"active"}],"data":"000030c94c8330550000402ea36b3055e80300000000000004454f530000000000"}],"signatures":["EOSKj6qNjC2K75hj81P8RVuM6wyA3fP8SD1URafucMS7LfX7XwDVDNb8jWxo21jixNJqr7UaYBrB3wERJXxUNnAvs9jyTAc7j"],"context_free_data":[]}
+
+
+--- Present in the wallet:
+
+    "EOS8NijGLHT8WyDmt2nqMwfP1hr8EiYx5JCYBWSP9S26WgbeugvSJ",
+    "5KWBFG1co7XsaKCHBND9r5RdVDUqBWdPsfqy3xxpZiRSs5kHgF4"
+
+---
+
+POST /v1/chain/push_transaction HTTP/1.0
+Host: localhost
+content-length: 351
+Accept: */*
+Connection: close
+
+{"signatures":["EOSKj6qNjC2K75hj81P8RVuM6wyA3fP8SD1URafucMS7LfX7XwDVDNb8jWxo21jixNJqr7UaYBrB3wERJXxUNnAvs9jyTAc7j"],"compression":"none","packed_context_free_data":"","packed_trx":"bec7c75a00005e012e26be8700000000010000000000ea3055000000572d3ccdcd01000030c94c83305500000000a8ed323221000030c94c8330550000402ea36b3055e80300000000000004454f530000000000"}HTTP/1.1 400 Bad Request
+Content-Length: 858
+Content-type: application/json
+Server: WebSocket++/0.7.0
+
+{"code":400,"message":"Bad Request","error":{"code":3030000,"name":"transaction_exception","what":"transaction validation exception","details":[{"message":"condition: assertion failed: integer underflow subtracting token balance","file":"wasm_interface.cpp","line_number":805,"method":"eosio_assert"},{"message":"","file":"apply_context.cpp","line_number":30,"method":"exec_one"},{"message":"","file":"chain_controller.cpp","line_number":1989,"method":"__apply_transaction"},{"message":"","file":"chain_controller.cpp","line_number":2024,"method":"_apply_transaction"},{"message":"","file":"chain_controller.cpp","line_number":2225,"method":"wrap_transaction_processing"},{"message":"","file":"chain_controller.cpp","line_number":353,"method":"_push_transaction"},{"message":"","file":"chain_controller.cpp","line_number":328,"method":"_push_transaction"}]}}

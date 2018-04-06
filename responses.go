@@ -110,7 +110,7 @@ type GetRequiredKeysResp struct {
 }
 
 // PushTransactionFullResp unwraps the responses from a successful `push_transaction`.
-
+// FIXME: REVIEW the actual output, things have moved here.
 type PushTransactionFullResp struct {
 	TransactionID string               `json:"transaction_id"`
 	Processed     TransactionProcessed `json:"processed"` // WARN: is an `fc::variant` in server..

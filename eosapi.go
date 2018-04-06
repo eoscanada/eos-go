@@ -17,12 +17,17 @@ import (
 )
 
 type EOSAPI struct {
-	HttpClient *http.Client
-	BaseURL    *url.URL
-	ChainID    []byte
-	Signer     Signer
-	Debug      bool
-	Compress   CompressionType
+	HttpClient              *http.Client
+	BaseURL                 *url.URL
+	ChainID                 []byte
+	Signer                  Signer
+	Debug                   bool
+	Compress                CompressionType
+	DefaultMaxKCPUUsage     uint32 // in kilo-cpu cycles
+	DefaultMaxNetUsageWords uint32 // in 8-bytes words
+
+	lastGetInfo      *InfoResp
+	lastGetInfoStamp time.Time
 }
 
 func New(baseURL *url.URL, chainID []byte) *EOSAPI {
@@ -210,7 +215,7 @@ func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *Pu
 
 	stx := NewSignedTransaction(tx)
 
-	stx.estimateResources(opts, len(resp.RequiredKeys))
+	stx.estimateResources(opts, api.DefaultMaxKCPUUsage, api.DefaultMaxNetUsageWords)
 
 	signedTx, err := api.Signer.Sign(stx, chainID, resp.RequiredKeys...)
 	if err != nil {

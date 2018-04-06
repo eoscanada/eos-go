@@ -2,6 +2,7 @@ package eos
 
 import (
 	"bytes"
+	"compress/flate"
 	"compress/zlib"
 	"encoding/binary"
 	"encoding/hex"
@@ -15,9 +16,9 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
 	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
 
-	NetUsageWords Varuint32 `json:"net_usage_words"`
-	KCPUUsage     Varuint32 `json:"kcpu_usage"`
-	DelaySec      Varuint32 `json:"delay_sec"` // number of secs to delay, making it cancellable for that duration
+	MaxNetUsageWords Varuint32 `json:"max_net_usage_words"`
+	MaxKCPUUsage     Varuint32 `json:"max_kcpu_usage"`
+	DelaySec         Varuint32 `json:"delay_sec"` // number of secs to delay, making it cancellable for that duration
 
 	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
 
@@ -28,9 +29,17 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 // 69c9c15a 0000 1400 62f95d45 b31d 904e 00 00 020000000000ea305500000040258ab2c2010000000000ea305500000000a8ed
 
 func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
-	info, err := api.GetInfo()
-	if err != nil {
-		return nil, err
+	var info *InfoResp
+	var err error
+	if !api.lastGetInfoStamp.IsZero() && api.lastGetInfoStamp.Before(time.Now().Add(-3*time.Second)) {
+		info = api.lastGetInfo
+	} else {
+		info, err = api.GetInfo()
+		if err != nil {
+			return nil, err
+		}
+		api.lastGetInfoStamp = time.Now()
+		api.lastGetInfo = info
 	}
 
 	if tx.ContextFreeActions == nil {
@@ -75,67 +84,55 @@ func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 }
 
 func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
-	data, err := MarshalBinary(s.Transaction)
+	rawtrx, err := MarshalBinary(s.Transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	rawcfd, err := MarshalBinary(s.ContextFreeData)
 	if err != nil {
 		return nil, err
 	}
 
 	switch opts.Compress {
 	case CompressionZlib:
-		var buf bytes.Buffer
-		_, _ = zlib.NewWriter(&buf).Write(data)
-		data = buf.Bytes()
+		var trx bytes.Buffer
+		var cfd bytes.Buffer
+
+		// Compress Trx
+		writer, _ := zlib.NewWriterLevel(&trx, flate.BestCompression) // can only fail if invalid `level`..
+		writer.Write(rawtrx)                                          // ignore error, could only bust memory
+		rawtrx = trx.Bytes()
+
+		// Compress ContextFreeData
+		writer, _ = zlib.NewWriterLevel(&cfd, flate.BestCompression) // can only fail if invalid `level`..
+		writer.Write(rawcfd)                                         // ignore errors, memory errors only
+		rawcfd = cfd.Bytes()
+
 	}
 
 	packed := &PackedTransaction{
-		Signatures:      s.Signatures,
-		ContextFreeData: s.ContextFreeData,
-		Compression:     opts.Compress,
-		Data:            data,
+		Signatures:            s.Signatures,
+		Compression:           opts.Compress,
+		PackedContextFreeData: rawcfd,
+		PackedTransaction:     rawtrx,
 	}
 
 	return packed, nil
 }
 
-func (tx *SignedTransaction) estimateResources(opts TxOptions, numKeys int) error {
+func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet uint32) error {
 	// see programs/cleos/main.cpp for an estimation algo..
-	if opts.NetUsageWords != 0 {
-		tx.NetUsageWords = Varuint32(opts.NetUsageWords)
+	if opts.MaxNetUsageWords != 0 {
+		tx.MaxNetUsageWords = Varuint32(opts.MaxNetUsageWords)
 	} else {
-		base := 10 // for good measure.. this resource's varint, and some..
-
-		// for signatures
-		base += 5 /* varint for sig count */ + numKeys*65 /* bytes per sig */
-
-		if opts.Compress == CompressionZlib {
-			// for new data (see C++ code .. not sure why here)
-			base += 252 // 4 + 252 = 256
-		}
-
-		for _, cfa := range tx.ContextFreeData {
-			base += len(cfa)
-		}
-		if len(tx.ContextFreeData) != 0 {
-			base += 7 // for alignment ?
-		}
-
-		packed, err := tx.Pack(opts)
-		if err != nil {
-			return err
-		}
-		base += len(packed.Data)
-
-		tx.NetUsageWords = Varuint32(base / 8) // because it's a count of 8-bytes words.
+		tx.MaxNetUsageWords = Varuint32(maxnet)
 	}
 
-	if opts.KCPUUsage != 0 {
-		tx.KCPUUsage = Varuint32(opts.KCPUUsage)
+	if opts.MaxKCPUUsage != 0 {
+		tx.MaxKCPUUsage = Varuint32(opts.MaxKCPUUsage)
 	} else {
-		base := 2048 /* for good measure :P */
-		// Estimated per context-free actions usage..
-		base += 10000 * len(tx.ContextFreeActions)
-		base += 2000 * len(tx.Actions)
-		tx.KCPUUsage = Varuint32(base) // should divide by 1024 ?!
+		tx.MaxKCPUUsage = Varuint32(maxcpu)
 	}
 
 	return nil
@@ -145,10 +142,10 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions, numKeys int) erro
 // signatures, and all. They circulate like that on the P2P net, and
 // that's how they are stored.
 type PackedTransaction struct {
-	Signatures      []string        `json:"signatures"`
-	ContextFreeData []HexBytes      `json:"context_free_data"`
-	Compression     CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
-	Data            HexBytes        `json:"data"`
+	Signatures            []string        `json:"signatures"`
+	Compression           CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
+	PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
+	PackedTransaction     HexBytes        `json:"packed_trx"`
 }
 
 type DeferredTransaction struct {
@@ -162,9 +159,9 @@ type DeferredTransaction struct {
 // TxOptions represents options you want to pass to the transaction
 // you're sending.
 type TxOptions struct {
-	NetUsageWords uint32
-	Delay         time.Duration
-	KCPUUsage     uint32 // If you want to override the CPU usage (in counts of 1024)
+	MaxNetUsageWords uint32
+	Delay            time.Duration
+	MaxKCPUUsage     uint32 // If you want to override the CPU usage (in counts of 1024)
 	//ExtraKCPUUsage uint32 // If you want to *add* some CPU usage to the estimated amount (in counts of 1024)
 	Compress CompressionType
 }
