@@ -21,14 +21,14 @@ type Signer interface {
 
 // `eosiowd` wallet-based signer
 type WalletSigner struct {
-	api        *EOSAPI
+	api        *API
 	walletName string
 }
 
 // NewWalletSigner takes an `api`, because often the wallet will be a
 // second endpoint, and not the server node with whom you're pushing
 // transactions to.
-func NewWalletSigner(api *EOSAPI, walletName string) *WalletSigner {
+func NewWalletSigner(api *API, walletName string) *WalletSigner {
 	return &WalletSigner{api, walletName}
 }
 

@@ -247,8 +247,8 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
-func (t JSONTime) UnmarshalBinary(data []byte) error {
-	t.Time = time.Unix(int64(binary.LittleEndian.Uint32(data)), 0)
+func (t *JSONTime) UnmarshalBinary(data []byte) error {
+	t.Time = time.Unix(int64(binary.LittleEndian.Uint32(data)), 0).UTC()
 	return nil
 }
 

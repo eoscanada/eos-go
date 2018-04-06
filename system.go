@@ -14,7 +14,7 @@ import (
 // top-level.. since it's not an API call per se.
 //
 // NewAccount pushes a `newaccount` transaction on the `eosio
-func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionFullResp, err error) {
+func (api *API) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionFullResp, err error) {
 	a := &Action{
 		Account: AccountName("eosio"),
 		Name:    ActionName("newaccount"),
@@ -67,7 +67,7 @@ func (api *EOSAPI) NewAccount(creator, newAccount AccountName, publicKey ecc.Pub
 //
 // Over here, we use the `wasm` file directly.. so it is your
 // responsibility to provide a compiled file.
-func (api *EOSAPI) SetCode(forAccount AccountName, wasmPath, abiPath string) (out *PushTransactionFullResp, err error) {
+func (api *API) SetCode(forAccount AccountName, wasmPath, abiPath string) (out *PushTransactionFullResp, err error) {
 	codeContent, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return nil, err

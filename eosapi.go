@@ -16,7 +16,7 @@ import (
 	"github.com/eosioca/eosapi/ecc"
 )
 
-type EOSAPI struct {
+type API struct {
 	HttpClient              *http.Client
 	BaseURL                 *url.URL
 	ChainID                 []byte
@@ -30,12 +30,12 @@ type EOSAPI struct {
 	lastGetInfoStamp time.Time
 }
 
-func New(baseURL *url.URL, chainID []byte) *EOSAPI {
+func New(baseURL *url.URL, chainID []byte) *API {
 	if len(chainID) != 32 {
 		panic("chainID must be 32 bytes")
 	}
 
-	api := &EOSAPI{
+	api := &API{
 		HttpClient: &http.Client{
 			Transport: &http.Transport{
 				Proxy: http.ProxyFromEnvironment,
@@ -64,7 +64,7 @@ func New(baseURL *url.URL, chainID []byte) *EOSAPI {
 // 2018).  Some endpoints front their node with a keep-alive
 // supporting web server.  Adjust the `KeepAlive` support of the
 // client accordingly.
-func (api *EOSAPI) FixKeepAlives() bool {
+func (api *API) FixKeepAlives() bool {
 	// Yeah, to provoke a keep alive, you need to query twice.
 	for i := 0; i < 5; i++ {
 		_, err := api.GetInfo()
@@ -91,7 +91,7 @@ func (api *EOSAPI) FixKeepAlives() bool {
 	return false
 }
 
-func (api *EOSAPI) EnableKeepAlives() bool {
+func (api *API) EnableKeepAlives() bool {
 	if tr, ok := api.HttpClient.Transport.(*http.Transport); ok {
 		tr.DisableKeepAlives = false
 		return true
@@ -99,7 +99,7 @@ func (api *EOSAPI) EnableKeepAlives() bool {
 	return false
 }
 
-func (api *EOSAPI) SetSigner(s Signer) {
+func (api *API) SetSigner(s Signer) {
 	api.Signer = s
 }
 
@@ -143,22 +143,22 @@ func (api *EOSAPI) SetSigner(s Signer) {
 // const string wallet_import_key = wallet_func_base + "/import_key";
 // const string wallet_sign_trx = wallet_func_base + "/sign_transaction";
 
-func (api *EOSAPI) GetAccount(name AccountName) (out *AccountResp, err error) {
+func (api *API) GetAccount(name AccountName) (out *AccountResp, err error) {
 	err = api.call("chain", "get_account", M{"account_name": name}, &out)
 	return
 }
 
-func (api *EOSAPI) GetCode(account AccountName) (out *Code, err error) {
+func (api *API) GetCode(account AccountName) (out *Code, err error) {
 	err = api.call("chain", "get_code", M{"account_name": account}, &out)
 	return
 }
 
 // WalletImportKey loads a new WIF-encoded key into the wallet.
-func (api *EOSAPI) WalletImportKey(walletName, wifPrivKey string) (err error) {
+func (api *API) WalletImportKey(walletName, wifPrivKey string) (err error) {
 	return api.call("wallet", "import_key", []string{walletName, wifPrivKey}, nil)
 }
 
-func (api *EOSAPI) WalletPublicKeys() (out []ecc.PublicKey, err error) {
+func (api *API) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	var textKeys []string
 	err = api.call("wallet", "get_public_keys", nil, &textKeys)
 	if err != nil {
@@ -176,7 +176,7 @@ func (api *EOSAPI) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
-func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
+func (api *API) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
 	var textKeys []string
 	for _, key := range pubKeys {
 		textKeys = append(textKeys, key.String())
@@ -190,15 +190,15 @@ func (api *EOSAPI) WalletSignTransaction(tx *SignedTransaction, chainID []byte, 
 	return
 }
 
-func (api *EOSAPI) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err error) {
+func (api *API) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err error) {
 	return api.SignPushTransaction(&Transaction{Actions: a}, TxOptions{})
 }
 
-func (api *EOSAPI) SignPushActionsWithOpts(opts TxOptions, a ...*Action) (out *PushTransactionFullResp, err error) {
+func (api *API) SignPushActionsWithOpts(opts TxOptions, a ...*Action) (out *PushTransactionFullResp, err error) {
 	return api.SignPushTransaction(&Transaction{Actions: a}, opts)
 }
 
-func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *PushTransactionFullResp, err error) {
+func (api *API) SignPushTransaction(tx *Transaction, opts TxOptions) (out *PushTransactionFullResp, err error) {
 	if api.Signer == nil {
 		return nil, fmt.Errorf("no Signer configured")
 	}
@@ -230,52 +230,52 @@ func (api *EOSAPI) SignPushTransaction(tx *Transaction, opts TxOptions) (out *Pu
 	return api.PushSignedTransaction(packed)
 }
 
-func (api *EOSAPI) PushSignedTransaction(tx *PackedTransaction) (out *PushTransactionFullResp, err error) {
+func (api *API) PushSignedTransaction(tx *PackedTransaction) (out *PushTransactionFullResp, err error) {
 	err = api.call("chain", "push_transaction", tx, &out)
 	return
 }
 
-func (api *EOSAPI) GetInfo() (out *InfoResp, err error) {
+func (api *API) GetInfo() (out *InfoResp, err error) {
 	err = api.call("chain", "get_info", nil, &out)
 	return
 }
 
-func (api *EOSAPI) GetNetConnections() (out []*NetConnectionsResp, err error) {
+func (api *API) GetNetConnections() (out []*NetConnectionsResp, err error) {
 	err = api.call("net", "connections", nil, &out)
 	return
 }
 
-func (api *EOSAPI) NetConnect(host string) (out NetConnectResp, err error) {
+func (api *API) NetConnect(host string) (out NetConnectResp, err error) {
 	err = api.call("net", "connect", host, &out)
 	return
 }
 
-func (api *EOSAPI) NetDisconnect(host string) (out NetDisconnectResp, err error) {
+func (api *API) NetDisconnect(host string) (out NetDisconnectResp, err error) {
 	err = api.call("net", "disconnect", host, &out)
 	return
 }
 
-func (api *EOSAPI) GetNetStatus(host string) (out *NetStatusResp, err error) {
+func (api *API) GetNetStatus(host string) (out *NetStatusResp, err error) {
 	err = api.call("net", "status", M{"host": host}, &out)
 	return
 }
 
-func (api *EOSAPI) GetBlockByID(id string) (out *BlockResp, err error) {
+func (api *API) GetBlockByID(id string) (out *BlockResp, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": id}, &out)
 	return
 }
 
-func (api *EOSAPI) GetBlockByNum(num uint64) (out *BlockResp, err error) {
+func (api *API) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": fmt.Sprintf("%d", num)}, &out)
 	return
 }
 
-func (api *EOSAPI) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
+func (api *API) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
 	err = api.call("chain", "get_table_rows", params, &out)
 	return
 }
 
-func (api *EOSAPI) GetRequiredKeys(tx *Transaction) (out *GetRequiredKeysResp, err error) {
+func (api *API) GetRequiredKeys(tx *Transaction) (out *GetRequiredKeysResp, err error) {
 	keys, err := api.Signer.AvailableKeys()
 	if err != nil {
 		return nil, err
@@ -285,14 +285,14 @@ func (api *EOSAPI) GetRequiredKeys(tx *Transaction) (out *GetRequiredKeysResp, e
 	return
 }
 
-func (api *EOSAPI) GetCurrencyBalance(account AccountName, symbol string, code AccountName) (out []Asset, err error) {
+func (api *API) GetCurrencyBalance(account AccountName, symbol string, code AccountName) (out []Asset, err error) {
 	err = api.call("chain", "get_currency_balance", M{"account": account, "symbol": symbol, "code": code}, &out)
 	return
 }
 
 // See more here: libraries/chain/contracts/abi_serializer.cpp:58...
 
-func (api *EOSAPI) call(baseAPI string, endpoint string, body interface{}, out interface{}) error {
+func (api *API) call(baseAPI string, endpoint string, body interface{}, out interface{}) error {
 	jsonBody, err := enc(body)
 	if err != nil {
 		return err

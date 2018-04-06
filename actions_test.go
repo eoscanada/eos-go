@@ -66,7 +66,7 @@ func TestActionNewAccount(t *testing.T) {
 
 	buf, err = json.Marshal(a.Data)
 	assert.NoError(t, err)
-	assert.Equal(t, `mama`, string(buf))
+	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"public_key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"active\":{\"threshold\":1,\"keys\":[{\"public_key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"recovery\":{\"threshold\":1,\"keys\":null,\"accounts\":[{\"permission\":{\"actor\":\"eosio\",\"permission\":\"active\"},\"weight\":1}]}}", string(buf))
 	// 00096e88 0000 0000 00000000 00 00 00 00 01 0000000000ea3055
 }
 
@@ -108,7 +108,7 @@ func TestActionUnmarshalBinary(t *testing.T) {
 	}{
 		{
 			"967abe5a000003002a48328c0000000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32322f0000000000ea3055000000023baca66200a0724e1809000004454f53000000000e57656c636f6d6520306461303930",
-			"{\"expiration\":\"0001-01-01T00:00:00\",\"region\":0,\"ref_block_num\":3,\"ref_block_prefix\":2352105514,\"net_usage_words\":0,\"kcpu_usage\":0,\"delay_sec\":0}",
+			"{\"expiration\":\"2018-03-30T17:57:42\",\"region\":0,\"ref_block_num\":3,\"ref_block_prefix\":2352105514,\"max_net_usage_words\":0,\"max_kcpu_usage\":0,\"delay_sec\":0}",
 		},
 	}
 

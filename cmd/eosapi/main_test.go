@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newAPI() (api *eos.EOSAPI) {
+func newAPI() (api *eos.API) {
 	api = eos.New("http://testnet-dawn3.eosio.ca")
 	tr := &http.Transport{}
 	api.HttpClient = &http.Client{Transport: tr}

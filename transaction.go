@@ -28,7 +28,7 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 
 // 69c9c15a 0000 1400 62f95d45 b31d 904e 00 00 020000000000ea305500000040258ab2c2010000000000ea305500000000a8ed
 
-func (tx *Transaction) Fill(api *EOSAPI) ([]byte, error) {
+func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	var info *InfoResp
 	var err error
 	if !api.lastGetInfoStamp.IsZero() && api.lastGetInfoStamp.Before(time.Now().Add(-3*time.Second)) {
