@@ -1,6 +1,6 @@
 package token
 
-import eos "github.com/eosioca/eosapi"
+import eos "github.com/eoscanada/eos-go"
 
 var AN = eos.AN
 var PN = eos.PN

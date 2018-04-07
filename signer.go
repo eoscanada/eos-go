@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/eosioca/eosapi/ecc"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 type Signer interface {

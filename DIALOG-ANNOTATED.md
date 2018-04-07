@@ -268,7 +268,7 @@ Date: Sat, 17 Mar 2018 01:57:58 GMT
 
 Successful newaccount with my program:
 
-github.com/eosioca/eosapi/cmd/eosapi
+github.com/eoscanada/eos-go/cmd/eosapi
 POST /v1/chain/get_info HTTP/1.1
 Host: localhost:8888
 

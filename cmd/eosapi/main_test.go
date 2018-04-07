@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eosioca/eosapi"
+	"github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
 )
 

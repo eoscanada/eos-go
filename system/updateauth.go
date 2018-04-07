@@ -1,6 +1,6 @@
 package system
 
-import "github.com/eosioca/eosapi"
+import "github.com/eoscanada/eos-go"
 
 // NewUpdateAuth creates an action from the `eosio.system` contract
 // called `updateauth`.
@@ -14,12 +14,12 @@ func NewUpdateAuth(account eos.AccountName, permission, parent eos.PermissionNam
 		Authorization: []eos.PermissionLevel{
 			{account, usingPermission},
 		},
-		Data: UpdateAuth{
+		Data: eos.NewActionData(UpdateAuth{
 			Account:    account,
 			Permission: permission,
 			Parent:     parent,
 			Data:       authority,
-		},
+		}),
 	}
 
 	return a

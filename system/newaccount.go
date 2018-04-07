@@ -1,8 +1,8 @@
 package system
 
 import (
-	eos "github.com/eosioca/eosapi"
-	"github.com/eosioca/eosapi/ecc"
+	eos "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 // NewSetPriv returns a `setpriv` action that lives on the
@@ -16,7 +16,7 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 		Authorization: []eos.PermissionLevel{
 			{Actor: creator, Permission: PN("active")},
 		},
-		Data: NewAccount{
+		Data: eos.NewActionData(NewAccount{
 			Creator: creator,
 			Name:    newAccount,
 			Owner: eos.Authority{
@@ -46,6 +46,6 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 					},
 				},
 			},
-		},
+		}),
 	}
 }

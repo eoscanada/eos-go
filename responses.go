@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/eosioca/eosapi/ecc"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 type InfoResp struct {
@@ -124,8 +124,8 @@ type TransactionProcessed struct {
 }
 
 type ActionTrace struct {
-	Receiver   AccountName  `json:"receiver"`
-	Action     Action       `json:"act"`
+	Receiver AccountName `json:"receiver"`
+	// Action     Action       `json:"act"` // FIXME: how do we unpack that ? what's on the other side anyway?
 	Console    string       `json:"console"`
 	RegionID   uint16       `json:"region_id"`
 	CycleIndex int          `json:"cycle_index"`

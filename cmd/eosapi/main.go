@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/eosioca/eosapi"
-	"github.com/eosioca/eosapi/ecc"
+	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 func main() {

@@ -30,6 +30,12 @@ func UnmarshalBinary(b []byte, v interface{}) error {
 	return NewDecoder(bytes.NewReader(b)).Decode(v)
 }
 
+func UnmarshalBinaryWithAction(b []byte, v interface{}, act Action) error {
+	d := NewDecoder(bytes.NewReader(b))
+	d.lastAction = act
+	return d.Decode(v)
+}
+
 type Encoder struct {
 	Order  binary.ByteOrder
 	w      io.Writer
@@ -194,8 +200,9 @@ func (b *ByteReader) Read(p []byte) (int, error) {
 }
 
 type Decoder struct {
-	Order binary.ByteOrder
-	r     *ByteReader
+	Order      binary.ByteOrder
+	r          *ByteReader
+	lastAction Action
 }
 
 func NewDecoder(r io.Reader) *Decoder {
@@ -218,12 +225,28 @@ type UnmarshalBinaryReader interface {
 	UnmarshalBinaryRead(io.Reader) error
 }
 
+type UnmarshalBinaryWithCurrentAction interface {
+	UnmarshalBinaryWithCurrentAction(data []byte, act Action) error
+}
+
 func (d *Decoder) Decode(v interface{}) (err error) {
-	// Check if the type implements the encoding.BinaryUnmarshaler interface, and use it if so.
+	//fmt.Printf("MAMA: %#v %T\n", v, v)
 	if i, ok := v.(UnmarshalBinaryReader); ok {
 		return i.UnmarshalBinaryRead(d.r)
 	}
+
+	if i, ok := v.(UnmarshalBinaryWithCurrentAction); ok {
+		var l uint64
+		if l, err = binary.ReadUvarint(d.r); err != nil {
+			return
+		}
+		buf := make([]byte, l)
+		_, err = d.r.Read(buf)
+		return i.UnmarshalBinaryWithCurrentAction(buf, d.lastAction)
+	}
+
 	if i, ok := v.(encoding.BinaryUnmarshaler); ok {
+		//fmt.Println("BinaryUnmarshaler")
 		// if we need, we'll implement an UnmarshalBinaryRead() that'll take precedence over this
 		// and that will read byte-per-byte on its own..
 		var l uint64
@@ -254,6 +277,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	switch t.Kind() {
 	case reflect.Array:
+		//fmt.Println("Array")
 		len := t.Len()
 		for i := 0; i < int(len); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
@@ -262,6 +286,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Slice:
+		//fmt.Println("Slice")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
@@ -278,16 +303,19 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Struct:
+		//fmt.Println("Struct")
 		l := rv.NumField()
 		for i := 0; i < l; i++ {
 			if v := rv.Field(i); v.CanSet() && t.Field(i).Name != "_" {
-				if err = d.Decode(v.Addr().Interface()); err != nil {
+				iface := v.Addr().Interface()
+				if err = d.Decode(iface); err != nil {
 					return
 				}
 			}
 		}
 
 	case reflect.Map:
+		//fmt.Println("Map")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
@@ -308,6 +336,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.String:
+		//fmt.Println("String")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
@@ -317,16 +346,19 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.SetString(string(buf))
 
 	case reflect.Bool:
+		//fmt.Println("Bool")
 		var out byte
 		err = binary.Read(d.r, d.Order, &out)
 		rv.SetBool(out != 0)
 
 	case reflect.Int:
+		//fmt.Println("Int")
 		var out int64
 		err = binary.Read(d.r, d.Order, &out)
 		rv.SetInt(out)
 
 	case reflect.Uint:
+		//fmt.Println("uInt")
 		var out uint64
 		err = binary.Read(d.r, d.Order, &out)
 		rv.SetUint(out)
@@ -334,6 +366,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case reflect.Int8, reflect.Uint8, reflect.Int16, reflect.Uint16,
 		reflect.Int32, reflect.Uint32, reflect.Int64, reflect.Uint64,
 		reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128:
+		//fmt.Println("Some funky ints")
 		err = binary.Read(d.r, d.Order, v)
 
 	default:

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	eos "github.com/eosioca/eosapi"
+	eos "github.com/eoscanada/eos-go"
 )
 
 func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.Transaction, err error) {
@@ -30,12 +30,12 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 			Authorization: []eos.PermissionLevel{
 				{account, eos.PermissionName("active")},
 			},
-			Data: SetCode{
+			Data: eos.NewActionData(SetCode{
 				Account:   account,
 				VMType:    0,
 				VMVersion: 0,
 				Code:      eos.HexBytes(codeContent),
-			},
+			}),
 		},
 		{
 			Account: AN("eosio"),
@@ -43,10 +43,10 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 			Authorization: []eos.PermissionLevel{
 				{account, eos.PermissionName("active")},
 			},
-			Data: SetABI{
+			Data: eos.NewActionData(SetABI{
 				Account: account,
 				ABI:     abiDef,
-			},
+			}),
 		},
 	}
 	return &eos.Transaction{Actions: actions}, nil

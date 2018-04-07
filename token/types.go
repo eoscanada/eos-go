@@ -1,6 +1,6 @@
 package token
 
-import eos "github.com/eosioca/eosapi"
+import eos "github.com/eoscanada/eos-go"
 
 // Create represents the `create` struct on the `eosio.token` contract.
 type Create struct {

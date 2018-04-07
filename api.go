@@ -11,9 +11,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 	"time"
 
-	"github.com/eosioca/eosapi/ecc"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 type API struct {
@@ -28,6 +29,7 @@ type API struct {
 
 	lastGetInfo      *InfoResp
 	lastGetInfoStamp time.Time
+	lastGetInfoLock  sync.Mutex
 }
 
 func New(baseURL *url.URL, chainID []byte) *API {

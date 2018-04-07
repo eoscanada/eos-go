@@ -31,15 +31,18 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	var info *InfoResp
 	var err error
+
+	api.lastGetInfoLock.Lock()
 	if !api.lastGetInfoStamp.IsZero() && api.lastGetInfoStamp.Before(time.Now().Add(-3*time.Second)) {
 		info = api.lastGetInfo
 	} else {
 		info, err = api.GetInfo()
-		if err != nil {
-			return nil, err
-		}
 		api.lastGetInfoStamp = time.Now()
 		api.lastGetInfo = info
+	}
+	api.lastGetInfoLock.Unlock()
+	if err != nil {
+		return nil, err
 	}
 
 	if tx.ContextFreeActions == nil {

@@ -1,7 +1,7 @@
 EOS.IO API library for Go
 =========================
 
-[![GoDoc](https://godoc.org/github.com/eosioca/eosapi?status.svg)](https://godoc.org/github.com/eosioca/eosapi)
+[![GoDoc](https://godoc.org/github.com/eoscanada/eos-go?status.svg)](https://godoc.org/github.com/eoscanada/eos-go)
 
 This library aims to provide simple access to data structures and API
 calls to an EOS.IO RPC server, running remotely or locally.

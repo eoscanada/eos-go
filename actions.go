@@ -1,18 +1,23 @@
 package eos
 
 import (
-	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"io"
 	"reflect"
 )
 
+var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
+
+// Registers Action objects..
+func RegisterAction(accountName AccountName, actionName ActionName, obj interface{}) {
+	// TODO: lock or som'th.. unless we never call after boot time..
+	if registeredActions[accountName] == nil {
+		registeredActions[accountName] = make(map[ActionName]reflect.Type)
+	}
+	registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
+}
+
 // See: libraries/chain/include/eosio/chain/contracts/types.hpp:203
 // See: build/contracts/eosio.system/eosio.system.abi
-
-// Top-level actions
 
 // SetCode represents the hard-coded `setcode` action.
 type SetCode struct {
@@ -26,61 +31,6 @@ type SetCode struct {
 type SetABI struct {
 	Account AccountName `json:"account"`
 	ABI     ABI         `json:"abi"`
-}
-
-// belongs to `system`  structs
-type EOSIOParameters struct {
-	BasePerTransactionNetUsage     uint32 `json:"base_per_transaction_net_usage" yaml:"base_per_transaction_net_usage"`
-	BasePerTransactionCPUUsage     uint32 `json:"base_per_transaction_cpu_usage" yaml:"base_per_transaction_cpu_usage"`
-	BasePerActionCPUUsage          uint32 `json:"base_per_action_cpu_usage" yaml:"base_per_action_cpu_usage"`
-	BaseSetcodeCPUUsage            uint32 `json:"base_setcode_cpu_usage" yaml:"base_setcode_cpu_usage"`
-	PerSignatureCPUUsage           uint32 `json:"per_signature_cpu_usage" yaml:"per_signature_cpu_usage"`
-	PerLockNetUsage                uint32 `json:"per_lock_net_usage" yaml:"per_lock_net_usage"`
-	ContextFreeDiscountCPUUsageNum uint64 `json:"context_free_discount_cpu_usage_num" yaml:"context_free_discount_cpu_usage_num"`
-	ContextFreeDiscountCPUUsageDen uint64 `json:"context_free_discount_cpu_usage_den" yaml:"context_free_discount_cpu_usage_den"`
-	MaxTransactionCPUUsage         uint32 `json:"max_transaction_cpu_usage" yaml:"max_transaction_cpu_usage"`
-	MaxTransactionNetUsage         uint32 `json:"max_transaction_net_usage" yaml:"max_transaction_net_usage"`
-
-	MaxBlockCPUUsage       uint64 `json:"max_block_cpu_usage" yaml:"max_block_cpu_usage"`
-	TargetBlockCPUUsagePct uint32 `json:"target_block_cpu_usage_pct" yaml:"target_block_cpu_usage_pct"` //< the target percent (1% == 100, 100%= 10,000) of maximum cpu usage; exceeding this triggers congestion handling
-	MaxBblockNetUsage      uint64 `json:"max_block_net_usage" yaml:"max_block_net_usage"`               //< the maxiumum net usage in instructions for a block
-	TargetBlockNetUsagePct uint32 `json:"target_block_net_usage_pct" yaml:"target_block_net_usage_pct"` //< the target percent (1% == 100, 100%= 10,000) of maximum net usage; exceeding this triggers congestion handling
-
-	MaxTransactionLifetime       uint32 `json:"max_transaction_lifetime" yaml:"max_transaction_lifetime"`
-	MaxTransactionExecTime       uint32 `json:"max_transaction_exec_time" yaml:"max_transaction_exec_time"`
-	MaxAuthorityDepth            uint16 `json:"max_authority_depth" yaml:"max_authority_depth"`
-	MaxInlineDepth               uint16 `json:"max_inline_depth" yaml:"max_inline_depth"`
-	MaxInlineActionSize          uint32 `json:"max_inline_action_size" yaml:"max_inline_action_size"`
-	MaxGeneratedTransactionCount uint32 `json:"max_generated_transaction_count" yaml:"max_generated_transaction_count"`
-
-	// FIXME: does not appear in the `abi` for `eosio.system`.
-	// MaxStorageSize uint64 `json:"max_storage_size" yaml:"max_storage_size"`
-	PercentOfMaxInflationRate uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
-	StorageReserveRatio       uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
-}
-
-// Sync with: /home/abourget/build/eos/patch1.patch
-
-// belongs to the `system` structs
-type EOSIOGlobalState struct {
-	EOSIOParameters
-	TotalStorageBytesReserved uint64 `json:"total_storage_bytes_reserved"`
-	TotalStorageStake         uint64 `json:"total_storage_stake"`
-	PaymentPerBlock           uint64 `json:"payment_per_block"`
-}
-
-// belongs to `system` structs
-type DelegatedBandwidth struct {
-	From         AccountName `json:"from"`
-	To           AccountName `json:"to"`
-	NetWeight    Asset       `json:"net_weight"`
-	CPUWeight    Asset       `json:"cpu_weight"`
-	StorageStake Asset       `json:"storage_stake"`
-	StorageBytes uint64      `json:"storage_bytes"`
-}
-
-// belongs to `system` structs
-type TotalResources struct {
 }
 
 // NewAccount represents the hard-coded `newaccount` action.
@@ -97,74 +47,103 @@ type Action struct {
 	Account       AccountName       `json:"account"`
 	Name          ActionName        `json:"name"`
 	Authorization []PermissionLevel `json:"authorization,omitempty"`
-	Data          ActionData        `json:"data,omitempty"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
+	Data          ActionData        `json:"data"` // as HEX when we receive it.. FIXME: decode from hex directly.. and encode back plz!
 }
 
-type action struct {
-	Account       AccountName       `json:"account"`
-	Name          ActionName        `json:"name"`
-	Authorization []PermissionLevel `json:"authorization,omitempty"`
+func (a Action) Obj() interface{} { // Payload ? ActionData ? GetData ?
+	return a.Data.obj
 }
 
-type ActionData interface{}
+type ActionData struct {
+	HexBytes
+	obj interface{} // potentially unpacked from the Actions registry mapped through `RegisterAction`.
+	abi []byte      // TBD: we could use the ABI to decode in obj
+}
 
-func (a *Action) UnmarshalBinaryRead(r io.Reader) error {
-	// Ok, we need to find a way to unmarshal those transactions.. to
-	// do verification and/or introspection of blockchain data.
-	//
-	// There are two ways we can completely decode an incoming Action,
-	// through a local map of structs (sort of a hard-coded ABI), or
-	// through the ABI definitions and building an agnostic
-	// map[string]interface{}.
-	fmt.Println("MAMA")
-	length, err := binary.ReadUvarint(&ByteReader{r})
-	if err != nil {
-		return err
+func NewActionData(obj interface{}) ActionData {
+	return ActionData{obj: obj}
+}
+
+func (a ActionData) MarshalBinary() ([]byte, error) {
+	if a.obj != nil {
+		raw, err := MarshalBinary(a.obj)
+		if err != nil {
+			return nil, err
+		}
+		a.HexBytes = HexBytes(raw)
 	}
+	return MarshalBinary(a.HexBytes)
+}
 
-	data := make([]byte, length)
-	_, err = io.ReadFull(r, data)
-	if err != nil {
-		return err
+func (a *ActionData) UnmarshalBinaryWithLastAction(data []byte, act Action) error {
+	a.HexBytes = HexBytes(data)
+
+	actionMap := registeredActions[act.Account]
+
+	var decodeInto reflect.Type
+	if actionMap != nil {
+		objType := actionMap[act.Name]
+		if objType != nil {
+			decodeInto = reflect.TypeOf(objType)
+		}
 	}
-
-	actionMap := registeredActions[a.Account]
-	if actionMap == nil {
+	if decodeInto == nil {
 		return nil
 	}
 
-	objMap := actionMap[a.Name]
-	if objMap == nil {
-		return nil
-	}
+	obj := reflect.New(decodeInto)
 
-	obj := reflect.New(reflect.TypeOf(objMap))
-
-	err = UnmarshalBinary(data, &obj)
+	err := UnmarshalBinary(data, &obj)
 	if err != nil {
 		return err
 	}
 
-	a.Data = obj.Elem().Interface()
+	a.obj = obj.Elem().Interface()
 
 	return nil
 }
 
-var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
+func (a *ActionData) UnmarshalJSON(v []byte) (err error) {
+	// Unmarshal from the JSON format ?  We'd need it to be registered.. but we can't hook into the JSON
+	// lib to read the current action above.. we'll need to defer loading
+	// Either keep as json.RawMessage, or as map[string]interface{}
+	a.obj = json.RawMessage(v)
+	return nil
+}
 
-// Registers Action objects..
-func RegisterAction(accountName AccountName, actionName ActionName, obj interface{}) {
-	// TODO: lock or som'th.. unless we never call after boot time..
-	if registeredActions[accountName] == nil {
-		registeredActions[accountName] = make(map[ActionName]reflect.Type)
+// DecodeAs allows you to decode after the fact, either from JSON or from HexBytes
+func (a *Action) DecodeAs(v interface{}) (err error) {
+	if msg, ok := a.Data.obj.(json.RawMessage); ok {
+		err = json.Unmarshal(msg, v)
+	} else {
+		err = UnmarshalBinary(a.Data.HexBytes, v)
+	} // Fail with an error if HexBytes was len=0 ?
+	// Perhaps it was already decoded into something Registered!
+	if err != nil {
+		return err
 	}
-	registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
+
+	a.Data.obj = v
+
+	return nil
+
+}
+
+func (a ActionData) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.obj)
+}
+
+type jsonAction struct {
+	Account       AccountName       `json:"account"`
+	Name          ActionName        `json:"name"`
+	Authorization []PermissionLevel `json:"authorization,omitempty"`
+	Data          HexBytes          `json:"data"`
 }
 
 func (a *Action) UnmarshalJSON(v []byte) (err error) {
 	// load Account, Name, Authorization, Data
 	// and then unpack other fields in a struct based on `Name` and `AccountName`..
-	var newAct *action
+	var newAct jsonAction
 	if err = json.Unmarshal(v, &newAct); err != nil {
 		return
 	}
@@ -173,85 +152,30 @@ func (a *Action) UnmarshalJSON(v []byte) (err error) {
 	a.Name = newAct.Name
 	a.Authorization = newAct.Authorization
 
-	actionMap := registeredActions[a.Account]
-	if actionMap == nil {
-		return nil
-	}
-
-	objMap := actionMap[a.Name]
-	if objMap == nil {
-		return nil
-	}
-
-	obj := reflect.New(reflect.TypeOf(objMap))
-	err = json.Unmarshal(v, &obj)
+	err = UnmarshalBinaryWithAction([]byte(newAct.Data), &a.Data, *a)
 	if err != nil {
 		return err
 	}
 
-	a.Data = obj.Elem().Interface()
-
 	return nil
 }
 
-func (a Action) MarshalBinary() ([]byte, error) {
-	//fmt.Println("ENTERING MARSHALBINARY FOR ACTION!", a)
-	// marshal binary a short action, then data
-	common, err := MarshalBinary(&action{
-		Account:       a.Account,
-		Name:          a.Name,
-		Authorization: a.Authorization,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var data []byte
-	if a.Data != nil {
-		data, err = MarshalBinary(a.Data)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	varint := make([]byte, 4, 4)
-	varintLen := binary.PutUvarint(varint, uint64(len(data)))
-	// fmt.Println("****************************")
-	// fmt.Println("ok mama", len(data), varint, varintLen)
-	common = append(common, varint[:varintLen]...)
-	// fmt.Println("ok mama", hex.EncodeToString(common))
-	common = append(common, data...)
-	// fmt.Println("ok mama", hex.EncodeToString(common))
-
-	return common, nil
-}
-
 func (a *Action) MarshalJSON() ([]byte, error) {
-	// Start with the base-line Action fields.
-
-	cnt, err := json.Marshal(&action{
-		Account:       a.Account,
-		Name:          a.Name,
-		Authorization: a.Authorization,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var keys1 map[string]interface{}
-	err = json.Unmarshal(cnt, &keys1)
-	if err != nil {
-		return nil, err
-	}
-
-	if a.Data != nil {
-		data, err := MarshalBinary(a.Data)
+	var data HexBytes
+	if a.Data.obj == nil {
+		data = a.Data.HexBytes
+	} else {
+		var err error
+		data, err = MarshalBinary(a.Data.obj)
 		if err != nil {
 			return nil, err
 		}
-
-		keys1["data"] = hex.EncodeToString(data)
 	}
 
-	return json.Marshal(keys1)
+	return json.Marshal(&jsonAction{
+		Account:       a.Account,
+		Name:          a.Name,
+		Authorization: a.Authorization,
+		Data:          HexBytes(data),
+	})
 }

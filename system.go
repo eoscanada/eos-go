@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/eosioca/eosapi/ecc"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 // System contract functions
@@ -21,7 +21,7 @@ func (api *API) NewAccount(creator, newAccount AccountName, publicKey ecc.Public
 		Authorization: []PermissionLevel{
 			{creator, PermissionName("active")},
 		},
-		Data: NewAccount{
+		Data: NewActionData(NewAccount{
 			Creator: creator,
 			Name:    newAccount,
 			Owner: Authority{
@@ -51,7 +51,7 @@ func (api *API) NewAccount(creator, newAccount AccountName, publicKey ecc.Public
 					},
 				},
 			},
-		},
+		}),
 	}
 
 	return api.SignPushActions(a)
@@ -90,12 +90,12 @@ func (api *API) SetCode(forAccount AccountName, wasmPath, abiPath string) (out *
 			Authorization: []PermissionLevel{
 				{forAccount, PermissionName("active")},
 			},
-			Data: SetCode{
+			Data: NewActionData(SetCode{
 				Account:   forAccount,
 				VMType:    0,
 				VMVersion: 0,
 				Code:      HexBytes(codeContent),
-			},
+			}),
 		},
 		{
 			Account: AccountName("eosio"),
@@ -103,10 +103,10 @@ func (api *API) SetCode(forAccount AccountName, wasmPath, abiPath string) (out *
 			Authorization: []PermissionLevel{
 				{forAccount, PermissionName("active")},
 			},
-			Data: SetABI{
+			Data: NewActionData(SetABI{
 				Account: forAccount,
 				ABI:     abiDef,
-			},
+			}),
 		},
 	}
 

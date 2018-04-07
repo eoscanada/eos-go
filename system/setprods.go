@@ -1,6 +1,6 @@
 package system
 
-import eos "github.com/eosioca/eosapi"
+import eos "github.com/eoscanada/eos-go"
 
 // NewSetPriv returns a `setpriv` action that lives on the
 // `eosio.bios` contract. It should exist only when booting a new
@@ -13,10 +13,10 @@ func NewSetProds(version uint32, producers []ProducerKey) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: SetProds{
+		Data: eos.NewActionData(SetProds{
 			Version:   version,
 			Producers: producers,
-		},
+		}),
 	}
 	return a
 }

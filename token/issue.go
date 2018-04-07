@@ -1,6 +1,6 @@
 package token
 
-import eos "github.com/eosioca/eosapi"
+import eos "github.com/eoscanada/eos-go"
 
 func NewIssue(to eos.AccountName, quantity eos.Asset, memo string) *eos.Action {
 	return &eos.Action{
@@ -9,10 +9,10 @@ func NewIssue(to eos.AccountName, quantity eos.Asset, memo string) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: Issue{
+		Data: eos.NewActionData(Issue{
 			To:       to,
 			Quantity: quantity,
 			Memo:     memo,
-		},
+		}),
 	}
 }

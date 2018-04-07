@@ -1,6 +1,6 @@
 package eos
 
-import "github.com/eosioca/eosapi/ecc"
+import "github.com/eoscanada/eos-go/ecc"
 
 // Work-in-progress p2p comms implementation
 //

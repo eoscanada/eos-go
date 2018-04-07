@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/eosioca/eosapi/ecc"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: Move this test to the `system` contract.. and take out
+// `NewAccount` from this package.
 func TestActionNewAccount(t *testing.T) {
 	pubKey, err := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
 	require.NoError(t, err)
@@ -19,7 +21,7 @@ func TestActionNewAccount(t *testing.T) {
 		Authorization: []PermissionLevel{
 			{AccountName("eosio"), PermissionName("active")},
 		},
-		Data: NewAccount{
+		Data: NewActionData(NewAccount{
 			Creator: AccountName("eosio"),
 			Name:    AccountName("abourget"),
 			Owner: Authority{
@@ -49,7 +51,7 @@ func TestActionNewAccount(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	}
 	tx := &Transaction{
 		Actions: []*Action{a},
@@ -62,12 +64,18 @@ func TestActionNewAccount(t *testing.T) {
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100","name":"newaccount"}`, string(buf))
+	assert.Equal(t, `{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100"}`, string(buf))
 
 	buf, err = json.Marshal(a.Data)
 	assert.NoError(t, err)
 	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"public_key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"active\":{\"threshold\":1,\"keys\":[{\"public_key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"recovery\":{\"threshold\":1,\"keys\":null,\"accounts\":[{\"permission\":{\"actor\":\"eosio\",\"permission\":\"active\"},\"weight\":1}]}}", string(buf))
 	// 00096e88 0000 0000 00000000 00 00 00 00 01 0000000000ea3055
+
+	// WUTz that ?
+	// var newAct *Action
+	// newAct.DecodeAs(&NewAccount{})
+	// require.NoError(t, UnmarshalBinary(buf, &newAct))
+	// assert.Equal(t, a, newAct)
 }
 
 func TestMarshalTransactionAndSigned(t *testing.T) {
@@ -77,10 +85,10 @@ func TestMarshalTransactionAndSigned(t *testing.T) {
 		Authorization: []PermissionLevel{
 			{AccountName("eosio"), PermissionName("active")},
 		},
-		Data: NewAccount{
+		Data: NewActionData(NewAccount{
 			Creator: AccountName("eosio"),
 			Name:    AccountName("abourget"),
-		},
+		}),
 	}
 	tx := &SignedTransaction{Transaction: &Transaction{
 		Actions: []*Action{a},

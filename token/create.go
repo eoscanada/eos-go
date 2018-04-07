@@ -1,6 +1,6 @@
 package token
 
-import eos "github.com/eosioca/eosapi"
+import eos "github.com/eoscanada/eos-go"
 
 func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall, canWhitelist bool) *eos.Action {
 	return &eos.Action{
@@ -9,12 +9,12 @@ func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio.token"), Permission: PN("active")},
 		},
-		Data: Create{
+		Data: eos.NewActionData(Create{
 			Issuer:        issuer,
 			MaximumSupply: maxSupply,
 			CanFreeze:     canFreeze,
 			CanRecall:     canRecall,
 			CanWhitelist:  canWhitelist,
-		},
+		}),
 	}
 }

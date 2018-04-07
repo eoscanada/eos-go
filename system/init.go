@@ -1,6 +1,6 @@
 package system
 
-import eos "github.com/eosioca/eosapi"
+import eos "github.com/eoscanada/eos-go"
 
 func init() {
 	eos.RegisterAction(AN("eosio"), ActN("setcode"), &SetCode{})

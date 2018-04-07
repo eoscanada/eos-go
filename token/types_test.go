@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	eos "github.com/eosioca/eosapi"
+	eos "github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

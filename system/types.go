@@ -1,8 +1,8 @@
 package system
 
 import (
-	eos "github.com/eosioca/eosapi"
-	"github.com/eosioca/eosapi/ecc"
+	eos "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 // UpdateAuth represents the hard-coded `updateauth` action.
@@ -49,6 +49,56 @@ type ProducerKey struct {
 	BlockSigningKey ecc.PublicKey   `json:"block_signing_key"`
 }
 
+// EOSIOParameters are all the params that can be set on the system contract.
+type EOSIOParameters struct {
+	BasePerTransactionNetUsage     uint32 `json:"base_per_transaction_net_usage" yaml:"base_per_transaction_net_usage"`
+	BasePerTransactionCPUUsage     uint32 `json:"base_per_transaction_cpu_usage" yaml:"base_per_transaction_cpu_usage"`
+	BasePerActionCPUUsage          uint32 `json:"base_per_action_cpu_usage" yaml:"base_per_action_cpu_usage"`
+	BaseSetcodeCPUUsage            uint32 `json:"base_setcode_cpu_usage" yaml:"base_setcode_cpu_usage"`
+	PerSignatureCPUUsage           uint32 `json:"per_signature_cpu_usage" yaml:"per_signature_cpu_usage"`
+	PerLockNetUsage                uint32 `json:"per_lock_net_usage" yaml:"per_lock_net_usage"`
+	ContextFreeDiscountCPUUsageNum uint64 `json:"context_free_discount_cpu_usage_num" yaml:"context_free_discount_cpu_usage_num"`
+	ContextFreeDiscountCPUUsageDen uint64 `json:"context_free_discount_cpu_usage_den" yaml:"context_free_discount_cpu_usage_den"`
+	MaxTransactionCPUUsage         uint32 `json:"max_transaction_cpu_usage" yaml:"max_transaction_cpu_usage"`
+	MaxTransactionNetUsage         uint32 `json:"max_transaction_net_usage" yaml:"max_transaction_net_usage"`
+
+	MaxBlockCPUUsage       uint64 `json:"max_block_cpu_usage" yaml:"max_block_cpu_usage"`
+	TargetBlockCPUUsagePct uint32 `json:"target_block_cpu_usage_pct" yaml:"target_block_cpu_usage_pct"` //< the target percent (1% == 100, 100%= 10,000) of maximum cpu usage; exceeding this triggers congestion handling
+	MaxBblockNetUsage      uint64 `json:"max_block_net_usage" yaml:"max_block_net_usage"`               //< the maxiumum net usage in instructions for a block
+	TargetBlockNetUsagePct uint32 `json:"target_block_net_usage_pct" yaml:"target_block_net_usage_pct"` //< the target percent (1% == 100, 100%= 10,000) of maximum net usage; exceeding this triggers congestion handling
+
+	MaxTransactionLifetime       uint32 `json:"max_transaction_lifetime" yaml:"max_transaction_lifetime"`
+	MaxTransactionExecTime       uint32 `json:"max_transaction_exec_time" yaml:"max_transaction_exec_time"`
+	MaxAuthorityDepth            uint16 `json:"max_authority_depth" yaml:"max_authority_depth"`
+	MaxInlineDepth               uint16 `json:"max_inline_depth" yaml:"max_inline_depth"`
+	MaxInlineActionSize          uint32 `json:"max_inline_action_size" yaml:"max_inline_action_size"`
+	MaxGeneratedTransactionCount uint32 `json:"max_generated_transaction_count" yaml:"max_generated_transaction_count"`
+
+	// FIXME: does not appear in the `abi` for `eosio.system`.
+	// MaxStorageSize uint64 `json:"max_storage_size" yaml:"max_storage_size"`
+	PercentOfMaxInflationRate uint32 `json:"percent_of_max_inflation_rate" yaml:"percent_of_max_inflation_rate"`
+	StorageReserveRatio       uint32 `json:"storage_reserve_ratio" yaml:"storage_reserve_ratio"`
+}
+
+type EOSIOGlobalState struct {
+	EOSIOParameters
+	TotalStorageBytesReserved uint64 `json:"total_storage_bytes_reserved"`
+	TotalStorageStake         uint64 `json:"total_storage_stake"`
+	PaymentPerBlock           uint64 `json:"payment_per_block"`
+}
+
+type DelegatedBandwidth struct {
+	From         eos.AccountName `json:"from"`
+	To           eos.AccountName `json:"to"`
+	NetWeight    eos.Asset       `json:"net_weight"`
+	CPUWeight    eos.Asset       `json:"cpu_weight"`
+	StorageStake eos.Asset       `json:"storage_stake"`
+	StorageBytes uint64      `json:"storage_bytes"`
+}
+
+type TotalResources struct {
+}
+
 // NewAccount represents the `newaccount` on the `eosio.system` contract / hard-coded in the chain.
 type NewAccount struct {
 	Creator  eos.AccountName `json:"creator"`
@@ -83,9 +133,9 @@ type Refund struct {
 
 // RegProducer represents the `eosio.system::regproducer` action
 type RegProducer struct {
-	Producer    eos.AccountName     `json:"producer"`
-	ProducerKey []byte              `json:"producer_key"`
-	Prefs       eos.EOSIOParameters `json:"eosio_parameters"`
+	Producer    eos.AccountName `json:"producer"`
+	ProducerKey []byte          `json:"producer_key"`
+	Prefs       EOSIOParameters `json:"eosio_parameters"`
 }
 
 // UnregProducer represents the `eosio.system::unregprod` action
