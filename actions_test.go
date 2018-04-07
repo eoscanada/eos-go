@@ -106,7 +106,7 @@ func TestMarshalTransactionAndSigned(t *testing.T) {
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"account":"eosio","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe931000000000000000000000000000000000000","name":"newaccount"}`, string(buf))
+	assert.Equal(t, `{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe931000000000000000000000000000000000000"}`, string(buf))
 }
 
 func TestActionUnmarshalBinary(t *testing.T) {
