@@ -217,7 +217,7 @@ func (a Asset) MarshalBinary() ([]byte, error) {
 
 func (a *Asset) UnmarshalJSON(data []byte) error {
 	var s string
-	err := json.Unmarshal(data, s)
+	err := json.Unmarshal(data, &s)
 	if err != nil {
 		return err
 	}
