@@ -157,6 +157,35 @@ func NewEOSAsset(amount int64) Asset {
 	return Asset{Amount: amount, Symbol: EOSSymbol}
 }
 
+// NewAsset parses a string like `1000.0000 EOS` into a properly setup Asset
+func NewAsset(in string) (out Asset, err error) {
+	sec := strings.SplitN(in, " ", 2)
+	if len(sec) != 2 {
+		return out, fmt.Errorf("invalid format %q, expected an amount and a currency symbol", in)
+	}
+
+	if len(sec[1]) > 7 {
+		return out, fmt.Errorf("currency symbol %q too long", sec[1])
+	}
+
+	out.Symbol.Symbol = sec[1]
+	amount := sec[0]
+	amountSec := strings.SplitN(amount, ".", 2)
+
+	if len(amountSec) == 2 {
+		out.Symbol.Precision = uint8(len(amountSec[1]))
+	}
+
+	val, err := strconv.ParseInt(strings.Replace(amount, ".", "", 1), 10, 64)
+	if err != nil {
+		return out, err
+	}
+
+	out.Amount = val
+
+	return
+}
+
 func (a *Asset) UnmarshalBinary(data []byte) error {
 	newAsset := Asset{}
 	if err := UnmarshalBinary(data[:8], &newAsset.Amount); err != nil {
@@ -187,8 +216,19 @@ func (a Asset) MarshalBinary() ([]byte, error) {
 }
 
 func (a *Asset) UnmarshalJSON(data []byte) error {
-	// decode "1000.0000 EOS" as `Asset{Amount: 10000000, Symbol: {Precision: 4, Symbol: "EOS"}`
-	// deal with the underlying `Symbol`
+	var s string
+	err := json.Unmarshal(data, s)
+	if err != nil {
+		return err
+	}
+
+	asset, err := NewAsset(s)
+	if err != nil {
+		return err
+	}
+
+	*a = asset
+
 	return nil
 }
 

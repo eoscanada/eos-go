@@ -269,3 +269,34 @@ func TestHexBytes(t *testing.T) {
 	require.NoError(t, json.Unmarshal(cnt, &b))
 	assert.Equal(t, a, b)
 }
+
+func TestNewAsset(t *testing.T) {
+
+	tests := []struct {
+		in        string
+		amount    int64
+		symbol    string
+		precision int
+	}{
+		{
+			"1000.0000 EOS",
+			10000000, "EOS", 4,
+		},
+		{
+			"1000 CUR",
+			1000, "CUR", 0,
+		},
+		{
+			"1000.1 CURRENT",
+			10001, "CURRENT", 1,
+		},
+	}
+
+	for _, test := range tests {
+		asset, err := NewAsset(test.in)
+		require.NoError(t, err)
+		assert.Equal(t, asset.Amount, int64(test.amount))
+		assert.Equal(t, asset.Symbol.Symbol, test.symbol)
+		assert.Equal(t, asset.Symbol.Precision, uint8(test.precision))
+	}
+}
