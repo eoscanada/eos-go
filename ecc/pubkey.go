@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eoscanada/eos-go/btcec"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/golangcrypto/ripemd160"
 )

@@ -372,7 +372,7 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 	var unixNano int64
 	if data[0] == '"' {
 		var s string
-		if err = json.Unmarshal(data, &s); err != ni {
+		if err = json.Unmarshal(data, &s); err != nil {
 			return
 		}
 

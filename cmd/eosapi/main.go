@@ -28,8 +28,8 @@ func main() {
 
 	api.SetSigner(keyBag)
 
-	walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:6667"}, bytes.Repeat([]byte{0}, 32))
-	api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
+	// walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:6667"}, bytes.Repeat([]byte{0}, 32))
+	// api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
 	// Corresponding to the wallet, so we can sign on the live node.
 
 	// resp, err := api.SetCode(AC("eosio"), "/home/abourget/build/eos/build/contracts/eosio.system/eosio.system.wasm", "/home/abourget/build/eos/build/contracts/eosio.system/eosio.system.abi")
