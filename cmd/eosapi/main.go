@@ -14,11 +14,15 @@ func main() {
 	//api := eos.New("http://testnet-dawn3.eosio.ca", "0000000000000000000000000000000000000000000000000000000000000000")
 	api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
+	api.Debug = true
+
 	keyBag := eos.NewKeyBag()
 	if err := keyBag.Add("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"); err != nil {
 		log.Fatalln("Couldn't load private key:", err)
 	}
-	if err := keyBag.Add("5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"); err != nil {
+	//"EOS5GNc1NNsChC2URSevTBYhvQxGzjAgFRDi8V992ckjyc5tRzWn4",
+	// "5K7Ffo8LXHhbsxV48w3sZzo8UnaKX3z5iD5mvac1AfDhHXKs3ao"
+	if err := keyBag.Add("5K7Ffo8LXHhbsxV48w3sZzo8UnaKX3z5iD5mvac1AfDhHXKs3ao"); err != nil {
 		log.Fatalln("Couldn't load private key:", err)
 	}
 
@@ -35,7 +39,7 @@ func main() {
 	// 	fmt.Println("RESP:", resp)
 	// }
 
-	resp, err := api.NewAccount(AC("eosio"), AC("abourget3"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
+	resp, err := api.NewAccount(AC("eosio"), AC("abourget4"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
 	if err != nil {
 		fmt.Println("ERROR calling NewAccount:", err)
 	} else {

@@ -13,7 +13,7 @@ import (
 // certain actions and makes it easy to use.. but doesn't belong
 // top-level.. since it's not an API call per se.
 //
-// NewAccount pushes a `newaccount` transaction on the `eosio
+// NewAccount pushes a `newaccount` transaction on the `eosio`
 func (api *API) NewAccount(creator, newAccount AccountName, publicKey ecc.PublicKey) (out *PushTransactionFullResp, err error) {
 	a := &Action{
 		Account: AccountName("eosio"),

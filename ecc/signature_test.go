@@ -19,6 +19,24 @@ func TestSignatureSerialization(t *testing.T) {
 	sig, err := privkey.Sign(sigDigest(make([]byte, 32, 32), payload))
 	require.NoError(t, err)
 	assert.Equal(t, `EOSK2JjfxmYpoVwCKkohDiQPcepeyetSWMgQPjx3zqagzao5NeQhnW4JQ2qwxd4txU7dR5TdS6PnP75vmMs5qSXzjphqUZz6N`, sig.String()) // not checked after..
+	assert.True(t, isCanonical([]byte(sig)))
+}
+
+func TestSignatureCanonical(t *testing.T) {
+	privkey, err := NewPrivateKey("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3")
+	require.NoError(t, err)
+
+	payload := []byte("payload1") // doesn't fail
+	sig, err := privkey.Sign(sigDigest(make([]byte, 32, 32), payload))
+	require.NoError(t, err)
+	fmt.Println("MAM", sig.String())
+	assert.True(t, isCanonical([]byte(sig)))
+
+	payload = []byte("payload6") // fails
+	sig, err = privkey.Sign(sigDigest(make([]byte, 32, 32), payload))
+	require.NoError(t, err)
+	fmt.Println("MAM", sig.String())
+	assert.True(t, isCanonical([]byte(sig)))
 }
 
 func TestSignatureMarshalUnmarshal(t *testing.T) {
@@ -26,7 +44,21 @@ func TestSignatureMarshalUnmarshal(t *testing.T) {
 	sig, err := NewSignature(fromEOSIOC)
 	require.NoError(t, err)
 	assert.Equal(t, fromEOSIOC, sig.String())
+	assert.True(t, isCanonical([]byte(sig)))
+}
 
+func isCanonical(compactSig []byte) bool {
+	// !(c.data[1] & 0x80)
+	// && !(c.data[1] == 0 && !(c.data[2] & 0x80))
+	// && !(c.data[33] & 0x80)
+	// && !(c.data[33] == 0 && !(c.data[34] & 0x80));
+
+	d := compactSig
+	t1 := (d[1] & 0x80) == 0
+	t2 := !(d[1] == 0 && ((d[2] & 0x80) == 0))
+	t3 := (d[33] & 0x80) == 0
+	t4 := !(d[33] == 0 && ((d[34] & 0x80) == 0))
+	return t1 && t2 && t3 && t4
 }
 
 func TestSignaturePublicKeyExtraction(t *testing.T) {

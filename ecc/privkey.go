@@ -9,7 +9,6 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/base58"
 )
 
 func NewRandomPrivateKey() (*PrivateKey, error) {
@@ -60,25 +59,25 @@ func (p *PrivateKey) Sign(hash []byte) (Signature, error) {
 		return nil, fmt.Errorf("hash should be 32 bytes")
 	}
 
-	sig, err := p.privKey.Sign(hash)
+	// sig, err := p.privKey.Sign(hash)
 
-	// der := sig.Serialize()
-	// lenR := der[3]
-	// lenS := der[5+lenR]
-	// i := 0
-	// if lenR == 32 && lenS == 32 {
-	// }
+	// // der := sig.Serialize()
+	// // lenR := der[3]
+	// // lenS := der[5+lenR]
+	// // i := 0
+	// // if lenR == 32 && lenS == 32 {
+	// // }
 
-	buf := make([]byte, 65, 65)
-	//buf[0] =
-	copy(buf[1:33], sig.R.Bytes())
-	copy(buf[33:], sig.S.Bytes())
+	// buf := make([]byte, 65, 65)
+	// //buf[0] =
+	// copy(buf[1:33], sig.R.Bytes())
+	// copy(buf[33:], sig.S.Bytes())
 
-	checksum := ripemd160checksum(buf)
-	textSig := base58.Encode(append(buf, checksum[:4]...))
-	fmt.Println("OUTPUT sig", "EOS"+textSig)
+	// checksum := ripemd160checksum(buf)
+	// textSig := base58.Encode(append(buf, checksum[:4]...))
+	// fmt.Println("OUTPUT sig", "EOS"+textSig)
 
-	compactSig, err := btcec.SignCompact(btcec.S256(), p.privKey, hash, true)
+	compactSig, err := btcec.SignCompactCanonical(btcec.S256(), p.privKey, hash, true)
 	if err != nil {
 		return nil, err
 	}
