@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/eoscanada/eos-go/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 )
