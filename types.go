@@ -357,3 +357,55 @@ func (a *Varuint32) UnmarshalBinaryRead(r io.Reader) error {
 	*a = Varuint32(size)
 	return nil
 }
+
+// Tstamp
+
+type Tstamp struct {
+	time.Time
+}
+
+func (t Tstamp) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("%d", t.UnixNano()))
+}
+
+func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
+	var unixNano int64
+	if data[0] == '"' {
+		var s string
+		if err = json.Unmarshal(data, &s); err != ni {
+			return
+		}
+
+		unixNano, err = strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		unixNano, err = strconv.ParseInt(string(data), 10, 64)
+		if err != nil {
+			return err
+		}
+	}
+	seconds := unixNano / 1e9
+	nanoSecs := unixNano*1e9 - seconds
+	*t = Tstamp{time.Unix(seconds, nanoSecs)}
+
+	return nil
+}
+
+func (t *Tstamp) UnmarshalBinary(data []byte) error {
+	unixNano := int64(binary.LittleEndian.Uint64(data))
+	seconds := unixNano / 1e9
+	nanoSecs := unixNano*1e9 - seconds
+	t.Time = time.Unix(seconds, nanoSecs).UTC()
+	return nil
+}
+
+func (t Tstamp) UnmarshalBinarySize() int { return 8 }
+
+func (t Tstamp) MarshalBinary() ([]byte, error) {
+	out := []byte{0, 0, 0, 0, 0, 0, 0, 0}
+	binary.LittleEndian.PutUint64(out, uint64(t.UnixNano()))
+	return out, nil
+}

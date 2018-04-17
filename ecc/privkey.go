@@ -77,7 +77,7 @@ func (p *PrivateKey) Sign(hash []byte) (Signature, error) {
 	// textSig := base58.Encode(append(buf, checksum[:4]...))
 	// fmt.Println("OUTPUT sig", "EOS"+textSig)
 
-	compactSig, err := btcec.SignCompactCanonical(btcec.S256(), p.privKey, hash, true)
+	compactSig, err := p.privKey.SignCanonical(btcec.S256(), hash)
 	if err != nil {
 		return nil, err
 	}

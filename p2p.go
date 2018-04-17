@@ -13,7 +13,7 @@ type HandshakeMessage struct {
 	ChainID                  HexBytes      `json:"chain_id"`
 	NodeID                   HexBytes      `json:"node_id"` // sha256
 	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
-	Time                     int           `json:"time"`    // time?!
+	Time                     Tstamp        `json:"time"`    // time?!
 	Token                    HexBytes      `json:"token"`   // digest of time to prove we own the private `key`
 	Signature                ecc.Signature `json:"sig"`     // can be empty if no key, signature of the digest above
 	P2PAddress               string        `json:"p2p_address"`
