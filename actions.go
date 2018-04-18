@@ -107,7 +107,7 @@ func (a *ActionData) UnmarshalJSON(v []byte) (err error) {
 	// Unmarshal from the JSON format ?  We'd need it to be registered.. but we can't hook into the JSON
 	// lib to read the current action above.. we'll need to defer loading
 	// Either keep as json.RawMessage, or as map[string]interface{}
-	a.obj = json.RawMessage(v)
+	a.HexBytes = v
 	return nil
 }
 
@@ -151,11 +151,12 @@ func (a *Action) UnmarshalJSON(v []byte) (err error) {
 	a.Account = newAct.Account
 	a.Name = newAct.Name
 	a.Authorization = newAct.Authorization
+	a.Data.HexBytes = newAct.Data
 
-	err = UnmarshalBinaryWithAction([]byte(newAct.Data), &a.Data, *a)
-	if err != nil {
-		return err
-	}
+	// err = UnmarshalBinaryWithAction([]byte(newAct.Data), &a.Data, *a)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

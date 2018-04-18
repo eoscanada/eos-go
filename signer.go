@@ -98,6 +98,13 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 		return nil, err
 	}
 
+	cfd := []byte{}
+	if len(tx.ContextFreeData) > 0 {
+		cfd, err = MarshalBinary(tx.ContextFreeData)
+		if err != nil {
+			return nil, err
+		}
+	}
 	keyMap := b.keyMap()
 	for _, key := range requiredKeys {
 		privKey := keyMap[key.String()]
@@ -105,17 +112,6 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, fmt.Errorf("private key for %q not in keybag", key)
 		}
 
-		// TODO: handle ContextFreeData later.. will be added to
-		// signature if it exists in tx.ContextFreeData .. and there
-		// can be many []byte in there.. so the serialization isn't
-		// clear to me yet.  Shouldn't be very complex though.
-		cfd := []byte{}
-		if len(tx.ContextFreeData) > 0 {
-			cfd, err = MarshalBinary(tx.ContextFreeData)
-			if err != nil {
-				return nil, err
-			}
-		}
 		sig, err := privKey.Sign(SigDigest(chainID, txdata, cfd))
 		if err != nil {
 			return nil, err
