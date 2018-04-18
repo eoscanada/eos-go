@@ -28,6 +28,10 @@ accountResp, _ := api.GetAccount("initn")
 fmt.Println("Permission for initn:", accountResp.Permissions[0].RequiredAuth.Keys)
 ```
 
+`eosio.system` and `eosio.token` contract _Actions_ are respectively in:
+* https://github.com/eoscanada/eos-go/tree/master/system ([godocs](https://godoc.org/github.com/eoscanada/eos-go/system))
+* https://github.com/eoscanada/eos-go/tree/master/token ([godocs](https://godoc.org/github.com/eoscanada/eos-go/token))
+
 Example
 -------
 
