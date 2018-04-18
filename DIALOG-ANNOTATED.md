@@ -1092,3 +1092,15 @@ Content-type: application/json
 Server: WebSocket++/0.7.0
 
 {"code":400,"message":"Bad Request","error":{"code":3030000,"name":"transaction_exception","what":"transaction validation exception","details":[{"message":"condition: assertion failed: integer underflow subtracting token balance","file":"wasm_interface.cpp","line_number":805,"method":"eosio_assert"},{"message":"","file":"apply_context.cpp","line_number":30,"method":"exec_one"},{"message":"","file":"chain_controller.cpp","line_number":1989,"method":"__apply_transaction"},{"message":"","file":"chain_controller.cpp","line_number":2024,"method":"_apply_transaction"},{"message":"","file":"chain_controller.cpp","line_number":2225,"method":"wrap_transaction_processing"},{"message":"","file":"chain_controller.cpp","line_number":353,"method":"_push_transaction"},{"message":"","file":"chain_controller.cpp","line_number":328,"method":"_push_transaction"}]}}
+
+
+
+
+
+
+
+
+
+ff6ed75a00009906975014d600000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100
+
+ff6ed75a00009906975014d600000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100

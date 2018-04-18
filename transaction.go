@@ -97,6 +97,11 @@ func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 		return nil, err
 	}
 
+	// Is it so ?
+	if len(s.ContextFreeData) == 0 {
+		rawcfd = []byte{}
+	}
+
 	switch opts.Compress {
 	case CompressionZlib:
 		var trx bytes.Buffer

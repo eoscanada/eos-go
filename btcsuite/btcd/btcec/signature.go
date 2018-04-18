@@ -422,86 +422,39 @@ func RecoverCompact(curve *KoblitzCurve, signature,
 
 // signRFC6979 generates a deterministic ECDSA signature according to RFC 6979 and BIP 62.
 func signRFC6979(privateKey *PrivateKey, hash []byte, nonce int) (*Signature, error) {
+
 	privkey := privateKey.ToECDSA()
-	curveParams := S256()
-	N := curveParams.N
-	halfOrder := curveParams.halfOrder
+	N := S256().N
+	halfOrder := S256().halfOrder
+	k := nonceRFC6979(privkey.D, hash, nonce)
+	inv := new(big.Int).ModInverse(k, N)
+	r, _ := privkey.Curve.ScalarBaseMult(k.Bytes())
+	if r.Cmp(N) == 1 {
+		r.Sub(r, N)
+	}
+
+	if r.Sign() == 0 {
+		return nil, errors.New("calculated R is zero")
+	}
 
 	e := hashToInt(hash, privkey.Curve)
+	s := new(big.Int).Mul(privkey.D, r)
+	s.Add(s, e)
+	s.Mul(s, inv)
+	s.Mod(s, N)
 
-	var r, s *big.Int
-	var err error
-	nonceRFC6979(privkey.D, hash, nonce, func(k *big.Int) bool {
-		// // find canonically valid signature
-
-		// if (curve.isInfinity(Q)) return false
-
-		// r = Q.affineX.mod(n)
-		// var Q = G.multiply(k)
-		var Q *big.Int
-		r, Q = privkey.Curve.ScalarBaseMult(k.Bytes())
-		fmt.Println("MAMA", r, Q)
-
-		// This thing is done OUTSIDE this loop in the JS version, does it change something?
-		if r.Cmp(N) == 1 {
-			r.Sub(r, N)
-		}
-
-		// if Q.Sign() == 0 {
-		// 	err = errors.New("Q's sign is zero")
-		// 	return false
-		// }
-
-		// if (r.signum() === 0) return false
-		if r.Sign() == 0 {
-			err = errors.New("calculated R is zero")
-			return false
-		}
-
-		// s = k.modInverse(n).multiply(e.add(d.multiply(r))).mod(n)
-		// if (s.signum() === 0) return false
-		inv := new(big.Int).ModInverse(k, N)
-		s = new(big.Int).Mul(privkey.D, r)
-		s.Add(s, e)
-		s.Mul(s, inv)
-		s.Mod(s, N)
-
-		if s.Cmp(halfOrder) == 1 {
-			s.Sub(N, s)
-		}
-		if s.Sign() == 0 {
-			err = errors.New("calculated S is zero")
-			return false
-		}
-
-		return true
-	})
-	if err != nil {
-		return nil, err
+	if s.Cmp(halfOrder) == 1 {
+		s.Sub(N, s)
+	}
+	if s.Sign() == 0 {
+		return nil, errors.New("calculated S is zero")
 	}
 	return &Signature{R: r, S: s}, nil
 }
 
 // nonceRFC6979 generates an ECDSA nonce (`k`) deterministically according to RFC 6979.
 // It takes a 32-byte hash as an input and returns 32-byte nonce to be used in ECDSA algorithm.
-func nonceRFC6979(privkey *big.Int, hash []byte, nonce int, checkSig func(k *big.Int) bool) {
-	// https://github.com/EOSIO/eosjs-ecc/blob/master/src/ecdsa.js#L72
-	// https://github.com/EOSIO/eosjs-ecc/blob/master/src/ecdsa.js#L9
-
-	/*
-		// From the `cryptonomex/secp256k1-???`'s src/secp256k1.c file:
-
-		static int nonce_function_rfc6979(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, unsigned int counter, const void *data) {
-		   secp256k1_rfc6979_hmac_sha256_t rng;
-		   unsigned int i;
-		   secp256k1_rfc6979_hmac_sha256_initialize(&rng, key32, 32, msg32, 32, (const unsigned char*)data, data != NULL ? 32 : 0);
-		   for (i = 0; i <= counter; i++) {
-		       secp256k1_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
-		   }
-		   secp256k1_rfc6979_hmac_sha256_finalize(&rng);
-		   return 1;
-		}
-	*/
+func nonceRFC6979(privkey *big.Int, hash []byte, nonce int) *big.Int {
 	if nonce > 0 {
 		moreHash := sha256.New()
 		moreHash.Write(hash)
@@ -550,14 +503,9 @@ func nonceRFC6979(privkey *big.Int, hash []byte, nonce int, checkSig func(k *big
 
 		// Step H3
 		secret := hashToInt(t, curve)
-
-		fmt.Println("CHECKING", checkSig(secret))
-		//if secret.Cmp(one) >= 0 && secret.Cmp(q) < 0 && checkSig(secret) {
-		if secret.Sign() > 0 && secret.Cmp(q) < 0 && checkSig(secret) {
-			fmt.Println("Going through")
-			return
+		if secret.Cmp(one) >= 0 && secret.Cmp(q) < 0 {
+			return secret
 		}
-		fmt.Println("NOT going through")
 		k = mac(alg, k, append(v, 0x00))
 		v = mac(alg, k, v)
 	}
