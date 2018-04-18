@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/btcsuite/golangcrypto/ripemd160"
+	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
+	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
+	"golang.org/x/crypto/ripemd160"
 )
 
 const PublicKeyPrefix = "EOS"

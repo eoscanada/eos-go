@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
+	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 )
 
 // Signature represents a signature for some hash

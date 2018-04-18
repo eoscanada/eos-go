@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
