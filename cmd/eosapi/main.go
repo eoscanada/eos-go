@@ -19,9 +19,8 @@ func main() {
 
 	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
-		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
-		"5K7Ffo8LXHhbsxV48w3sZzo8UnaKX3z5iD5mvac1AfDhHXKs3ao",
 		"5KE5hGNCAs1YvV74Ho14y1rV1DrnqZpTwLugS8QvYbKbrGAvVA1", // EOS71W8hvF43Eq6GQBRhuc5mvWKtknxzmb9NzNwPGpcEm2xAZaG8c
+		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3", //... 6CV
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -40,7 +39,7 @@ func main() {
 	// }
 
 	resp, err := api.SignPushActions(
-		system.NewNewAccount(AC("eosio"), AC("abourget"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
+		system.NewNewAccount(AC("eosio"), AC("abourgeta"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 	)
 	if err != nil {
 		fmt.Println("ERROR calling NewAccount:", err)
