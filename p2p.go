@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/eoscanada/eos-go/ecc"
-	"github.com/eoscanada/eos-go/p2p"
 )
 
 // Work-in-progress p2p comms implementation
@@ -16,9 +15,67 @@ import (
 // See /home/abourget/build/eos3/plugins/net_plugin/include/eosio/net_plugin/protocol.hpp:219
 //
 
+type P2PMessageType byte
+
+const (
+	HandshakeMessageType P2PMessageType = iota
+	GoAwayMessageType
+	TimeMessageType
+	NoticeMessageType
+	RequestMessageType
+	SyncRequestMessageType
+	SignedBlockSummaryMessageType
+	SignedBlockMessageType
+	SignedTransactionMessageType
+	PackedTransactionMessageType
+)
+
+var messageNames = []string{
+	"Handshake",
+	"GoAway",
+	"Time",
+	"Notice",
+	"Request",
+	"SyncRequest",
+	"SignedBlockSummary",
+	"SignedBlock",
+	"SignedTransaction",
+	"PackedTransaction",
+}
+
+func NewMessageType(aType byte) (t P2PMessageType, err error) {
+
+	t = P2PMessageType(aType)
+	if !t.isValid() {
+		err = errors.New(fmt.Sprintf("unknown type [%d]", aType))
+		return
+	}
+
+	return
+}
+
+func (t P2PMessageType) isValid() bool {
+
+	index := byte(t)
+	return int(index) < len(messageNames) && index >= 0
+
+}
+
+func (t P2PMessageType) Name() (string, bool) {
+
+	index := byte(t)
+
+	if !t.isValid() {
+		return "Unknown", false
+	}
+
+	name := messageNames[index]
+	return name, true
+}
+
 type P2PMessage struct {
 	Length  uint32
-	Type    p2p.MessageType
+	Type    P2PMessageType
 	Payload []byte
 }
 
@@ -60,7 +117,7 @@ func (a *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(7000), float64(len(payloadBytes))))]))
 
-	messageType, err := p2p.NewMessageType(payloadBytes[0])
+	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {
 		return
 	}

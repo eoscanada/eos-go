@@ -10,25 +10,37 @@ import (
 	"github.com/eoscanada/eos-go"
 )
 
-var Settings = []ForwardSetting{
+var Routes = []Route{
 	{From: ":8900", To: "cbillett.eoscanada.com:9876"},
 	{From: ":8901", To: "cbillett.eoscanada.com:9876"},
 	{From: ":8902", To: "localhost:19876"},
 }
 
-type ForwardSetting struct {
+type ActionType int
+
+const (
+	AddRoute ActionType = iota
+)
+
+type Route struct {
 	From string
 	To   string
 }
 
-type ForwardingSettingChannel chan ForwardSetting
+type RouteAction struct {
+	ActionType ActionType
+	Route
+}
 
-var forwardingSettingChannel = make(ForwardingSettingChannel)
+type RouteActionChannel chan RouteAction
 
-func handleForwardingSettings(channel ForwardingSettingChannel) {
+var routeActionChannel = make(RouteActionChannel)
 
-	for setting := range channel {
-		go startForwarding(setting)
+func handleRouteAction(channel RouteActionChannel) {
+
+	for routeAction := range channel {
+		//todo : handle action type
+		go startForwarding(routeAction.Route)
 	}
 }
 
@@ -39,6 +51,7 @@ type Message struct {
 	P2PMessage            eos.P2PMessage
 }
 
+//todo : this not really a sender ... find a better name ...
 type SenderChannel chan Message
 
 var senderChannel = make(SenderChannel)
@@ -63,18 +76,18 @@ func main() {
 	done := make(chan bool)
 
 	go handleSend(senderChannel)
-	go handleForwardingSettings(forwardingSettingChannel)
+	go handleRouteAction(routeActionChannel)
 
-	for _, forwardSetting := range Settings {
+	for _, route := range Routes {
 
-		forwardingSettingChannel <- forwardSetting
+		routeActionChannel <- RouteAction{ActionType: AddRoute, Route: route}
 	}
 
 	<-done
 
 }
 
-func startForwarding(setting ForwardSetting) {
+func startForwarding(setting Route) {
 
 	fmt.Printf("Starting forwarding [%s] -> [%s] \n", setting.From, setting.To)
 
