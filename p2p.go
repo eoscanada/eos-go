@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/eoscanada/eos-go/ecc"
+	"github.com/eoscanada/eos-go/p2p"
 )
 
 // Work-in-progress p2p comms implementation
@@ -17,7 +18,7 @@ import (
 
 type P2PMessage struct {
 	Length  uint32
-	Type    byte
+	Type    p2p.MessageType
 	Payload []byte
 }
 
@@ -25,7 +26,7 @@ func (a P2PMessage) MarshalBinary() ([]byte, error) {
 
 	data := make([]byte, a.Length+4, a.Length+4)
 	binary.LittleEndian.PutUint32(data[0:4], a.Length)
-	data[4] = a.Type
+	data[4] = byte(a.Type)
 	copy(data[5:], a.Payload)
 
 	return data, nil
@@ -59,9 +60,14 @@ func (a *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(7000), float64(len(payloadBytes))))]))
 
+	messageType, err := p2p.NewMessageType(payloadBytes[0])
+	if err != nil {
+		return
+	}
+
 	*a = P2PMessage{
 		Length:  size,
-		Type:    payloadBytes[0],
+		Type:    messageType,
 		Payload: payloadBytes[1:],
 	}
 

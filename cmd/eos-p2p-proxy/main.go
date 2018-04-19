@@ -119,7 +119,8 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 			return
 		}
 
-		fmt.Printf("Message received from [%s] with length: [%d] type: [%d]\n", connection.RemoteAddr().String(), msg.Length, msg.Type)
+		typeName, _ := msg.Type.Name()
+		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", connection.RemoteAddr().String(), msg.Length, msg.Type, typeName)
 
 		senderChannel <- Message{
 			DestinationConnection: forwardConnection,
