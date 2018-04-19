@@ -34,11 +34,12 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 
 	api.lastGetInfoLock.Lock()
 	if !api.lastGetInfoStamp.IsZero() && time.Now().Add(-1*time.Second).Before(api.lastGetInfoStamp) {
-		fmt.Println("Using the LAST INFO")
 		info = api.lastGetInfo
 	} else {
-		fmt.Println("SETTING the last info")
 		info, err = api.GetInfo()
+		if err != nil {
+			return nil, err
+		}
 		api.lastGetInfoStamp = time.Now()
 		api.lastGetInfo = info
 	}

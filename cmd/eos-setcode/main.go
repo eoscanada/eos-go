@@ -19,8 +19,9 @@ var flagPrivKey = flag.String("key", "", "Private key to load to sign transactio
 func main() {
 	flag.Parse()
 
-	api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
-	//api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
+//	api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
+	api := eos.New(&url.URL{Scheme: "http", Host: "localhost:9999"}, bytes.Repeat([]byte{0}, 32))
+	// api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
 	// api.Debug = true
 
@@ -28,7 +29,8 @@ func main() {
 	for _, key := range []string{
 		*flagPrivKey,
 		"5KE5hGNCAs1YvV74Ho14y1rV1DrnqZpTwLugS8QvYbKbrGAvVA1", // EOS71W8hvF43Eq6GQBRhuc5mvWKtknxzmb9NzNwPGpcEm2xAZaG8c
-		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3", //... 6CV
+		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3", //... 5CV
+		"5Jrwky4GxChTSqG29Mj9B1HGqJXx8T8WxkPJULmDaBDsguhiF8m",
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -42,13 +44,13 @@ func main() {
 	// Then, it DOESN't work when we sign our transactions directly through
 	// the KeyBag Signer
 	// The only difference is that we GO THROUGH JSON SERIALIZATION and BACK ?!?
-	walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:6667"}, bytes.Repeat([]byte{0}, 32))
-	// walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:5555"}, bytes.Repeat([]byte{0}, 32))
-	// walletAPI.Debug = true
-	if err := walletAPI.WalletImportKey("default", *flagPrivKey); err != nil {
-		fmt.Println("Error adding key to wallet:", err)
-	}
-	api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
+	// walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:6667"}, bytes.Repeat([]byte{0}, 32))
+	// // walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:5555"}, bytes.Repeat([]byte{0}, 32))
+	// // walletAPI.Debug = true
+	// if err := walletAPI.WalletImportKey("default", *flagPrivKey); err != nil {
+	// 	fmt.Println("Error adding key to wallet:", err)
+	// }
+	// api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
 
 	// Corresponding to the wallet, so we can sign on the live node.
 
@@ -60,7 +62,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("Couldn't read setcode data:", err)
 	}
-	setCodeTx.Actions = []*eos.Action{setCodeTx.Actions[1]}
+	setCodeTx.Actions = []*eos.Action{setCodeTx.Actions[0]}
 
 	resp, err := api.SignPushTransaction(setCodeTx, nil)
 	if err != nil {
@@ -69,12 +71,12 @@ func main() {
 		fmt.Println("RESP:", resp)
 	}
 
-	api.SetSigner(keyBag)
+	// api.SetSigner(keyBag)
 
-	resp, err = api.SignPushTransaction(setCodeTx, nil)
-	if err != nil {
-		fmt.Println("ERROR calling SetCode:", err)
-	} else {
-		fmt.Println("RESP:", resp)
-	}
+	// resp, err = api.SignPushTransaction(setCodeTx, nil)
+	// if err != nil {
+	// 	fmt.Println("ERROR calling SetCode:", err)
+	// } else {
+	// 	fmt.Println("RESP:", resp)
+	// }
 }
