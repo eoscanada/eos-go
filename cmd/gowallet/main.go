@@ -19,6 +19,7 @@ func main() {
 	for _, key := range []string{
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
 		"5K7Ffo8LXHhbsxV48w3sZzo8UnaKX3z5iD5mvac1AfDhHXKs3ao",
+		"5Jrwky4GxChTSqG29Mj9B1HGqJXx8T8WxkPJULmDaBDsguhiF8m", // EOS8BSnVNRPfuTFReBjP71TTbQp3gDSSMt7wf1iMGJFMwdtN7aupE
 		"5Jv2xEfJ4UVbNTBNjMxdWZAJcaDweP4bgwRd554NpWG3VynxW6L", // EOS5Dg9cu3yn5cMpWkrZnhmYk2xDBWmu62Sj2dNrWn6Ui82eoYJQh
 		"5KE5hGNCAs1YvV74Ho14y1rV1DrnqZpTwLugS8QvYbKbrGAvVA1", // EOS71W8hvF43Eq6GQBRhuc5mvWKtknxzmb9NzNwPGpcEm2xAZaG8c
 	} {
@@ -64,13 +65,13 @@ func main() {
 
 		err = json.Unmarshal(inputs[1], &requiredKeys)
 		if err != nil {
-			http.Error(w, "decoding param1", 500)
+			http.Error(w, "decoding param2", 500)
 			return
 		}
 
 		err = json.Unmarshal(inputs[2], &chainID)
 		if err != nil {
-			http.Error(w, "decoding param1", 500)
+			http.Error(w, "decoding param3", 500)
 			return
 		}
 

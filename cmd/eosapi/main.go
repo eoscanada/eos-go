@@ -21,6 +21,7 @@ func main() {
 	for _, key := range []string{
 		"5KE5hGNCAs1YvV74Ho14y1rV1DrnqZpTwLugS8QvYbKbrGAvVA1", // EOS71W8hvF43Eq6GQBRhuc5mvWKtknxzmb9NzNwPGpcEm2xAZaG8c
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3", //... 6CV
+		"5Jrwky4GxChTSqG29Mj9B1HGqJXx8T8WxkPJULmDaBDsguhiF8m",
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -38,8 +39,10 @@ func main() {
 	// 	fmt.Println("RESP:", resp)
 	// }
 
+	newAcct := AC("abou23u")
+
 	resp, err := api.SignPushActions(
-		system.NewNewAccount(AC("eosio"), AC("abourgeta"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
+		system.NewNewAccount(AC("eosio"), newAcct, ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 	)
 	if err != nil {
 		fmt.Println("ERROR calling NewAccount:", err)
@@ -47,17 +50,16 @@ func main() {
 		fmt.Println("RESP:", resp)
 	}
 
-	// walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:6667"}, bytes.Repeat([]byte{0}, 32))
-	// walletAPI.Debug = true
+	// walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:5555"}, bytes.Repeat([]byte{0}, 32))
+	// // walletAPI.Debug = true
 	// api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
 
 	// resp, err = api.SignPushActions(
-	// 	system.NewNewAccount(AC("eosio"), AC("abourget"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
+	// 	system.NewNewAccount(AC("eosio"), newAcct, ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 	// )
 	// if err != nil {
 	// 	fmt.Println("ERROR calling NewAccount:", err)
 	// } else {
 	// 	fmt.Println("RESP:", resp)
 	// }
-
 }

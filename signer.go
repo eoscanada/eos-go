@@ -2,6 +2,7 @@ package eos
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -112,13 +113,22 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, fmt.Errorf("private key for %q not in keybag", key)
 		}
 
-		sig, err := privKey.Sign(SigDigest(chainID, txdata, cfd))
+		sigDigest := SigDigest(chainID, txdata, cfd)
+		fmt.Println("SIGNING THIS DIGEST:", hex.EncodeToString(sigDigest))
+		fmt.Println("SIGNING THIS payload:", hex.EncodeToString(txdata))
+		fmt.Println("SIGNING THIS chainID:", hex.EncodeToString(chainID))
+		fmt.Println("SIGNING THIS cfd:", hex.EncodeToString(cfd))
+		sig, err := privKey.Sign(sigDigest)
 		if err != nil {
 			return nil, err
 		}
 
 		tx.Signatures = append(tx.Signatures, sig.String())
 	}
+
+	// tmpcnt, _ := json.Marshal(tx)
+	// var newTx *SignedTransaction
+	// _ = json.Unmarshal(tmpcnt, &newTx)
 
 	return tx, nil
 }

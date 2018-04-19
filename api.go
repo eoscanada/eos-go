@@ -193,19 +193,23 @@ func (api *API) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pub
 }
 
 func (api *API) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err error) {
-	return api.SignPushTransaction(&Transaction{Actions: a}, TxOptions{})
+	return api.SignPushTransaction(&Transaction{Actions: a}, nil)
 }
 
 func (api *API) SignPushActionsWithOpts(opts TxOptions, a ...*Action) (out *PushTransactionFullResp, err error) {
-	return api.SignPushTransaction(&Transaction{Actions: a}, opts)
+	return api.SignPushTransaction(&Transaction{Actions: a}, &opts)
 }
 
-func (api *API) SignPushTransaction(tx *Transaction, opts TxOptions) (out *PushTransactionFullResp, err error) {
+func (api *API) SignPushTransaction(tx *Transaction, opts *TxOptions) (out *PushTransactionFullResp, err error) {
 	if api.Signer == nil {
 		return nil, fmt.Errorf("no Signer configured")
 	}
 
-	chainID, err := tx.Fill(api)
+	if opts == nil {
+		opts = &TxOptions{}
+	}
+
+	_, err = tx.Fill(api)
 	if err != nil {
 		return nil, err
 	}
@@ -217,14 +221,14 @@ func (api *API) SignPushTransaction(tx *Transaction, opts TxOptions) (out *PushT
 
 	stx := NewSignedTransaction(tx)
 
-	stx.estimateResources(opts, api.DefaultMaxKCPUUsage, api.DefaultMaxNetUsageWords)
+	stx.estimateResources(*opts, api.DefaultMaxKCPUUsage, api.DefaultMaxNetUsageWords)
 
-	signedTx, err := api.Signer.Sign(stx, chainID, resp.RequiredKeys...)
+	signedTx, err := api.Signer.Sign(stx, api.ChainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("Sign: %s", err)
 	}
 
-	packed, err := signedTx.Pack(opts)
+	packed, err := signedTx.Pack(*opts)
 	if err != nil {
 		return nil, err
 	}

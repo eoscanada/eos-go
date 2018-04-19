@@ -3,11 +3,11 @@ package eos
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
 // see: libraries/chain/include/eosio/chain/contracts/types.hpp:100
 type ABI struct {
-	Types            []ABIType    `json:"types,omitempty"`
-	Structs          []StructDef  `json:"structs,omitempty"`
-	Actions          []ActionDef  `json:"actions,omitempty"`
-	Tables           []TableDef   `json:"tables,omitempty"`
-	RicardianClauses []ClausePair `json:"ricardian_clauses,omitempty"`
+	Types   []ABIType    `json:"types,omitempty"`
+	Structs []StructDef  `json:"structs,omitempty"`
+	Actions []ActionDef  `json:"actions,omitempty"`
+	Tables  []TableDef   `json:"tables,omitempty"`
+	Clauses []ClausePair `json:"clauses,omitempty"`
 }
 
 type ABIType struct {
@@ -18,7 +18,7 @@ type ABIType struct {
 type StructDef struct {
 	Name   string     `json:"name"`
 	Base   string     `json:"base"`
-	Fields []FieldDef `json:"fields,omitempty"` // WARN: UNORDERED!!! Should use `https://github.com/virtuald/go-ordered-json/blob/master/example_test.go`
+	Fields []FieldDef `json:"fields,omitempty"`
 }
 
 type FieldDef struct {

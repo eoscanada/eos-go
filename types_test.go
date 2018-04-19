@@ -171,6 +171,8 @@ func TestNameToString(t *testing.T) {
 		{"c08fca86a9a8d2d4", "undelegatebw"},
 		{"0040cbdaa86c52d5", "updateauth"},
 		{"0000000080ab26a7", "owner"},
+		{"00000040258ab2c2", "setcode"},
+		{"00000000b863b2c2", "setabi"},
 	}
 
 	for _, test := range tests {

@@ -11,10 +11,10 @@ import (
 )
 
 type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
-	Expiration     JSONTime `json:"expiration,omitempty"`
+	Expiration     JSONTime `json:"expiration"`
 	Region         uint16   `json:"region"`
-	RefBlockNum    uint16   `json:"ref_block_num,omitempty"`
-	RefBlockPrefix uint32   `json:"ref_block_prefix,omitempty"`
+	RefBlockNum    uint16   `json:"ref_block_num"`
+	RefBlockPrefix uint32   `json:"ref_block_prefix"`
 
 	MaxNetUsageWords Varuint32 `json:"max_net_usage_words"`
 	MaxKCPUUsage     Varuint32 `json:"max_kcpu_usage"`
@@ -22,8 +22,8 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 
 	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
 
-	ContextFreeActions []*Action `json:"context_free_actions,omitempty"`
-	Actions            []*Action `json:"actions,omitempty"`
+	ContextFreeActions []*Action `json:"context_free_actions"`
+	Actions            []*Action `json:"actions"`
 }
 
 // 69c9c15a 0000 1400 62f95d45 b31d 904e 00 00 020000000000ea305500000040258ab2c2010000000000ea305500000000a8ed
@@ -33,9 +33,11 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	var err error
 
 	api.lastGetInfoLock.Lock()
-	if !api.lastGetInfoStamp.IsZero() && api.lastGetInfoStamp.Before(time.Now().Add(-3*time.Second)) {
+	if !api.lastGetInfoStamp.IsZero() && time.Now().Add(-1*time.Second).Before(api.lastGetInfoStamp) {
+		fmt.Println("Using the LAST INFO")
 		info = api.lastGetInfo
 	} else {
+		fmt.Println("SETTING the last info")
 		info, err = api.GetInfo()
 		api.lastGetInfoStamp = time.Now()
 		api.lastGetInfo = info
@@ -129,7 +131,7 @@ func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 	return packed, nil
 }
 
-func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet uint32) error {
+func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet uint32) {
 	// see programs/cleos/main.cpp for an estimation algo..
 	if opts.MaxNetUsageWords != 0 {
 		tx.MaxNetUsageWords = Varuint32(opts.MaxNetUsageWords)
@@ -142,8 +144,6 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet ui
 	} else {
 		tx.MaxKCPUUsage = Varuint32(maxcpu)
 	}
-
-	return nil
 }
 
 // PackedTransaction represents a fully packed transaction, with
