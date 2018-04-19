@@ -7,7 +7,10 @@ import (
 
 	"fmt"
 
-	"github.com/eoscanada/eos-go/ecc"
+	"reflect"
+
+	"encoding/hex"
+	"math"
 )
 
 // Work-in-progress p2p comms implementation
@@ -30,24 +33,31 @@ const (
 	PackedTransactionMessageType
 )
 
-var messageNames = []string{
-	"Handshake",
-	"GoAway",
-	"Time",
-	"Notice",
-	"Request",
-	"SyncRequest",
-	"SignedBlockSummary",
-	"SignedBlock",
-	"SignedTransaction",
-	"PackedTransaction",
+type MessageAttributes struct {
+	Name        string
+	ReflectType reflect.Type
 }
+
+var messageAttributes = []MessageAttributes{
+	{Name: "Handshake", ReflectType: nil},
+	{Name: "GoAway", ReflectType: nil},
+	{Name: "Time", ReflectType: reflect.TypeOf(TimeMessage{})},
+	{Name: "Notice", ReflectType: nil},
+	{Name: "Request", ReflectType: nil},
+	{Name: "SyncRequest", ReflectType: nil},
+	{Name: "SignedBlockSummary", ReflectType: nil},
+	{Name: "SignedBlock", ReflectType: nil},
+	{Name: "SignedTransaction", ReflectType: nil},
+	{Name: "PackedTransaction", ReflectType: nil},
+}
+
+var UnknownMessageTypeError = errors.New("unknown type")
 
 func NewMessageType(aType byte) (t P2PMessageType, err error) {
 
 	t = P2PMessageType(aType)
 	if !t.isValid() {
-		err = errors.New(fmt.Sprintf("unknown type [%d]", aType))
+		err = UnknownMessageTypeError
 		return
 	}
 
@@ -57,7 +67,7 @@ func NewMessageType(aType byte) (t P2PMessageType, err error) {
 func (t P2PMessageType) isValid() bool {
 
 	index := byte(t)
-	return int(index) < len(messageNames) && index >= 0
+	return int(index) < len(messageAttributes) && index >= 0
 
 }
 
@@ -69,8 +79,20 @@ func (t P2PMessageType) Name() (string, bool) {
 		return "Unknown", false
 	}
 
-	name := messageNames[index]
-	return name, true
+	attr := messageAttributes[index]
+	return attr.Name, true
+}
+
+func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
+
+	index := byte(t)
+
+	if !t.isValid() {
+		return MessageAttributes{}, false
+	}
+
+	attr := messageAttributes[index]
+	return attr, true
 }
 
 type P2PMessage struct {
@@ -79,17 +101,52 @@ type P2PMessage struct {
 	Payload []byte
 }
 
-func (a P2PMessage) MarshalBinary() ([]byte, error) {
+func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
 
-	data := make([]byte, a.Length+4, a.Length+4)
-	binary.LittleEndian.PutUint32(data[0:4], a.Length)
-	data[4] = byte(a.Type)
-	copy(data[5:], a.Payload)
+	attr, ok := p2pMsg.Type.Attributes()
+
+	if !ok {
+		return nil, UnknownMessageTypeError
+	}
+
+	msg := reflect.New(attr.ReflectType)
+
+	err := p2pMsg.DecodePayload(msg.Interface())
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Interface(), err
+}
+
+func (p2pMsg P2PMessage) DecodePayload(message interface{}) error {
+
+	attr, ok := p2pMsg.Type.Attributes()
+
+	if !ok {
+		return UnknownMessageTypeError
+	}
+
+	messageType := reflect.TypeOf(message).Elem()
+	if messageType != attr.ReflectType {
+		return errors.New(fmt.Sprintf("Given message type [%s] to not match payload type [%s]", messageType.Name(), attr.ReflectType.Name()))
+	}
+
+	return UnmarshalBinary(p2pMsg.Payload, message)
+
+}
+
+func (p2pMsg P2PMessage) MarshalBinary() ([]byte, error) {
+
+	data := make([]byte, p2pMsg.Length+4, p2pMsg.Length+4)
+	binary.LittleEndian.PutUint32(data[0:4], p2pMsg.Length)
+	data[4] = byte(p2pMsg.Type)
+	copy(data[5:], p2pMsg.Payload)
 
 	return data, nil
 }
 
-func (a *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
+func (p2pMsg *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	lengthBytes := make([]byte, 4, 4)
 	_, err = r.Read(lengthBytes)
@@ -115,59 +172,18 @@ func (a *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//headerBytes := append(lengthBytes, payloadBytes[:int(math.Min(float64(10), float64(len(payloadBytes))))]...)
 
-	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(7000), float64(len(payloadBytes))))]))
+	fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
 
 	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {
 		return
 	}
 
-	*a = P2PMessage{
+	*p2pMsg = P2PMessage{
 		Length:  size,
 		Type:    messageType,
 		Payload: payloadBytes[1:],
 	}
 
 	return nil
-}
-
-type HandshakeMessage struct {
-	// net_plugin/protocol.hpp handshake_message
-	NetworkVersion           int16         `json:"network_version"`
-	ChainID                  HexBytes      `json:"chain_id"`
-	NodeID                   HexBytes      `json:"node_id"` // sha256
-	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
-	Time                     Tstamp        `json:"time"`    // time?!
-	Token                    HexBytes      `json:"token"`   // digest of time to prove we own the private `key`
-	Signature                ecc.Signature `json:"sig"`     // can be empty if no key, signature of the digest above
-	P2PAddress               string        `json:"p2p_address"`
-	LastIrreversibleBlockNum uint32        `json:"last_irreversible_block_num"`
-	LastIrreversibleBlockID  HexBytes      `json:"last_irreversible_block_id"`
-	HeadNum                  uint32        `json:"head_num"`
-	HeadID                   HexBytes      `json:"head_id"`
-	OS                       string        `json:"os"`
-	Agent                    string        `json:"agent"`
-	Generation               int16         `json:"generation"`
-}
-
-type GoAwayReason uint8
-
-const (
-	GoAwayNoReason = uint8(iota)
-	GoAwaySelfConnect
-	GoAwayDuplicate
-	GoAwayWrongChain
-	GoAwayWrongVersion
-	GoAwayForked
-	GoAwayUnlinkable
-	GoAwayBadTransaction
-	GoAwayValidation
-	GoAwayAuthentication
-	GoAwayFatalOther
-	GoAwayBenignOther
-	GoAwayCrazy
-)
-
-type GoAwayMessage struct {
-	GoAwayReason
 }

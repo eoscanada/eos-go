@@ -44,19 +44,18 @@ func handleRouteAction(channel RouteActionChannel) {
 	}
 }
 
-type Message struct {
+type Communication struct {
 	Source                string
 	Destination           string
 	DestinationConnection net.Conn
 	P2PMessage            eos.P2PMessage
 }
 
-//todo : this not really a sender ... find a better name ...
-type SenderChannel chan Message
+type TransmissionChannel chan Communication
 
-var senderChannel = make(SenderChannel)
+var transmissionChannel = make(TransmissionChannel)
 
-func handleSend(channel SenderChannel) {
+func handleTransmission(channel TransmissionChannel) {
 
 	for forward := range channel {
 
@@ -68,15 +67,32 @@ func handleSend(channel SenderChannel) {
 			fmt.Printf("Message forwarded to [%s]\n", forward.DestinationConnection.RemoteAddr().String())
 		}
 	}
-
 }
+
+type CommunicationRouter chan Communication
+
+var communicationRouter = make(CommunicationRouter)
+
+func handleRouting(routingChannel CommunicationRouter) {
+
+	for communication := range routingChannel {
+		for _, channel := range routingChannels {
+			channel <- communication
+		}
+	}
+}
+
+var routingChannels []chan Communication
 
 func main() {
 
 	done := make(chan bool)
 
-	go handleSend(senderChannel)
+	go handleTransmission(transmissionChannel)
 	go handleRouteAction(routeActionChannel)
+	go handleRouting(communicationRouter)
+
+	routingChannels = []chan Communication{transmissionChannel}
 
 	for _, route := range Routes {
 
@@ -124,7 +140,6 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 	for {
 		var msg eos.P2PMessage
 
-		//fmt.Printf("Waiting for message from [%s]\n", connection.RemoteAddr().String())
 		err = decoder.Decode(&msg)
 		if err != nil {
 			fmt.Println("Connection error: ", err)
@@ -135,7 +150,7 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 		typeName, _ := msg.Type.Name()
 		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", connection.RemoteAddr().String(), msg.Length, msg.Type, typeName)
 
-		senderChannel <- Message{
+		transmissionChannel <- Communication{
 			DestinationConnection: forwardConnection,
 			P2PMessage:            msg,
 		}

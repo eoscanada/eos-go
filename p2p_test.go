@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test(t *testing.T) {
+func TestP2PMessage_UnmarshalBinaryRead(t *testing.T) {
 
 	hexString := `09000000050100000019000000`
 	decoded, err := hex.DecodeString(hexString)
@@ -21,6 +21,39 @@ func Test(t *testing.T) {
 	assert.Equal(t, uint32(9), s.Length)
 	assert.Equal(t, P2PMessageType(5), s.Type)
 	assert.Equal(t, []byte{0x1, 0x0, 0x0, 0x0, 0x19, 0x0, 0x0, 0x0}, s.Payload)
+}
+
+func TestP2PMessage_DecodePayload(t *testing.T) {
+
+	hexString := `2100000002000000000000000000000000000000004016e1d216df26150000000000000000`
+	decoded, err := hex.DecodeString(hexString)
+	if err != nil {
+		t.Error(err)
+	}
+	var p2pMessage P2PMessage
+	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage))
+
+	var timeMessage TimeMessage
+	assert.NoError(t, p2pMessage.DecodePayload(&timeMessage))
+
+	//todo : more assert
+
+}
+func TestP2PMessage_AsMessage(t *testing.T) {
+
+	hexString := `2100000002000000000000000000000000000000004016e1d216df26150000000000000000`
+	decoded, err := hex.DecodeString(hexString)
+	if err != nil {
+		t.Error(err)
+	}
+	var p2pMessage P2PMessage
+	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage))
+
+	msg, err := p2pMessage.AsMessage()
+
+	assert.NoError(t, err)
+	assert.IsType(t, &TimeMessage{}, msg)
+
 }
 
 func TestMessageType_Name(t *testing.T) {
