@@ -52,11 +52,15 @@ func main() {
 
 	// Corresponding to the wallet, so we can sign on the live node.
 
+	// THIS IS REALLY WEIRD!! IT WORKS WITH KEYBAG BUT NOT WITH THE OFFICIAL WALLET!
+	// I inspected all bytes.. they sign the same hash.. it's all the same thing..
+	// isn't it PACKED the same way on the `push_transaction` side ?!?!
+
 	setCodeTx, err := system.NewSetCodeTx(eos.AccountName(*flagAccount), *flagWasm, *flagABI)
 	if err != nil {
 		log.Fatalln("Couldn't read setcode data:", err)
 	}
-	setCodeTx.Actions = []*eos.Action{setCodeTx.Actions[0]}
+	setCodeTx.Actions = []*eos.Action{setCodeTx.Actions[1]}
 
 	resp, err := api.SignPushTransaction(setCodeTx, nil)
 	if err != nil {
@@ -73,5 +77,4 @@ func main() {
 	} else {
 		fmt.Println("RESP:", resp)
 	}
-
 }
