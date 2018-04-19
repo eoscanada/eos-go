@@ -61,7 +61,10 @@ type ActionData struct {
 }
 
 func NewActionData(obj interface{}) ActionData {
-	return ActionData{obj: obj}
+	return ActionData{
+		HexBytes: []byte(""),
+		obj: obj,
+	}
 }
 
 func (a ActionData) MarshalBinary() ([]byte, error) {
