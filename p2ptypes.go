@@ -49,3 +49,6 @@ type TimeMessage struct {
 	Transmit    Tstamp `json:"xmt"`
 	Destination Tstamp `json:"dst"`
 }
+
+type SignedBlockSummaryMessage struct {
+}

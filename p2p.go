@@ -8,9 +8,6 @@ import (
 	"fmt"
 
 	"reflect"
-
-	"encoding/hex"
-	"math"
 )
 
 // Work-in-progress p2p comms implementation
@@ -109,6 +106,10 @@ func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
 		return nil, UnknownMessageTypeError
 	}
 
+	if attr.ReflectType == nil {
+		return nil, errors.New("Missing reflect type ")
+	}
+
 	msg := reflect.New(attr.ReflectType)
 
 	err := p2pMsg.DecodePayload(msg.Interface())
@@ -125,6 +126,10 @@ func (p2pMsg P2PMessage) DecodePayload(message interface{}) error {
 
 	if !ok {
 		return UnknownMessageTypeError
+	}
+
+	if attr.ReflectType == nil {
+		return errors.New("Missing reflect type ")
 	}
 
 	messageType := reflect.TypeOf(message).Elem()
@@ -172,7 +177,7 @@ func (p2pMsg *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//headerBytes := append(lengthBytes, payloadBytes[:int(math.Min(float64(10), float64(len(payloadBytes))))]...)
 
-	fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
+	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
 
 	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {

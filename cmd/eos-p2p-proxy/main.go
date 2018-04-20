@@ -7,13 +7,15 @@ import (
 
 	"bufio"
 
+	"encoding/json"
+
 	"github.com/eoscanada/eos-go"
 )
 
 var Routes = []Route{
 	{From: ":8900", To: "cbillett.eoscanada.com:9876"},
 	{From: ":8901", To: "cbillett.eoscanada.com:9876"},
-	{From: ":8902", To: "localhost:19876"},
+	{From: ":8902", To: "Charless-MacBook-Pro-2.local:19876"},
 }
 
 type ActionType int
@@ -77,30 +79,31 @@ func handleRouting(routingChannel CommunicationRouter) {
 
 	for communication := range routingChannel {
 		for _, channel := range routingChannels {
+
+			fmt.Println("sending comm to channel : ", channel)
+
 			channel <- communication
 		}
 	}
 }
 
-var routingChannels []chan Communication
+type WebSocketChannel chan Communication
 
-func main() {
+var webSocketChannel = make(WebSocketChannel)
 
-	done := make(chan bool)
+func handleWebSocket(webSocketChannel WebSocketChannel) {
 
-	go handleTransmission(transmissionChannel)
-	go handleRouteAction(routeActionChannel)
-	go handleRouting(communicationRouter)
+	for communication := range webSocketChannel {
 
-	routingChannels = []chan Communication{transmissionChannel}
+		msg, err := communication.P2PMessage.AsMessage()
+		if err != nil {
+			fmt.Println("websocket err: ", err)
+			continue
+		}
 
-	for _, route := range Routes {
-
-		routeActionChannel <- RouteAction{ActionType: AddRoute, Route: route}
+		b, err := json.Marshal(msg)
+		fmt.Println("WebSocket data ------> ", string(b))
 	}
-
-	<-done
-
 }
 
 func startForwarding(setting Route) {
@@ -150,9 +153,31 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 		typeName, _ := msg.Type.Name()
 		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", connection.RemoteAddr().String(), msg.Length, msg.Type, typeName)
 
-		transmissionChannel <- Communication{
+		communicationRouter <- Communication{
 			DestinationConnection: forwardConnection,
 			P2PMessage:            msg,
 		}
 	}
+}
+
+var routingChannels []chan Communication
+
+func main() {
+
+	done := make(chan bool)
+
+	routingChannels = []chan Communication{transmissionChannel, webSocketChannel}
+
+	go handleRouteAction(routeActionChannel)
+
+	go handleRouting(communicationRouter)
+	go handleTransmission(transmissionChannel)
+	go handleWebSocket(webSocketChannel)
+
+	for _, route := range Routes {
+
+		routeActionChannel <- RouteAction{ActionType: AddRoute, Route: route}
+	}
+
+	<-done
 }
