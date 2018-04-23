@@ -2,6 +2,10 @@ package eos
 
 import "github.com/eoscanada/eos-go/ecc"
 
+type P2PMessage interface {
+
+}
+
 type HandshakeMessage struct {
 	// net_plugin/protocol.hpp handshake_message
 	NetworkVersion           int16         `json:"network_version"`

@@ -7,9 +7,16 @@ import (
 
 	"bufio"
 
-	"encoding/json"
+	"flag"
+
+	"plugin"
+
+	"log"
+
+	"reflect"
 
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/proxy"
 )
 
 var Routes = []Route{
@@ -50,7 +57,7 @@ type Communication struct {
 	Source                string
 	Destination           string
 	DestinationConnection net.Conn
-	P2PMessage            eos.P2PMessage
+	P2PMessage            eos.P2PMessageEnvelope
 }
 
 type TransmissionChannel chan Communication
@@ -85,24 +92,25 @@ func handleRouting(routingChannel Router) {
 	}
 }
 
-type WebSocketChannel chan Communication
+type PostProcessorChannel chan Communication
 
-var webSocketChannel = make(WebSocketChannel)
+var postProcessorChannel = make(PostProcessorChannel)
 
-func handleWebSocket(webSocketChannel WebSocketChannel) {
+func handlePostProcess(postProcessChannel PostProcessorChannel, postProcessChannels []proxy.P2PMessageChannel) {
 
 	fmt.Println("Wait for comm on web socket")
 
-	for communication := range webSocketChannel {
+	for communication := range postProcessChannel {
 
 		msg, err := communication.P2PMessage.AsMessage()
 		if err != nil {
-			fmt.Println("websocket err: ", err)
+			fmt.Println("Post processing err: ", err)
 			continue
 		}
-
-		b, err := json.Marshal(msg)
-		fmt.Println("WebSocket data ------> ", string(b))
+		for _, c := range postProcessChannels {
+			fmt.Printf("Sending message [%s] to channel [%s]\n", msg, reflect.TypeOf(c))
+			c <- msg
+		}
 	}
 }
 
@@ -141,7 +149,7 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 	decoder := eos.NewDecoder(bufio.NewReader(connection))
 
 	for {
-		var msg eos.P2PMessage
+		var msg eos.P2PMessageEnvelope
 
 		err = decoder.Decode(&msg)
 		if err != nil {
@@ -162,18 +170,54 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 
 var routingChannels []chan Communication
 
+type pluginFlags []string
+
+func (p *pluginFlags) String() string {
+	return "TODO"
+}
+
+func (p *pluginFlags) Set(value string) error {
+	*p = append(*p, value)
+	return nil
+}
+
+var plugins pluginFlags
+
 func main() {
 
 	done := make(chan bool)
 
-	routingChannels = []chan Communication{transmissionChannel}
-	//routingChannels = []chan Communication{transmissionChannel, webSocketChannel}
+	flag.Var(&plugins, "plugin", "Plugin so file path")
+	flag.Parse()
+
+	var postProcessChannels []proxy.P2PMessageChannel
+	for _, p := range plugins {
+		fmt.Println("Loading plugin: ", p)
+		plug, err := plugin.Open(p)
+		if err != nil {
+			log.Fatal("Failed to load plugin: ", err)
+		}
+		pluginSymbol, err := plug.Lookup("Plugin")
+		if err != nil {
+			log.Fatal("Failed to load plugin: ", err)
+		}
+
+		var plugin proxy.PostProcessorPlugin
+		plugin, ok := pluginSymbol.(proxy.PostProcessorPlugin)
+		if !ok {
+			log.Fatal("unexpected type from module symbol: ", reflect.TypeOf(pluginSymbol).String())
+		}
+		go plugin.Start()
+		postProcessChannels = append(postProcessChannels, plugin.Channel())
+	}
+
+	routingChannels = []chan Communication{transmissionChannel, postProcessorChannel}
 
 	go handleRouteAction(routeActionChannel)
 
 	go handleRouting(router)
 	go handleTransmission(transmissionChannel)
-	go handleWebSocket(webSocketChannel)
+	go handlePostProcess(postProcessorChannel, postProcessChannels)
 
 	for _, route := range Routes {
 

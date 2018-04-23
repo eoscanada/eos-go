@@ -15,7 +15,7 @@ func TestP2PMessage_UnmarshalBinaryRead(t *testing.T) {
 		t.Error(err)
 	}
 
-	var s P2PMessage
+	var s P2PMessageEnvelope
 
 	assert.NoError(t, UnmarshalBinary(decoded, &s))
 	assert.Equal(t, uint32(9), s.Length)
@@ -30,7 +30,7 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	var p2pMessage P2PMessage
+	var p2pMessage P2PMessageEnvelope
 	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage))
 
 	var timeMessage TimeMessage
@@ -46,7 +46,7 @@ func TestP2PMessage_AsMessage(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	var p2pMessage P2PMessage
+	var p2pMessage P2PMessageEnvelope
 	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage))
 
 	msg, err := p2pMessage.AsMessage()

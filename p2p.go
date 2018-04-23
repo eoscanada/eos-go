@@ -3,9 +3,8 @@ package eos
 import (
 	"encoding/binary"
 	"errors"
-	"io"
-
 	"fmt"
+	"io"
 
 	"reflect"
 )
@@ -92,13 +91,13 @@ func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
 	return attr, true
 }
 
-type P2PMessage struct {
+type P2PMessageEnvelope struct {
 	Length  uint32
 	Type    P2PMessageType
 	Payload []byte
 }
 
-func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
+func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
 
 
 
@@ -127,7 +126,7 @@ func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
 	return msg.Interface(), err
 }
 
-func (p2pMsg P2PMessage) DecodePayload(message interface{}) error {
+func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
 
 	attr, ok := p2pMsg.Type.Attributes()
 
@@ -148,7 +147,7 @@ func (p2pMsg P2PMessage) DecodePayload(message interface{}) error {
 
 }
 
-func (p2pMsg P2PMessage) MarshalBinary() ([]byte, error) {
+func (p2pMsg P2PMessageEnvelope) MarshalBinary() ([]byte, error) {
 
 	data := make([]byte, p2pMsg.Length+4, p2pMsg.Length+4)
 	binary.LittleEndian.PutUint32(data[0:4], p2pMsg.Length)
@@ -158,7 +157,7 @@ func (p2pMsg P2PMessage) MarshalBinary() ([]byte, error) {
 	return data, nil
 }
 
-func (p2pMsg *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
+func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	lengthBytes := make([]byte, 4, 4)
 	_, err = r.Read(lengthBytes)
@@ -191,7 +190,7 @@ func (p2pMsg *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 		return
 	}
 
-	*p2pMsg = P2PMessage{
+	*p2pMsg = P2PMessageEnvelope{
 		Length:  size,
 		Type:    messageType,
 		Payload: payloadBytes[1:],
