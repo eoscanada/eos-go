@@ -2,14 +2,17 @@ package main
 
 import (
 	"net"
-
 	"fmt"
-
 	"bufio"
-
 	"encoding/json"
-
 	"github.com/eoscanada/eos-go"
+	"google.golang.org/api/monitoring/v3"
+	"golang.org/x/net/context"
+	"time"
+	"math/rand"
+	"os"
+	"log"
+	"golang.org/x/oauth2/google"
 )
 
 var Routes = []Route{
@@ -49,6 +52,7 @@ func handleRouteAction(channel RouteActionChannel) {
 type Communication struct {
 	Source                string
 	Destination           string
+	SourceConnection      net.Conn
 	DestinationConnection net.Conn
 	P2PMessage            eos.P2PMessage
 }
@@ -79,9 +83,6 @@ func handleRouting(routingChannel CommunicationRouter) {
 
 	for communication := range routingChannel {
 		for _, channel := range routingChannels {
-
-			fmt.Println("sending comm to channel : ", channel)
-
 			channel <- communication
 		}
 	}
@@ -104,6 +105,113 @@ func handleWebSocket(webSocketChannel WebSocketChannel) {
 		b, err := json.Marshal(msg)
 		fmt.Println("WebSocket data ------> ", string(b))
 	}
+}
+
+type MonitoringChannel chan Communication
+
+var monitoringChannel = make(MonitoringChannel)
+
+func handleMonitoring(monitoringChannel MonitoringChannel) {
+
+	for communication := range monitoringChannel {
+
+		msg, err := communication.P2PMessage.AsMessage()
+		if err != nil {
+			continue
+		}
+		typeName, _ := communication.P2PMessage.Type.Name()
+		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", communication.SourceConnection.RemoteAddr().String(), communication.P2PMessage.Length, communication.P2PMessage.Type, typeName)
+
+		b, err := json.Marshal(msg)
+		fmt.Println("Monitoring data ------> ", string(b))
+		///////////////////////////////////////////////////////////
+
+		if len(os.Args) < 2 {
+			fmt.Println("Usage: custommetric <project_id>")
+			return
+		}
+
+		ctx := context.Background()
+		s, err := createService(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		//projectID := os.Args[1]
+		projectID := "eoscanada-sandbox-patrick-test"
+		metricType := "custom.googleapis.com/patrick/test/monitoring3"
+
+		if err := writeTimeSeriesValue(s, projectID, metricType, typeName, communication.SourceConnection.RemoteAddr().String()); err != nil {
+			log.Fatal(err)
+		}
+
+		///////////////////////////////////////////////////////////
+	}
+}
+
+func writeTimeSeriesValue(s *monitoring.Service, projectID, metricType string, typeName string, msgFrom string) error {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	rand.Seed(time.Now().UTC().UnixNano())
+	randVal := rand.Int63n(10)
+	timeseries := monitoring.TimeSeries{
+		Metric: &monitoring.Metric{
+			Type: metricType,
+			Labels: map[string]string{
+				//"environment":  "STAGING",
+				"msgTypeLabel": typeName,
+				"msgFrom": msgFrom,
+				//"msgTypeCode": communication.P2PMessage.Type,
+			},
+		},
+		Resource: &monitoring.MonitoredResource{
+			Labels: map[string]string{
+				"project_id": projectID,
+				//"instance_id": "test-instance",
+				//"zone":        "us-central1-f",
+			},
+			Type: "global",
+			//Type: "gce_instance",
+		},
+		Points: []*monitoring.Point{
+			{
+				Interval: &monitoring.TimeInterval{
+					//StartTime: now,
+					EndTime:   now,
+				},
+				Value: &monitoring.TypedValue{
+					Int64Value: &randVal,
+					//Int64Value: int64(&randVal),
+				},
+			},
+		},
+	}
+
+	createTimeseriesRequest := monitoring.CreateTimeSeriesRequest{
+		TimeSeries: []*monitoring.TimeSeries{&timeseries},
+	}
+
+	//log.Printf("writeTimeseriesRequest: %s\n", formatResource(createTimeseriesRequest))
+	_, err := s.Projects.TimeSeries.Create(projectResource(projectID), &createTimeseriesRequest).Do()
+	if err != nil {
+		return fmt.Errorf("Could not write time series value, %v ", err)
+	}
+	return nil
+}
+
+func createService(ctx context.Context) (*monitoring.Service, error) {
+	hc, err := google.DefaultClient(ctx, monitoring.MonitoringScope)
+	if err != nil {
+		return nil, err
+	}
+	s, err := monitoring.New(hc)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func projectResource(projectID string) string {
+	return "projects/" + projectID
 }
 
 func startForwarding(setting Route) {
@@ -147,13 +255,12 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 		if err != nil {
 			fmt.Println("Connection error: ", err)
 			forwardConnection.Close()
+			//TODO: verifier si la connection doit etre fermee des deux bords
 			return
 		}
 
-		typeName, _ := msg.Type.Name()
-		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", connection.RemoteAddr().String(), msg.Length, msg.Type, typeName)
-
 		communicationRouter <- Communication{
+			SourceConnection:      connection,
 			DestinationConnection: forwardConnection,
 			P2PMessage:            msg,
 		}
@@ -166,13 +273,14 @@ func main() {
 
 	done := make(chan bool)
 
-	routingChannels = []chan Communication{transmissionChannel, webSocketChannel}
+	routingChannels = []chan Communication{transmissionChannel, webSocketChannel, monitoringChannel}
 
 	go handleRouteAction(routeActionChannel)
 
 	go handleRouting(communicationRouter)
 	go handleTransmission(transmissionChannel)
 	go handleWebSocket(webSocketChannel)
+	go handleMonitoring(monitoringChannel)
 
 	for _, route := range Routes {
 
