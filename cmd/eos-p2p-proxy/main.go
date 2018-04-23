@@ -71,16 +71,14 @@ func handleTransmission(channel TransmissionChannel) {
 	}
 }
 
-type CommunicationRouter chan Communication
+type Router chan Communication
 
-var communicationRouter = make(CommunicationRouter)
+var router = make(Router)
 
-func handleRouting(routingChannel CommunicationRouter) {
+func handleRouting(routingChannel Router) {
 
 	for communication := range routingChannel {
 		for _, channel := range routingChannels {
-
-			fmt.Println("sending comm to channel : ", channel)
 
 			channel <- communication
 		}
@@ -92,6 +90,8 @@ type WebSocketChannel chan Communication
 var webSocketChannel = make(WebSocketChannel)
 
 func handleWebSocket(webSocketChannel WebSocketChannel) {
+
+	fmt.Println("Wait for comm on web socket")
 
 	for communication := range webSocketChannel {
 
@@ -153,7 +153,7 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 		typeName, _ := msg.Type.Name()
 		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", connection.RemoteAddr().String(), msg.Length, msg.Type, typeName)
 
-		communicationRouter <- Communication{
+		router <- Communication{
 			DestinationConnection: forwardConnection,
 			P2PMessage:            msg,
 		}
@@ -166,11 +166,12 @@ func main() {
 
 	done := make(chan bool)
 
-	routingChannels = []chan Communication{transmissionChannel, webSocketChannel}
+	routingChannels = []chan Communication{transmissionChannel}
+	//routingChannels = []chan Communication{transmissionChannel, webSocketChannel}
 
 	go handleRouteAction(routeActionChannel)
 
-	go handleRouting(communicationRouter)
+	go handleRouting(router)
 	go handleTransmission(transmissionChannel)
 	go handleWebSocket(webSocketChannel)
 

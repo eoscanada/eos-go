@@ -42,8 +42,8 @@ var messageAttributes = []MessageAttributes{
 	{Name: "Notice", ReflectType: nil},
 	{Name: "Request", ReflectType: nil},
 	{Name: "SyncRequest", ReflectType: nil},
-	{Name: "SignedBlockSummary", ReflectType: nil},
-	{Name: "SignedBlock", ReflectType: nil},
+	{Name: "SignedBlockSummary", ReflectType: reflect.TypeOf(SignedBlockSummaryMessage{})},
+	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlockMessage{})},
 	{Name: "SignedTransaction", ReflectType: nil},
 	{Name: "PackedTransaction", ReflectType: nil},
 }
@@ -100,7 +100,14 @@ type P2PMessage struct {
 
 func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
 
+
+
 	attr, ok := p2pMsg.Type.Attributes()
+
+	if attr.ReflectType != nil {
+
+		fmt.Println("P2P message type:", attr.ReflectType.Name())
+	}
 
 	if !ok {
 		return nil, UnknownMessageTypeError

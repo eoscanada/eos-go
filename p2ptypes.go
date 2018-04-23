@@ -24,7 +24,7 @@ type HandshakeMessage struct {
 type GoAwayReason uint8
 
 const (
-	GoAwayNoReason = uint8(iota)
+	GoAwayNoReason       = uint8(iota)
 	GoAwaySelfConnect
 	GoAwayDuplicate
 	GoAwayWrongChain
@@ -50,5 +50,47 @@ type TimeMessage struct {
 	Destination Tstamp `json:"dst"`
 }
 
+
+type TransactionStatus uint8
+
+const (
+	TransactionStatusExecuted TransactionStatus = iota ///< succeed, no error handler executed
+	TransactionStatusSoftFail                          ///< objectively failed (not executed), error handler executed
+	TransactionStatusHardFail                          ///< objectively failed and error handler objectively failed thus no state change
+	TransactionStatusSelayed                           ///< transaction delayed
+);
+
+type TransactionId SHA256Bytes
+
+type TransactionReceipt struct {
+	Status       TransactionStatus `json:"status"`
+	KCPUUsage    uint32            `json:"kcpu_usage"`
+	NeUsageWords uint32            `json:"net_usage_words"`
+	Id           TransactionId     `json:"id"`
+}
+
+type ShardLock struct {
+	AccountName AccountName `json:"account_name"`
+	ScopeName   ScopeName   `json:"scope_name"`
+}
+
+type ShardSummary struct {
+	ReadLocks    []ShardLock          `json:"read_locks"`
+	WriteLocks   []ShardLock          `json:"write_locks"`
+	Transactions []TransactionReceipt `json:"transactions"`
+}
+
+type Cycles [] ShardSummary
+type RegionSummary struct {
+	Region        uint16
+	CyclesSummary []Cycles `json:"cycles_summary"`
+}
+
 type SignedBlockSummaryMessage struct {
+	Regions []RegionSummary `json:"regions"`
+}
+
+type SignedBlockMessage struct {
+	SignedBlockSummaryMessage
+	InputTransactions []PackedTransaction `json:"input_transactions"`
 }

@@ -230,6 +230,14 @@ type UnmarshalBinaryWithCurrentAction interface {
 }
 
 func (d *Decoder) Decode(v interface{}) (err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("!!!!!!!!!!!!!!! Recovered in f", r)
+			err = r.(error)
+		}
+	}()
+
 	//fmt.Printf("MAMA: %#v %T\n", v, v)
 	if i, ok := v.(UnmarshalBinaryReader); ok {
 		return i.UnmarshalBinaryRead(d.r)
