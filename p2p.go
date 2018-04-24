@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
+	"encoding/hex"
 	"reflect"
 )
 
@@ -92,14 +94,12 @@ func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
 }
 
 type P2PMessageEnvelope struct {
-	Length  uint32
-	Type    P2PMessageType
-	Payload []byte
+	Length  uint32         `json:"length"`
+	Type    P2PMessageType `json:"type"`
+	Payload []byte         `json:"-"`
 }
 
 func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
-
-
 
 	attr, ok := p2pMsg.Type.Attributes()
 
@@ -183,7 +183,7 @@ func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//headerBytes := append(lengthBytes, payloadBytes[:int(math.Min(float64(10), float64(len(payloadBytes))))]...)
 
-	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
+	fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
 
 	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {

@@ -3,7 +3,6 @@ package eos
 import "github.com/eoscanada/eos-go/ecc"
 
 type P2PMessage interface {
-
 }
 
 type HandshakeMessage struct {
@@ -28,7 +27,7 @@ type HandshakeMessage struct {
 type GoAwayReason uint8
 
 const (
-	GoAwayNoReason       = uint8(iota)
+	GoAwayNoReason = uint8(iota)
 	GoAwaySelfConnect
 	GoAwayDuplicate
 	GoAwayWrongChain
@@ -54,7 +53,6 @@ type TimeMessage struct {
 	Destination Tstamp `json:"dst"`
 }
 
-
 type TransactionStatus uint8
 
 const (
@@ -62,7 +60,7 @@ const (
 	TransactionStatusSoftFail                          ///< objectively failed (not executed), error handler executed
 	TransactionStatusHardFail                          ///< objectively failed and error handler objectively failed thus no state change
 	TransactionStatusSelayed                           ///< transaction delayed
-);
+)
 
 type TransactionId SHA256Bytes
 
@@ -84,13 +82,43 @@ type ShardSummary struct {
 	Transactions []TransactionReceipt `json:"transactions"`
 }
 
-type Cycles [] ShardSummary
+type Cycles []ShardSummary
 type RegionSummary struct {
 	Region        uint16
 	CyclesSummary []Cycles `json:"cycles_summary"`
 }
 
+type ProducerKey struct {
+	AccountName     AccountName `json:"account_name"`
+	BlockSigningKey SHA256Bytes `json:"block_signing_key"` //todo: Surely not good
+}
+
+type ProducerScheduleType struct {
+	Version   uint32        `json:"version"`
+	Producers []ProducerKey `json:"producers"`
+}
+
+type BlockHeader struct {
+	Digest           SHA256Bytes   `json:"digest"`
+	BlockNumber      uint32        `json:"block_number"`
+	NumFromId        uint32        `json:"num_from_id"`
+	Previous         SHA256Bytes   `json:"previous"`
+	Timestamp        Tstamp        `json:"timestamp"`
+	TransactionMRoot SHA256Bytes   `json:"transaction_mroot"`
+	ActionMRoot      SHA256Bytes   `json:"action_mroot"`
+	BlockMRoot       SHA256Bytes   `json:"block_mroot"`
+	Producer         AccountName   `json:"producer"`
+	ScheduleVersion  uint32        `json:"schedule_version"`
+	NewProducers     []ProducerKey `json:"new_producers"`
+}
+
+type SignedBlockHeader struct {
+	BlockHeader
+	ProducerSignature SHA256Bytes `json:"producer_signature"` //todo: Surely not good
+}
+
 type SignedBlockSummaryMessage struct {
+	SignedBlockHeader
 	Regions []RegionSummary `json:"regions"`
 }
 

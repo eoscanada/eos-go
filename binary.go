@@ -238,7 +238,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 	}()
 
-	//fmt.Printf("MAMA: %#v %T\n", v, v)
+	fmt.Printf("MAMA!!!: %#v %T\n", v, v)
 	if i, ok := v.(UnmarshalBinaryReader); ok {
 		return i.UnmarshalBinaryRead(d.r)
 	}
@@ -285,7 +285,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	switch t.Kind() {
 	case reflect.Array:
-		//fmt.Println("Array")
+		fmt.Println("Array")
 		len := t.Len()
 		for i := 0; i < int(len); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
@@ -294,7 +294,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Slice:
-		//fmt.Println("Slice")
+		fmt.Println("Slice")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
@@ -304,18 +304,21 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		} else if int(l) != t.Len() {
 			return fmt.Errorf("binary: encoded size %d != real size %d", l, t.Len())
 		}
+		fmt.Println("Slice len: ", l)
 		for i := 0; i < int(l); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
 				return
 			}
 		}
 
+		fmt.Println("Slice done: ", l)
 	case reflect.Struct:
-		//fmt.Println("Struct")
+		fmt.Println("Struct")
 		l := rv.NumField()
 		for i := 0; i < l; i++ {
 			if v := rv.Field(i); v.CanSet() && t.Field(i).Name != "_" {
 				iface := v.Addr().Interface()
+				fmt.Println("Field name:", t.Field(i).Name)
 				if err = d.Decode(iface); err != nil {
 					return
 				}
@@ -323,7 +326,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Map:
-		//fmt.Println("Map")
+		fmt.Println("Map")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
@@ -344,29 +347,30 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.String:
-		//fmt.Println("String")
+		fmt.Println("String")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
 		}
+		fmt.Println("String len: ", l)
 		buf := make([]byte, l)
 		_, err = d.r.Read(buf)
 		rv.SetString(string(buf))
 
 	case reflect.Bool:
-		//fmt.Println("Bool")
+		fmt.Println("Bool")
 		var out byte
 		err = binary.Read(d.r, d.Order, &out)
 		rv.SetBool(out != 0)
 
 	case reflect.Int:
-		//fmt.Println("Int")
+		fmt.Println("Int")
 		var out int64
 		err = binary.Read(d.r, d.Order, &out)
 		rv.SetInt(out)
 
 	case reflect.Uint:
-		//fmt.Println("uInt")
+		fmt.Println("uInt")
 		var out uint64
 		err = binary.Read(d.r, d.Order, &out)
 		rv.SetUint(out)
@@ -376,6 +380,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128:
 		//fmt.Println("Some funky ints")
 		err = binary.Read(d.r, d.Order, v)
+		fmt.Printf("uintXX: [%d]\n", v)
 
 	default:
 		return errors.New("binary: unsupported type " + t.String())

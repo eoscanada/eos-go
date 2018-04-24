@@ -339,6 +339,18 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (t *SHA256Bytes) UnmarshalBinary(data []byte) error {
+
+	s := SHA256Bytes(data)
+
+	ss := string(s)
+	fmt.Println(ss)
+	*t = s
+	return nil
+}
+
+func (t SHA256Bytes) UnmarshalBinarySize() int { return 32 }
+
 // TODO: SHA256Bytes, implement the Binary encoder... fixed size.
 
 type Varuint32 uint32
