@@ -400,18 +400,16 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 			return err
 		}
 	}
-	seconds := unixNano / 1e9
-	nanoSecs := unixNano*1e9 - seconds
-	*t = Tstamp{time.Unix(seconds, nanoSecs)}
+	*t = Tstamp{time.Unix(0, unixNano)}
 
 	return nil
 }
 
 func (t *Tstamp) UnmarshalBinary(data []byte) error {
+
 	unixNano := int64(binary.LittleEndian.Uint64(data))
-	seconds := unixNano / 1e9
-	nanoSecs := unixNano*1e9 - seconds
-	t.Time = time.Unix(seconds, nanoSecs).UTC()
+	t.Time = time.Unix(0, unixNano)
+
 	return nil
 }
 

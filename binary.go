@@ -238,7 +238,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 	}()
 
-	fmt.Printf("MAMA!!!: %#v %T\n", v, v)
+	//fmt.Printf("MAMA!!!: %#v %T\n", v, v)
 	if i, ok := v.(UnmarshalBinaryReader); ok {
 		return i.UnmarshalBinaryRead(d.r)
 	}

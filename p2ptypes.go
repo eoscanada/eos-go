@@ -1,6 +1,10 @@
 package eos
 
-import "github.com/eoscanada/eos-go/ecc"
+import (
+	"fmt"
+
+	"github.com/eoscanada/eos-go/ecc"
+)
 
 type P2PMessage interface {
 }
@@ -53,6 +57,10 @@ type TimeMessage struct {
 	Destination Tstamp `json:"dst"`
 }
 
+func (t *TimeMessage) String() string {
+	return fmt.Sprintf("Origin [%s], Receive [%s], Transmit [%s], Destination [%s]", t.Origin, t.Receive, t.Transmit, t.Destination)
+}
+
 type TransactionStatus uint8
 
 const (
@@ -99,27 +107,24 @@ type ProducerScheduleType struct {
 }
 
 type BlockHeader struct {
-	Digest           SHA256Bytes   `json:"digest"`
-	BlockNumber      uint32        `json:"block_number"`
-	NumFromId        uint32        `json:"num_from_id"`
-	Previous         SHA256Bytes   `json:"previous"`
-	Timestamp        Tstamp        `json:"timestamp"`
-	TransactionMRoot SHA256Bytes   `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes   `json:"action_mroot"`
-	BlockMRoot       SHA256Bytes   `json:"block_mroot"`
-	Producer         AccountName   `json:"producer"`
-	ScheduleVersion  uint32        `json:"schedule_version"`
-	NewProducers     []ProducerKey `json:"new_producers"`
+	Previous  SHA256Bytes `json:"previous"`
+	Timestamp Tstamp      `json:"timestamp"`
+	/*	TransactionMRoot SHA256Bytes `json:"transaction_mroot"`
+		ActionMRoot      SHA256Bytes `json:"action_mroot"`
+		BlockMRoot       SHA256Bytes `json:"block_mroot"`
+		Producer         AccountName `json:"producer"`
+		ScheduleVersion  uint32      `json:"schedule_version"`
+	*/ //NewProducers     []ProducerKey `json:"new_producers"`
 }
 
 type SignedBlockHeader struct {
 	BlockHeader
-	ProducerSignature SHA256Bytes `json:"producer_signature"` //todo: Surely not good
+	//ProducerSignature ecc.Signature `json:"producer_signature"` //todo: Surely not good
 }
 
 type SignedBlockSummaryMessage struct {
 	SignedBlockHeader
-	Regions []RegionSummary `json:"regions"`
+	//Regions []RegionSummary `json:"regions"`
 }
 
 type SignedBlockMessage struct {

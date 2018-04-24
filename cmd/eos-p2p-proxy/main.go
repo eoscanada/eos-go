@@ -221,7 +221,7 @@ func main() {
 		go h(plugin.Channel())
 	}
 
-	postProcessChannels = append(postProcessChannels, websocket.Plugin.Channel())
+	//postProcessChannels = append(postProcessChannels, websocket.Plugin.Channel())
 	go websocket.HandleWebSocket(websocket.Plugin.Channel())
 
 	routingChannels = []chan Communication{transmissionChannel, postProcessorChannel}

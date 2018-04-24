@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,6 +25,11 @@ func TestP2PMessage_UnmarshalBinaryRead(t *testing.T) {
 	assert.Equal(t, []byte{0x1, 0x0, 0x0, 0x0, 0x19, 0x0, 0x0, 0x0}, s.Payload)
 }
 
+/*
+0f010000
+06
+0003338e14a48fd745ae3ff9d9dfb3d149c04507f9fde929c67311e1f004eab21849e444b7d9a2e6e5730eef8166a57ef1cc6e905cc0944fd8cee5d0c2ec6ec9a53076333442d7a57ce7820187f8889111443a1466666eac707ece1249d91a1a279ee04a856013e6b1fc7a14d74d8c237d47d8e2d951c422301f77342eb6f79f143958c90000000000ea30550000000000001f7ed3ef0a9a8bc7b695a390b20909852a7c43e3e54dce9d64aa107762a0b54b904b611084d16fb2bb4973374f380bd43548ac8e64e52c9911bcbb96128ccf5a11010000010100010000000000ea30550000000000ea305501001326b7530160d3c85db322fd2c550248fe22151d1e9423d2250a699595e5b1c1517d",
+*/
 func TestP2PMessage_DecodePayload(t *testing.T) {
 
 	type Case struct {
@@ -35,7 +42,7 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 	cases := []Case{
 		{
 			Name:           "SignedBlockSummaryMessage Good",
-			HexString:      "0f01000006000330907937f721e855bb1ff0b6143af8bd82cba550d1c20438b29dbb30b2a74170e244d756399dd08666bbbe2e44c0f0967b9dfaa02b33234a2a31e52319961cf2de529eb4bc72f5b7b28b86848e837ce30805ae57e81023189eabd77d516a12ac02a7e9f40f2a2d66d2199a8bc9983e30066f61cbf24230653bb74b9c91e8d7b972ab0000000000ea3055000000000000205c87c866b524d313866c8c0c036518ee4e898b133d570b41403e31bb072f909d1b8e40775e261e24ae787aeeb127e5f25725ab684f382f7f92a68ee4672e1fac010000010100010000000000ea30550000000000ea305501001326fd25e5ad35924d41b9611304b682dcfca0bf1154008f97268d43bfaba999b104",
+			HexString:      "0f010000060003338e14a48fd745ae3ff9d9dfb3d149c04507f9fde929c67311e1f004eab21849e444b7d9a2e6e5730eef8166a57ef1cc6e905cc0944fd8cee5d0c2ec6ec9a53076333442d7a57ce7820187f8889111443a1466666eac707ece1249d91a1a279ee04a856013e6b1fc7a14d74d8c237d47d8e2d951c422301f77342eb6f79f143958c90000000000ea30550000000000001f7ed3ef0a9a8bc7b695a390b20909852a7c43e3e54dce9d64aa107762a0b54b904b611084d16fb2bb4973374f380bd43548ac8e64e52c9911bcbb96128ccf5a11010000010100010000000000ea30550000000000ea305501001326b7530160d3c85db322fd2c550248fe22151d1e9423d2250a699595e5b1c1517d",
 			ExpectedStruct: &SignedBlockSummaryMessage{},
 			ExpectedErr:    false,
 		},
@@ -47,7 +54,7 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 		//},
 		//{
 		//	Name:           "Time Good",
-		//	HexString:      "2100000002000000000000000000000000000000004016e1d216df26150000000000000000",
+		//	HexString:      "210000000284226efdfa6e2815e80d7efdfa6e2815342b7efdfa6e28150000000000000000",
 		//	ExpectedStruct: &TimeMessage{},
 		//	ExpectedErr:    false,
 		//},
@@ -60,11 +67,11 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 		//s := string(decoded)
 		//fmt.Println(s)
 
-		var p2pMessage P2PMessageEnvelope
-		assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage), c.Name)
+		var p2PMessageEnvelope P2PMessageEnvelope
+		assert.NoError(t, UnmarshalBinary(decoded, &p2PMessageEnvelope), c.Name)
 
-		assert.NoError(t, p2pMessage.DecodePayload(c.ExpectedStruct), c.Name)
-		//fmt.Println(c.ExpectedStruct)
+		assert.NoError(t, p2PMessageEnvelope.DecodePayload(c.ExpectedStruct), c.Name)
+		fmt.Println("BILC: ", c.ExpectedStruct)
 	}
 
 	//todo : more assert
