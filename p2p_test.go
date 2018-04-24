@@ -2,6 +2,7 @@ package eos
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,9 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 		assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage), c.Name)
 
 		assert.NoError(t, p2pMessage.DecodePayload(c.ExpectedStruct), c.Name)
+		jsonCnt, err := json.MarshalIndent(c.ExpectedStruct, "", "  ")
+		assert.NoError(t, err)
+		assert.Equal(t, `superob`, string(jsonCnt))
 		//fmt.Println(c.ExpectedStruct)
 	}
 

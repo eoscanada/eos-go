@@ -68,6 +68,15 @@ func (e *Encoder) writeVarint(v int) error {
 }
 
 func (b *Encoder) Encode(v interface{}) (err error) {
+	if i, ok := v.(OptionalBinaryMarshaler); ok {
+		if i.OptionalBinaryMarshalerPresent() {
+			b.w.Write([]byte(0x01))
+		} else {
+			b.w.Write([]byte(0x00))
+			return nil
+		}
+	}
+
 	switch cv := v.(type) {
 	case encoding.BinaryMarshaler:
 		buf, err := cv.MarshalBinary()
@@ -229,6 +238,10 @@ type UnmarshalBinaryWithCurrentAction interface {
 	UnmarshalBinaryWithCurrentAction(data []byte, act Action) error
 }
 
+type OptionalBinaryMarshaler interface {
+	OptionalBinaryMarshalerPresent()
+}
+
 func (d *Decoder) Decode(v interface{}) (err error) {
 
 	defer func() {
@@ -237,6 +250,18 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			err = r.(error)
 		}
 	}()
+
+	if _, ok := v.(OptionalBinaryMarshaler); ok {
+		isPresent := make([]byte, 1, 1)
+		_, err := d.r.Read(isPresent)
+		if err != nil {
+			return err
+		}
+
+		if isPresent[0] == 0 {
+			return nil
+		}
+	}
 
 	fmt.Printf("MAMA!!!: %#v %T\n", v, v)
 	if i, ok := v.(UnmarshalBinaryReader); ok {

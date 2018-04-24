@@ -1,6 +1,8 @@
 package eos
 
-import "github.com/eoscanada/eos-go/ecc"
+import (
+	"github.com/eoscanada/eos-go/ecc"
+)
 
 type P2PMessage interface {
 }
@@ -59,16 +61,16 @@ const (
 	TransactionStatusExecuted TransactionStatus = iota ///< succeed, no error handler executed
 	TransactionStatusSoftFail                          ///< objectively failed (not executed), error handler executed
 	TransactionStatusHardFail                          ///< objectively failed and error handler objectively failed thus no state change
-	TransactionStatusSelayed                           ///< transaction delayed
+	TransactionStatusDelayed                           ///< transaction delayed
 )
 
-type TransactionId SHA256Bytes
+type TransactionID SHA256Bytes
 
 type TransactionReceipt struct {
-	Status       TransactionStatus `json:"status"`
-	KCPUUsage    uint32            `json:"kcpu_usage"`
-	NeUsageWords uint32            `json:"net_usage_words"`
-	Id           TransactionId     `json:"id"`
+	Status        TransactionStatus `json:"status"`
+	KCPUUsage     Varuint32         `json:"kcpu_usage"`
+	NetUsageWords Varuint32         `json:"net_usage_words"`
+	ID            TransactionID     `json:"id"`
 }
 
 type ShardLock struct {
@@ -89,32 +91,35 @@ type RegionSummary struct {
 }
 
 type ProducerKey struct {
-	AccountName     AccountName `json:"account_name"`
-	BlockSigningKey SHA256Bytes `json:"block_signing_key"` //todo: Surely not good
+	AccountName     AccountName   `json:"account_name"`
+	BlockSigningKey ecc.PublicKey `json:"block_signing_key"`
 }
 
-type ProducerScheduleType struct {
+type ProducerSchedule struct {
 	Version   uint32        `json:"version"`
 	Producers []ProducerKey `json:"producers"`
 }
 
 type BlockHeader struct {
-	Digest           SHA256Bytes   `json:"digest"`
-	BlockNumber      uint32        `json:"block_number"`
-	NumFromId        uint32        `json:"num_from_id"`
-	Previous         SHA256Bytes   `json:"previous"`
-	Timestamp        Tstamp        `json:"timestamp"`
-	TransactionMRoot SHA256Bytes   `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes   `json:"action_mroot"`
-	BlockMRoot       SHA256Bytes   `json:"block_mroot"`
-	Producer         AccountName   `json:"producer"`
-	ScheduleVersion  uint32        `json:"schedule_version"`
-	NewProducers     []ProducerKey `json:"new_producers"`
+	Previous         SHA256Bytes               `json:"previous"`
+	Timestamp        BlockTimestamp            `json:"timestamp"`
+	TransactionMRoot SHA256Bytes               `json:"transaction_mroot"`
+	ActionMRoot      SHA256Bytes               `json:"action_mroot"`
+	BlockMRoot       SHA256Bytes               `json:"block_mroot"`
+	Producer         AccountName               `json:"producer"`
+	ScheduleVersion  uint32                    `json:"schedule_version"`
+	NewProducers     *OptionalProducerSchedule `json:"new_producers"`
 }
+
+type OptionalProducerSchedule struct {
+	ProducerSchedule
+}
+
+func (a *OptionalProducerSchedule) OptionalBinaryMarshalerPresent() bool { return a == nil }
 
 type SignedBlockHeader struct {
 	BlockHeader
-	ProducerSignature SHA256Bytes `json:"producer_signature"` //todo: Surely not good
+	ProducerSignature ecc.Signature `json:"producer_signature"`
 }
 
 type SignedBlockSummaryMessage struct {
