@@ -1412,3 +1412,31 @@ d32a
 
 
 UNAUTHORIZED
+
+
+
+
+0f010000
+06
+000330907937f721e855bb1ff0b6143af8bd82cba550d1c20438b29dbb30b2a7
+4170e244 = 2004 ou 2008, si c'est un nom de secondes depuis l'EPOCH (1970)
+d756399dd08666bbbe2e44c0f0967b9dfaa02b33234a2a31e52319961cf2de52
+9eb4bc72f5b7b28b86848e837ce30805ae57e81023189eabd77d516a12ac02a7
+e9f40f2a2d66d2199a8bc9983e30066f61cbf24230653bb74b9c91e8d7b972ab
+0000000000ea3055 eosio
+00000000
+00 optional not there !!
+00205c87c866b524d313866c8c0c036518ee4e898b133d570b41403e31bb072f909d1b8e40775e261e24ae787aeeb127e5f25725ab684f382f7f92a68ee4672e1fac producer_signature 66 bytes
+01 []region
+0000 region
+01 []cycles
+01 []shardsummary
+00 []readlocks
+01 []writelocks
+0000000000ea3055 "eosio"
+0000000000ea3055 "eosio"
+01 []transactions
+00 status = executed
+13 KCPUUsage = 19
+26 NetusageWords = 38
+fd25e5ad35924d41b9611304b682dcfca0bf1154008f97268d43bfaba999b104  transaction ID

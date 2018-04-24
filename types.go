@@ -400,6 +400,7 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 			return err
 		}
 	}
+
 	*t = Tstamp{time.Unix(0, unixNano)}
 
 	return nil
@@ -418,5 +419,54 @@ func (t Tstamp) UnmarshalBinarySize() int { return 8 }
 func (t Tstamp) MarshalBinary() ([]byte, error) {
 	out := []byte{0, 0, 0, 0, 0, 0, 0, 0}
 	binary.LittleEndian.PutUint64(out, uint64(t.UnixNano()))
+	return out, nil
+}
+
+// Block timestamp, has EPOCH Y2K. Adds 946684800000ms to the incoming value.
+
+type BlockTimestamp struct {
+	time.Time
+}
+
+// func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
+// 	return json.Marshal(fmt.Sprintf("%d", t.UnixNano()))
+// }
+
+// func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
+// 	var unixNano int64
+// 	if data[0] == '"' {
+// 		var s string
+// 		if err = json.Unmarshal(data, &s); err != nil {
+// 			return
+// 		}
+
+// 		unixNano, err = strconv.ParseInt(s, 10, 64)
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 	} else {
+// 		unixNano, err = strconv.ParseInt(string(data), 10, 64)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+
+// 	*t = BlockTimestamp{time.Unix(0, unixNano)}
+
+// 	return nil
+// }
+
+func (t *BlockTimestamp) UnmarshalBinary(data []byte) error {
+	unixSec := int64(binary.LittleEndian.Uint32(data))
+	t.Time = time.Unix(unixSec+946684800, 0).UTC()
+	return nil
+}
+
+func (t BlockTimestamp) UnmarshalBinarySize() int { return 4 }
+
+func (t BlockTimestamp) MarshalBinary() ([]byte, error) {
+	out := []byte{0, 0, 0, 0}
+	binary.LittleEndian.PutUint32(out, uint32(t.Unix()-946684800))
 	return out, nil
 }

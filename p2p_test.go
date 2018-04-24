@@ -2,6 +2,7 @@ package eos
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"testing"
 
 	"fmt"
@@ -70,8 +71,11 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 		var p2PMessageEnvelope P2PMessageEnvelope
 		assert.NoError(t, UnmarshalBinary(decoded, &p2PMessageEnvelope), c.Name)
 
-		assert.NoError(t, p2PMessageEnvelope.DecodePayload(c.ExpectedStruct), c.Name)
-		fmt.Println("BILC: ", c.ExpectedStruct)
+		assert.NoError(t, p2pMessage.DecodePayload(c.ExpectedStruct), c.Name)
+		jsonCnt, err := json.MarshalIndent(c.ExpectedStruct, "", "  ")
+		assert.NoError(t, err)
+		assert.Equal(t, `superob`, string(jsonCnt))
+		//fmt.Println(c.ExpectedStruct)
 	}
 
 	//todo : more assert

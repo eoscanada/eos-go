@@ -63,14 +63,11 @@ func NewMessageType(aType byte) (t P2PMessageType, err error) {
 }
 
 func (t P2PMessageType) isValid() bool {
-
 	index := byte(t)
 	return int(index) < len(messageAttributes) && index >= 0
-
 }
 
 func (t P2PMessageType) Name() (string, bool) {
-
 	index := byte(t)
 
 	if !t.isValid() {
@@ -82,7 +79,6 @@ func (t P2PMessageType) Name() (string, bool) {
 }
 
 func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
-
 	index := byte(t)
 
 	if !t.isValid() {
@@ -100,20 +96,15 @@ type P2PMessageEnvelope struct {
 }
 
 func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
-
 	attr, ok := p2pMsg.Type.Attributes()
-
-	if attr.ReflectType != nil {
-
-		fmt.Println("P2P message type:", attr.ReflectType.Name())
-	}
-
 	if !ok {
 		return nil, UnknownMessageTypeError
 	}
 
 	if attr.ReflectType == nil {
 		return nil, errors.New("Missing reflect type ")
+	} else {
+		fmt.Println("P2P message type:", attr.ReflectType.Name())
 	}
 
 	msg := reflect.New(attr.ReflectType)
@@ -127,20 +118,18 @@ func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
 }
 
 func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
-
 	attr, ok := p2pMsg.Type.Attributes()
-
 	if !ok {
 		return UnknownMessageTypeError
 	}
 
 	if attr.ReflectType == nil {
-		return errors.New("Missing reflect type ")
+		return errors.New("missing reflect type")
 	}
 
 	messageType := reflect.TypeOf(message).Elem()
 	if messageType != attr.ReflectType {
-		return errors.New(fmt.Sprintf("Given message type [%s] to not match payload type [%s]", messageType.Name(), attr.ReflectType.Name()))
+		return fmt.Errorf("given message type [%s] to not match payload type [%s]", messageType.Name(), attr.ReflectType.Name())
 	}
 
 	return UnmarshalBinary(p2pMsg.Payload, message)
@@ -148,7 +137,6 @@ func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
 }
 
 func (p2pMsg P2PMessageEnvelope) MarshalBinary() ([]byte, error) {
-
 	data := make([]byte, p2pMsg.Length+4, p2pMsg.Length+4)
 	binary.LittleEndian.PutUint32(data[0:4], p2pMsg.Length)
 	data[4] = byte(p2pMsg.Type)
@@ -158,11 +146,9 @@ func (p2pMsg P2PMessageEnvelope) MarshalBinary() ([]byte, error) {
 }
 
 func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
-
 	lengthBytes := make([]byte, 4, 4)
 	_, err = r.Read(lengthBytes)
 	if err != nil {
-		fmt.Errorf("error: [%s]\n", err)
 		return
 	}
 
