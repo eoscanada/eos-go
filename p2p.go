@@ -3,14 +3,10 @@ package eos
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 
-	"fmt"
-
 	"reflect"
-
-	"encoding/hex"
-	"math"
 )
 
 // Work-in-progress p2p comms implementation
@@ -95,18 +91,22 @@ func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
 	return attr, true
 }
 
-type P2PMessage struct {
+type P2PMessageEnvelope struct {
 	Length  uint32
 	Type    P2PMessageType
 	Payload []byte
 }
 
-func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
+func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
 
 	attr, ok := p2pMsg.Type.Attributes()
 
 	if !ok {
 		return nil, UnknownMessageTypeError
+	}
+
+	if attr.ReflectType == nil {
+		return nil, errors.New("Missing reflect type ")
 	}
 
 	msg := reflect.New(attr.ReflectType)
@@ -119,12 +119,16 @@ func (p2pMsg P2PMessage) AsMessage() (interface{}, error) {
 	return msg.Interface(), err
 }
 
-func (p2pMsg P2PMessage) DecodePayload(message interface{}) error {
+func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
 
 	attr, ok := p2pMsg.Type.Attributes()
 
 	if !ok {
 		return UnknownMessageTypeError
+	}
+
+	if attr.ReflectType == nil {
+		return errors.New("Missing reflect type ")
 	}
 
 	messageType := reflect.TypeOf(message).Elem()
@@ -136,7 +140,7 @@ func (p2pMsg P2PMessage) DecodePayload(message interface{}) error {
 
 }
 
-func (p2pMsg P2PMessage) MarshalBinary() ([]byte, error) {
+func (p2pMsg P2PMessageEnvelope) MarshalBinary() ([]byte, error) {
 
 	data := make([]byte, p2pMsg.Length+4, p2pMsg.Length+4)
 	binary.LittleEndian.PutUint32(data[0:4], p2pMsg.Length)
@@ -146,7 +150,7 @@ func (p2pMsg P2PMessage) MarshalBinary() ([]byte, error) {
 	return data, nil
 }
 
-func (p2pMsg *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
+func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	lengthBytes := make([]byte, 4, 4)
 	_, err = r.Read(lengthBytes)
@@ -172,14 +176,14 @@ func (p2pMsg *P2PMessage) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//headerBytes := append(lengthBytes, payloadBytes[:int(math.Min(float64(10), float64(len(payloadBytes))))]...)
 
-	fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
+	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
 
 	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {
 		return
 	}
 
-	*p2pMsg = P2PMessage{
+	*p2pMsg = P2PMessageEnvelope{
 		Length:  size,
 		Type:    messageType,
 		Payload: payloadBytes[1:],

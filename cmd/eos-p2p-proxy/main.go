@@ -7,13 +7,22 @@ import (
 
 	"bufio"
 
+	"flag"
+
+	"plugin"
+
+	"log"
+
+	"reflect"
+
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/proxy"
 )
 
 var Routes = []Route{
 	{From: ":8900", To: "cbillett.eoscanada.com:9876"},
 	{From: ":8901", To: "cbillett.eoscanada.com:9876"},
-	{From: ":8902", To: "localhost:19876"},
+	{From: ":8902", To: "Charless-MacBook-Pro-2.local:19876"},
 }
 
 type ActionType int
@@ -48,7 +57,7 @@ type Communication struct {
 	Source                string
 	Destination           string
 	DestinationConnection net.Conn
-	P2PMessage            eos.P2PMessage
+	P2PMessage            eos.P2PMessageEnvelope
 }
 
 type TransmissionChannel chan Communication
@@ -77,30 +86,30 @@ func handleRouting(routingChannel CommunicationRouter) {
 
 	for communication := range routingChannel {
 		for _, channel := range routingChannels {
+
 			channel <- communication
 		}
 	}
 }
 
-var routingChannels []chan Communication
+type PostProcessorChannel chan Communication
 
-func main() {
+var postProcessorChannel = make(PostProcessorChannel)
 
-	done := make(chan bool)
+func handlePostProcess(postProcessChannel PostProcessorChannel, postProcessChannels []proxy.P2PMessageChannel) {
 
-	go handleTransmission(transmissionChannel)
-	go handleRouteAction(routeActionChannel)
-	go handleRouting(communicationRouter)
+	for communication := range postProcessChannel {
 
-	routingChannels = []chan Communication{transmissionChannel}
-
-	for _, route := range Routes {
-
-		routeActionChannel <- RouteAction{ActionType: AddRoute, Route: route}
+		msg, err := communication.P2PMessage.AsMessage()
+		if err != nil {
+			fmt.Println("Post processing err: ", err)
+			continue
+		}
+		for _, c := range postProcessChannels {
+			fmt.Printf("Sending message [%s] to channel [%s]\n", msg, reflect.TypeOf(c))
+			c <- msg
+		}
 	}
-
-	<-done
-
 }
 
 func startForwarding(setting Route) {
@@ -138,7 +147,7 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 	decoder := eos.NewDecoder(bufio.NewReader(connection))
 
 	for {
-		var msg eos.P2PMessage
+		var msg eos.P2PMessageEnvelope
 
 		err = decoder.Decode(&msg)
 		if err != nil {
@@ -150,9 +159,68 @@ func handleConnection(connection net.Conn, forwardConnection net.Conn) (err erro
 		typeName, _ := msg.Type.Name()
 		fmt.Printf("Message received from [%s] with length: [%d] type: [%d - %s]\n", connection.RemoteAddr().String(), msg.Length, msg.Type, typeName)
 
-		transmissionChannel <- Communication{
+		communicationRouter <- Communication{
 			DestinationConnection: forwardConnection,
 			P2PMessage:            msg,
 		}
 	}
+}
+
+var routingChannels []chan Communication
+
+type pluginFlags []string
+
+func (p *pluginFlags) String() string {
+	return "TODO"
+}
+
+func (p *pluginFlags) Set(value string) error {
+	*p = append(*p, value)
+	return nil
+}
+
+var plugins pluginFlags
+
+func main() {
+
+	done := make(chan bool)
+
+	flag.Var(&plugins, "plugin", "Plugin so file path")
+	flag.Parse()
+
+	var postProcessChannels []proxy.P2PMessageChannel
+	for _, p := range plugins {
+		fmt.Println("Loading plugin: ", p)
+		plug, err := plugin.Open(p)
+		if err != nil {
+			log.Fatal("Failed to load plugin: ", err)
+		}
+		pluginSymbol, err := plug.Lookup("Plugin")
+		if err != nil {
+			log.Fatal("Failed to load plugin: ", err)
+		}
+
+		var plugin proxy.PostProcessorPlugin
+		plugin, ok := pluginSymbol.(proxy.PostProcessorPlugin)
+		if !ok {
+			log.Fatal("unexpected type from module symbol: ", reflect.TypeOf(pluginSymbol).String())
+		}
+		go plugin.Start()
+		postProcessChannels = append(postProcessChannels, plugin.Channel())
+	}
+
+	routingChannels = []chan Communication{transmissionChannel, postProcessorChannel}
+
+	go handleRouteAction(routeActionChannel)
+
+	go handleRouting(communicationRouter)
+	go handleTransmission(transmissionChannel)
+	go handlePostProcess(postProcessorChannel, postProcessChannels)
+
+	for _, route := range Routes {
+
+		routeActionChannel <- RouteAction{ActionType: AddRoute, Route: route}
+	}
+
+	<-done
 }
