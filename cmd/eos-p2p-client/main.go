@@ -1,20 +1,26 @@
 package main
 
 import (
+	"log"
+
 	"github.com/eoscanada/eos-go/p2p"
 )
 
 func main() {
 
-	proxy := p2p.Proxy{
-		Routes: []*p2p.Route{
-			{From: ":8902", To: ":19876"},
-		},
+	done := make(chan bool)
+
+	client := p2p.Client{
 		PostProcessors: []p2p.PostProcessor{
 			&p2p.LoggerPostProcessor{},
 		},
 	}
 
-	proxy.Start()
+	err := client.Dial(":9876")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	<-done
 
 }
