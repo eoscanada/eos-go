@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/eoscanada/eos-go/proxy"
+	"github.com/eoscanada/eos-go/p2p"
 	"github.com/gorilla/websocket"
 )
 
@@ -44,9 +44,9 @@ func main() {
 		case <-ticker.C:
 
 			event := struct {
-				Route proxy.Route
+				Route p2p.Route
 			}{
-				Route: proxy.Route{From: "from.1", To: "to.1"},
+				Route: p2p.Route{From: "from.1", To: "to.1"},
 			}
 
 			err := c.WriteJSON(event)

@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/eoscanada/eos-go"
 	"fmt"
-	"github.com/eoscanada/eos-go/system"
+
+	"github.com/eoscanada/eos-go"
 )
 
 func main() {
@@ -116,63 +116,57 @@ func main() {
 
 	actionResp, err := api.SignPushActions(
 
+	//system.NewNewAccount(AC("eosio"), AC("eosio.msig"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
+	//system.NewNewAccount(AC("eosio"), AC("eosio.token"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
+	//system.NewNewAccount(AC("eosio"), AC("bilcproducer"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
+	//system.NewNewAccount(AC("eosio"), AC("cbillett"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
 
+	//bios
+	//system.NewSetPriv(AC("eosio")),
+	//system.NewSetPriv(AC("eosio.msig")),
+	//system.NewSetPriv(AC("eosio.token")),
+	//token.NewCreate(AC("eosio"), eos.NewEOSAsset(1000000000.0000), false, false, false),
+	//token.NewIssue(AC("eosio"), eos.NewEOSAsset(1000000000.0000), ""),
 
-		//system.NewNewAccount(AC("eosio"), AC("eosio.msig"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		//system.NewNewAccount(AC("eosio"), AC("eosio.token"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		//system.NewNewAccount(AC("eosio"), AC("bilcproducer"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		//system.NewNewAccount(AC("eosio"), AC("cbillett"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
+	//token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
 
-		//bios
-		//system.NewSetPriv(AC("eosio")),
-		//system.NewSetPriv(AC("eosio.msig")),
-		//system.NewSetPriv(AC("eosio.token")),
-		//token.NewCreate(AC("eosio"), eos.NewEOSAsset(1000000000.0000), false, false, false),
-		//token.NewIssue(AC("eosio"), eos.NewEOSAsset(1000000000.0000), ""),
+	//system.NewRegProducer(
+	//	AC("bilcproducer"),
+	//	ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk"),
+	//	system.EOSIOParameters{
+	//		BasePerTransactionNetUsage:     100,
+	//		BasePerTransactionCPUUsage:     500,
+	//		BasePerActionCPUUsage:          1000,
+	//		BaseSetcodeCPUUsage:            2097152, //# 2 * 1024 * 1024 // overbilling cpu usage for setcode to cover incidental
+	//		PerSignatureCPUUsage:           100000,
+	//		PerLockNetUsage:                32,
+	//		ContextFreeDiscountCPUUsageNum: 20,
+	//		ContextFreeDiscountCPUUsageDen: 100,
+	//		MaxTransactionCPUUsage:         10485760,  //10 * 1024 * 1024
+	//		MaxTransactionNetUsage:         102400,    // 100 * 1024
+	//		MaxBlockCPUUsage:               104857600, // 100 * 1024 * 1024; at 500ms blocks and 20000instr trx, this enables ~10,000 TPS burst
+	//		TargetBlockCPUUsagePct:         1000,      // 10%, 2 decimal places
+	//		MaxBblockNetUsage:              1048576,
+	//		TargetBlockNetUsagePct:         1000, // 10%, 2 decimal places
+	//		MaxTransactionLifetime:         3600,
+	//		MaxTransactionExecTime:         0, //unused??
+	//		MaxAuthorityDepth:              6,
+	//		MaxInlineDepth:                 4,
+	//		MaxInlineActionSize:            4096,
+	//		MaxGeneratedTransactionCount:   16,
+	//		PercentOfMaxInflationRate:      10000, // percent, with 2 dec places.
+	//		//MaxStorageSize: 10485760,  //FIXME
+	//		StorageReserveRatio:            1000,  // ratio * 1000,
+	//	},
+	//),
 
-
-
-		//token.NewTransfer(AC("eosio"), AC("cbillett"), eos.NewEOSAsset(100000), ""),
-
-		//system.NewRegProducer(
-		//	AC("bilcproducer"),
-		//	ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk"),
-		//	system.EOSIOParameters{
-		//		BasePerTransactionNetUsage:     100,
-		//		BasePerTransactionCPUUsage:     500,
-		//		BasePerActionCPUUsage:          1000,
-		//		BaseSetcodeCPUUsage:            2097152, //# 2 * 1024 * 1024 // overbilling cpu usage for setcode to cover incidental
-		//		PerSignatureCPUUsage:           100000,
-		//		PerLockNetUsage:                32,
-		//		ContextFreeDiscountCPUUsageNum: 20,
-		//		ContextFreeDiscountCPUUsageDen: 100,
-		//		MaxTransactionCPUUsage:         10485760,  //10 * 1024 * 1024
-		//		MaxTransactionNetUsage:         102400,    // 100 * 1024
-		//		MaxBlockCPUUsage:               104857600, // 100 * 1024 * 1024; at 500ms blocks and 20000instr trx, this enables ~10,000 TPS burst
-		//		TargetBlockCPUUsagePct:         1000,      // 10%, 2 decimal places
-		//		MaxBblockNetUsage:              1048576,
-		//		TargetBlockNetUsagePct:         1000, // 10%, 2 decimal places
-		//		MaxTransactionLifetime:         3600,
-		//		MaxTransactionExecTime:         0, //unused??
-		//		MaxAuthorityDepth:              6,
-		//		MaxInlineDepth:                 4,
-		//		MaxInlineActionSize:            4096,
-		//		MaxGeneratedTransactionCount:   16,
-		//		PercentOfMaxInflationRate:      10000, // percent, with 2 dec places.
-		//		//MaxStorageSize: 10485760,  //FIXME
-		//		StorageReserveRatio:            1000,  // ratio * 1000,
-		//	},
-		//),
-
-
-
-		system.NewVoteProducer(AC("cbillett"), AC(""), AC("bilcproducer")),
-		//system.NewSetProds(1, []system.ProducerKey{
-		//	{
-		//			AC("eosio"),
-		//			ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk"),
-		//	},
-		//}),
+	//system.NewVoteProducer(AC("cbillett"), AC(""), AC("bilcproducer")),
+	//system.NewSetProds(1, []system.ProducerKey{
+	//	{
+	//			AC("eosio"),
+	//			ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk"),
+	//	},
+	//}),
 
 	)
 	if err != nil {

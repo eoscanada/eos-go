@@ -1,6 +1,8 @@
 package eos
 
 import (
+	"fmt"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -10,8 +12,8 @@ type P2PMessage interface {
 type HandshakeMessage struct {
 	// net_plugin/protocol.hpp handshake_message
 	NetworkVersion           int16         `json:"network_version"`
-	ChainID                  HexBytes      `json:"chain_id"`
-	NodeID                   HexBytes      `json:"node_id"` // sha256
+	ChainID                  SHA256Bytes   `json:"chain_id"`
+	NodeID                   SHA256Bytes   `json:"node_id"` // sha256
 	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
 	Time                     Tstamp        `json:"time"`    // time?!
 	Token                    HexBytes      `json:"token"`   // digest of time to prove we own the private `key`
@@ -45,7 +47,8 @@ const (
 )
 
 type GoAwayMessage struct {
-	GoAwayReason
+	Reason GoAwayReason `json:"reason"`
+	NodeID SHA256Bytes  `json:"node_id"`
 }
 
 type TimeMessage struct {
@@ -68,13 +71,13 @@ const (
 	TransactionStatusDelayed                           ///< transaction delayed
 )
 
-type TransactionID SHA256Bytes
+//type TransactionID SHA256Bytes
 
 type TransactionReceipt struct {
 	Status        TransactionStatus `json:"status"`
 	KCPUUsage     Varuint32         `json:"kcpu_usage"`
 	NetUsageWords Varuint32         `json:"net_usage_words"`
-	ID            TransactionID     `json:"id"`
+	ID            SHA256Bytes       `json:"id"`
 }
 
 type ShardLock struct {
@@ -105,21 +108,23 @@ type ProducerSchedule struct {
 }
 
 type BlockHeader struct {
-	Previous         SHA256Bytes               `json:"previous"`
-	Timestamp        BlockTimestamp            `json:"timestamp"`
-	TransactionMRoot SHA256Bytes               `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes               `json:"action_mroot"`
-	BlockMRoot       SHA256Bytes               `json:"block_mroot"`
-	Producer         AccountName               `json:"producer"`
-	ScheduleVersion  uint32                    `json:"schedule_version"`
-	NewProducers     *OptionalProducerSchedule `json:"new_producers"`
+	Previous         SHA256Bytes              `json:"previous"`
+	Timestamp        BlockTimestamp           `json:"timestamp"`
+	TransactionMRoot SHA256Bytes              `json:"transaction_mroot"`
+	ActionMRoot      SHA256Bytes              `json:"action_mroot"`
+	BlockMRoot       SHA256Bytes              `json:"block_mroot"`
+	Producer         AccountName              `json:"producer"`
+	ScheduleVersion  uint32                   `json:"schedule_version"`
+	NewProducers     OptionalProducerSchedule `json:"new_producers"`
 }
 
 type OptionalProducerSchedule struct {
 	ProducerSchedule
 }
 
-func (a *OptionalProducerSchedule) OptionalBinaryMarshalerPresent() bool { return a == nil }
+func (a *OptionalProducerSchedule) OptionalBinaryMarshalerPresent() bool {
+	return a == nil
+}
 
 type SignedBlockHeader struct {
 	BlockHeader
@@ -128,10 +133,58 @@ type SignedBlockHeader struct {
 
 type SignedBlockSummaryMessage struct {
 	SignedBlockHeader
-	//Regions []RegionSummary `json:"regions"`
+	Regions []RegionSummary `json:"regions"`
 }
 
 type SignedBlockMessage struct {
 	SignedBlockSummaryMessage
 	InputTransactions []PackedTransaction `json:"input_transactions"`
+}
+
+type IDListMode uint8
+
+const (
+	none IDListMode = iota
+	catch_up
+	last_irr_catch_up
+	normal
+)
+
+type OrderedTransactionIDs struct {
+	Caca    [3]byte
+	Mode    IDListMode    `json:"mode"`
+	Pending uint32        `json:"pending"`
+	IDs     []SHA256Bytes `json:"ids"`
+}
+type OrderedBlockIDs struct {
+	Caca    [3]byte
+	Mode    IDListMode    `json:"mode"`
+	Pending uint32        `json:"pending"`
+	IDs     []SHA256Bytes `json:"ids"`
+}
+
+type NoticeMessage struct {
+	KnownTrx    OrderedBlockIDs `json:"known_trx"`
+	KnownBlocks OrderedBlockIDs `json:"known_blocks"`
+}
+
+type SyncRequestMessage struct {
+	StartBlock uint32 `json:"start_block"`
+	EndBlock   uint32 `json:"end_block"`
+}
+type RequestMessage struct {
+	ReqTrx    OrderedBlockIDs `json:"req_trx"`
+	ReqBlocks OrderedBlockIDs `json:"req_blocks"`
+}
+
+type SignedTransactionMessage struct {
+	Signatures      []ecc.Signature `json:"signatures"`
+	ContextFreeData []byte          `json:"context_free_data"`
+}
+
+type PackedTransactionMessage struct {
+	Signatures            []ecc.Signature `json:"signatures"`
+	Compression           CompressionType `json:"compression"`
+	PackedContextFreeData []byte          `json:"packed_context_free_data"`
+	PackedTrx             []byte          `json:"packed_trx"`
 }

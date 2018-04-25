@@ -5,9 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
-
-	"encoding/hex"
 	"reflect"
 )
 
@@ -37,16 +34,16 @@ type MessageAttributes struct {
 }
 
 var messageAttributes = []MessageAttributes{
-	{Name: "Handshake", ReflectType: nil},
-	{Name: "GoAway", ReflectType: nil},
+	{Name: "Handshake", ReflectType: reflect.TypeOf(HandshakeMessage{})},
+	{Name: "GoAway", ReflectType: reflect.TypeOf(GoAwayMessage{})},
 	{Name: "Time", ReflectType: reflect.TypeOf(TimeMessage{})},
-	{Name: "Notice", ReflectType: nil},
-	{Name: "Request", ReflectType: nil},
-	{Name: "SyncRequest", ReflectType: nil},
+	{Name: "Notice", ReflectType: reflect.TypeOf(NoticeMessage{})},
+	{Name: "Request", ReflectType: reflect.TypeOf(RequestMessage{})},
+	{Name: "SyncRequest", ReflectType: reflect.TypeOf(SyncRequestMessage{})},
 	{Name: "SignedBlockSummary", ReflectType: reflect.TypeOf(SignedBlockSummaryMessage{})},
 	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlockMessage{})},
-	{Name: "SignedTransaction", ReflectType: nil},
-	{Name: "PackedTransaction", ReflectType: nil},
+	{Name: "SignedTransaction", ReflectType: reflect.TypeOf(SignedTransactionMessage{})},
+	{Name: "PackedTransaction", ReflectType: reflect.TypeOf(PackedTransactionMessage{})},
 }
 
 var UnknownMessageTypeError = errors.New("unknown type")
@@ -103,8 +100,6 @@ func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
 
 	if attr.ReflectType == nil {
 		return nil, errors.New("Missing reflect type ")
-	} else {
-		fmt.Println("P2P message type:", attr.ReflectType.Name())
 	}
 
 	msg := reflect.New(attr.ReflectType)
@@ -146,6 +141,7 @@ func (p2pMsg P2PMessageEnvelope) MarshalBinary() ([]byte, error) {
 }
 
 func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
+
 	lengthBytes := make([]byte, 4, 4)
 	_, err = r.Read(lengthBytes)
 	if err != nil {
@@ -169,12 +165,13 @@ func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//headerBytes := append(lengthBytes, payloadBytes[:int(math.Min(float64(10), float64(len(payloadBytes))))]...)
 
-	fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
-
+	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
 	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {
 		return
 	}
+
+	//fmt.Println("Payload type: ", messageType)
 
 	*p2pMsg = P2PMessageEnvelope{
 		Length:  size,

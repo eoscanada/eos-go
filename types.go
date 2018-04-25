@@ -30,6 +30,9 @@ func PN(in string) PermissionName { return PermissionName(in) }
 func (acct AccountName) MarshalBinary() ([]byte, error) {
 	return Name(acct).MarshalBinary()
 }
+func (s ScopeName) MarshalBinary() ([]byte, error) {
+	return Name(s).MarshalBinary()
+}
 func (acct PermissionName) MarshalBinary() ([]byte, error) {
 	return Name(acct).MarshalBinary()
 }
@@ -53,6 +56,10 @@ func (n *AccountName) UnmarshalBinary(data []byte) error {
 	*n = AccountName(NameToString(binary.LittleEndian.Uint64(data)))
 	return nil
 }
+func (s *ScopeName) UnmarshalBinary(data []byte) error {
+	*s = ScopeName(NameToString(binary.LittleEndian.Uint64(data)))
+	return nil
+}
 func (n *Name) UnmarshalBinary(data []byte) error {
 	*n = Name(NameToString(binary.LittleEndian.Uint64(data)))
 	return nil
@@ -71,6 +78,7 @@ func (n *TableName) UnmarshalBinary(data []byte) error {
 }
 
 func (AccountName) UnmarshalBinarySize() int    { return 8 }
+func (ScopeName) UnmarshalBinarySize() int      { return 8 }
 func (PermissionName) UnmarshalBinarySize() int { return 8 }
 func (ActionName) UnmarshalBinarySize() int     { return 8 }
 func (TableName) UnmarshalBinarySize() int      { return 8 }
@@ -341,11 +349,7 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 
 func (t *SHA256Bytes) UnmarshalBinary(data []byte) error {
 
-	s := SHA256Bytes(data)
-
-	ss := string(s)
-	fmt.Println(ss)
-	*t = s
+	*t = SHA256Bytes(data)
 	return nil
 }
 
