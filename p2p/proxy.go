@@ -92,7 +92,7 @@ func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, po
 			continue
 		}
 
-		pp.P2PMessage = &msg
+		pp.P2PMessage = msg
 
 		for _, c := range postProcessorChannels {
 			c <- pp
@@ -100,10 +100,10 @@ func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, po
 	}
 }
 
-func (p *Proxy) handlePluginPostProcess(postProcessor PostProcessor, channel chan PostProcessable) {
+func (p *Proxy) handlePluginPostProcess(handle Handler, channel chan PostProcessable) {
 
 	for postProcessable := range channel {
-		postProcessor.Handle(postProcessable)
+		handle(postProcessable)
 	}
 }
 
@@ -160,8 +160,8 @@ func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn
 }
 
 type Proxy struct {
-	Routes         []*Route
-	PostProcessors []PostProcessor
+	Routes   []*Route
+	Handlers []Handler
 }
 
 func (p *Proxy) Start() {
@@ -170,7 +170,7 @@ func (p *Proxy) Start() {
 
 	var postProcessorChannels []chan PostProcessable
 
-	for _, plugin := range p.PostProcessors {
+	for _, plugin := range p.Handlers {
 
 		pc := make(chan PostProcessable)
 		postProcessorChannels = append(postProcessorChannels, pc)

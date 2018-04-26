@@ -10,8 +10,9 @@ func main() {
 		Routes: []*p2p.Route{
 			{From: ":8902", To: ":9876"},
 		},
-		PostProcessors: []p2p.PostProcessor{
-			&p2p.LoggerPostProcessor{},
+		Handlers: []p2p.Handler{
+			//p2p.StringLoggerHandler,
+			p2p.LoggerHandler,
 		},
 	}
 

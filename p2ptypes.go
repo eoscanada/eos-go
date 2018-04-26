@@ -33,6 +33,10 @@ func (m *HandshakeMessage) GetType() P2PMessageType {
 	return HandshakeMessageType
 }
 
+func (m *HandshakeMessage) String() string {
+	return fmt.Sprintf("Handshake: Head [%d] Last Irreversible [%d] Time [%s]", m.HeadNum, m.LastIrreversibleBlockNum, m.Time)
+}
+
 type GoAwayReason uint8
 
 const (
@@ -158,6 +162,10 @@ type SignedBlockMessage struct {
 	InputTransactions []PackedTransaction `json:"input_transactions"`
 }
 
+func (m *SignedBlockMessage) String() string {
+	return "SignedBlockMessage"
+}
+
 func (m *SignedBlockMessage) GetType() P2PMessageType {
 	return SignedBlockMessageType
 }
@@ -200,6 +208,9 @@ type SyncRequestMessage struct {
 
 func (m *SyncRequestMessage) GetType() P2PMessageType {
 	return SyncRequestMessageType
+}
+func (m *SyncRequestMessage) String() string {
+	return fmt.Sprintf("SyncRequest: Start Block [%d] End Block [%d]", m.StartBlock, m.EndBlock)
 }
 
 type RequestMessage struct {
