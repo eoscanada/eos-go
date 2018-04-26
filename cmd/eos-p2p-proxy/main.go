@@ -8,7 +8,7 @@ func main() {
 
 	proxy := p2p.Proxy{
 		Routes: []*p2p.Route{
-			{From: ":8902", To: ":19876"},
+			{From: ":8902", To: ":9876"},
 		},
 		PostProcessors: []p2p.PostProcessor{
 			&p2p.LoggerPostProcessor{},

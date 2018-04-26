@@ -4,13 +4,22 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 )
 
 // From github.com/alecthomas/binary
+
+var print = func(s string) {
+	//fmt.Print(s)
+}
+var println = func(s string) {
+	//print(fmt.Sprintf("%s\n", s))
+}
 
 var (
 	LittleEndian  = binary.LittleEndian
@@ -126,6 +135,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 			l := rv.NumField()
 			n := 0
 			for i := 0; i < l; i++ {
+				//fmt.Println("Bin -> ", t.Field(i).Name)
 				if v := rv.Field(i); t.Field(i).Name != "_" {
 					if v.CanInterface() {
 						iface := v.Interface()
@@ -312,12 +322,12 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Slice:
-		//fmt.Println("Slice")
+		print("Reading Slice length ")
 		var l uint64
 		if l, err = binary.ReadUvarint(d.r); err != nil {
 			return
 		}
-		//fmt.Println("Slice of length: ", l)
+		println(fmt.Sprintf("Slice [%T] of length: %d", v, l))
 		if t.Kind() == reflect.Slice {
 			rv.Set(reflect.MakeSlice(t, int(l), int(l)))
 		} else if int(l) != t.Len() {
@@ -330,12 +340,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Struct:
-		//fmt.Println("Struct")
 		l := rv.NumField()
 		for i := 0; i < l; i++ {
 			if v := rv.Field(i); v.CanSet() && t.Field(i).Name != "_" {
 				iface := v.Addr().Interface()
-				//fmt.Println("Field name:", t.Field(i).Name)
+				println(fmt.Sprintf("Struct Field name: %s", t.Field(i).Name))
 				if err = d.Decode(iface); err != nil {
 					return
 				}
@@ -400,5 +409,20 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	default:
 		return errors.New("binary: unsupported type " + t.String())
 	}
+	return
+}
+
+type LoggerReader struct {
+	Reader io.Reader
+}
+
+func (l *LoggerReader) Read(p []byte) (n int, err error) {
+
+	length := len(p)
+	n, err = l.Reader.Read(p)
+	if err == nil {
+		fmt.Printf("\t\t[%d] data [%s]\n", length, hex.EncodeToString(p[:int(math.Min(float64(2000), float64(len(p))))]))
+	}
+
 	return
 }

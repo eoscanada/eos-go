@@ -132,7 +132,7 @@ func (p *Proxy) startForwarding(route *Route) {
 		} else {
 			fmt.Println("Connected to: ", route.To)
 			go p.handleConnection(fromConn, toConn, route)
-			go p.handleConnection(toConn, fromConn, route)
+			go p.handleConnection(toConn, fromConn, &Route{From: route.To, To: route.From})
 		}
 	}
 }

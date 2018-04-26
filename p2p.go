@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -109,10 +110,11 @@ func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
 		return nil, err
 	}
 
-	return msg.Interface(), err
+	return msg.Interface().(P2PMessage), err
 }
 
 func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
+
 	attr, ok := p2pMsg.Type.Attributes()
 	if !ok {
 		return UnknownMessageTypeError
@@ -127,13 +129,19 @@ func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
 		return fmt.Errorf("given message type [%s] to not match payload type [%s]", messageType.Name(), attr.ReflectType.Name())
 	}
 
-	return UnmarshalBinary(p2pMsg.Payload, message)
+	r := bytes.NewReader(p2pMsg.Payload)
+	//lr := &LoggerReader{
+	//	Reader: r,
+	//}
+
+	return NewDecoder(r).Decode(message)
 
 }
 
 func (p2pMsg P2PMessageEnvelope) MarshalBinary() ([]byte, error) {
-	data := make([]byte, p2pMsg.Length+4, p2pMsg.Length+4)
-	binary.LittleEndian.PutUint32(data[0:4], p2pMsg.Length)
+	l := len(p2pMsg.Payload) + 1
+	data := make([]byte, l+4, l+4)
+	binary.LittleEndian.PutUint32(data[0:4], uint32(l))
 	data[4] = byte(p2pMsg.Type)
 	copy(data[5:], p2pMsg.Payload)
 

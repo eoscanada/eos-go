@@ -16,7 +16,7 @@ func main() {
 		},
 	}
 
-	err := client.Dial(":9876")
+	err := client.Dial(":9876", ":8888")
 	if err != nil {
 		log.Fatal(err)
 	}

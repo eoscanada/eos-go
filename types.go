@@ -328,6 +328,16 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (t *HexBytes) UnmarshalBinary(data []byte) error {
+
+	*t = HexBytes(data)
+	return nil
+}
+
+func (h HexBytes) MarshalBinary() ([]byte, error) {
+	return h, nil
+}
+
 // SHA256Bytes
 
 type SHA256Bytes []byte // should always be 32 bytes
@@ -351,6 +361,15 @@ func (t *SHA256Bytes) UnmarshalBinary(data []byte) error {
 
 	*t = SHA256Bytes(data)
 	return nil
+}
+
+func (a SHA256Bytes) MarshalBinary() ([]byte, error) {
+
+	if len(a) == 0 {
+		a = []byte{0}
+	}
+
+	return a, nil
 }
 
 func (t SHA256Bytes) UnmarshalBinarySize() int { return 32 }

@@ -8,6 +8,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
+
+	"github.com/eoscanada/eos-go/ecc"
 )
 
 type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
@@ -75,8 +77,8 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 type SignedTransaction struct {
 	*Transaction
 
-	Signatures      []string   `json:"signatures"`
-	ContextFreeData []HexBytes `json:"context_free_data"`
+	Signatures      []ecc.Signature `json:"signatures"`
+	ContextFreeData []HexBytes      `json:"context_free_data"`
 
 	packed *PackedTransaction
 }
@@ -84,7 +86,7 @@ type SignedTransaction struct {
 func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 	return &SignedTransaction{
 		Transaction:     tx,
-		Signatures:      make([]string, 0),
+		Signatures:      make([]ecc.Signature, 0),
 		ContextFreeData: make([]HexBytes, 0),
 	}
 }
@@ -151,7 +153,7 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet ui
 // signatures, and all. They circulate like that on the P2P net, and
 // that's how they are stored.
 type PackedTransaction struct {
-	Signatures            []string        `json:"signatures"`
+	Signatures            []ecc.Signature `json:"signatures"`
 	Compression           CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
 	PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
 	PackedTransaction     HexBytes        `json:"packed_trx"`

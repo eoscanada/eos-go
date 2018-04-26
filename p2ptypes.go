@@ -7,6 +7,7 @@ import (
 )
 
 type P2PMessage interface {
+	GetType() P2PMessageType
 }
 
 type HandshakeMessage struct {
@@ -16,16 +17,20 @@ type HandshakeMessage struct {
 	NodeID                   SHA256Bytes   `json:"node_id"` // sha256
 	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
 	Time                     Tstamp        `json:"time"`    // time?!
-	Token                    HexBytes      `json:"token"`   // digest of time to prove we own the private `key`
+	Token                    SHA256Bytes   `json:"token"`   // digest of time to prove we own the private `key`
 	Signature                ecc.Signature `json:"sig"`     // can be empty if no key, signature of the digest above
 	P2PAddress               string        `json:"p2p_address"`
 	LastIrreversibleBlockNum uint32        `json:"last_irreversible_block_num"`
-	LastIrreversibleBlockID  HexBytes      `json:"last_irreversible_block_id"`
+	LastIrreversibleBlockID  SHA256Bytes   `json:"last_irreversible_block_id"`
 	HeadNum                  uint32        `json:"head_num"`
-	HeadID                   HexBytes      `json:"head_id"`
+	HeadID                   SHA256Bytes   `json:"head_id"`
 	OS                       string        `json:"os"`
 	Agent                    string        `json:"agent"`
 	Generation               int16         `json:"generation"`
+}
+
+func (m *HandshakeMessage) GetType() P2PMessageType {
+	return HandshakeMessageType
 }
 
 type GoAwayReason uint8
@@ -51,11 +56,19 @@ type GoAwayMessage struct {
 	NodeID SHA256Bytes  `json:"node_id"`
 }
 
+func (m *GoAwayMessage) GetType() P2PMessageType {
+	return GoAwayMessageType
+}
+
 type TimeMessage struct {
 	Origin      Tstamp `json:"org"`
 	Receive     Tstamp `json:"rec"`
 	Transmit    Tstamp `json:"xmt"`
 	Destination Tstamp `json:"dst"`
+}
+
+func (m *TimeMessage) GetType() P2PMessageType {
+	return TimeMessageType
 }
 
 func (t *TimeMessage) String() string {
@@ -136,9 +149,17 @@ type SignedBlockSummaryMessage struct {
 	Regions []RegionSummary `json:"regions"`
 }
 
+func (m *SignedBlockSummaryMessage) GetType() P2PMessageType {
+	return SignedBlockSummaryMessageType
+}
+
 type SignedBlockMessage struct {
 	SignedBlockSummaryMessage
 	InputTransactions []PackedTransaction `json:"input_transactions"`
+}
+
+func (m *SignedBlockMessage) GetType() P2PMessageType {
+	return SignedBlockMessageType
 }
 
 type IDListMode uint8
@@ -168,13 +189,26 @@ type NoticeMessage struct {
 	KnownBlocks OrderedBlockIDs `json:"known_blocks"`
 }
 
+func (m *NoticeMessage) GetType() P2PMessageType {
+	return NoticeMessageType
+}
+
 type SyncRequestMessage struct {
 	StartBlock uint32 `json:"start_block"`
 	EndBlock   uint32 `json:"end_block"`
 }
+
+func (m *SyncRequestMessage) GetType() P2PMessageType {
+	return SyncRequestMessageType
+}
+
 type RequestMessage struct {
 	ReqTrx    OrderedBlockIDs `json:"req_trx"`
 	ReqBlocks OrderedBlockIDs `json:"req_blocks"`
+}
+
+func (m *RequestMessage) GetType() P2PMessageType {
+	return RequestMessageType
 }
 
 type SignedTransactionMessage struct {
@@ -182,9 +216,17 @@ type SignedTransactionMessage struct {
 	ContextFreeData []byte          `json:"context_free_data"`
 }
 
+func (m *SignedTransactionMessage) GetType() P2PMessageType {
+	return SignedTransactionMessageType
+}
+
 type PackedTransactionMessage struct {
 	Signatures            []ecc.Signature `json:"signatures"`
 	Compression           CompressionType `json:"compression"`
 	PackedContextFreeData []byte          `json:"packed_context_free_data"`
 	PackedTrx             []byte          `json:"packed_trx"`
+}
+
+func (m *PackedTransactionMessage) GetType() P2PMessageType {
+	return PackedTransactionMessageType
 }

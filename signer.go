@@ -123,7 +123,7 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, err
 		}
 
-		tx.Signatures = append(tx.Signatures, sig.String())
+		tx.Signatures = append(tx.Signatures, sig)
 	}
 
 	// tmpcnt, _ := json.Marshal(tx)
