@@ -135,6 +135,26 @@ var UILoggerHandler = func(processable p2p.PostProcessable) {
 			))
 		})
 		break
+	case eos.PackedTransactionMessageType:
+
+		ui.Update(func() {
+			//m := p2pMsg.(*eos.PackedTransactionMessage)
+			//transactionLog.Append(tui.NewHBox(
+			//	tui.NewLabel("PackedTransactionMessage"),
+			//	tui.NewSpacer(),
+			//))
+		})
+		break
+	case eos.SignedTransactionMessageType:
+
+		ui.Update(func() {
+			//m := p2pMsg.(*eos.PackedTransactionMessage)
+			//transactionLog.Append(tui.NewHBox(
+			//	tui.NewLabel("SignedTransactionMessageType"),
+			//	tui.NewSpacer(),
+			//))
+		})
+		break
 	}
 
 }

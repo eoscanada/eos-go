@@ -22,7 +22,7 @@ type transferChannel chan *eos.Action
 func main() {
 
 	//api := eos.New("http://testnet-dawn3.eosio.ca", "0000000000000000000000000000000000000000000000000000000000000000")
-	api := eos.New(&url.URL{Scheme: "http", Host: "localhost:18888"}, bytes.Repeat([]byte{0}, 32))
+	api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8888"}, bytes.Repeat([]byte{0}, 32))
 
 	keyBag := eos.NewKeyBag()
 	if err := keyBag.Add("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"); err != nil {
@@ -31,19 +31,22 @@ func main() {
 	if err := keyBag.Add("5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"); err != nil {
 		log.Fatalln("Couldn't load private key:", err)
 	}
-
-	//Connect to proxy ...
-	resp, err := api.NetConnect("192.168.1.147:29876")
-	if err != nil {
-		panic(err)
-	} else {
-		fmt.Println("Connect to proxy reponse: ", resp)
+	if err := keyBag.Add("5KM4eQC2SU6e5MEWtMQKHwSLN4dr2zC7zxv5igVSMsfbjsuFhsZ"); err != nil {
+		log.Fatalln("Couldn't load private key:", err)
 	}
+
+	////Connect to proxy ...
+	//resp, err := api.NetConnect("Charless-MacBook-Pro-2.local:8888")
+	//if err != nil {
+	//	panic(err)
+	//} else {
+	//	fmt.Println("Connect to proxy reponse: ", resp)
+	//}
 
 	api.SetSigner(keyBag)
 
-	walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:16666"}, bytes.Repeat([]byte{0}, 32))
-	api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
+	//walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:16666"}, bytes.Repeat([]byte{0}, 32))
+	//api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
 
 	accountActions, err := generateAccountActions(10)
 	if err != nil {
