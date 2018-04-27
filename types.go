@@ -443,6 +443,24 @@ type BlockTimestamp struct {
 	time.Time
 }
 
+const BlockTimestampFormat = "2006-01-02T15:04:05"
+
+func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("%q", t.Format(BlockTimestampFormat))), nil
+}
+
+func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
+	if string(data) == "null" {
+		return nil
+	}
+
+	t.Time, err = time.Parse(`"`+BlockTimestampFormat+`"`, string(data))
+	if err != nil {
+		t.Time, err = time.Parse(`"`+BlockTimestampFormat+`Z07:00"`, string(data))
+	}
+	return err
+}
+
 // func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
 // 	return json.Marshal(fmt.Sprintf("%d", t.UnixNano()))
 // }

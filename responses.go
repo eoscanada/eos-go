@@ -28,7 +28,6 @@ type BlockResp struct {
 	ID                    string           `json:"id"`                      // : "0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b",
 	BlockNum              uint64           `json:"block_num"`               // : 123,
 	RefBlockPrefix        uint64           `json:"ref_block_prefix"`        // : 2624744919
-
 }
 
 type TransactionResp struct {

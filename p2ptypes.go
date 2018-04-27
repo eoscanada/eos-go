@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"encoding/binary"
+	"encoding/json"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -88,7 +89,44 @@ const (
 	TransactionStatusSoftFail                          ///< objectively failed (not executed), error handler executed
 	TransactionStatusHardFail                          ///< objectively failed and error handler objectively failed thus no state change
 	TransactionStatusDelayed                           ///< transaction delayed
+	TransactionStatusUnknown  = TransactionStatus(255)
 )
+
+func (s *TransactionStatus) UnmarshalJSON(data []byte) error {
+	var decoded string
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	switch decoded {
+	case "executed":
+		*s = TransactionStatusExecuted
+	case "soft_fail":
+		*s = TransactionStatusSoftFail
+
+	case "hard_fail":
+		*s = TransactionStatusHardFail
+	case "delayed":
+		*s = TransactionStatusDelayed
+	default:
+		*s = TransactionStatusUnknown
+	}
+	return nil
+}
+
+func (s TransactionStatus) MarshalJSON() (data []byte, err error) {
+	out := "unknown"
+	switch s {
+	case TransactionStatusExecuted:
+		out = "executed"
+	case TransactionStatusSoftFail:
+		out = "soft_fail"
+	case TransactionStatusHardFail:
+		out = "hard_fail"
+	case TransactionStatusDelayed:
+		out = "delayed"
+	}
+	return json.Marshal(out)
+}
 
 //type TransactionID SHA256Bytes
 

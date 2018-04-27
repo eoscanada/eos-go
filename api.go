@@ -277,7 +277,7 @@ func (api *API) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	return
 }
 
-func (api *API) GetBlockByNumOrID(query string) (out *BlockResp, err error) {
+func (api *API) GetBlockByNumOrID(query string) (out *SignedBlockMessage, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": query}, &out)
 	return
 }
