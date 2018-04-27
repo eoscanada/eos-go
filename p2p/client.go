@@ -165,8 +165,6 @@ type handshakeInfo struct {
 }
 
 func (c *Client) SendHandshake(info handshakeInfo) (err error) {
-	fmt.Println("SENDING HANDSHARE", info)
-
 	pulbicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
 		return

@@ -283,7 +283,7 @@ func (api *API) GetBlockByNumOrID(query string) (out *SignedBlockMessage, err er
 }
 
 func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
-	err = api.call("chain", "get_transaction", M{"transaction_id": id}, &out)
+	err = api.call("account_history", "get_transaction", M{"transaction_id": id}, &out)
 	return
 }
 

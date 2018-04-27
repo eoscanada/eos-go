@@ -150,7 +150,7 @@ type ShardSummary struct {
 
 type Cycles []ShardSummary
 type RegionSummary struct {
-	Region        uint16
+	Region        uint16   `json:"region"`
 	CyclesSummary []Cycles `json:"cycles_summary"`
 }
 

@@ -31,7 +31,15 @@ type BlockResp struct {
 }
 
 type TransactionResp struct {
-
+	TransactionID string `json:"transaction_id"`
+	Transaction   struct {
+		Signatures            []ecc.Signature        `json:"signatures"`
+		Compression           CompressionType        `json:"compression"`
+		PackedContextFreeData HexBytes               `json:"packed_context_free_data"`
+		ContextFreeData       []HexBytes             `json:"context_free_data"`
+		PackedTransaction     HexBytes               `json:"packed_transaction"`
+		Transaction           map[string]interface{} `json:"transaction"`
+	} `json:"transaction"`
 }
 
 type ProducerChange struct {

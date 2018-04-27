@@ -36,5 +36,5 @@ var LoggerHandler = HandlerFunc(func(msg PostProcessable) {
 
 // StringLoggerHandler simply prints the messages as they go through the client.
 var StringLoggerHandler = HandlerFunc(func(msg PostProcessable) {
-	fmt.Printf("Message -> from [%s] to [%s] [%s]\n", msg.Route.From, msg.Route.To, msg.P2PMessage)
+	fmt.Printf("Received message %T\n", msg.P2PMessage)
 })
