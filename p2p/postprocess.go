@@ -13,20 +13,28 @@ type PostProcessable struct {
 	P2PMessage         eos.P2PMessage          `json:"p2p_message"`
 }
 
-type Handler func(processable PostProcessable)
+type Handler interface {
+	Handle(msg PostProcessable)
+}
 
-var LoggerHandler = func(processable PostProcessable) {
+type HandlerFunc func(msg PostProcessable)
 
-	data, error := json.Marshal(processable)
+func (f HandlerFunc) Handle(msg PostProcessable) {
+	f(msg)
+}
+
+// LoggerHandler logs the messages back and forth.
+var LoggerHandler = HandlerFunc(func(msg PostProcessable) {
+	data, error := json.Marshal(msg)
 	if error != nil {
 		fmt.Println("logger plugin err: ", error)
 		return
 	}
 
 	fmt.Println("logger - message : ", string(data))
-}
+})
 
-var StringLoggerHandler = func(processable PostProcessable) {
-
-	fmt.Printf("Message -> from [%s] to [%s] [%s]\n", processable.Route.From, processable.Route.To, processable.P2PMessage)
-}
+// StringLoggerHandler simply prints the messages as they go through the client.
+var StringLoggerHandler = HandlerFunc(func(msg PostProcessable) {
+	fmt.Printf("Message -> from [%s] to [%s] [%s]\n", msg.Route.From, msg.Route.To, msg.P2PMessage)
+})

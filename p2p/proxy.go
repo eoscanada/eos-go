@@ -103,7 +103,7 @@ func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, po
 func (p *Proxy) handlePluginPostProcess(handle Handler, channel chan PostProcessable) {
 
 	for postProcessable := range channel {
-		handle(postProcessable)
+		handle.Handle(postProcessable)
 	}
 }
 
@@ -152,7 +152,7 @@ func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn
 		}
 
 		router <- routeCommunication{
-			Route:                 route,
+			Route: route,
 			DestinationConnection: forwardConnection,
 			P2PMessageEnvelope:    &msg,
 		}
