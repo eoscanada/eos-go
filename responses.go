@@ -31,6 +31,10 @@ type BlockResp struct {
 
 }
 
+type TransactionResp struct {
+
+}
+
 type ProducerChange struct {
 }
 

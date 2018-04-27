@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -276,6 +277,16 @@ func (api *API) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	return
 }
 
+func (api *API) GetBlockByNumOrID(query string) (out *BlockResp, err error) {
+	err = api.call("chain", "get_block", M{"block_num_or_id": query}, &out)
+	return
+}
+
+func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
+	err = api.call("chain", "get_transaction", M{"transaction_id": id}, &out)
+	return
+}
+
 func (api *API) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
 	err = api.call("chain", "get_table_rows", params, &out)
 	return
@@ -337,6 +348,9 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 		return fmt.Errorf("Copy: %s", err)
 	}
 
+	if resp.StatusCode == 404 {
+		return ErrNotFound
+	}
 	if resp.StatusCode > 299 {
 		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
 	}
@@ -353,6 +367,8 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 
 	return nil
 }
+
+var ErrNotFound = errors.New("resource not found")
 
 type M map[string]interface{}
 
