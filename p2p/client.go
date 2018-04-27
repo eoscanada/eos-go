@@ -27,19 +27,24 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, eosAPI *eos.API) *Client {
-	return &Client{
-		p2pAddress: p2pAddr,
-		API:        eosAPI,
+func NewClient(p2pAddr string, eosAPI *eos.API, advertiseAddress string) *Client {
+	c := &Client{
+		p2pAddress:          p2pAddr,
+		AdvertiseP2PAddress: advertiseAddress,
+		API:                 eosAPI,
 	}
+	copy(c.NodeID[:], []byte(advertiseAddress))
+	return c
 }
 
 type Client struct {
-	handlers     []Handler
-	handlersLock sync.Mutex
-	p2pAddress   string
-	API          *eos.API
-	Conn         net.Conn
+	handlers            []Handler
+	handlersLock        sync.Mutex
+	p2pAddress          string
+	API                 *eos.API
+	AdvertiseP2PAddress string
+	Conn                net.Conn
+	NodeID              [32]byte
 }
 
 func (c *Client) Connect() (err error) {
@@ -116,7 +121,9 @@ func (c *Client) setupFlow() error {
 			LastIrreversibleBlockNum: msg.LastIrreversibleBlockNum,
 			LastIrreversibleBlockID:  msg.LastIrreversibleBlockID,
 		}
-		c.SendHandshake(hInfo)
+		if err := c.SendHandshake(hInfo); err != nil {
+			log.Println("Failed sending handshake:", err)
+		}
 	})
 	c.RegisterHandler(initHandler)
 
@@ -176,12 +183,12 @@ func (c *Client) SendHandshake(info handshakeInfo) (err error) {
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           int16(25431),
 		ChainID:                  decodeHex("0000000000000000000000000000000000000000000000000000000000000000"),
-		NodeID:                   decodeHex("b79243d6facfb19de89dd50405dd7958cf17afebedb10203b86442348b14c7a5"),
+		NodeID:                   c.NodeID[:],
 		Key:                      pulbicKey,
 		Time:                     tstamp,
 		Token:                    decodeHex("0000000000000000000000000000000000000000000000000000000000000000"),
 		Signature:                signature,
-		P2PAddress:               "Charless-MacBook-Pro-2.local:29876 - 1234567",
+		P2PAddress:               c.AdvertiseP2PAddress,
 		LastIrreversibleBlockNum: info.LastIrreversibleBlockNum,
 		LastIrreversibleBlockID:  info.LastIrreversibleBlockID,
 		HeadNum:                  info.HeadBlockNum,

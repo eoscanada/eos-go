@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"net/url"
@@ -11,155 +12,81 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 	"github.com/eoscanada/eos-go/token"
-	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 )
+
+var signingKey = flag.String("signing-key", "", "Key to sign transactions we're about to blast")
+var apiAddr = flag.String("api-addr", "http://localhost:8888", "RPC endpoint of the nodeos instance")
 
 var eosioAccount = AC("eosio")
 
 type transferChannel chan *eos.Action
 
 func main() {
+	flag.Parse()
 
-	//api := eos.New("http://testnet-dawn3.eosio.ca", "0000000000000000000000000000000000000000000000000000000000000000")
-	api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8888"}, bytes.Repeat([]byte{0}, 32))
+	apiAddrURL, err := url.Parse(*apiAddr)
+	if err != nil {
+		log.Fatalln("could not parse --api-addr:", err)
+	}
+
+	privKey, err := ecc.NewPrivateKey(*signingKey)
+	if err != nil {
+		log.Fatalln("failed loading private key:", err)
+	}
+
+	api := eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32)) // TODO: use chain ID from somewhere..
 
 	keyBag := eos.NewKeyBag()
-	if err := keyBag.Add("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"); err != nil {
+	if err := keyBag.Add(*signingKey); err != nil {
 		log.Fatalln("Couldn't load private key:", err)
 	}
-	if err := keyBag.Add("5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"); err != nil {
-		log.Fatalln("Couldn't load private key:", err)
-	}
-	if err := keyBag.Add("5KM4eQC2SU6e5MEWtMQKHwSLN4dr2zC7zxv5igVSMsfbjsuFhsZ"); err != nil {
-		log.Fatalln("Couldn't load private key:", err)
-	}
-
-	////Connect to proxy ...
-	//resp, err := api.NetConnect("Charless-MacBook-Pro-2.local:8888")
-	//if err != nil {
-	//	panic(err)
-	//} else {
-	//	fmt.Println("Connect to proxy reponse: ", resp)
-	//}
-
 	api.SetSigner(keyBag)
 
-	//walletAPI := eos.New(&url.URL{Scheme: "http", Host: "localhost:16666"}, bytes.Repeat([]byte{0}, 32))
-	//api.SetSigner(eos.NewWalletSigner(walletAPI, "default"))
-
-	accountActions, err := generateAccountActions(10)
-	if err != nil {
-		panic(err)
-	}
-
 	var accountNames []eos.AccountName
-	for _, aa := range accountActions {
+	for i := 0; i < 10; i++ {
+		acctName := random.String(12)
 
-		resp, err := api.SignPushActions(aa)
+		fmt.Println("Creating account with name: ", acctName)
 
+		newAcctAction := system.NewNewAccount(eosioAccount, AC(acctName), privKey.PublicKey())
+		xferAction := token.NewTransfer(eosioAccount, AC(acctName), eos.NewEOSAsset(10000), "")
+		nonceAction := system.NewNonce(uuid.NewV4().String())
+
+		fmt.Printf("Will transfer from account : [%s] to account : [%s]\n", eosioAccount, acctName)
+		_, err := api.SignPushActions(newAcctAction, xferAction, nonceAction)
 		if err != nil {
-			fmt.Println("ERROR calling NewAccount:", err)
-			panic(err)
-		} else {
-			fmt.Println("Account Created:", resp)
+			log.Fatalln("ERROR pushing tx:", err)
 		}
 
-		a := aa.Obj().(system.NewAccount)
-		accountNames = append(accountNames, a.Name)
-
-		fmt.Printf("Will transfer form account : [%s] to account : [%s]\n", eosioAccount, a)
-		resp, err = api.SignPushActions(token.NewTransfer(eosioAccount, a.Name, eos.NewEOSAsset(10000), ""))
-		if err != nil {
-			fmt.Println("ERROR transfering: ", err)
-
-		} else {
-			fmt.Println("Transfer: ", resp)
-		}
-
+		accountNames = append(accountNames, AC(acctName))
 	}
-
-	c := make(transferChannel, 10)
-
-	for i := 0; i < 1; i++ {
-		go sendTransfer(c, api)
-	}
-
-	done := make(chan bool)
-	go generateTransfer(c, accountNames)
-
-	<-done
-}
-
-func sendTransfer(c transferChannel, api *eos.API) error {
-
-	fmt.Println("Setting new transfer sender ...")
-
-	for a := range c {
-
-		t := a.Obj().(token.Transfer)
-		uuid, _ := uuid.NewV4()
-
-		resp, err := api.SignPushActions(a, system.NewNonce(uuid.String()))
-		if err != nil {
-			fmt.Printf("ERROR transfering from [%s] to [%s] error [%s]\n", t.From, t.To, err)
-
-		} else {
-			fmt.Println("Transfer: ", resp)
-		}
-	}
-
-	return nil
-}
-
-func generateTransfer(c transferChannel, accountNames []eos.AccountName) error {
-
-	fmt.Println("Starting transfer generation")
 
 	l := len(accountNames)
+	fromIndex, toIndex := 0, 1
 
-	if l < 2 {
-		return errors.New("Expecting at least 2 account names")
-	}
+	for {
+		from := accountNames[fromIndex]
+		to := accountNames[toIndex]
 
-	reset := func() (int, int) { return 0, 1 }
-	fromIndex, toIndex := reset()
+		fmt.Printf("Transfer 0.1 EOS from [%d %s] to [%d %s]\n", fromIndex, from, toIndex, to)
 
-	go func() {
-		for {
-			from := accountNames[fromIndex]
-			to := accountNames[toIndex]
-
-			fmt.Printf("Adding transfert [%d %s-> %d %s] to channel\n", fromIndex, from, toIndex, to)
-			c <- token.NewTransfer(from, to, eos.NewEOSAsset(1000), "")
-
-			fromIndex += 1
-			toIndex += 1
-			if fromIndex >= l {
-				fromIndex = 0
-			}
-			if toIndex >= l {
-				toIndex = 0
-			}
-		}
-	}()
-
-	return nil
-}
-
-func generateAccountActions(count int) (actions []*eos.Action, err error) {
-
-	for i := 0; i < count; i++ {
-
-		name := random.String(12)
-		fmt.Println("Creating account with name: ", name)
+		_, err := api.SignPushActions(
+			token.NewTransfer(from, to, eos.NewEOSAsset(1000), ""),
+			system.NewNonce(uuid.NewV4().String()),
+		)
 		if err != nil {
-			panic(err)
+			log.Fatalln("ERROR sending transfer:", err)
 		}
 
-		a := system.NewNewAccount(eosioAccount, AC(name), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"))
-		actions = append(actions, a)
-	}
+		fromIndex++
+		toIndex++
 
-	return
+		if fromIndex >= l {
+			fromIndex = 0
+		}
+		if toIndex >= l {
+			toIndex = 0
+		}
+	}
 }
