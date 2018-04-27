@@ -3,6 +3,8 @@ package eos
 import (
 	"fmt"
 
+	"encoding/binary"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -133,6 +135,10 @@ type BlockHeader struct {
 	Producer         AccountName              `json:"producer"`
 	ScheduleVersion  uint32                   `json:"schedule_version"`
 	NewProducers     OptionalProducerSchedule `json:"new_producers"`
+}
+
+func (b *BlockHeader) BlockNumber() uint32 {
+	return binary.BigEndian.Uint32(b.Previous[:4]) + 1
 }
 
 type OptionalProducerSchedule struct {
