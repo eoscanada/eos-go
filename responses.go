@@ -49,7 +49,7 @@ type Cycle struct {
 }
 
 type AccountResp struct {
-	AccountName AccountName  `json:"account"`
+	AccountName AccountName  `json:"account_name"`
 	Permissions []Permission `json:"permissions"`
 }
 
