@@ -51,10 +51,14 @@ func main() {
 
 		newAcctAction := system.NewNewAccount(eosioAccount, AC(acctName), privKey.PublicKey())
 		xferAction := token.NewTransfer(eosioAccount, AC(acctName), eos.NewEOSAsset(10000), "")
-		nonceAction := system.NewNonce(uuid.NewV4().String())
+		uuid, err := uuid.NewV4()
+		if err != nil {
+			log.Fatal(uuid)
+		}
+		nonceAction := system.NewNonce(uuid.String())
 
 		fmt.Printf("Will transfer from account : [%s] to account : [%s]\n", eosioAccount, acctName)
-		_, err := api.SignPushActions(newAcctAction, xferAction, nonceAction)
+		_, err = api.SignPushActions(newAcctAction, xferAction, nonceAction)
 		if err != nil {
 			log.Fatalln("ERROR pushing tx:", err)
 		}
@@ -71,9 +75,15 @@ func main() {
 
 		fmt.Printf("Transfer 0.1 EOS from [%d %s] to [%d %s]\n", fromIndex, from, toIndex, to)
 
-		_, err := api.SignPushActions(
+		uuid, err := uuid.NewV4()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = api.SignPushActions(
 			token.NewTransfer(from, to, eos.NewEOSAsset(1000), ""),
-			system.NewNonce(uuid.NewV4().String()),
+
+			system.NewNonce(uuid.String()),
 		)
 		if err != nil {
 			log.Fatalln("ERROR sending transfer:", err)

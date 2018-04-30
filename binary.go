@@ -15,10 +15,10 @@ import (
 // From github.com/alecthomas/binary
 
 var print = func(s string) {
-	//fmt.Print(s)
+	//	fmt.Print(s)
 }
 var println = func(s string) {
-	//print(fmt.Sprintf("%s\n", s))
+	//	print(fmt.Sprintf("%s\n", s))
 }
 
 var (

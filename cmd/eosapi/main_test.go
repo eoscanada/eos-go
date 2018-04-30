@@ -5,12 +5,23 @@ import (
 	"testing"
 	"time"
 
+	"log"
+	"net/url"
+
+	"bytes"
+
 	"github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
 )
 
 func newAPI() (api *eos.API) {
-	api = eos.New("http://testnet-dawn3.eosio.ca")
+
+	apiAddrURL, err := url.Parse("http://testnet-dawn3.eosio.ca")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	api = eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32))
 	tr := &http.Transport{}
 	api.HttpClient = &http.Client{Transport: tr}
 

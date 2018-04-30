@@ -8,7 +8,8 @@ import (
 	"fmt"
 
 	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/token"
+	"github.com/eoscanada/eos-go/ecc"
+	"github.com/eoscanada/eos-go/system"
 )
 
 func main() {
@@ -106,7 +107,7 @@ func main() {
 		//system.NewNewAccount(AC("eosio"), AC("eosio.msig"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
 		//system.NewNewAccount(AC("eosio"), AC("eosio.token"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
 		//system.NewNewAccount(AC("eosio"), AC("bilcproducer"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		//system.NewNewAccount(AC("eosio"), AC("cbillett"), ecc.MustNewPublicKey("EOS66MfGpiepzs46DudrpSQw6GEn2QywFYVMWc18hBFVVVehdbKdi")),
+		system.NewNewAccount(AC("eosio"), AC("shine"), ecc.MustNewPublicKey("EOS66MfGpiepzs46DudrpSQw6GEn2QywFYVMWc18hBFVVVehdbKdi")),
 
 		//bios
 		//system.NewSetPriv(AC("eosio")),
@@ -115,7 +116,7 @@ func main() {
 		//token.NewCreate(AC("eosio"), eos.NewEOSAsset(1000000000.0000), false, false, false),
 		//token.NewIssue(AC("eosio"), eos.NewEOSAsset(1000000000.0000), ""),
 
-		token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
+		//token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
 
 	//system.NewRegProducer(
 	//	AC("bilcproducer"),

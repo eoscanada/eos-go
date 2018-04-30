@@ -27,10 +27,11 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, eosAPI *eos.API, advertiseAddress string) *Client {
+func NewClient(p2pAddr string, eosAPI *eos.API, advertiseAddress string, networkVersion int16) *Client {
 	c := &Client{
 		p2pAddress:          p2pAddr,
 		AdvertiseP2PAddress: advertiseAddress,
+		NetworkVersion:      networkVersion,
 		API:                 eosAPI,
 	}
 	copy(c.NodeID[:], []byte(advertiseAddress))
@@ -43,6 +44,7 @@ type Client struct {
 	p2pAddress          string
 	API                 *eos.API
 	AdvertiseP2PAddress string
+	NetworkVersion      int16
 	Conn                net.Conn
 	NodeID              [32]byte
 }
@@ -179,7 +181,7 @@ func (c *Client) SendHandshake(info handshakeInfo) (err error) {
 	fmt.Println("Time from fake: ", tstamp)
 
 	handshake := &eos.HandshakeMessage{
-		NetworkVersion:           int16(25431),
+		NetworkVersion:           c.NetworkVersion,
 		ChainID:                  decodeHex("0000000000000000000000000000000000000000000000000000000000000000"),
 		NodeID:                   c.NodeID[:],
 		Key:                      pulbicKey,

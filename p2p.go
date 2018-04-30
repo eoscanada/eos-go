@@ -3,9 +3,11 @@ package eos
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 )
 
@@ -130,11 +132,11 @@ func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
 	}
 
 	r := bytes.NewReader(p2pMsg.Payload)
-	//lr := &LoggerReader{
-	//	Reader: r,
-	//}
+	lr := &LoggerReader{
+		Reader: r,
+	}
 
-	return NewDecoder(r).Decode(message)
+	return NewDecoder(lr).Decode(message)
 
 }
 
@@ -173,7 +175,7 @@ func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
 
 	//headerBytes := append(lengthBytes, payloadBytes[:int(math.Min(float64(10), float64(len(payloadBytes))))]...)
 
-	//fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
+	fmt.Printf("Length: [%s] Payload: [%s]\n", hex.EncodeToString(lengthBytes), hex.EncodeToString(payloadBytes[:int(math.Min(float64(1000), float64(len(payloadBytes))))]))
 	messageType, err := NewMessageType(payloadBytes[0])
 	if err != nil {
 		return

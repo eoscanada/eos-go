@@ -127,6 +127,22 @@ func (s TransactionStatus) MarshalJSON() (data []byte, err error) {
 	}
 	return json.Marshal(out)
 }
+func (s TransactionStatus) String() string {
+
+	switch s {
+	case TransactionStatusExecuted:
+		return "executed"
+	case TransactionStatusSoftFail:
+		return "soft fail"
+	case TransactionStatusHardFail:
+		return "hard fail"
+	case TransactionStatusDelayed:
+		return "delayed"
+	default:
+		return "unknown"
+	}
+
+}
 
 //type TransactionID SHA256Bytes
 
@@ -276,10 +292,12 @@ func (m *SignedTransactionMessage) GetType() P2PMessageType {
 }
 
 type PackedTransactionMessage struct {
-	Signatures            []ecc.Signature `json:"signatures"`
-	Compression           CompressionType `json:"compression"`
-	PackedContextFreeData []byte          `json:"packed_context_free_data"`
-	PackedTrx             []byte          `json:"packed_trx"`
+	//Signatures            []ecc.Signature `json:"signatures"`
+	//Compression           CompressionType `json:"compression"`
+	//PackedContextFreeData []byte          `json:"packed_context_free_data"`
+	//PackedTrx             []byte          `json:"packed_trx"`
+
+	PackedTransaction
 }
 
 func (m *PackedTransactionMessage) GetType() P2PMessageType {

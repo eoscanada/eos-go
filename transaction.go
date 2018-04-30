@@ -9,6 +9,10 @@ import (
 	"fmt"
 	"time"
 
+	"io"
+
+	"encoding/json"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -91,6 +95,19 @@ func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 	}
 }
 
+func (s *SignedTransaction) String() string {
+
+	data, err := json.Marshal(s)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
+}
+
+func (tx *Transaction) ID() string {
+	return "ID here" //todo
+}
+
 func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 	rawtrx, err := MarshalBinary(s.Transaction)
 	if err != nil {
@@ -157,6 +174,50 @@ type PackedTransaction struct {
 	Compression           CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
 	PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
 	PackedTransaction     HexBytes        `json:"packed_trx"`
+}
+
+func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
+
+	var txReader io.Reader
+	txReader = bytes.NewBuffer(p.PackedTransaction)
+
+	var freeDataReader io.Reader
+	freeDataReader = bytes.NewBuffer(p.PackedContextFreeData)
+
+	switch p.Compression {
+	case CompressionZlib:
+
+		txReader, err = zlib.NewReader(txReader)
+		if err != nil {
+			return
+		}
+
+		freeDataReader, _ = zlib.NewReader(freeDataReader)
+
+	}
+
+	decoder := NewDecoder(txReader)
+	var tx Transaction
+	err = decoder.Decode(&tx)
+	if err != nil {
+		fmt.Println("PackedTransaction@tx err: ", err)
+		return
+	}
+
+	//decoder = NewDecoder(freeDataReader)
+	//var contextFreeData []HexBytes
+	//err = decoder.Decode(&contextFreeData)
+	//if err != nil {
+	//	fmt.Println("PackedTransaction@freedata err: ", err)
+	//	return
+	//}
+
+	signedTx = NewSignedTransaction(&tx)
+	//signedTx.ContextFreeData = contextFreeData
+	signedTx.Signatures = p.Signatures
+	signedTx.packed = p
+
+	return
 }
 
 type DeferredTransaction struct {
