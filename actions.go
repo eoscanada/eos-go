@@ -55,15 +55,22 @@ func (a Action) Obj() interface{} { // Payload ? ActionData ? GetData ?
 }
 
 type ActionData struct {
+	obj
 	HexBytes
 	obj interface{} // potentially unpacked from the Actions registry mapped through `RegisterAction`.
 	abi []byte      // TBD: we could use the ABI to decode in obj
 }
 
+type obj struct {
+	raw HexBytes
+	obj interface{}
+	abi
+}
+
 func NewActionData(obj interface{}) ActionData {
 	return ActionData{
 		HexBytes: []byte(""),
-		obj: obj,
+		obj:      obj,
 	}
 }
 
