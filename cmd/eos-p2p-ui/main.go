@@ -16,17 +16,6 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-type post struct {
-	username string
-	message  string
-	time     string
-}
-
-var posts = []post{
-	{username: "john", message: "hi, what's up?", time: "14:41"},
-	{username: "jane", message: "not much", time: "14:43"},
-}
-
 var blockLog *tui.Box
 var transactionLog *tui.Box
 var ui tui.UI
@@ -97,7 +86,7 @@ func main() {
 	logsBox := tui.NewHBox(blockBox, transactionBox)
 
 	input := tui.NewEntry()
-	input.SetFocused(false)
+	input.SetFocused(true)
 	input.SetSizePolicy(tui.Expanding, tui.Maximum)
 
 	inputBox := tui.NewHBox(input)
@@ -182,11 +171,22 @@ var UILoggerHandler = func(processable p2p.PostProcessable) {
 		}
 		fmt.Println(signedTx)
 		ui.Update(func() {
-
 			transactionLog.Append(tui.NewHBox(
-				//tui.NewLabel(fmt.Sprintf("[%s]", signedTx.Transaction.ID())),
-				tui.NewLabel("PackedTransactionMessage !!!!!!!!!!!!!!!!!!!!!!!!!!"),
+				tui.NewLabel(fmt.Sprintf("Tx [%s] block [%d] region [%d]", signedTx.Transaction.ID(), signedTx.RefBlockNum, signedTx.Region)),
+				tui.NewPadder(1, 0, tui.NewLabel(fmt.Sprintf("expiring at [%s]", signedTx.Expiration.Format("15:04:05")))),
 			))
+
+			for _, action := range signedTx.Actions {
+				transactionLog.Append(tui.NewHBox(
+					tui.NewLabel(fmt.Sprintf("  action [%s] account [%s]", action.Name, action.Account)),
+				))
+
+				for _, perm := range action.Authorization {
+					transactionLog.Append(tui.NewHBox(
+						tui.NewLabel(fmt.Sprintf("    perm [%s] actor [%s]", perm.Permission, perm.Actor)),
+					))
+				}
+			}
 		})
 		break
 	case eos.SignedTransactionMessageType:

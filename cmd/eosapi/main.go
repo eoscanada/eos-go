@@ -8,8 +8,7 @@ import (
 	"fmt"
 
 	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ecc"
-	"github.com/eoscanada/eos-go/system"
+	"github.com/eoscanada/eos-go/token"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 
 	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
-		"5KM4eQC2SU6e5MEWtMQKHwSLN4dr2zC7zxv5igVSMsfbjsuFhsZ",
+		"5K3sGmfgdPvau1K1nEZFr8uU3jR4uh5oppCfnnUS99E6R1ibMMb",
 		"5Jd9CCuMGENFJTk1RGiCWCtLhCzkHcDLBnc8vnhGMArFu5dBfYF",
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
 		"5J77j8KYX33cgVPMQZ82zD967VNA9SPcXWnjRkb27z9M2suaZNn",
@@ -107,7 +106,7 @@ func main() {
 		//system.NewNewAccount(AC("eosio"), AC("eosio.msig"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
 		//system.NewNewAccount(AC("eosio"), AC("eosio.token"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
 		//system.NewNewAccount(AC("eosio"), AC("bilcproducer"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		system.NewNewAccount(AC("eosio"), AC("shine"), ecc.MustNewPublicKey("EOS66MfGpiepzs46DudrpSQw6GEn2QywFYVMWc18hBFVVVehdbKdi")),
+		//system.NewNewAccount(AC("eosio"), AC("cbillett"), ecc.MustNewPublicKey("EOS66MfGpiepzs46DudrpSQw6GEn2QywFYVMWc18hBFVVVehdbKdi")),
 
 		//bios
 		//system.NewSetPriv(AC("eosio")),
@@ -116,7 +115,7 @@ func main() {
 		//token.NewCreate(AC("eosio"), eos.NewEOSAsset(1000000000.0000), false, false, false),
 		//token.NewIssue(AC("eosio"), eos.NewEOSAsset(1000000000.0000), ""),
 
-		//token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
+		token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
 
 	//system.NewRegProducer(
 	//	AC("bilcproducer"),
