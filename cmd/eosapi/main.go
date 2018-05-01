@@ -20,7 +20,7 @@ func main() {
 
 	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
-		"5K3sGmfgdPvau1K1nEZFr8uU3jR4uh5oppCfnnUS99E6R1ibMMb",
+		"5KNv5k4imoLnaCEnxqNhC5NeeB8BoQpMiSEtzsbvz3YsLJ9xdtP",
 		"5Jd9CCuMGENFJTk1RGiCWCtLhCzkHcDLBnc8vnhGMArFu5dBfYF",
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
 		"5J77j8KYX33cgVPMQZ82zD967VNA9SPcXWnjRkb27z9M2suaZNn",
