@@ -29,31 +29,31 @@ var (
 
 func MarshalBinary(v interface{}) ([]byte, error) {
 	b := &bytes.Buffer{}
-	if err := NewEncoder(b).Encode(v); err != nil {
+	if err := NewOldEncoder(b).Encode(v); err != nil {
 		return nil, err
 	}
 	return b.Bytes(), nil
 }
 
 func UnmarshalBinary(b []byte, v interface{}) error {
-	return NewDecoder(bytes.NewReader(b)).Decode(v)
+	return NewOldDecoder(bytes.NewReader(b)).Decode(v)
 }
 
 func UnmarshalBinaryWithAction(b []byte, v interface{}, act Action) error {
-	d := NewDecoder(bytes.NewReader(b))
+	d := NewOldDecoder(bytes.NewReader(b))
 	d.lastAction = act
 	return d.Decode(v)
 }
 
-type Encoder struct {
+type EncoderOld struct {
 	Order  binary.ByteOrder
 	w      io.Writer
 	buf    []byte
 	strict bool
 }
 
-func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{
+func NewOldEncoder(w io.Writer) *EncoderOld {
+	return &EncoderOld{
 		Order: DefaultEndian,
 		w:     w,
 		buf:   make([]byte, 8),
@@ -64,19 +64,19 @@ func NewEncoder(w io.Writer) *Encoder {
 // if this encoder attempts to encode a struct and the struct has no encodable
 // fields an error is returned whereas the encoder returned from NewEncoder
 // will simply not write anything to `w`.
-func NewStrictEncoder(w io.Writer) *Encoder {
-	e := NewEncoder(w)
+func NewStrictEncoder(w io.Writer) *EncoderOld {
+	e := NewOldEncoder(w)
 	e.strict = true
 	return e
 }
 
-func (e *Encoder) writeVarint(v int) error {
+func (e *EncoderOld) writeVarintOld(v int) error {
 	l := binary.PutUvarint(e.buf, uint64(v))
 	_, err := e.w.Write(e.buf[:l])
 	return err
 }
 
-func (b *Encoder) Encode(v interface{}) (err error) {
+func (b *EncoderOld) Encode(v interface{}) (err error) {
 	if i, ok := v.(OptionalBinaryMarshaler); ok {
 		if i.OptionalBinaryMarshalerPresent() {
 			b.w.Write([]byte{0x01})
@@ -100,7 +100,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 		_, err = b.w.Write(buf)
 
 	case []byte: // fast-path byte arrays
-		if err = b.writeVarint(len(cv)); err != nil {
+		if err = b.writeVarintOld(len(cv)); err != nil {
 			return
 		}
 		_, err = b.w.Write(cv)
@@ -122,7 +122,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Slice:
 			l := rv.Len()
-			if err = b.writeVarint(l); err != nil {
+			if err = b.writeVarintOld(l); err != nil {
 				return
 			}
 			for i := 0; i < l; i++ {
@@ -154,7 +154,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Map:
 			l := rv.Len()
-			if err = b.writeVarint(l); err != nil {
+			if err = b.writeVarintOld(l); err != nil {
 				return
 			}
 			for _, key := range rv.MapKeys() {
@@ -168,7 +168,7 @@ func (b *Encoder) Encode(v interface{}) (err error) {
 			}
 
 		case reflect.String:
-			if err = b.writeVarint(rv.Len()); err != nil {
+			if err = b.writeVarintOld(rv.Len()); err != nil {
 				return
 			}
 			_, err = b.w.Write([]byte(rv.String()))
@@ -218,14 +218,14 @@ func (b *ByteReader) Read(p []byte) (int, error) {
 	return b.Reader.Read(p)
 }
 
-type Decoder struct {
+type OldDecoder struct {
 	Order      binary.ByteOrder
 	r          *ByteReader
 	lastAction Action
 }
 
-func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{
+func NewOldDecoder(r io.Reader) *OldDecoder {
+	return &OldDecoder{
 		Order: DefaultEndian,
 		r:     &ByteReader{r},
 	}
@@ -252,7 +252,7 @@ type OptionalBinaryMarshaler interface {
 	OptionalBinaryMarshalerPresent() bool
 }
 
-func (d *Decoder) Decode(v interface{}) (err error) {
+func (d *OldDecoder) Decode(v interface{}) (err error) {
 
 	//fmt.Printf("MAMA!!!: %#v %T\n", v, v)
 	if i, ok := v.(UnmarshalBinaryReader); ok {

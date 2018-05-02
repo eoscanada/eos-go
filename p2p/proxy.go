@@ -45,7 +45,7 @@ func (p *Proxy) handleTransmission(channel chan routeCommunication) {
 
 	for communication := range channel {
 
-		encoder := eos.NewEncoder(communication.DestinationConnection)
+		encoder := eos.NewOldEncoder(communication.DestinationConnection)
 		err := encoder.Encode(communication.P2PMessageEnvelope)
 		if err != nil {
 			fmt.Println("Sender error: ", err)
@@ -139,7 +139,7 @@ func (p *Proxy) startForwarding(route *Route) {
 
 func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn, route *Route) (err error) {
 
-	decoder := eos.NewDecoder(bufio.NewReader(connection))
+	decoder := eos.NewOldDecoder(bufio.NewReader(connection))
 
 	for {
 		var msg eos.P2PMessageEnvelope
@@ -152,7 +152,7 @@ func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn
 		}
 
 		router <- routeCommunication{
-			Route: route,
+			Route:                 route,
 			DestinationConnection: forwardConnection,
 			P2PMessageEnvelope:    &msg,
 		}

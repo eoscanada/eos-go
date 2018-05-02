@@ -242,7 +242,7 @@ func (c *Client) sendMessage(message eos.P2PMessage) (err error) {
 
 func (c *Client) handleConnection(route *Route, ready chan bool) {
 
-	decoder := eos.NewDecoder(bufio.NewReader(c.Conn))
+	decoder := eos.NewOldDecoder(bufio.NewReader(c.Conn))
 
 	ready <- true
 	for {

@@ -75,7 +75,8 @@ var (
 		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x59, 0x40,
 		0x1, 0x3, 0x6b, 0x65, 0x79, 0x5, 0x76, 0x61, 0x6c, 0x75, 0x65,
 		0x2, 0x5, 0x42, 0x6f, 0x62, 0x62, 0x79, 0x6, 0x52, 0x6f, 0x62,
-		0x65, 0x72, 0x74} )
+		0x65, 0x72, 0x74}
+)
 
 func TestBinaryEncodeComplex(t *testing.T) {
 	b, err := MarshalBinary(s1v)
@@ -140,14 +141,14 @@ func TestStructWithStruct(t *testing.T) {
 
 	s := Struct{V1: T1{1, "1", []int{1}}, V2: 2, V3: T1{3, "3", []int{3}}}
 	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
+	enc := NewOldEncoder(buf)
 	err := enc.Encode(&s)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
 	}
 
 	v := Struct{}
-	dec := NewDecoder(buf)
+	dec := NewOldDecoder(buf)
 	err = dec.Decode(&v)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -174,14 +175,14 @@ func TestStructWithEmbeddedStruct(t *testing.T) {
 
 	s := Struct{T1: T1{1, "1", []int{1}}, V2: 2, V3: T1{3, "3", []int{3}}}
 	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
+	enc := NewOldEncoder(buf)
 	err := enc.Encode(&s)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
 	}
 
 	v := Struct{}
-	dec := NewDecoder(buf)
+	dec := NewOldDecoder(buf)
 	err = dec.Decode(&v)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -210,14 +211,14 @@ func TestArrayOfStructWithStruct(t *testing.T) {
 		{V1: T1{1, "1", []int{1}}, V2: 2, V3: T1{3, "3", []int{3}}},
 	}
 	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
+	enc := NewOldEncoder(buf)
 	err := enc.Encode(&s)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
 	}
 
 	v := [1]Struct{}
-	dec := NewDecoder(buf)
+	dec := NewOldDecoder(buf)
 	err = dec.Decode(&v)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -246,14 +247,14 @@ func TestSliceOfStructWithStruct(t *testing.T) {
 		{V1: T1{1, "1", []int{1}}, V2: 2, V3: T1{3, "3", []int{3}}},
 	}
 	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
+	enc := NewOldEncoder(buf)
 	err := enc.Encode(&s)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
 	}
 
 	v := []Struct{}
-	dec := NewDecoder(buf)
+	dec := NewOldDecoder(buf)
 	err = dec.Decode(&v)
 	if err != nil {
 		t.Fatalf("error: %v\n", err)
@@ -295,7 +296,7 @@ func BenchmarkEncodeStructI1(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		enc := NewEncoder(buf)
+		enc := NewOldEncoder(buf)
 		_ = enc.Encode(&s)
 	}
 
@@ -310,7 +311,7 @@ func BenchmarkEncodeStructI2(b *testing.B) {
 	var s Struct
 	s.S.I = 1024
 	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
+	enc := NewOldEncoder(buf)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -328,7 +329,7 @@ func BenchmarkEncodeStructI3(b *testing.B) {
 	var s Struct
 	s.S.I = 1024
 	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
+	enc := NewOldEncoder(buf)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -369,7 +370,7 @@ func BenchmarkDecodeStructI1(b *testing.B) {
 	buf := getTestBuffer(b)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		dec := NewDecoder(buf)
+		dec := NewOldDecoder(buf)
 		_ = dec.Decode(&s)
 	}
 
@@ -385,7 +386,7 @@ func BenchmarkDecodeStructI2(b *testing.B) {
 	var s Struct
 
 	buf := getTestBuffer(b)
-	dec := NewDecoder(buf)
+	dec := NewOldDecoder(buf)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -404,7 +405,7 @@ func BenchmarkDecodeStructI3(b *testing.B) {
 	var s Struct
 
 	buf := getTestBuffer(b)
-	dec := NewDecoder(buf)
+	dec := NewOldDecoder(buf)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

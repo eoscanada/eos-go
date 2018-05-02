@@ -88,9 +88,10 @@ func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
 }
 
 type P2PMessageEnvelope struct {
-	Length  uint32         `json:"length"`
-	Type    P2PMessageType `json:"type"`
-	Payload []byte         `json:"-"`
+	Length     uint32         `json:"length"`
+	Type       P2PMessageType `json:"type"`
+	Payload    []byte         `json:"-"`
+	P2PMessage *P2PMessage    `json:"-" eos:"-"`
 }
 
 func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
@@ -134,7 +135,7 @@ func (p2pMsg P2PMessageEnvelope) DecodePayload(message interface{}) error {
 	//	Reader: r,
 	//}
 
-	return NewDecoder(r).Decode(message)
+	return NewOldDecoder(r).Decode(message)
 
 }
 
