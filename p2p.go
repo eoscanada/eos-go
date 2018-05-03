@@ -91,7 +91,7 @@ type P2PMessageEnvelope struct {
 	Length     uint32         `json:"length"`
 	Type       P2PMessageType `json:"type"`
 	Payload    []byte         `json:"-"`
-	P2PMessage *P2PMessage    `json:"-" eos:"-"`
+	P2PMessage *P2PMessage    `json:"message" eos:"-"`
 }
 
 func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {

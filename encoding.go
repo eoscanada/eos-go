@@ -72,7 +72,7 @@ func NewDecoder(data []byte) *Decoder {
 
 func (d *Decoder) Decode(v interface{}) (err error) {
 
-	println(fmt.Sprintf("%T", v))
+	//println(fmt.Sprintf("%T", v))
 
 	//if _, ok := v.(OptionalBinaryMarshaler); ok {
 	//	isPresent := make([]byte, 1, 1)
@@ -88,7 +88,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
-		return errors.New("binary: can only Decode to pointer type")
+		return errors.New("decode: can only Decode to pointer type")
 	}
 	t := rv.Type()
 
@@ -101,8 +101,12 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 		rv.SetString(s)
 		return
-
-	case *byte, *P2PMessageType:
+	case *Name, *AccountName, *PermissionName, *ActionName, *TableName, *ScopeName:
+		name := NameToString(d.readUint64())
+		println(fmt.Sprintf("readName [%s]", name))
+		rv.SetString(name)
+		return
+	case *byte, *P2PMessageType, *TransactionStatus:
 		rv.SetUint(uint64(d.readByte()))
 		return
 	case *int16:
@@ -117,6 +121,22 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case *uint64:
 		rv.SetUint(uint64(d.readUint64()))
 		return
+	case *Varuint32:
+		r, e := d.readUvarint()
+		if e != nil {
+			err = e
+			return
+		}
+		rv.SetUint(r)
+		return
+	case *[]byte:
+		data, e := d.readByteArray()
+		if e != nil {
+			err = e
+			return
+		}
+		rv.SetBytes(data)
+		return
 	case *SHA256Bytes:
 		r := d.readSHA256Bytes()
 		rv.SetBytes(r)
@@ -129,8 +149,43 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		r := d.readSignature()
 		rv.SetBytes(r)
 		return
+	case *Tstamp:
+		r := d.readTstamp()
+		rv.Set(reflect.ValueOf(r))
+		return
+	case *BlockTimestamp:
+		r := d.readBlockTimestamp()
+		rv.Set(reflect.ValueOf(r))
+		return
+	case *OptionalProducerSchedule:
+
+		isPresent := d.readByte()
+
+		if isPresent == 0 {
+			println("Skipping optional OptionalProducerSchedule")
+			return
+		}
+
+		return
 	case *P2PMessageEnvelope:
-		d.decodeStruct(v, t, rv)
+
+		//d.decodeStruct(v, t, rv)
+
+		envelope := d.readP2PMessageEnvelope()
+
+		attr, ok := envelope.Type.Attributes()
+		if !ok {
+			return fmt.Errorf("decode: unknown p2p message type [%d]", envelope.Type)
+		}
+		msg := reflect.New(attr.ReflectType)
+		subDecoder := NewDecoder(envelope.Payload)
+		subDecoder.Decode(msg.Interface())
+
+		decoded := msg.Interface().(P2PMessage)
+		envelope.P2PMessage = &decoded
+
+		rv.Set(reflect.ValueOf(*envelope))
+
 		return
 	}
 
@@ -201,6 +256,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) (err error) {
 	l := rv.NumField()
 	for i := 0; i < l; i++ {
+
+		if tag := t.Field(i).Tag.Get("eos"); tag == "-" {
+			continue
+		}
+
 		if v := rv.Field(i); v.CanSet() && t.Field(i).Name != "_" {
 			iface := v.Addr().Interface()
 			println(fmt.Sprintf("Struct Field name: %s", t.Field(i).Name))
@@ -218,10 +278,12 @@ func (d *Decoder) readUvarint() (uint64, error) {
 
 	l, read := binary.Uvarint(d.data[d.pos:])
 	if read <= 0 {
+		println(fmt.Sprintf("readUvarint [%d]", l))
 		return l, VarIntBufferSizeError
 	}
 
 	d.pos += read
+	println(fmt.Sprintf("readUvarint [%d]", l))
 	return l, nil
 }
 
@@ -239,12 +301,14 @@ func (d *Decoder) readByteArray() (out []byte, err error) {
 	out = d.data[d.pos : d.pos+int(l)]
 	d.pos += int(l)
 
+	println(fmt.Sprintf("readByteArray [%s]", hex.EncodeToString(out)))
 	return
 }
 
 func (d *Decoder) readByte() (out byte) {
 	out = d.data[d.pos]
 	d.pos++
+	println(fmt.Sprintf("readByte [%d]", out))
 	return
 }
 
@@ -262,48 +326,68 @@ func (d *Decoder) readInt16() (out int16) {
 func (d *Decoder) readUint32() (out uint32) {
 	out = binary.LittleEndian.Uint32(d.data[d.pos:])
 	d.pos += TypeSize.UInt32
+	println(fmt.Sprintf("readUint32 [%d]", out))
 	return
 }
 
 func (d *Decoder) readUint64() (out uint64) {
 	out = binary.LittleEndian.Uint64(d.data[d.pos:])
 	d.pos += TypeSize.UInt64
+	println(fmt.Sprintf("readUint64 [%d]", out))
 	return
 }
 
 func (d *Decoder) readString() (out string, err error) {
 	data, err := d.readByteArray()
 	out = string(data)
+	println(fmt.Sprintf("readString [%s]", out))
 	return
 }
 
 func (d *Decoder) readSHA256Bytes() (out SHA256Bytes) {
 	out = SHA256Bytes(d.data[d.pos : d.pos+TypeSize.SHA256Bytes])
 	d.pos += TypeSize.SHA256Bytes
+	println(fmt.Sprintf("readSHA256Bytes [%s]", hex.EncodeToString(out)))
 	return
 }
 
 func (d *Decoder) readPublicKey() (out ecc.PublicKey) {
 	out = ecc.PublicKey(d.data[d.pos : d.pos+TypeSize.PublicKey])
 	d.pos += TypeSize.PublicKey
+	println(fmt.Sprintf("readPublicKey [%s]", hex.EncodeToString(out)))
 	return
 }
 
 func (d *Decoder) readSignature() (out ecc.Signature) {
 	out = ecc.Signature(d.data[d.pos : d.pos+TypeSize.Signature])
 	d.pos += TypeSize.Signature
+	println(fmt.Sprintf("readSignature [%s]", hex.EncodeToString(out)))
 	return
 }
 
 func (d *Decoder) readTstamp() (out Tstamp) {
 	unixNano := d.readUint64()
 	out.Time = time.Unix(0, int64(unixNano))
+	println(fmt.Sprintf("readTstamp [%s]", out))
 	return
 }
 
 func (d *Decoder) readBlockTimestamp() (out BlockTimestamp) {
 	unixSec := int64(d.readUint32())
 	out.Time = time.Unix(unixSec+946684800, 0)
+	return
+}
+
+func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope) {
+
+	out = &P2PMessageEnvelope{}
+	out.Length = d.readUint32()
+	out.Type = P2PMessageType(d.readByte())
+
+	payload := d.data[d.pos : d.pos+int(out.Length)]
+	d.pos += int(out.Length)
+
+	out.Payload = payload
 	return
 }
 
@@ -340,14 +424,11 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 
 	switch cv := v.(type) {
 
-	case string:
-		d.writeString(cv)
+	case string, Name, AccountName:
+		d.writeString(cv.(string))
 		return
-	case byte:
-		d.writeByte(cv)
-		return
-	case P2PMessageType:
-		d.writeByte(byte(cv))
+	case byte, P2PMessageType, TransactionStatus:
+		d.writeByte(cv.(byte))
 		return
 	case int16:
 		d.writeInt16(cv)
@@ -361,6 +442,9 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 	case uint64:
 		d.writeUint64(cv)
 		return
+	case Varuint32:
+		d.writeUVarInt(int(cv))
+		return
 	case SHA256Bytes:
 		d.writeSHA256Bytes(cv)
 		return
@@ -370,7 +454,12 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 	case ecc.Signature:
 		d.writeSignature(cv)
 		return
-
+	case Tstamp:
+		d.writeTstamp(cv)
+		return
+	case BlockTimestamp:
+		d.writeBlockTimestamp(cv)
+		return
 	default:
 
 		rv := reflect.Indirect(reflect.ValueOf(v))
