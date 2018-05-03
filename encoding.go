@@ -70,21 +70,10 @@ func NewDecoder(data []byte) *Decoder {
 	}
 }
 
+func (d *Decoder) DecodeP2PMessage(decode bool) {
+	d.decodeP2PMessage = decode
+}
 func (d *Decoder) Decode(v interface{}) (err error) {
-
-	//println(fmt.Sprintf("%T", v))
-
-	//if _, ok := v.(OptionalBinaryMarshaler); ok {
-	//	isPresent := make([]byte, 1, 1)
-	//	_, err := d.r.Read(isPresent)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	if isPresent[0] == 0 {
-	//		return nil
-	//	}
-	//}
 
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
@@ -122,19 +111,13 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.SetUint(uint64(d.readUint64()))
 		return
 	case *Varuint32:
-		r, e := d.readUvarint()
-		if e != nil {
-			err = e
-			return
-		}
+		var r uint64
+		r, err = d.readUvarint()
 		rv.SetUint(r)
 		return
 	case *[]byte:
-		data, e := d.readByteArray()
-		if e != nil {
-			err = e
-			return
-		}
+		var data []byte
+		data, err = d.readByteArray()
 		rv.SetBytes(data)
 		return
 	case *SHA256Bytes:
@@ -166,23 +149,24 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			return
 		}
 
-		return
 	case *P2PMessageEnvelope:
 
 		//d.decodeStruct(v, t, rv)
 
 		envelope := d.readP2PMessageEnvelope()
 
-		attr, ok := envelope.Type.Attributes()
-		if !ok {
-			return fmt.Errorf("decode: unknown p2p message type [%d]", envelope.Type)
-		}
-		msg := reflect.New(attr.ReflectType)
-		subDecoder := NewDecoder(envelope.Payload)
-		subDecoder.Decode(msg.Interface())
+		if d.decodeP2PMessage {
+			attr, ok := envelope.Type.Attributes()
+			if !ok {
+				return fmt.Errorf("decode: unknown p2p message type [%d]", envelope.Type)
+			}
+			msg := reflect.New(attr.ReflectType)
+			subDecoder := NewDecoder(envelope.Payload)
+			subDecoder.Decode(msg.Interface())
 
-		decoded := msg.Interface().(P2PMessage)
-		envelope.P2PMessage = &decoded
+			decoded := msg.Interface().(P2PMessage)
+			envelope.P2PMessage = &decoded
+		}
 
 		rv.Set(reflect.ValueOf(*envelope))
 
@@ -384,7 +368,7 @@ func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope) {
 	out.Length = d.readUint32()
 	out.Type = P2PMessageType(d.readByte())
 
-	payload := d.data[d.pos : d.pos+int(out.Length)]
+	payload := d.data[d.pos : d.pos+int(out.Length-1)]
 	d.pos += int(out.Length)
 
 	out.Payload = payload
@@ -413,23 +397,16 @@ func NewEncoder(w io.Writer) *Encoder {
 }
 
 func (d *Encoder) Encode(v interface{}) (err error) {
-	//if i, ok := v.(OptionalBinaryMarshaler); ok {
-	//	if i.OptionalBinaryMarshalerPresent() {
-	//		b.w.Write([]byte{0x01})
-	//	} else {
-	//		b.w.Write([]byte{0x01})
-	//		return nil
-	//	}
-	//}
-
 	switch cv := v.(type) {
-
-	case string, Name, AccountName:
+	case string, Name, AccountName, PermissionName, ActionName, TableName, ScopeName:
 		d.writeString(cv.(string))
 		return
-	case byte, P2PMessageType, TransactionStatus:
-		d.writeByte(cv.(byte))
+	case byte:
+		d.writeByte(cv)
 		return
+	//case TransactionStatus:
+	//	d.writeByte(byte(cv))
+	//	return
 	case int16:
 		d.writeInt16(cv)
 		return
@@ -460,6 +437,9 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 	case BlockTimestamp:
 		d.writeBlockTimestamp(cv)
 		return
+	case *P2PMessageEnvelope:
+		d.writeBlockP2PMessageEnvelope(*cv)
+		return
 	default:
 
 		rv := reflect.Indirect(reflect.ValueOf(v))
@@ -470,7 +450,7 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Array:
 			l := t.Len()
 			d.writeUVarInt(l)
-			println(fmt.Sprintf("Array [%T] of length: %d", v, l))
+			println(fmt.Sprintf("Encode: array [%T] of length: %d", v, l))
 			for i := 0; i < l; i++ {
 				if err = d.Encode(rv.Index(i).Interface()); err != nil {
 					return
@@ -480,7 +460,7 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Slice:
 			l := rv.Len()
 			d.writeUVarInt(l)
-			println(fmt.Sprintf("Slice [%T] of length: %d", v, l))
+			println(fmt.Sprintf("Encode: slice [%T] of length: %d", v, l))
 			for i := 0; i < l; i++ {
 				if err = d.Encode(rv.Index(i).Interface()); err != nil {
 					return
@@ -489,11 +469,11 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Struct:
 			l := rv.NumField()
-			println(fmt.Sprintf("Struct [%T] of length: %d", v, l))
+			println(fmt.Sprintf("Encode: struct [%T] of length: %d", v, l))
 			n := 0
 			for i := 0; i < l; i++ {
 				field := t.Field(i)
-				println(fmt.Sprintf("Field -> %s", field.Name))
+				println(fmt.Sprintf("Encode: field -> %s", field.Name))
 
 				if tag := field.Tag.Get("eos"); tag == "-" {
 					continue
@@ -611,4 +591,14 @@ func (e *Encoder) writeTstamp(t Tstamp) {
 func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) {
 	n := uint32(bt.Unix() - 946684800)
 	e.writeUint32(n)
+}
+
+func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) {
+
+	println("writeBlockP2PMessageEnvelope")
+
+	e.writeUint32(envelope.Length)
+	e.writeByte(byte(envelope.Type))
+	e.append(envelope.Payload)
+
 }

@@ -304,10 +304,16 @@ type EncodeTestStruct struct {
 	F10 ecc.Signature
 	F11 byte
 	F12 uint64
+	F13 []byte
+	F14 Tstamp
+	F15 BlockTimestamp
+	F16 Varuint32
 }
 
 func TestDecoder_Encode(t *testing.T) {
 
+	tstamp := Tstamp{Time: time.Unix(0, time.Now().UnixNano())}
+	blockts := BlockTimestamp{time.Unix(time.Now().Unix(), 0)}
 	s := &EncodeTestStruct{
 		F1:  "abc",
 		F2:  -75,
@@ -321,6 +327,10 @@ func TestDecoder_Encode(t *testing.T) {
 		F10: ecc.Signature(bytes.Repeat([]byte{0}, 66)),
 		F11: byte(1),
 		F12: uint64(87),
+		F13: []byte{1, 2, 3, 4, 5},
+		F14: tstamp,
+		F15: blockts,
+		F16: Varuint32(999),
 	}
 
 	buf := new(bytes.Buffer)
@@ -343,64 +353,18 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, ecc.Signature(bytes.Repeat([]byte{0}, 66)), s.F10)
 	assert.Equal(t, byte(1), s.F11)
 	assert.Equal(t, uint64(87), s.F12)
+	assert.Equal(t, uint64(87), s.F12)
+	assert.Equal(t, []byte{1, 2, 3, 4, 5}, s.F13)
+	assert.Equal(t, tstamp, s.F14)
+	assert.Equal(t, blockts, s.F15)
+	assert.Equal(t, Varuint32(999), s.F16)
 
 }
 
-//func TestDecoder_Decode(t *testing.T) {
-//
-//	var s EncodeTestStruct
-//
-//	buf := new(bytes.Buffer)
-//	enc := NewEncoder(buf)
-//	enc.writeString("abc")
-//	enc.writeInt16(-75)
-//	enc.writeUint16(99)
-//	enc.writeUint32(999)
-//	enc.writeSHA256Bytes(bytes.Repeat([]byte{0}, 32))
-//
-//	//F6
-//	enc.writeUVarInt(2)
-//	enc.writeString("def")
-//	enc.writeString("789")
-//
-//	//F7
-//	enc.writeUVarInt(2)
-//	enc.writeString("foo")
-//	enc.writeString("bar")
-//
-//	//F8
-//	enc.writeUVarInt(2)
-//	enc.writeString("foo")
-//	enc.writeString("bar")
-//	enc.writeString("hello")
-//	enc.writeString("you")
-//
-//	//F9
-//	enc.writePublicKey(bytes.Repeat([]byte{0}, 34))
-//	//F10
-//	enc.writeSignature(bytes.Repeat([]byte{0}, 66))
-//
-//	decoder := NewDecoder(enc.data)
-//	err := decoder.Decode(&s)
-//	assert.NoError(t, err)
-//
-//	assert.Equal(t, "abc", s.F1)
-//	assert.Equal(t, int16(-75), s.F2)
-//	assert.Equal(t, uint16(99), s.F3)
-//	assert.Equal(t, uint32(999), s.F4)
-//	assert.Equal(t, SHA256Bytes(bytes.Repeat([]byte{0}, 32)), s.F5)
-//	assert.Equal(t, []string{"def", "789"}, s.F6)
-//	assert.Equal(t, [2]string{"foo", "bar"}, s.F7)
-//	assert.Equal(t, map[string]string{"foo": "bar", "hello": "you"}, s.F8)
-//	assert.Equal(t, ecc.PublicKey(bytes.Repeat([]byte{0}, 34)), s.F9)
-//	assert.Equal(t, ecc.Signature(bytes.Repeat([]byte{0}, 66)), s.F10)
-//
-//}
-
 func TestDecoder_Decode_No_Ptr(t *testing.T) {
 	decoder := NewDecoder([]byte{})
-	err := decoder.Decode("")
-	assert.EqualError(t, err, "binary: can only Decode to pointer type")
+	err := decoder.Decode(1)
+	assert.EqualError(t, err, "decode: can only Decode to pointer type")
 }
 
 func TestDecoder_Decode_String_Err(t *testing.T) {
@@ -532,5 +496,42 @@ func TestEncoder_Encode_struct_error(t *testing.T) {
 	enc := NewEncoder(buf)
 	err := enc.Encode(&s)
 	assert.EqualError(t, err, "binary: unsupported type time.Duration")
+
+}
+
+type TagTestStruct struct {
+	S1 string `eos:"-"`
+	S2 string
+}
+
+func TestEncoder_Decode_struct_tag(t *testing.T) {
+	var s TagTestStruct
+
+	buf := new(bytes.Buffer)
+
+	enc := NewEncoder(buf)
+	enc.writeString("123")
+
+	d := NewDecoder(enc.data)
+	d.Decode(&s)
+	assert.Equal(t, "", s.S1)
+	assert.Equal(t, "123", s.S2)
+
+}
+
+func TestEncoder_Encode_struct_tag(t *testing.T) {
+
+	s := &TagTestStruct{
+		S1: "123",
+		S2: "abc",
+	}
+
+	buf := new(bytes.Buffer)
+
+	enc := NewEncoder(buf)
+	enc.Encode(s)
+
+	expected := []byte{0x3, 0x61, 0x62, 0x63}
+	assert.Equal(t, expected, enc.data)
 
 }

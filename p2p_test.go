@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -200,6 +201,52 @@ func TestMessageType_Name(t *testing.T) {
 		assert.Equal(t, c.OK, ok)
 		assert.Equal(t, c.ExpectedName, name)
 	}
+}
+
+func TestDecoder_P2PMessageEnvelope(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+
+	msg := &P2PMessageEnvelope{
+		Length:  4,
+		Type:    SignedTransactionMessageType,
+		Payload: []byte{1, 2, 3},
+	}
+
+	err := enc.Encode(msg)
+	assert.NoError(t, err)
+	d := NewDecoder(enc.data)
+
+	var decoded P2PMessageEnvelope
+
+	d.DecodeP2PMessage(false)
+	err = d.Decode(&decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(4), decoded.Length)
+	assert.Equal(t, SignedTransactionMessageType, decoded.Type)
+	assert.Equal(t, []byte{1, 2, 3}, decoded.Payload)
+}
+
+func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+
+	msg := &P2PMessageEnvelope{
+		Length:  4,
+		Type:    99,
+		Payload: []byte{1, 2, 3},
+	}
+
+	err := enc.Encode(msg)
+	assert.NoError(t, err)
+	d := NewDecoder(enc.data)
+
+	var decoded P2PMessageEnvelope
+
+	err = d.Decode(&decoded)
+	assert.EqualError(t, err, "decode: unknown p2p message type [99]")
 }
 
 func TestPackedTransaction_UnPack(t *testing.T) {
