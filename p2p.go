@@ -91,7 +91,7 @@ type P2PMessageEnvelope struct {
 	Length     uint32         `json:"length"`
 	Type       P2PMessageType `json:"type"`
 	Payload    []byte         `json:"-"`
-	P2PMessage *P2PMessage    `json:"message" eos:"-"`
+	P2PMessage P2PMessage     `json:"message" eos:"-"`
 }
 
 func (p2pMsg P2PMessageEnvelope) AsMessage() (P2PMessage, error) {
@@ -189,4 +189,36 @@ func (p2pMsg *P2PMessageEnvelope) UnmarshalBinaryRead(r io.Reader) (err error) {
 	}
 
 	return nil
+}
+
+func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
+
+	data := make([]byte, 0)
+
+	lengthBytes := make([]byte, 4, 4)
+	_, err = r.Read(lengthBytes)
+	if err != nil {
+		return
+	}
+
+	data = append(data, lengthBytes...)
+
+	size := binary.LittleEndian.Uint32(lengthBytes)
+	fmt.Println("Read message length: ", size)
+
+	payloadBytes := make([]byte, size, size)
+	_, err = io.ReadFull(r, payloadBytes)
+
+	if err != nil {
+		fmt.Println("Connection error: ", err)
+		return
+	}
+
+	data = append(data, payloadBytes...)
+
+	envelope = &P2PMessageEnvelope{}
+	decoder := NewDecoder(data)
+	err = decoder.Decode(envelope)
+
+	return
 }

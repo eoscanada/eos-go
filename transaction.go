@@ -196,7 +196,7 @@ func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
 
 	}
 
-	decoder := NewDecoder(txReader)
+	decoder := NewOldDecoder(txReader)
 	var tx Transaction
 	err = decoder.Decode(&tx)
 	if err != nil {

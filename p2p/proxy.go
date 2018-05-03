@@ -92,7 +92,7 @@ func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, po
 			continue
 		}
 
-		pp.P2PMessage = msg
+		pp.P2PMessageEnvelope.P2PMessage = msg
 
 		for _, c := range postProcessorChannels {
 			c <- pp

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"encoding/json"
 
 	"github.com/stretchr/testify/assert"
@@ -212,7 +213,7 @@ func TestDecoder_P2PMessageEnvelope(t *testing.T) {
 
 	err := enc.Encode(msg)
 	assert.NoError(t, err)
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	var decoded P2PMessageEnvelope
 
@@ -237,7 +238,7 @@ func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
 
 	err := enc.Encode(msg)
 	assert.NoError(t, err)
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	var decoded P2PMessageEnvelope
 
@@ -255,25 +256,41 @@ func TestDecode_OptionalProducerSchedule_Missing_PresentByte(t *testing.T) {
 
 func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
 
+	buf := new(bytes.Buffer)
+
 	decoder := NewDecoder([]byte{})
 	err := decoder.Decode(&P2PMessageEnvelope{})
 	assert.EqualError(t, err, "decode, p2p envelope length: uint32 required [4] bytes, remaining [0]")
 
-	encoder := NewEncoder(new(bytes.Buffer))
+	encoder := NewEncoder(buf)
 	encoder.writeUint32(4)
 
-	decoder = NewDecoder(encoder.data)
+	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&P2PMessageEnvelope{})
 	assert.EqualError(t, err, "decode, p2p envelope type: byte required [1] byte, remaining [0]")
 
-	encoder = NewEncoder(new(bytes.Buffer))
+	buf = new(bytes.Buffer)
+	encoder = NewEncoder(buf)
 	encoder.writeUint32(10)
 	encoder.writeByte(9)
 
-	decoder = NewDecoder(encoder.data)
+	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&P2PMessageEnvelope{})
 	assert.EqualError(t, err, "decode, p2p envelope payload required [10] bytes, remaining [0]")
 
+}
+
+type mockWriter struct {
+}
+
+func (w mockWriter) Write(p []byte) (n int, err error) {
+	return 0, errors.New("error.1")
+}
+
+func TestEncode_P2PMessageEnvelope_Error(t *testing.T) {
+	buf := mockWriter{}
+	encoder := NewEncoder(buf)
+	assert.EqualError(t, encoder.writeBlockP2PMessageEnvelope(P2PMessageEnvelope{}), "error.1")
 }
 
 func TestPackedTransaction_UnPack(t *testing.T) {

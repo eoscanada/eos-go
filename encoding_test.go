@@ -37,7 +37,7 @@ func TestDecoder_Byte(t *testing.T) {
 	enc.writeByte(0)
 	enc.writeByte(1)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	n, err := d.readByte()
 	assert.NoError(t, err)
@@ -58,7 +58,7 @@ func TestDecoder_ByteArray(t *testing.T) {
 	enc.writeByteArray([]byte{1, 2, 3})
 	enc.writeByteArray([]byte{4, 5, 6})
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	data, err := d.readByteArray()
 	assert.NoError(t, err)
@@ -77,7 +77,7 @@ func TestDecoder_ByteArray_MissingData(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeUVarInt(10)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	_, err := d.readByteArray()
 	assert.EqualError(t, err, "byte array: varlen=10, missing 10 bytes")
@@ -101,7 +101,7 @@ func TestDecoder_Uint16(t *testing.T) {
 	enc.writeUint16(uint16(99))
 	enc.writeUint16(uint16(100))
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	n, err := d.readUint16()
 	assert.NoError(t, err)
@@ -121,7 +121,7 @@ func TestDecoder_int16(t *testing.T) {
 	enc.writeInt16(int16(-99))
 	enc.writeInt16(int16(100))
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	n, err := d.readInt16()
 	assert.NoError(t, err)
@@ -138,14 +138,14 @@ func TestDecoder_Uint32(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.writeUint32(uint32(99))
+	enc.writeUint32(uint32(342))
 	enc.writeUint32(uint32(100))
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	n, err := d.readUint32()
 	assert.NoError(t, err)
-	assert.Equal(t, uint32(99), n)
+	assert.Equal(t, uint32(342), n)
 	assert.Equal(t, 4, d.remaining())
 
 	n, err = d.readUint32()
@@ -161,7 +161,7 @@ func TestDecoder_Uint64(t *testing.T) {
 	enc.writeUint64(uint64(99))
 	enc.writeUint64(uint64(100))
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	n, err := d.readUint64()
 	assert.NoError(t, err)
@@ -182,7 +182,7 @@ func TestDecoder_string(t *testing.T) {
 	enc.writeString("")
 	enc.writeString("abc")
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	s, err := d.readString()
 	assert.NoError(t, err)
@@ -208,7 +208,7 @@ func TestDecoder_SHA256Bytes(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeSHA256Bytes(s)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	rs, err := d.readSHA256Bytes()
 	assert.NoError(t, err)
@@ -225,7 +225,7 @@ func TestDecoder_Empty_SHA256Bytes(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeSHA256Bytes(s)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	s, err := d.readSHA256Bytes()
 	assert.NoError(t, err)
@@ -241,7 +241,7 @@ func TestDecoder_PublicKey(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writePublicKey(pk)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	rpk, err := d.readPublicKey()
 	assert.NoError(t, err)
@@ -258,7 +258,7 @@ func TestDecoder_Empty_PublicKey(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writePublicKey(pk)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	pk, err := d.readPublicKey()
 	assert.NoError(t, err)
@@ -274,7 +274,7 @@ func TestDecoder_Signature(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeSignature(sig)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	rsig, err := d.readSignature()
 	assert.NoError(t, err)
@@ -290,7 +290,7 @@ func TestDecoder_Empty_Signature(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeSignature(sig)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	sig, err := d.readSignature()
 	assert.NoError(t, err)
@@ -308,7 +308,7 @@ func TestDecoder_Tstamp(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeTstamp(ts)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	rts, err := d.readTstamp()
 	assert.NoError(t, err)
@@ -326,7 +326,7 @@ func TestDecoder_BlockTimestamp(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeBlockTimestamp(ts)
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 
 	rbt, err := d.readBlockTimestamp()
 	assert.NoError(t, err)
@@ -380,7 +380,7 @@ func TestDecoder_Encode(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.Encode(s)
 
-	decoder := NewDecoder(enc.data)
+	decoder := NewDecoder(buf.Bytes())
 	err := decoder.Decode(s)
 	assert.NoError(t, err)
 
@@ -416,7 +416,7 @@ func TestDecoder_Decode_String_Err(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeUVarInt(10)
 
-	decoder := NewDecoder(enc.data)
+	decoder := NewDecoder(buf.Bytes())
 	var s string
 	err := decoder.Decode(&s)
 	assert.EqualError(t, err, "byte array: varlen=10, missing 10 bytes")
@@ -428,9 +428,9 @@ func TestDecoder_Decode_Array(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.Encode([3]byte{1, 2, 4})
 
-	assert.Equal(t, []byte{1, 2, 4}, enc.data)
+	assert.Equal(t, []byte{1, 2, 4}, buf.Bytes())
 
-	decoder := NewDecoder(enc.data)
+	decoder := NewDecoder(buf.Bytes())
 	var decoded [3]byte
 	decoder.Decode(&decoded)
 	assert.Equal(t, [3]byte{1, 2, 4}, decoded)
@@ -442,13 +442,13 @@ func TestDecoder_Decode_Slice_Err(t *testing.T) {
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 
-	decoder := NewDecoder(enc.data)
+	decoder := NewDecoder(buf.Bytes())
 	var s []string
 	err := decoder.Decode(&s)
 	assert.EqualError(t, err, "varint: invalide buffer size")
 
 	enc.writeUVarInt(1)
-	decoder = NewDecoder(enc.data)
+	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&s)
 	assert.EqualError(t, err, "varint: invalide buffer size")
 
@@ -472,13 +472,13 @@ func TestDecoder_Decode_Map_Err(t *testing.T) {
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 
-	decoder := NewDecoder(enc.data)
+	decoder := NewDecoder(buf.Bytes())
 	var m map[string]string
 	err := decoder.Decode(&m)
 	assert.EqualError(t, err, "varint: invalide buffer size")
 
 	enc.writeUVarInt(1)
-	decoder = NewDecoder(enc.data)
+	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&m)
 	assert.EqualError(t, err, "varint: invalide buffer size")
 }
@@ -492,7 +492,7 @@ func TestDecoder_Decode_Bad_Map(t *testing.T) {
 	enc.writeString("foo")
 	enc.writeString("bar")
 
-	decoder := NewDecoder(enc.data)
+	decoder := NewDecoder(buf.Bytes())
 	err := decoder.Decode(&m)
 	assert.EqualError(t, err, "decode, unsupported type time.Duration")
 
@@ -565,7 +565,7 @@ func TestEncoder_Decode_struct_tag(t *testing.T) {
 	enc := NewEncoder(buf)
 	enc.writeString("123")
 
-	d := NewDecoder(enc.data)
+	d := NewDecoder(buf.Bytes())
 	d.Decode(&s)
 	assert.Equal(t, "", s.S1)
 	assert.Equal(t, "123", s.S2)
@@ -585,7 +585,7 @@ func TestEncoder_Encode_struct_tag(t *testing.T) {
 	enc.Encode(s)
 
 	expected := []byte{0x3, 0x61, 0x62, 0x63}
-	assert.Equal(t, expected, enc.data)
+	assert.Equal(t, expected, buf.Bytes())
 
 }
 

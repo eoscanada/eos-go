@@ -16,7 +16,7 @@ import (
 var apiAddr = flag.String("api-addr", "http://localhost:8888", "RPC endpoint of the nodeos instance")
 var p2pAddr = flag.String("p2p-addr", "localhost:9876", "P2P socket connection")
 var signingKey = flag.String("signing-key", "", "Key to sign transactions we're about to blast")
-var chainID = flag.String("chain-id", "00000000000000000000000000000000", "Chain id")
+var chainID = flag.String("chain-id", "0000000000000000000000000000000000000000000000000000000000000000", "Chain id")
 var networkVersion = flag.Int("network-version", 25431, "Chain id")
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 	done := make(chan bool)
 
 	api := eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32))
-	client := p2p.NewClient(*p2pAddr, api, *chainID, int16(*networkVersion))
+	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion), *p2pAddr)
 	client.RegisterHandler(p2p.HandlerFunc(p2p.LoggerHandler))
 	err = client.Connect()
 	if err != nil {

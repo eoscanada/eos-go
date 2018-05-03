@@ -55,10 +55,10 @@ type Decoder struct {
 }
 
 var print = func(s string) {
-	//fmt.Print(s)
+	fmt.Print(s)
 }
 var println = func(s string) {
-	//print(fmt.Sprintf("%s\n", s))
+	print(fmt.Sprintf("%s\n", s))
 }
 
 func NewDecoder(data []byte) *Decoder {
@@ -191,7 +191,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			err = subDecoder.Decode(msg.Interface())
 
 			decoded := msg.Interface().(P2PMessage)
-			envelope.P2PMessage = &decoded
+			envelope.P2PMessage = decoded
 		}
 
 		rv.Set(reflect.ValueOf(*envelope))
@@ -347,6 +347,7 @@ func (d *Decoder) readUint32() (out uint32, err error) {
 		return
 	}
 
+	fmt.Println("Grrrrr! ", hex.EncodeToString(d.data[d.pos:d.pos+4]))
 	out = binary.LittleEndian.Uint32(d.data[d.pos:])
 	d.pos += TypeSize.UInt32
 	println(fmt.Sprintf("readUint32 [%d]", out))
@@ -403,7 +404,7 @@ func (d *Decoder) readSignature() (out ecc.Signature, err error) {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
-	out = ecc.Signature(d.data[d.pos : d.pos+TypeSize.Signature])
+	out = ecc.Signature(d.data[d.pos+1 : d.pos+TypeSize.Signature-1])
 	d.pos += TypeSize.Signature
 	println(fmt.Sprintf("readSignature [%s]", hex.EncodeToString(out)))
 	return
@@ -470,60 +471,65 @@ func (d *Decoder) remaining() int {
 type Encoder struct {
 	output io.Writer
 	Order  binary.ByteOrder
-	data   []byte
+	count  int
 }
 
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
 		output: w,
 		Order:  DefaultEndian,
-		data:   make([]byte, 0),
+		count:  0,
 	}
 }
 
 func (e *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
-	case string, Name, AccountName, PermissionName, ActionName, TableName, ScopeName:
-		e.writeString(cv.(string))
+	case Name, AccountName, PermissionName, ActionName, TableName, ScopeName:
+		val, er := StringToName(cv.(string))
+		if er != nil {
+			err = fmt.Errorf("encode, name, %s", e)
+			return
+		}
+		err = e.writeUint64(val)
+		return
+	case string:
+		err = e.writeString(cv)
 		return
 	case byte:
-		e.writeByte(cv)
+		err = e.writeByte(cv)
 		return
-	//case TransactionStatus:
-	//	d.writeByte(byte(cv))
-	//	return
 	case int16:
-		e.writeInt16(cv)
+		err = e.writeInt16(cv)
 		return
 	case uint16:
-		e.writeUint16(cv)
+		err = e.writeUint16(cv)
 		return
 	case uint32:
-		e.writeUint32(cv)
+		err = e.writeUint32(cv)
 		return
 	case uint64:
-		e.writeUint64(cv)
+		err = e.writeUint64(cv)
 		return
 	case Varuint32:
-		e.writeUVarInt(int(cv))
+		err = e.writeUVarInt(int(cv))
 		return
 	case SHA256Bytes:
-		e.writeSHA256Bytes(cv)
+		err = e.writeSHA256Bytes(cv)
 		return
 	case ecc.PublicKey:
-		e.writePublicKey(cv)
+		err = e.writePublicKey(cv)
 		return
 	case ecc.Signature:
-		e.writeSignature(cv)
+		err = e.writeSignature(cv)
 		return
 	case Tstamp:
-		e.writeTstamp(cv)
+		err = e.writeTstamp(cv)
 		return
 	case BlockTimestamp:
-		e.writeBlockTimestamp(cv)
+		err = e.writeBlockTimestamp(cv)
 		return
 	case *P2PMessageEnvelope:
-		e.writeBlockP2PMessageEnvelope(*cv)
+		err = e.writeBlockP2PMessageEnvelope(*cv)
 		return
 	default:
 
@@ -592,98 +598,116 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		}
 	}
 
-	//todo : send to writer
 	return
 }
 
-func (e *Encoder) append(bytes []byte) {
+func (e *Encoder) toWriter(bytes []byte) (err error) {
 
-	println(fmt.Sprintf("Appending : [%s][%s]", bytes, hex.EncodeToString(bytes)))
-	e.data = append(e.data, bytes...)
+	e.count += len(bytes)
+	println(fmt.Sprintf("Appending : [%s] pos [%d]", hex.EncodeToString(bytes), e.count))
+	_, err = e.output.Write(bytes)
 	return
 }
 
-func (e *Encoder) writeByteArray(b []byte) {
-
+func (e *Encoder) writeByteArray(b []byte) error {
 	e.writeUVarInt(len(b))
-	e.append(b)
+	return e.toWriter(b)
 }
 
-func (e *Encoder) writeUVarInt(v int) {
+func (e *Encoder) writeUVarInt(v int) (err error) {
 	buf := make([]byte, 8)
 	l := binary.PutUvarint(buf, uint64(v))
-	e.append(buf[:l])
+	return e.toWriter(buf[:l])
 }
 
-func (e *Encoder) writeByte(b byte) {
-	e.append([]byte{b})
+func (e *Encoder) writeByte(b byte) (err error) {
+	return e.toWriter([]byte{b})
 }
 
-func (e *Encoder) writeUint16(i uint16) {
+func (e *Encoder) writeUint16(i uint16) (err error) {
 	buf := make([]byte, TypeSize.UInt16)
 	binary.LittleEndian.PutUint16(buf, i)
-	e.append(buf)
+	return e.toWriter(buf)
 }
 
-func (e *Encoder) writeInt16(i int16) {
-	e.writeUint16(uint16(i))
+func (e *Encoder) writeInt16(i int16) (err error) {
+	return e.writeUint16(uint16(i))
 }
 
-func (e *Encoder) writeUint32(i uint32) {
+func (e *Encoder) writeUint32(i uint32) (err error) {
 	buf := make([]byte, TypeSize.UInt32)
 	binary.LittleEndian.PutUint32(buf, i)
-	e.append(buf)
+	return e.toWriter(buf)
 
 }
 
-func (e *Encoder) writeUint64(i uint64) {
+func (e *Encoder) writeUint64(i uint64) (err error) {
 	buf := make([]byte, TypeSize.UInt64)
 	binary.LittleEndian.PutUint64(buf, i)
-	e.append(buf)
+	return e.toWriter(buf)
 
 }
 
-func (e *Encoder) writeString(s string) {
-	e.writeByteArray([]byte(s))
+func (e *Encoder) writeString(s string) (err error) {
+	return e.writeByteArray([]byte(s))
 }
 
-func (e *Encoder) writeSHA256Bytes(s SHA256Bytes) {
+func (e *Encoder) writeSHA256Bytes(s SHA256Bytes) error {
 	if len(s) == 0 {
-		e.append(bytes.Repeat([]byte{0}, TypeSize.SHA256Bytes))
+		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.SHA256Bytes))
 	}
-	e.append(s)
+	return e.toWriter(s)
 }
 
-func (e *Encoder) writePublicKey(pk ecc.PublicKey) {
+func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
 	if len(pk) == 0 {
-		e.append(bytes.Repeat([]byte{0}, TypeSize.PublicKey))
+		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.PublicKey))
 	}
-	e.append(pk)
+
+	return e.toWriter(append(bytes.Repeat([]byte{0}, 34-len(pk)), pk...))
 }
 
-func (e *Encoder) writeSignature(s ecc.Signature) {
+func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
 	if len(s) == 0 {
-		e.append(bytes.Repeat([]byte{0}, TypeSize.Signature))
+		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Signature))
 	}
-	e.append(s)
+	return e.toWriter(s)
 }
 
-func (e *Encoder) writeTstamp(t Tstamp) {
+func (e *Encoder) writeTstamp(t Tstamp) (err error) {
 	n := uint64(t.UnixNano())
-	e.writeUint64(n)
+	return e.writeUint64(n)
 }
 
-func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) {
+func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
 	n := uint32(bt.Unix() - 946684800)
-	e.writeUint32(n)
+	return e.writeUint32(n)
 }
 
-func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) {
+func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) (err error) {
 
 	println("writeBlockP2PMessageEnvelope")
 
-	e.writeUint32(envelope.Length)
-	e.writeByte(byte(envelope.Type))
-	e.append(envelope.Payload)
+	if envelope.P2PMessage != nil {
+		buf := new(bytes.Buffer)
+		subEncoder := NewEncoder(buf)
+		err = subEncoder.Encode(envelope.P2PMessage)
+		if err != nil {
+			err = fmt.Errorf("p2p message, %s", err)
+			return
+		}
+		envelope.Payload = buf.Bytes()
+	}
 
+	messageLen := uint32(len(envelope.Payload) + 1)
+	println(fmt.Sprintf("Message length: %d", messageLen))
+	err = e.writeUint32(messageLen)
+	if err == nil {
+		err = e.writeByte(byte(envelope.Type))
+
+		if err == nil {
+			return e.toWriter(envelope.Payload)
+		}
+	}
+	return
 }

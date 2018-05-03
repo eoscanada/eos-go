@@ -10,7 +10,6 @@ import (
 type PostProcessable struct {
 	Route              *Route                  `json:"route"`
 	P2PMessageEnvelope *eos.P2PMessageEnvelope `json:"p2p_message_envelope"`
-	P2PMessage         eos.P2PMessage          `json:"p2p_message"`
 }
 
 type Handler interface {
@@ -36,5 +35,5 @@ var LoggerHandler = HandlerFunc(func(msg PostProcessable) {
 
 // StringLoggerHandler simply prints the messages as they go through the client.
 var StringLoggerHandler = HandlerFunc(func(msg PostProcessable) {
-	fmt.Printf("Received message %T\n", msg.P2PMessage)
+	fmt.Printf("Received message %T\n", msg.P2PMessageEnvelope.P2PMessage)
 })
