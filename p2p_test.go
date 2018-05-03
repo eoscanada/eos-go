@@ -242,7 +242,38 @@ func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
 	var decoded P2PMessageEnvelope
 
 	err = d.Decode(&decoded)
-	assert.EqualError(t, err, "decode: unknown p2p message type [99]")
+	assert.EqualError(t, err, "decode, unknown p2p message type [99]")
+}
+
+func TestDecode_OptionalProducerSchedule_Missing_PresentByte(t *testing.T) {
+
+	decoder := NewDecoder([]byte{})
+	err := decoder.Decode(&OptionalProducerSchedule{})
+	assert.EqualError(t, err, "decode: OptionalProducerSchedule isPresent, byte required [1] byte, remaining [0]")
+
+}
+
+func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
+
+	decoder := NewDecoder([]byte{})
+	err := decoder.Decode(&P2PMessageEnvelope{})
+	assert.EqualError(t, err, "decode, p2p envelope length: uint32 required [4] bytes, remaining [0]")
+
+	encoder := NewEncoder(new(bytes.Buffer))
+	encoder.writeUint32(4)
+
+	decoder = NewDecoder(encoder.data)
+	err = decoder.Decode(&P2PMessageEnvelope{})
+	assert.EqualError(t, err, "decode, p2p envelope type: byte required [1] byte, remaining [0]")
+
+	encoder = NewEncoder(new(bytes.Buffer))
+	encoder.writeUint32(10)
+	encoder.writeByte(9)
+
+	decoder = NewDecoder(encoder.data)
+	err = decoder.Decode(&P2PMessageEnvelope{})
+	assert.EqualError(t, err, "decode, p2p envelope payload required [10] bytes, remaining [0]")
+
 }
 
 func TestPackedTransaction_UnPack(t *testing.T) {

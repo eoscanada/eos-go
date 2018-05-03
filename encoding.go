@@ -77,7 +77,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
-		return errors.New("decode: can only Decode to pointer type")
+		return errors.New("decode, can only Decode to pointer type")
 	}
 	t := rv.Type()
 
@@ -95,9 +95,6 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case *Name, *AccountName, *PermissionName, *ActionName, *TableName, *ScopeName:
 		var n uint64
 		n, err = d.readUint64()
-		if err != nil {
-			return
-		}
 		name := NameToString(n)
 		println(fmt.Sprintf("readName [%s]", name))
 		rv.SetString(name)
@@ -166,7 +163,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 		isPresent, e := d.readByte()
 		if e != nil {
-			err = fmt.Errorf("decode: read isPresent, %s", e)
+			err = fmt.Errorf("decode: OptionalProducerSchedule isPresent, %s", e)
 			return
 		}
 
@@ -179,14 +176,14 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 		envelope, e := d.readP2PMessageEnvelope()
 		if e != nil {
-			err = fmt.Errorf("decode: read p2p envelope, %s", e)
+			err = fmt.Errorf("decode, %s", e)
 			return
 		}
 
 		if d.decodeP2PMessage {
 			attr, ok := envelope.Type.Attributes()
 			if !ok {
-				return fmt.Errorf("decode: unknown p2p message type [%d]", envelope.Type)
+				return fmt.Errorf("decode, unknown p2p message type [%d]", envelope.Type)
 			}
 			msg := reflect.New(attr.ReflectType)
 			subDecoder := NewDecoder(envelope.Payload)
@@ -256,7 +253,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 	default:
 
-		return errors.New("binary: unsupported type " + t.String())
+		return errors.New("decode, unsupported type " + t.String())
 
 	}
 	return
@@ -317,7 +314,7 @@ func (d *Decoder) readByteArray() (out []byte, err error) {
 func (d *Decoder) readByte() (out byte, err error) {
 
 	if d.remaining() < TypeSize.Byte {
-		err = fmt.Errorf("encode: byte required [1] byte, remaining [%d]", d.remaining())
+		err = fmt.Errorf("byte required [1] byte, remaining [%d]", d.remaining())
 		return
 	}
 
@@ -329,7 +326,7 @@ func (d *Decoder) readByte() (out byte, err error) {
 
 func (d *Decoder) readUint16() (out uint16, err error) {
 	if d.remaining() < TypeSize.UInt16 {
-		err = fmt.Errorf("encode: UInt16 required [%d] bytes, remaining [%d]", TypeSize.UInt16, d.remaining())
+		err = fmt.Errorf("uint16 required [%d] bytes, remaining [%d]", TypeSize.UInt16, d.remaining())
 		return
 	}
 
@@ -346,7 +343,7 @@ func (d *Decoder) readInt16() (out int16, err error) {
 
 func (d *Decoder) readUint32() (out uint32, err error) {
 	if d.remaining() < TypeSize.UInt32 {
-		err = fmt.Errorf("encode: UInt32 required [%d] bytes, remaining [%d]", TypeSize.UInt32, d.remaining())
+		err = fmt.Errorf("uint32 required [%d] bytes, remaining [%d]", TypeSize.UInt32, d.remaining())
 		return
 	}
 
@@ -358,7 +355,7 @@ func (d *Decoder) readUint32() (out uint32, err error) {
 
 func (d *Decoder) readUint64() (out uint64, err error) {
 	if d.remaining() < TypeSize.UInt64 {
-		err = fmt.Errorf("encode: UInt64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
+		err = fmt.Errorf("uint64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
 		return
 	}
 
@@ -378,7 +375,7 @@ func (d *Decoder) readString() (out string, err error) {
 func (d *Decoder) readSHA256Bytes() (out SHA256Bytes, err error) {
 
 	if d.remaining() < TypeSize.SHA256Bytes {
-		err = fmt.Errorf("encode: sha256 required [%d] bytes, remaining [%d]", TypeSize.SHA256Bytes, d.remaining())
+		err = fmt.Errorf("sha256 required [%d] bytes, remaining [%d]", TypeSize.SHA256Bytes, d.remaining())
 		return
 	}
 
@@ -391,7 +388,7 @@ func (d *Decoder) readSHA256Bytes() (out SHA256Bytes, err error) {
 func (d *Decoder) readPublicKey() (out ecc.PublicKey, err error) {
 
 	if d.remaining() < TypeSize.PublicKey {
-		err = fmt.Errorf("encode: PublicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
+		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
 		return
 	}
 
@@ -403,7 +400,7 @@ func (d *Decoder) readPublicKey() (out ecc.PublicKey, err error) {
 
 func (d *Decoder) readSignature() (out ecc.Signature, err error) {
 	if d.remaining() < TypeSize.Signature {
-		err = fmt.Errorf("encode: Signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
+		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
 	out = ecc.Signature(d.data[d.pos : d.pos+TypeSize.Signature])
@@ -415,7 +412,7 @@ func (d *Decoder) readSignature() (out ecc.Signature, err error) {
 func (d *Decoder) readTstamp() (out Tstamp, err error) {
 
 	if d.remaining() < TypeSize.Tstamp {
-		err = fmt.Errorf("encode: Tstamp required [%d] bytes, remaining [%d]", TypeSize.Tstamp, d.remaining())
+		err = fmt.Errorf("tstamp required [%d] bytes, remaining [%d]", TypeSize.Tstamp, d.remaining())
 		return
 	}
 
@@ -427,7 +424,7 @@ func (d *Decoder) readTstamp() (out Tstamp, err error) {
 
 func (d *Decoder) readBlockTimestamp() (out BlockTimestamp, err error) {
 	if d.remaining() < TypeSize.BlockTimestamp {
-		err = fmt.Errorf("encode: BlockTimestamp required [%d] bytes, remaining [%d]", TypeSize.BlockTimestamp, d.remaining())
+		err = fmt.Errorf("blockTimestamp required [%d] bytes, remaining [%d]", TypeSize.BlockTimestamp, d.remaining())
 		return
 	}
 	n, err := d.readUint32()
@@ -440,20 +437,20 @@ func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope, err error) 
 	out = &P2PMessageEnvelope{}
 	l, err := d.readUint32()
 	if err != nil {
-		err = fmt.Errorf("decode p2p evelope lenght: %s", err)
+		err = fmt.Errorf("p2p envelope length: %s", err)
 		return
 	}
 	out.Length = l
 	b, err := d.readByte()
 	if err != nil {
-		err = fmt.Errorf("decode p2p evelope type: %s", err)
+		err = fmt.Errorf("p2p envelope type: %s", err)
 		return
 	}
 	out.Type = P2PMessageType(b)
 
 	payloadLength := int(l - 1)
 	if d.remaining() < payloadLength {
-		err = fmt.Errorf("decode: p2p envelope payload required [%d] bytes, remaining [%d]", l, d.remaining())
+		err = fmt.Errorf("p2p envelope payload required [%d] bytes, remaining [%d]", l, d.remaining())
 		return
 	}
 	payload := d.data[d.pos : d.pos+int(payloadLength)]
@@ -484,49 +481,49 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 }
 
-func (d *Encoder) Encode(v interface{}) (err error) {
+func (e *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
 	case string, Name, AccountName, PermissionName, ActionName, TableName, ScopeName:
-		d.writeString(cv.(string))
+		e.writeString(cv.(string))
 		return
 	case byte:
-		d.writeByte(cv)
+		e.writeByte(cv)
 		return
 	//case TransactionStatus:
 	//	d.writeByte(byte(cv))
 	//	return
 	case int16:
-		d.writeInt16(cv)
+		e.writeInt16(cv)
 		return
 	case uint16:
-		d.writeUint16(cv)
+		e.writeUint16(cv)
 		return
 	case uint32:
-		d.writeUint32(cv)
+		e.writeUint32(cv)
 		return
 	case uint64:
-		d.writeUint64(cv)
+		e.writeUint64(cv)
 		return
 	case Varuint32:
-		d.writeUVarInt(int(cv))
+		e.writeUVarInt(int(cv))
 		return
 	case SHA256Bytes:
-		d.writeSHA256Bytes(cv)
+		e.writeSHA256Bytes(cv)
 		return
 	case ecc.PublicKey:
-		d.writePublicKey(cv)
+		e.writePublicKey(cv)
 		return
 	case ecc.Signature:
-		d.writeSignature(cv)
+		e.writeSignature(cv)
 		return
 	case Tstamp:
-		d.writeTstamp(cv)
+		e.writeTstamp(cv)
 		return
 	case BlockTimestamp:
-		d.writeBlockTimestamp(cv)
+		e.writeBlockTimestamp(cv)
 		return
 	case *P2PMessageEnvelope:
-		d.writeBlockP2PMessageEnvelope(*cv)
+		e.writeBlockP2PMessageEnvelope(*cv)
 		return
 	default:
 
@@ -539,17 +536,16 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 			l := t.Len()
 			println(fmt.Sprintf("Encode: array [%T] of length: %d", v, l))
 			for i := 0; i < l; i++ {
-				if err = d.Encode(rv.Index(i).Interface()); err != nil {
+				if err = e.Encode(rv.Index(i).Interface()); err != nil {
 					return
 				}
 			}
-
 		case reflect.Slice:
 			l := rv.Len()
-			d.writeUVarInt(l)
+			e.writeUVarInt(l)
 			println(fmt.Sprintf("Encode: slice [%T] of length: %d", v, l))
 			for i := 0; i < l; i++ {
-				if err = d.Encode(rv.Index(i).Interface()); err != nil {
+				if err = e.Encode(rv.Index(i).Interface()); err != nil {
 					return
 				}
 			}
@@ -569,7 +565,7 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 					if v.CanInterface() {
 						iface := v.Interface()
 						if iface != nil {
-							if err = d.Encode(iface); err != nil {
+							if err = e.Encode(iface); err != nil {
 								return
 							}
 						}
@@ -580,14 +576,14 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Map:
 			l := rv.Len()
-			d.writeUVarInt(l)
+			e.writeUVarInt(l)
 			println(fmt.Sprintf("Map [%T] of length: %d", v, l))
 			for _, key := range rv.MapKeys() {
 				value := rv.MapIndex(key)
-				if err = d.Encode(key.Interface()); err != nil {
+				if err = e.Encode(key.Interface()); err != nil {
 					return err
 				}
-				if err = d.Encode(value.Interface()); err != nil {
+				if err = e.Encode(value.Interface()); err != nil {
 					return err
 				}
 			}
@@ -595,6 +591,8 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 			return errors.New("binary: unsupported type " + t.String())
 		}
 	}
+
+	//todo : send to writer
 	return
 }
 

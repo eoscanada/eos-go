@@ -407,7 +407,7 @@ func TestDecoder_Encode(t *testing.T) {
 func TestDecoder_Decode_No_Ptr(t *testing.T) {
 	decoder := NewDecoder([]byte{})
 	err := decoder.Decode(1)
-	assert.EqualError(t, err, "decode: can only Decode to pointer type")
+	assert.EqualError(t, err, "decode, can only Decode to pointer type")
 }
 
 func TestDecoder_Decode_String_Err(t *testing.T) {
@@ -463,7 +463,7 @@ func TestDecoder_Decode_Struct_Err(t *testing.T) {
 	s := structWithInvalidType{}
 	decoder := NewDecoder([]byte{})
 	err := decoder.Decode(&s)
-	assert.EqualError(t, err, "binary: unsupported type time.Duration")
+	assert.EqualError(t, err, "decode, unsupported type time.Duration")
 
 }
 
@@ -494,11 +494,22 @@ func TestDecoder_Decode_Bad_Map(t *testing.T) {
 
 	decoder := NewDecoder(enc.data)
 	err := decoder.Decode(&m)
-	assert.EqualError(t, err, "binary: unsupported type time.Duration")
+	assert.EqualError(t, err, "decode, unsupported type time.Duration")
 
 }
 
 func TestEncoder_Encode_array_error(t *testing.T) {
+
+	decoder := NewDecoder([]byte{1})
+
+	toDecode := [1]time.Duration{}
+	err := decoder.Decode(&toDecode)
+
+	assert.EqualError(t, err, "decode, unsupported type time.Duration")
+
+}
+
+func TestEncoder_Decode_array_error(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
@@ -506,6 +517,7 @@ func TestEncoder_Encode_array_error(t *testing.T) {
 	assert.EqualError(t, err, "binary: unsupported type time.Duration")
 
 }
+
 func TestEncoder_Encode_slide_error(t *testing.T) {
 
 	buf := new(bytes.Buffer)
@@ -575,4 +587,34 @@ func TestEncoder_Encode_struct_tag(t *testing.T) {
 	expected := []byte{0x3, 0x61, 0x62, 0x63}
 	assert.Equal(t, expected, enc.data)
 
+}
+
+func TestDecoder_readUint16_missing_data(t *testing.T) {
+
+	_, err := NewDecoder([]byte{}).readByte()
+	assert.EqualError(t, err, "byte required [1] byte, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readUint16()
+	assert.EqualError(t, err, "uint16 required [2] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readUint32()
+	assert.EqualError(t, err, "uint32 required [4] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readUint64()
+	assert.EqualError(t, err, "uint64 required [8] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readSHA256Bytes()
+	assert.EqualError(t, err, "sha256 required [32] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readPublicKey()
+	assert.EqualError(t, err, "publicKey required [34] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readSignature()
+	assert.EqualError(t, err, "signature required [66] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readTstamp()
+	assert.EqualError(t, err, "tstamp required [8] bytes, remaining [0]")
+
+	_, err = NewDecoder([]byte{}).readBlockTimestamp()
+	assert.EqualError(t, err, "blockTimestamp required [4] bytes, remaining [0]")
 }
