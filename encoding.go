@@ -81,6 +81,8 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	}
 	t := rv.Type()
 
+	println(fmt.Sprintf("Decode type [%s]", t.Name()))
+
 	switch v.(type) {
 	case *string:
 		s, e := d.readString()
@@ -91,24 +93,39 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.SetString(s)
 		return
 	case *Name, *AccountName, *PermissionName, *ActionName, *TableName, *ScopeName:
-		name := NameToString(d.readUint64())
+		var n uint64
+		n, err = d.readUint64()
+		if err != nil {
+			return
+		}
+		name := NameToString(n)
 		println(fmt.Sprintf("readName [%s]", name))
 		rv.SetString(name)
 		return
-	case *byte, *P2PMessageType, *TransactionStatus:
-		rv.SetUint(uint64(d.readByte()))
+	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode:
+		var n byte
+		n, err = d.readByte()
+		rv.SetUint(uint64(n))
 		return
 	case *int16:
-		rv.SetInt(int64(d.readInt16()))
+		var n int16
+		n, err = d.readInt16()
+		rv.SetInt(int64(n))
 		return
 	case *uint16:
-		rv.SetUint(uint64(d.readUint16()))
+		var n uint16
+		n, err = d.readUint16()
+		rv.SetUint(uint64(n))
 		return
 	case *uint32:
-		rv.SetUint(uint64(d.readUint32()))
+		var n uint32
+		n, err = d.readUint32()
+		rv.SetUint(uint64(n))
 		return
 	case *uint64:
-		rv.SetUint(uint64(d.readUint64()))
+		var n uint64
+		n, err = d.readUint64()
+		rv.SetUint(n)
 		return
 	case *Varuint32:
 		var r uint64
@@ -121,28 +138,37 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.SetBytes(data)
 		return
 	case *SHA256Bytes:
-		r := d.readSHA256Bytes()
-		rv.SetBytes(r)
+		var s SHA256Bytes
+		s, err = d.readSHA256Bytes()
+		rv.SetBytes(s)
 		return
 	case *ecc.PublicKey:
-		r := d.readPublicKey()
-		rv.SetBytes(r)
+		var p ecc.PublicKey
+		p, err = d.readPublicKey()
+		rv.SetBytes(p)
 		return
 	case *ecc.Signature:
-		r := d.readSignature()
-		rv.SetBytes(r)
+		var s ecc.Signature
+		s, err = d.readSignature()
+		rv.SetBytes(s)
 		return
 	case *Tstamp:
-		r := d.readTstamp()
-		rv.Set(reflect.ValueOf(r))
+		var ts Tstamp
+		ts, err = d.readTstamp()
+		rv.Set(reflect.ValueOf(ts))
 		return
 	case *BlockTimestamp:
-		r := d.readBlockTimestamp()
-		rv.Set(reflect.ValueOf(r))
+		var bt BlockTimestamp
+		bt, err = d.readBlockTimestamp()
+		rv.Set(reflect.ValueOf(bt))
 		return
 	case *OptionalProducerSchedule:
 
-		isPresent := d.readByte()
+		isPresent, e := d.readByte()
+		if e != nil {
+			err = fmt.Errorf("decode: read isPresent, %s", e)
+			return
+		}
 
 		if isPresent == 0 {
 			println("Skipping optional OptionalProducerSchedule")
@@ -151,9 +177,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	case *P2PMessageEnvelope:
 
-		//d.decodeStruct(v, t, rv)
-
-		envelope := d.readP2PMessageEnvelope()
+		envelope, e := d.readP2PMessageEnvelope()
+		if e != nil {
+			err = fmt.Errorf("decode: read p2p envelope, %s", e)
+			return
+		}
 
 		if d.decodeP2PMessage {
 			attr, ok := envelope.Type.Attributes()
@@ -162,7 +190,8 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			}
 			msg := reflect.New(attr.ReflectType)
 			subDecoder := NewDecoder(envelope.Payload)
-			subDecoder.Decode(msg.Interface())
+
+			err = subDecoder.Decode(msg.Interface())
 
 			decoded := msg.Interface().(P2PMessage)
 			envelope.P2PMessage = &decoded
@@ -289,32 +318,54 @@ func (d *Decoder) readByteArray() (out []byte, err error) {
 	return
 }
 
-func (d *Decoder) readByte() (out byte) {
+func (d *Decoder) readByte() (out byte, err error) {
+
+	if d.remaining() < TypeSize.Byte {
+		err = fmt.Errorf("encode: byte required [1] byte, remaining [%d]", d.remaining())
+		return
+	}
+
 	out = d.data[d.pos]
 	d.pos++
 	println(fmt.Sprintf("readByte [%d]", out))
 	return
 }
 
-func (d *Decoder) readUint16() (out uint16) {
+func (d *Decoder) readUint16() (out uint16, err error) {
+	if d.remaining() < TypeSize.UInt16 {
+		err = fmt.Errorf("encode: UInt16 required [%d] bytes, remaining [%d]", TypeSize.UInt16, d.remaining())
+		return
+	}
+
 	out = binary.LittleEndian.Uint16(d.data[d.pos:])
 	d.pos += TypeSize.UInt16
 	return
 }
 
-func (d *Decoder) readInt16() (out int16) {
-	out = int16(d.readUint16())
+func (d *Decoder) readInt16() (out int16, err error) {
+	n, err := d.readUint16()
+	out = int16(n)
 	return
 }
 
-func (d *Decoder) readUint32() (out uint32) {
+func (d *Decoder) readUint32() (out uint32, err error) {
+	if d.remaining() < TypeSize.UInt32 {
+		err = fmt.Errorf("encode: UInt32 required [%d] bytes, remaining [%d]", TypeSize.UInt32, d.remaining())
+		return
+	}
+
 	out = binary.LittleEndian.Uint32(d.data[d.pos:])
 	d.pos += TypeSize.UInt32
 	println(fmt.Sprintf("readUint32 [%d]", out))
 	return
 }
 
-func (d *Decoder) readUint64() (out uint64) {
+func (d *Decoder) readUint64() (out uint64, err error) {
+	if d.remaining() < TypeSize.UInt64 {
+		err = fmt.Errorf("encode: UInt64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
+		return
+	}
+
 	out = binary.LittleEndian.Uint64(d.data[d.pos:])
 	d.pos += TypeSize.UInt64
 	println(fmt.Sprintf("readUint64 [%d]", out))
@@ -328,47 +379,88 @@ func (d *Decoder) readString() (out string, err error) {
 	return
 }
 
-func (d *Decoder) readSHA256Bytes() (out SHA256Bytes) {
+func (d *Decoder) readSHA256Bytes() (out SHA256Bytes, err error) {
+
+	if d.remaining() < TypeSize.SHA256Bytes {
+		err = fmt.Errorf("encode: sha256 required [%d] bytes, remaining [%d]", TypeSize.SHA256Bytes, d.remaining())
+		return
+	}
+
 	out = SHA256Bytes(d.data[d.pos : d.pos+TypeSize.SHA256Bytes])
 	d.pos += TypeSize.SHA256Bytes
 	println(fmt.Sprintf("readSHA256Bytes [%s]", hex.EncodeToString(out)))
 	return
 }
 
-func (d *Decoder) readPublicKey() (out ecc.PublicKey) {
+func (d *Decoder) readPublicKey() (out ecc.PublicKey, err error) {
+
+	if d.remaining() < TypeSize.PublicKey {
+		err = fmt.Errorf("encode: PublicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
+		return
+	}
+
 	out = ecc.PublicKey(d.data[d.pos : d.pos+TypeSize.PublicKey])
 	d.pos += TypeSize.PublicKey
 	println(fmt.Sprintf("readPublicKey [%s]", hex.EncodeToString(out)))
 	return
 }
 
-func (d *Decoder) readSignature() (out ecc.Signature) {
+func (d *Decoder) readSignature() (out ecc.Signature, err error) {
+	if d.remaining() < TypeSize.Signature {
+		err = fmt.Errorf("encode: Signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
+		return
+	}
 	out = ecc.Signature(d.data[d.pos : d.pos+TypeSize.Signature])
 	d.pos += TypeSize.Signature
 	println(fmt.Sprintf("readSignature [%s]", hex.EncodeToString(out)))
 	return
 }
 
-func (d *Decoder) readTstamp() (out Tstamp) {
-	unixNano := d.readUint64()
+func (d *Decoder) readTstamp() (out Tstamp, err error) {
+
+	if d.remaining() < TypeSize.Tstamp {
+		err = fmt.Errorf("encode: Tstamp required [%d] bytes, remaining [%d]", TypeSize.Tstamp, d.remaining())
+		return
+	}
+
+	unixNano, err := d.readUint64()
 	out.Time = time.Unix(0, int64(unixNano))
 	println(fmt.Sprintf("readTstamp [%s]", out))
 	return
 }
 
-func (d *Decoder) readBlockTimestamp() (out BlockTimestamp) {
-	unixSec := int64(d.readUint32())
-	out.Time = time.Unix(unixSec+946684800, 0)
+func (d *Decoder) readBlockTimestamp() (out BlockTimestamp, err error) {
+	if d.remaining() < TypeSize.BlockTimestamp {
+		err = fmt.Errorf("encode: BlockTimestamp required [%d] bytes, remaining [%d]", TypeSize.BlockTimestamp, d.remaining())
+		return
+	}
+	n, err := d.readUint32()
+	out.Time = time.Unix(int64(n)+946684800, 0)
 	return
 }
 
-func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope) {
+func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope, err error) {
 
 	out = &P2PMessageEnvelope{}
-	out.Length = d.readUint32()
-	out.Type = P2PMessageType(d.readByte())
+	l, err := d.readUint32()
+	if err != nil {
+		err = fmt.Errorf("decode p2p evelope lenght: %s", err)
+		return
+	}
+	out.Length = l
+	b, err := d.readByte()
+	if err != nil {
+		err = fmt.Errorf("decode p2p evelope type: %s", err)
+		return
+	}
+	out.Type = P2PMessageType(b)
 
-	payload := d.data[d.pos : d.pos+int(out.Length-1)]
+	payloadLength := int(l - 1)
+	if d.remaining() < payloadLength {
+		err = fmt.Errorf("decode: p2p envelope payload required [%d] bytes, remaining [%d]", l, d.remaining())
+		return
+	}
+	payload := d.data[d.pos : d.pos+int(payloadLength)]
 	d.pos += int(out.Length)
 
 	out.Payload = payload
