@@ -422,20 +422,18 @@ func TestDecoder_Decode_String_Err(t *testing.T) {
 	assert.EqualError(t, err, "byte array: varlen=10, missing 10 bytes")
 }
 
-func TestDecoder_Decode_Array_Err(t *testing.T) {
+func TestDecoder_Decode_Array(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
+	enc.Encode([3]byte{1, 2, 4})
+
+	assert.Equal(t, []byte{1, 2, 4}, enc.data)
 
 	decoder := NewDecoder(enc.data)
-	var s [1]string
-	err := decoder.Decode(&s)
-	assert.EqualError(t, err, "varint: invalide buffer size")
-
-	enc.writeUVarInt(1)
-	decoder = NewDecoder(enc.data)
-	err = decoder.Decode(&s)
-	assert.EqualError(t, err, "varint: invalide buffer size")
+	var decoded [3]byte
+	decoder.Decode(&decoded)
+	assert.Equal(t, [3]byte{1, 2, 4}, decoded)
 
 }
 

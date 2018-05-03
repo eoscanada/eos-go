@@ -55,10 +55,10 @@ type Decoder struct {
 }
 
 var print = func(s string) {
-	fmt.Print(s)
+	//fmt.Print(s)
 }
 var println = func(s string) {
-	print(fmt.Sprintf("%s\n", s))
+	//print(fmt.Sprintf("%s\n", s))
 }
 
 func NewDecoder(data []byte) *Decoder {
@@ -205,11 +205,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	switch t.Kind() {
 	case reflect.Array:
 		print("Array")
-		var len uint64
-		len, err = d.readUvarint()
-		if err != nil {
-			return
-		}
+		len := t.Len()
 		for i := 0; i < int(len); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
 				return
@@ -541,7 +537,6 @@ func (d *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Array:
 			l := t.Len()
-			d.writeUVarInt(l)
 			println(fmt.Sprintf("Encode: array [%T] of length: %d", v, l))
 			for i := 0; i < l; i++ {
 				if err = d.Encode(rv.Index(i).Interface()); err != nil {
