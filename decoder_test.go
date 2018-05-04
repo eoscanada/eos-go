@@ -8,6 +8,8 @@ import (
 
 	"time"
 
+	"fmt"
+
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
 )
@@ -332,6 +334,17 @@ func TestDecoder_BlockTimestamp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ts, rbt)
 	assert.Equal(t, 0, d.remaining())
+}
+
+func TestDecoder_Time(t *testing.T) {
+
+	time := time.Now()
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	enc.Encode(&time)
+
+	fmt.Println(buf.Bytes())
 }
 
 type EncodeTestStruct struct {

@@ -104,7 +104,7 @@ func TestSignaturePublicKeyExtractionSecond(t *testing.T) {
 	require.NoError(t, err)
 
 	// Ok, we'd need to find values where we know the signature is valid, and comes from the given key.
-	assert.Equal(t, "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
+	assert.Equal(t, "EOS5DguRMaGh72NvbVX5LKHTb5cvbRmAxgrm9i2NNPKv5TC7FadXs", pubKey.String())
 }
 
 func TestEOSIOCSigningComparison(t *testing.T) {
@@ -124,7 +124,7 @@ func TestEOSIOCSigningComparison(t *testing.T) {
 	sig, err := privKey.Sign(digest)
 	require.NoError(t, err)
 
-	fromEOSIOC := "EOSK4AKjmxow1cTcjSFxYhvTxQGYmPX7KS18Qj3A7sosUvxxmXngagk6D3TjY81eRsiT78En7Pv1zca7MmKdc2bKne2W8EW8W"
+	fromEOSIOC := "EOSK2WBNtiTY8o4mqFSz7HPnjkiT9JhUYGFa81RrzaXr3aWRF1F8qwVfutJXroqiL35ZiHTcvn8gPWGYJDwnKZTCcbAGJy4i9"
 	assert.Equal(t, fromEOSIOC, sig.String())
 }
 
@@ -143,7 +143,7 @@ func TestNodeosSignatureComparison(t *testing.T) {
 	require.NoError(t, err)
 
 	// from that tx:
-	fromEOSIOCTx := "EOSKkwLhwDoRF8gpGFbcUKiaPdeeKo6U7eDuXQw9szMiNE4K4cFe17sffk6hmy3mWf1ogtzd5J5kvnvFD3Lq5cF6VyYb3KsGy"
+	fromEOSIOCTx := "EOSK9JDNpqcgUin9i2PtsV6QbLG8QGzYPN8kqVicJ63CgHBiwq9q27qykaerbNh8kD6baLFWcuKyTmVUwFRF6myjqFQcHvRXf"
 	assert.Equal(t, fromEOSIOCTx, sig.String())
 
 	// decode

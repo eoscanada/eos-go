@@ -2,13 +2,11 @@ package token
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"testing"
 
-	eos "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 //func TestPackAction(t *testing.T) {
@@ -62,49 +60,4 @@ func TestUnpackActionTransfer(t *testing.T) {
 		assert.Equal(t, test.out, res)
 	}
 
-}
-
-func TestActionMetaTypes(t *testing.T) {
-
-	a := NewTransfer(AN("abourget"), AN("mama"), eos.NewEOSAsset(100), "note.1")
-
-	//a := &eos.Action{
-	//	Account: AN("eosio"),
-	//	Name:    ActN("transfer"),
-	//	//Data: &Transfer{
-	//	//	From: AN("abourget"),
-	//	//	To:   AN("mama"),
-	//	//},
-	//	Data: *transfer,
-	//}
-
-	cnt, err := json.Marshal(a)
-	require.NoError(t, err)
-
-	var b eos.Action
-
-	err = json.Unmarshal(cnt, &b)
-	require.NoError(t, err)
-
-	assert.Equal(t, a, &b)
-
-	//assert.Equal(t,
-	//	`{"account":"eosio","data":"00000059b1abe931000000000060a4910000000000000000000000000000000000","name":"transfer"}`,
-	//	string(cnt),
-	//)
-	//
-	//var newAction eos.Action
-	//require.NoError(t, json.Unmarshal(cnt, &newAction))
-	//
-	//tx := &eos.Transaction{Actions: []*eos.Action{a}}
-	//stx := eos.NewSignedTransaction(tx)
-	//packed, err := stx.Pack(eos.TxOptions{})
-	//require.NoError(t, err)
-	//fmt.Println("MAMA1", stx.MaxNetUsageWords)
-	//fmt.Println("MAMA2", stx.Transaction.MaxNetUsageWords)
-	//assert.Equal(t, 123, stx.MaxNetUsageWords)
-	//packedData, err := json.Marshal(packed)
-	//fmt.Println("MAMA3", stx.Transaction.MaxNetUsageWords)
-	//assert.Equal(t, `000000000000000000000`, string(packedData))
-	//assert.Equal(t, `000000000000000000000`, hex.EncodeToString(packed.PackedTransaction))
 }

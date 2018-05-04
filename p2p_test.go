@@ -153,22 +153,6 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 	//todo : more assert
 
 }
-func TestP2PMessage_AsMessage(t *testing.T) {
-
-	hexString := `2100000002000000000000000000000000000000004016e1d216df26150000000000000000`
-	decoded, err := hex.DecodeString(hexString)
-	if err != nil {
-		t.Error(err)
-	}
-	var p2pMessage P2PMessageEnvelope
-	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessage))
-
-	msg, err := p2pMessage.AsMessage()
-
-	assert.NoError(t, err)
-	assert.IsType(t, &TimeMessage{}, msg)
-
-}
 
 func TestMessageType_Name(t *testing.T) {
 

@@ -68,7 +68,7 @@ func TestActionNewAccount(t *testing.T) {
 
 	buf, err = json.Marshal(a.Data)
 	assert.NoError(t, err)
-	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"public_key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"active\":{\"threshold\":1,\"keys\":[{\"public_key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"recovery\":{\"threshold\":1,\"keys\":null,\"accounts\":[{\"permission\":{\"actor\":\"eosio\",\"permission\":\"active\"},\"weight\":1}]}}", string(buf))
+	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"active\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null},\"recovery\":{\"threshold\":1,\"keys\":null,\"accounts\":[{\"permission\":{\"actor\":\"eosio\",\"permission\":\"active\"},\"weight\":1}]}}", string(buf))
 	// 00096e88 0000 0000 00000000 00 00 00 00 01 0000000000ea3055
 
 	// WUTz that ?
@@ -124,7 +124,9 @@ func TestActionUnmarshalBinary(t *testing.T) {
 		var tx Transaction
 		b, err := hex.DecodeString(test.in)
 		require.NoError(t, err)
-		require.NoError(t, UnmarshalBinary(b, &tx))
+
+		decoder := NewDecoder(b)
+		require.NoError(t, decoder.Decode(&tx))
 
 		js, err := json.Marshal(tx)
 		require.NoError(t, err)

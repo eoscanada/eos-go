@@ -1,16 +1,12 @@
 package eos
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"time"
-
-	"bytes"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -28,67 +24,6 @@ type ScopeName Name
 func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
-
-func (acct AccountName) MarshalBinary() ([]byte, error) {
-	return Name(acct).MarshalBinary()
-}
-func (s ScopeName) MarshalBinary() ([]byte, error) {
-	return Name(s).MarshalBinary()
-}
-func (acct PermissionName) MarshalBinary() ([]byte, error) {
-	return Name(acct).MarshalBinary()
-}
-func (acct ActionName) MarshalBinary() ([]byte, error) {
-	return Name(acct).MarshalBinary()
-}
-func (acct TableName) MarshalBinary() ([]byte, error) {
-	return Name(acct).MarshalBinary()
-}
-func (acct Name) MarshalBinary() ([]byte, error) {
-	val, err := StringToName(string(acct))
-	if err != nil {
-		return nil, err
-	}
-	var out [8]byte
-	binary.LittleEndian.PutUint64(out[:8], val)
-	return out[:], nil
-}
-
-func (n *AccountName) UnmarshalBinary(data []byte) error {
-	*n = AccountName(NameToString(binary.LittleEndian.Uint64(data)))
-	return nil
-}
-func (s *ScopeName) UnmarshalBinary(data []byte) error {
-	*s = ScopeName(NameToString(binary.LittleEndian.Uint64(data)))
-	return nil
-}
-func (n *Name) UnmarshalBinary(data []byte) error {
-	*n = Name(NameToString(binary.LittleEndian.Uint64(data)))
-	return nil
-}
-func (n *PermissionName) UnmarshalBinary(data []byte) error {
-	*n = PermissionName(NameToString(binary.LittleEndian.Uint64(data)))
-	return nil
-}
-func (n *ActionName) UnmarshalBinary(data []byte) error {
-	*n = ActionName(NameToString(binary.LittleEndian.Uint64(data)))
-	return nil
-}
-func (n *TableName) UnmarshalBinary(data []byte) error {
-	*n = TableName(NameToString(binary.LittleEndian.Uint64(data)))
-	return nil
-}
-
-func (AccountName) UnmarshalBinarySize() int    { return 8 }
-func (ScopeName) UnmarshalBinarySize() int      { return 8 }
-func (PermissionName) UnmarshalBinarySize() int { return 8 }
-func (ActionName) UnmarshalBinarySize() int     { return 8 }
-func (TableName) UnmarshalBinarySize() int      { return 8 }
-func (Name) UnmarshalBinarySize() int           { return 8 }
-
-// OTHER TYPES: eosjs/src/structs.js
-
-// Compression
 
 type CompressionType uint8
 
@@ -125,18 +60,6 @@ func (c *CompressionType) UnmarshalJSON(data []byte) error {
 // CurrencyName
 
 type CurrencyName string
-
-func (c CurrencyName) MarshalBinary() ([]byte, error) {
-	out := make([]byte, 7, 7)
-	copy(out, []byte(c))
-	return out, nil
-}
-
-func (c *CurrencyName) UnmarshalBinary(data []byte) error {
-	*c = CurrencyName(strings.TrimRight(string(data), "\x00"))
-	return nil
-}
-func (CurrencyName) UnmarshalBinarySize() int { return 7 }
 
 // Asset
 
@@ -195,35 +118,6 @@ func NewAsset(in string) (out Asset, err error) {
 	out.Amount = val
 
 	return
-}
-
-func (a *Asset) UnmarshalBinary(data []byte) error {
-	newAsset := Asset{}
-	if err := UnmarshalBinary(data[:8], &newAsset.Amount); err != nil {
-		return err
-	}
-	if err := UnmarshalBinary(data[8:9], &newAsset.Precision); err != nil {
-		return err
-	}
-	newAsset.Symbol.Symbol = strings.Trim(string(data[9:16]), "\x00")
-
-	*a = newAsset
-
-	return nil
-}
-
-func (Asset) UnmarshalBinarySize() int {
-	return 16
-}
-
-func (a Asset) MarshalBinary() ([]byte, error) {
-	binAsset := struct {
-		Amount    int64
-		Precision uint8
-		Symbol    [7]byte
-	}{Amount: a.Amount, Precision: a.Precision, Symbol: [7]byte{}}
-	copy(binAsset.Symbol[:], []byte(a.Symbol.Symbol))
-	return MarshalBinary(binAsset)
 }
 
 func (a *Asset) UnmarshalJSON(data []byte) error {
@@ -298,19 +192,6 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
-func (t *JSONTime) UnmarshalBinary(data []byte) error {
-	t.Time = time.Unix(int64(binary.LittleEndian.Uint32(data)), 0).UTC()
-	return nil
-}
-
-func (t JSONTime) MarshalBinary() ([]byte, error) {
-	out := []byte{0, 0, 0, 0}
-	binary.LittleEndian.PutUint32(out, uint32(t.Unix()))
-	return out, nil
-}
-
-func (t JSONTime) UnmarshalBinarySize() int { return 4 }
-
 // HexBytes
 
 type HexBytes []byte
@@ -349,42 +230,7 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-func (t *SHA256Bytes) UnmarshalBinary(data []byte) error {
-
-	*t = SHA256Bytes(data)
-	return nil
-}
-
-func (a SHA256Bytes) MarshalBinary() ([]byte, error) {
-
-	if len(a) == 0 {
-		a = bytes.Repeat([]byte{0}, 32)
-	}
-
-	return a, nil
-}
-
-func (t SHA256Bytes) UnmarshalBinarySize() int { return 32 }
-
-// TODO: SHA256Bytes, implement the Binary encoder... fixed size.
-
 type Varuint32 uint32
-
-func (a Varuint32) MarshalBinary() ([]byte, error) {
-	data := make([]byte, 8, 8)
-	l := binary.PutUvarint(data, uint64(a))
-	//fmt.Println("VARUINT MARSHAL", a, data, data[:l])
-	return data[:l], nil
-}
-
-func (a *Varuint32) UnmarshalBinaryRead(r io.Reader) error {
-	size, err := binary.ReadUvarint(&ByteReader{r})
-	if err != nil {
-		return err
-	}
-	*a = Varuint32(size)
-	return nil
-}
 
 // Tstamp
 
@@ -421,24 +267,6 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 	return nil
 }
 
-func (t *Tstamp) UnmarshalBinary(data []byte) error {
-
-	unixNano := int64(binary.LittleEndian.Uint64(data))
-	t.Time = time.Unix(0, unixNano)
-
-	return nil
-}
-
-func (t Tstamp) UnmarshalBinarySize() int { return 8 }
-
-func (t Tstamp) MarshalBinary() ([]byte, error) {
-	out := []byte{0, 0, 0, 0, 0, 0, 0, 0}
-	binary.LittleEndian.PutUint64(out, uint64(t.UnixNano()))
-	return out, nil
-}
-
-// Block timestamp, has EPOCH Y2K. Adds 946684800000ms to the incoming value.
-
 type BlockTimestamp struct {
 	time.Time
 }
@@ -459,47 +287,4 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 		t.Time, err = time.Parse(`"`+BlockTimestampFormat+`Z07:00"`, string(data))
 	}
 	return err
-}
-
-// func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
-// 	return json.Marshal(fmt.Sprintf("%d", t.UnixNano()))
-// }
-
-// func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
-// 	var unixNano int64
-// 	if data[0] == '"' {
-// 		var s string
-// 		if err = json.Unmarshal(data, &s); err != nil {
-// 			return
-// 		}
-
-// 		unixNano, err = strconv.ParseInt(s, 10, 64)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 	} else {
-// 		unixNano, err = strconv.ParseInt(string(data), 10, 64)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	*t = BlockTimestamp{time.Unix(0, unixNano)}
-
-// 	return nil
-// }
-
-func (t *BlockTimestamp) UnmarshalBinary(data []byte) error {
-	unixSec := int64(binary.LittleEndian.Uint32(data))
-	t.Time = time.Unix(unixSec+946684800, 0).UTC()
-	return nil
-}
-
-func (t BlockTimestamp) UnmarshalBinarySize() int { return 4 }
-
-func (t BlockTimestamp) MarshalBinary() ([]byte, error) {
-	out := []byte{0, 0, 0, 0}
-	binary.LittleEndian.PutUint32(out, uint32(t.Unix()-946684800))
-	return out, nil
 }

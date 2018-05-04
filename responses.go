@@ -99,7 +99,9 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 
 		// access the type of the `Slice`, create a bunch of them..
 		newStruct := reflect.New(structType)
-		if err := UnmarshalBinary(bin, newStruct.Interface()); err != nil {
+
+		decoder := NewDecoder(bin)
+		if err := decoder.Decode(newStruct.Interface()); err != nil {
 			return err
 		}
 

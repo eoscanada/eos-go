@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"log"
 	"net/url"
 
 	"bytes"
+
+	"log"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
@@ -16,14 +17,21 @@ import (
 
 func newAPI() (api *eos.API) {
 
-	apiAddrURL, err := url.Parse("http://testnet-dawn3.eosio.ca")
-	if err != nil {
-		log.Fatal(err)
-	}
+	api = eos.New(&url.URL{Scheme: "http", Host: "localhost:8888"}, bytes.Repeat([]byte{0}, 32))
 
-	api = eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32))
 	tr := &http.Transport{}
 	api.HttpClient = &http.Client{Transport: tr}
+	keyBag := eos.NewKeyBag()
+
+	for _, key := range []string{
+		"5HryYjdRzBtQKzM1H7L1Y4yokBMAoUYjcYpMvhQv1hzKhrKdfWp",
+	} {
+		if err := keyBag.Add(key); err != nil {
+			log.Fatalln("Couldn't load private key:", err)
+		}
+	}
+
+	api.SetSigner(keyBag)
 
 	return
 }

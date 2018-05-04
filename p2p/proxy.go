@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"fmt"
 
-	"encoding/hex"
 	"log"
 
 	"github.com/eoscanada/eos-go"
@@ -45,7 +44,7 @@ func (p *Proxy) handleTransmission(channel chan routeCommunication) {
 
 	for communication := range channel {
 
-		encoder := eos.NewOldEncoder(communication.DestinationConnection)
+		encoder := eos.NewEncoder(communication.DestinationConnection)
 		err := encoder.Encode(communication.P2PMessageEnvelope)
 		if err != nil {
 			fmt.Println("Sender error: ", err)
@@ -76,23 +75,6 @@ func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, po
 			Route:              communication.Route,
 			P2PMessageEnvelope: communication.P2PMessageEnvelope,
 		}
-
-		msg, err := communication.P2PMessageEnvelope.AsMessage()
-		if err != nil {
-
-			env := communication.P2PMessageEnvelope
-
-			msgData, err := eos.MarshalBinary(env)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			fmt.Printf("Post process failed for message type [%d] len[%d] with data [%s]\n", env.Type, env.Length, hex.EncodeToString(msgData))
-			log.Fatal("Post processing err: ", err)
-			continue
-		}
-
-		pp.P2PMessageEnvelope.P2PMessage = msg
 
 		for _, c := range postProcessorChannels {
 			c <- pp
@@ -139,23 +121,23 @@ func (p *Proxy) startForwarding(route *Route) {
 
 func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn, route *Route) (err error) {
 
-	decoder := eos.NewOldDecoder(bufio.NewReader(connection))
+	r := bufio.NewReader(connection)
 
 	for {
-		var msg eos.P2PMessageEnvelope
 
-		err = decoder.Decode(&msg)
+		envelope, err := eos.ReadP2PMessageData(r)
 		if err != nil {
 			fmt.Println("Connection error: ", err)
 			forwardConnection.Close()
-			return // handleConnection will be restarted in startForwarding
+			log.Fatal("Handle connection, ", err)
 		}
 
 		router <- routeCommunication{
 			Route:                 route,
 			DestinationConnection: forwardConnection,
-			P2PMessageEnvelope:    &msg,
+			P2PMessageEnvelope:    envelope,
 		}
+
 	}
 }
 

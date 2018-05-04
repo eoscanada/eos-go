@@ -105,7 +105,7 @@ func main() {
 	ui.SetKeybinding("Esc", func() { ui.Quit() })
 
 	api := eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32))
-	client := p2p.NewClient(*p2pAddr, api, *chainID, int16(*networkVersion))
+	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion), "123")
 	client.RegisterHandler(p2p.HandlerFunc(UILoggerHandler))
 	client.RegisterHandler(p2p.LoggerHandler)
 
@@ -127,7 +127,7 @@ var UILoggerHandler = func(processable p2p.PostProcessable) {
 		}
 	}()
 
-	p2pMsg := processable.P2PMessage
+	p2pMsg := processable.P2PMessageEnvelope.P2PMessage
 	switch p2pMsg.GetType() {
 
 	case eos.SignedBlockMessageType:

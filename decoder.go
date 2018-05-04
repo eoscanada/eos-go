@@ -1,7 +1,6 @@
 package eos
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -12,6 +11,10 @@ import (
 	"reflect"
 
 	"encoding/hex"
+
+	"strings"
+
+	"io/ioutil"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -27,6 +30,7 @@ var TypeSize = struct {
 	Signature      int
 	Tstamp         int
 	BlockTimestamp int
+	CurrencyName   int
 }{
 	Byte:           1,
 	UInt16:         2,
@@ -38,6 +42,18 @@ var TypeSize = struct {
 	Signature:      66,
 	Tstamp:         8,
 	BlockTimestamp: 4,
+	CurrencyName:   7,
+}
+
+var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
+
+// Registers Action objects..
+func RegisterAction(accountName AccountName, actionName ActionName, obj interface{}) {
+	// TODO: lock or som'th.. unless we never call after boot time..
+	if registeredActions[accountName] == nil {
+		registeredActions[accountName] = make(map[ActionName]reflect.Type)
+	}
+	registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
 }
 
 // Decoder implements the EOS unpacking, similar to FC_BUFFER
@@ -54,8 +70,13 @@ type Decoder struct {
 	//lastSeenAction ActionName
 }
 
+var prefix = make([]string, 0)
+
 var print = func(s string) {
-	fmt.Print(s)
+	//for _, s := range prefix {
+	//	fmt.Print(s)
+	//}
+	//fmt.Print(s)
 }
 var println = func(s string) {
 	print(fmt.Sprintf("%s\n", s))
@@ -82,6 +103,16 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	t := rv.Type()
 
 	println(fmt.Sprintf("Decode type [%s]", t.Name()))
+	if !rv.CanAddr() {
+		return errors.New("binary: can only Decode to pointer type")
+	}
+
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		newRV := reflect.New(t)
+		rv.Set(newRV)
+		rv = reflect.Indirect(newRV)
+	}
 
 	switch v.(type) {
 	case *string:
@@ -129,6 +160,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		r, err = d.readUvarint()
 		rv.SetUint(r)
 		return
+	case HexBytes:
+		var data []byte
+		data, err = d.readByteArray()
+		rv.SetBytes(data)
+		return
 	case *[]byte:
 		var data []byte
 		data, err = d.readByteArray()
@@ -159,6 +195,21 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		bt, err = d.readBlockTimestamp()
 		rv.Set(reflect.ValueOf(bt))
 		return
+	case *JSONTime:
+		var jt JSONTime
+		jt, err = d.readJSONTime()
+		rv.Set(reflect.ValueOf(jt))
+		return
+	case *CurrencyName:
+		var cur CurrencyName
+		cur, err = d.readCurrencyName()
+		rv.Set(reflect.ValueOf(cur))
+		return
+	case *Asset:
+		var asset Asset
+		asset, err = d.readAsset()
+		rv.Set(reflect.ValueOf(asset))
+		return
 	case *OptionalProducerSchedule:
 
 		isPresent, e := d.readByte()
@@ -171,7 +222,14 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			println("Skipping optional OptionalProducerSchedule")
 			return
 		}
+	case **Action:
+		d.decodeStruct(v, t, rv)
+		action := rv.Interface().(Action)
 
+		var data ActionData
+		data, err = d.readActionData(action)
+		action.Data = data
+		return
 	case *P2PMessageEnvelope:
 
 		envelope, e := d.readP2PMessageEnvelope()
@@ -261,6 +319,8 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) (err error) {
 	l := rv.NumField()
+
+	prefix = append(prefix, "     ")
 	for i := 0; i < l; i++ {
 
 		if tag := t.Field(i).Tag.Get("eos"); tag == "-" {
@@ -269,12 +329,13 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 
 		if v := rv.Field(i); v.CanSet() && t.Field(i).Name != "_" {
 			iface := v.Addr().Interface()
-			println(fmt.Sprintf("Struct Field name: %s", t.Field(i).Name))
+			println(fmt.Sprintf("Field name: %s", t.Field(i).Name))
 			if err = d.Decode(iface); err != nil {
 				return
 			}
 		}
 	}
+	prefix = prefix[:len(prefix)-1]
 	return
 }
 
@@ -340,6 +401,11 @@ func (d *Decoder) readInt16() (out int16, err error) {
 	out = int16(n)
 	return
 }
+func (d *Decoder) readInt64() (out int64, err error) {
+	n, err := d.readUint64()
+	out = int64(n)
+	return
+}
 
 func (d *Decoder) readUint32() (out uint32, err error) {
 	if d.remaining() < TypeSize.UInt32 {
@@ -347,7 +413,6 @@ func (d *Decoder) readUint32() (out uint32, err error) {
 		return
 	}
 
-	fmt.Println("Grrrrr! ", hex.EncodeToString(d.data[d.pos:d.pos+4]))
 	out = binary.LittleEndian.Uint32(d.data[d.pos:])
 	d.pos += TypeSize.UInt32
 	println(fmt.Sprintf("readUint32 [%d]", out))
@@ -360,9 +425,10 @@ func (d *Decoder) readUint64() (out uint64, err error) {
 		return
 	}
 
-	out = binary.LittleEndian.Uint64(d.data[d.pos:])
+	data := d.data[d.pos : d.pos+TypeSize.UInt64]
+	out = binary.LittleEndian.Uint64(data)
 	d.pos += TypeSize.UInt64
-	println(fmt.Sprintf("readUint64 [%d]", out))
+	println(fmt.Sprintf("readUint64 [%d] [%s]", out, hex.EncodeToString(data)))
 	return
 }
 
@@ -404,7 +470,7 @@ func (d *Decoder) readSignature() (out ecc.Signature, err error) {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
-	out = ecc.Signature(d.data[d.pos+1 : d.pos+TypeSize.Signature-1])
+	out = ecc.Signature(d.data[d.pos : d.pos+TypeSize.Signature])
 	d.pos += TypeSize.Signature
 	println(fmt.Sprintf("readSignature [%s]", hex.EncodeToString(out)))
 	return
@@ -430,6 +496,74 @@ func (d *Decoder) readBlockTimestamp() (out BlockTimestamp, err error) {
 	}
 	n, err := d.readUint32()
 	out.Time = time.Unix(int64(n)+946684800, 0)
+	return
+}
+
+func (d *Decoder) readJSONTime() (jsonTime JSONTime, err error) {
+	n, err := d.readUint32()
+	jsonTime = JSONTime{time.Unix(int64(n), 0).UTC()}
+	return
+}
+
+func (d *Decoder) readCurrencyName() (out CurrencyName, err error) {
+
+	data := d.data[d.pos : d.pos+TypeSize.CurrencyName]
+	d.pos += TypeSize.CurrencyName
+
+	out = CurrencyName(strings.TrimRight(string(data), "\x00"))
+	return
+}
+
+func (d *Decoder) readAsset() (out Asset, err error) {
+
+	amount, err := d.readInt64()
+	precision, err := d.readByte()
+	if err != nil {
+		err = fmt.Errorf("readSymbol precision, %s", err)
+		return
+	}
+
+	data := d.data[d.pos : d.pos+7]
+	d.pos += 7
+
+	out = Asset{}
+	out.Amount = amount
+	out.Precision = precision
+	out.Symbol.Symbol = strings.TrimRight(string(data), "\x00")
+	return
+}
+
+func (d *Decoder) readActionData(action Action) (out ActionData, err error) {
+	//
+	out = ActionData{}
+	data, err := d.readByteArray()
+	if err != nil {
+		err = fmt.Errorf("read action data, %s", err)
+		return
+	}
+	out.HexBytes = HexBytes(data)
+	actionMap := registeredActions[action.Account]
+
+	var decodeInto reflect.Type
+	if actionMap != nil {
+		objType := actionMap[action.Name]
+		if objType != nil {
+			decodeInto = reflect.TypeOf(objType)
+		}
+	}
+	if decodeInto == nil {
+		return
+	}
+
+	obj := reflect.New(decodeInto)
+
+	err = UnmarshalBinary(data, &obj)
+	if err != nil {
+		return
+	}
+
+	out.Obj = obj.Elem().Interface()
+
 	return
 }
 
@@ -465,249 +599,17 @@ func (d *Decoder) remaining() int {
 	return len(d.data) - d.pos
 }
 
-// --------------------------------------------------------------
-// Encoder implements the EOS packing, similar to FC_BUFFER
-// --------------------------------------------------------------
-type Encoder struct {
-	output io.Writer
-	Order  binary.ByteOrder
-	count  int
-}
+func UnmarshalBinaryReader(reader io.Reader, v interface{}) (err error) {
 
-func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{
-		output: w,
-		Order:  DefaultEndian,
-		count:  0,
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return
 	}
+	return UnmarshalBinary(data, v)
 }
 
-func (e *Encoder) Encode(v interface{}) (err error) {
-	switch cv := v.(type) {
-	case Name, AccountName, PermissionName, ActionName, TableName, ScopeName:
-		val, er := StringToName(cv.(string))
-		if er != nil {
-			err = fmt.Errorf("encode, name, %s", e)
-			return
-		}
-		err = e.writeUint64(val)
-		return
-	case string:
-		err = e.writeString(cv)
-		return
-	case byte:
-		err = e.writeByte(cv)
-		return
-	case int16:
-		err = e.writeInt16(cv)
-		return
-	case uint16:
-		err = e.writeUint16(cv)
-		return
-	case uint32:
-		err = e.writeUint32(cv)
-		return
-	case uint64:
-		err = e.writeUint64(cv)
-		return
-	case Varuint32:
-		err = e.writeUVarInt(int(cv))
-		return
-	case SHA256Bytes:
-		err = e.writeSHA256Bytes(cv)
-		return
-	case ecc.PublicKey:
-		err = e.writePublicKey(cv)
-		return
-	case ecc.Signature:
-		err = e.writeSignature(cv)
-		return
-	case Tstamp:
-		err = e.writeTstamp(cv)
-		return
-	case BlockTimestamp:
-		err = e.writeBlockTimestamp(cv)
-		return
-	case *P2PMessageEnvelope:
-		err = e.writeBlockP2PMessageEnvelope(*cv)
-		return
-	default:
+func UnmarshalBinary(data []byte, v interface{}) (err error) {
 
-		rv := reflect.Indirect(reflect.ValueOf(v))
-		t := rv.Type()
-
-		switch t.Kind() {
-
-		case reflect.Array:
-			l := t.Len()
-			println(fmt.Sprintf("Encode: array [%T] of length: %d", v, l))
-			for i := 0; i < l; i++ {
-				if err = e.Encode(rv.Index(i).Interface()); err != nil {
-					return
-				}
-			}
-		case reflect.Slice:
-			l := rv.Len()
-			e.writeUVarInt(l)
-			println(fmt.Sprintf("Encode: slice [%T] of length: %d", v, l))
-			for i := 0; i < l; i++ {
-				if err = e.Encode(rv.Index(i).Interface()); err != nil {
-					return
-				}
-			}
-
-		case reflect.Struct:
-			l := rv.NumField()
-			println(fmt.Sprintf("Encode: struct [%T] of length: %d", v, l))
-			n := 0
-			for i := 0; i < l; i++ {
-				field := t.Field(i)
-				println(fmt.Sprintf("Encode: field -> %s", field.Name))
-
-				if tag := field.Tag.Get("eos"); tag == "-" {
-					continue
-				}
-				if v := rv.Field(i); t.Field(i).Name != "_" {
-					if v.CanInterface() {
-						iface := v.Interface()
-						if iface != nil {
-							if err = e.Encode(iface); err != nil {
-								return
-							}
-						}
-					}
-					n++
-				}
-			}
-
-		case reflect.Map:
-			l := rv.Len()
-			e.writeUVarInt(l)
-			println(fmt.Sprintf("Map [%T] of length: %d", v, l))
-			for _, key := range rv.MapKeys() {
-				value := rv.MapIndex(key)
-				if err = e.Encode(key.Interface()); err != nil {
-					return err
-				}
-				if err = e.Encode(value.Interface()); err != nil {
-					return err
-				}
-			}
-		default:
-			return errors.New("binary: unsupported type " + t.String())
-		}
-	}
-
-	return
-}
-
-func (e *Encoder) toWriter(bytes []byte) (err error) {
-
-	e.count += len(bytes)
-	println(fmt.Sprintf("Appending : [%s] pos [%d]", hex.EncodeToString(bytes), e.count))
-	_, err = e.output.Write(bytes)
-	return
-}
-
-func (e *Encoder) writeByteArray(b []byte) error {
-	e.writeUVarInt(len(b))
-	return e.toWriter(b)
-}
-
-func (e *Encoder) writeUVarInt(v int) (err error) {
-	buf := make([]byte, 8)
-	l := binary.PutUvarint(buf, uint64(v))
-	return e.toWriter(buf[:l])
-}
-
-func (e *Encoder) writeByte(b byte) (err error) {
-	return e.toWriter([]byte{b})
-}
-
-func (e *Encoder) writeUint16(i uint16) (err error) {
-	buf := make([]byte, TypeSize.UInt16)
-	binary.LittleEndian.PutUint16(buf, i)
-	return e.toWriter(buf)
-}
-
-func (e *Encoder) writeInt16(i int16) (err error) {
-	return e.writeUint16(uint16(i))
-}
-
-func (e *Encoder) writeUint32(i uint32) (err error) {
-	buf := make([]byte, TypeSize.UInt32)
-	binary.LittleEndian.PutUint32(buf, i)
-	return e.toWriter(buf)
-
-}
-
-func (e *Encoder) writeUint64(i uint64) (err error) {
-	buf := make([]byte, TypeSize.UInt64)
-	binary.LittleEndian.PutUint64(buf, i)
-	return e.toWriter(buf)
-
-}
-
-func (e *Encoder) writeString(s string) (err error) {
-	return e.writeByteArray([]byte(s))
-}
-
-func (e *Encoder) writeSHA256Bytes(s SHA256Bytes) error {
-	if len(s) == 0 {
-		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.SHA256Bytes))
-	}
-	return e.toWriter(s)
-}
-
-func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
-	if len(pk) == 0 {
-		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.PublicKey))
-	}
-
-	return e.toWriter(append(bytes.Repeat([]byte{0}, 34-len(pk)), pk...))
-}
-
-func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
-	if len(s) == 0 {
-		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Signature))
-	}
-	return e.toWriter(s)
-}
-
-func (e *Encoder) writeTstamp(t Tstamp) (err error) {
-	n := uint64(t.UnixNano())
-	return e.writeUint64(n)
-}
-
-func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
-	n := uint32(bt.Unix() - 946684800)
-	return e.writeUint32(n)
-}
-
-func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) (err error) {
-
-	println("writeBlockP2PMessageEnvelope")
-
-	if envelope.P2PMessage != nil {
-		buf := new(bytes.Buffer)
-		subEncoder := NewEncoder(buf)
-		err = subEncoder.Encode(envelope.P2PMessage)
-		if err != nil {
-			err = fmt.Errorf("p2p message, %s", err)
-			return
-		}
-		envelope.Payload = buf.Bytes()
-	}
-
-	messageLen := uint32(len(envelope.Payload) + 1)
-	println(fmt.Sprintf("Message length: %d", messageLen))
-	err = e.writeUint32(messageLen)
-	if err == nil {
-		err = e.writeByte(byte(envelope.Type))
-
-		if err == nil {
-			return e.toWriter(envelope.Payload)
-		}
-	}
-	return
+	decoder := NewDecoder(data)
+	return decoder.Decode(v)
 }

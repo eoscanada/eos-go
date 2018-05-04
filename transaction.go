@@ -13,6 +13,8 @@ import (
 
 	"encoding/json"
 
+	"io/ioutil"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -28,8 +30,8 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 
 	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
 
-	ContextFreeActions []*Action `json:"context_free_actions"`
-	Actions            []*Action `json:"actions"`
+	ContextFreeActions []*Action `json:"context_free_actions,omitempty"`
+	Actions            []*Action `json:"actions,omitempty"`
 }
 
 // 69c9c15a 0000 1400 62f95d45 b31d 904e 00 00 020000000000ea305500000040258ab2c2010000000000ea305500000000a8ed
@@ -196,7 +198,12 @@ func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
 
 	}
 
-	decoder := NewOldDecoder(txReader)
+	data, err := ioutil.ReadAll(txReader)
+	if err != nil {
+		return
+	}
+	decoder := NewDecoder(data)
+
 	var tx Transaction
 	err = decoder.Decode(&tx)
 	if err != nil {
