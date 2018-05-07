@@ -4,6 +4,12 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"os"
+
+	"bufio"
+
+	"strings"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -77,6 +83,22 @@ func (b *KeyBag) Add(wifKey string) error {
 		return err
 	}
 	b.Keys = append(b.Keys, privKey)
+	return nil
+}
+
+func (b *KeyBag) ImportFromFile(path string) error {
+	inFile, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("import keys from file [%s], %s", path, err)
+	}
+	defer inFile.Close()
+	scanner := bufio.NewScanner(inFile)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		key := strings.TrimSpace(scanner.Text())
+		b.Add(key)
+	}
 	return nil
 }
 
