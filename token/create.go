@@ -18,3 +18,12 @@ func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall
 		}),
 	}
 }
+
+// Create represents the `create` struct on the `eosio.token` contract.
+type Create struct {
+	Issuer        eos.AccountName `json:"issuer"`
+	MaximumSupply eos.Asset       `json:"maximum_supply"`
+	CanFreeze     bool            `json:"can_freeze"`
+	CanRecall     bool            `json:"can_recall"`
+	CanWhitelist  bool            `json:"can_whitelist"`
+}

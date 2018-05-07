@@ -17,3 +17,11 @@ func NewTransfer(from, to eos.AccountName, quantity eos.Asset, memo string) *eos
 		}),
 	}
 }
+
+// Transfer represents the `transfer` struct on `eosio.token` contract.
+type Transfer struct {
+	From     eos.AccountName `json:"from"`
+	To       eos.AccountName `json:"to"`
+	Quantity eos.Asset       `json:"quantity"`
+	Memo     string          `json:"memo"`
+}

@@ -16,3 +16,10 @@ func NewIssue(to eos.AccountName, quantity eos.Asset, memo string) *eos.Action {
 		}),
 	}
 }
+
+// Issue represents the `issue` struct on the `eosio.token` contract.
+type Issue struct {
+	To       eos.AccountName `json:"to"`
+	Quantity eos.Asset       `json:"quantity"`
+	Memo     string          `json:"memo"`
+}

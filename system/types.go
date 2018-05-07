@@ -99,15 +99,6 @@ type DelegatedBandwidth struct {
 type TotalResources struct {
 }
 
-// NewAccount represents the `newaccount` on the `eosio.system` contract / hard-coded in the chain.
-type NewAccount struct {
-	Creator  eos.AccountName `json:"creator"`
-	Name     eos.AccountName `json:"name"`
-	Owner    eos.Authority   `json:"owner"`
-	Active   eos.Authority   `json:"active"`
-	Recovery eos.Authority   `json:"recovery"`
-}
-
 // DelegateBW represents the `eosio.system::delegatebw` action.
 type DelegateBW struct {
 	From         eos.AccountName `json:"from"`

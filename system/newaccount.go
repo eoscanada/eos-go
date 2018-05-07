@@ -5,9 +5,7 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 )
 
-// NewSetPriv returns a `setpriv` action that lives on the
-// `eosio.bios` contract. It should exist only when booting a new
-// network, as it is replaced using the `eos-bios` boot process by the
+// NewNewAccount returns a `newaccount` action that lives on the
 // `eosio.system` contract.
 func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey) *eos.Action {
 	return &eos.Action{
@@ -48,4 +46,15 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 			},
 		}),
 	}
+}
+
+// NewAccount represents a `newaccount` action on the `eosio.system`
+// contract. It is one of the rare ones to be hard-coded into the
+// blockchain.
+type NewAccount struct {
+	Creator  eos.AccountName `json:"creator"`
+	Name     eos.AccountName `json:"name"`
+	Owner    eos.Authority   `json:"owner"`
+	Active   eos.Authority   `json:"active"`
+	Recovery eos.Authority   `json:"recovery"`
 }

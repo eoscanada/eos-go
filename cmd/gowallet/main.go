@@ -10,8 +10,7 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 )
 
-// A simple Wallet implementation, using a KeyBag and the `btcec`
-// signature machinery.
+// A drop-in Wallet server, mimics `keosd` using a KeyBag and the Go signature machinery.
 
 func main() {
 
@@ -61,19 +60,19 @@ func main() {
 
 		err := json.Unmarshal(inputs[0], &tx)
 		if err != nil {
-			http.Error(w, "decoding param1", 500)
+			http.Error(w, "decoding transaction", 500)
 			return
 		}
 
 		err = json.Unmarshal(inputs[1], &requiredKeys)
 		if err != nil {
-			http.Error(w, "decoding param2", 500)
+			http.Error(w, "decoding required keys", 500)
 			return
 		}
 
 		err = json.Unmarshal(inputs[2], &chainID)
 		if err != nil {
-			http.Error(w, "decoding param3", 500)
+			http.Error(w, "decoding chain id", 500)
 			return
 		}
 
@@ -84,16 +83,17 @@ func main() {
 		}
 
 		w.WriteHeader(201)
-		json.NewEncoder(w).Encode(signed)
+		_ = json.NewEncoder(w).Encode(signed)
 	})
 
 	http.HandleFunc("/v1/wallet/import_key", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Handling import_key")
-		// TODO: do the things..
 		var inputs []string
 		_ = json.NewDecoder(r.Body).Decode(&inputs)
 		// We're ignoring inputs[0] which is the name of the wallet ("default" by default)
+
 		keyBag.Add(inputs[1])
+
 		w.WriteHeader(201)
 		w.Write([]byte("{}"))
 	})
