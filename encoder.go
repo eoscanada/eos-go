@@ -335,9 +335,9 @@ func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) (err
 
 func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 
-	if actionData.Obj != nil {
+	if actionData.obj != nil {
 
-		raw, err := MarshalBinary(actionData.Obj)
+		raw, err := MarshalBinary(actionData.obj)
 		if err != nil {
 			return err
 		}

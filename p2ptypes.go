@@ -292,11 +292,6 @@ func (m *SignedTransactionMessage) GetType() P2PMessageType {
 }
 
 type PackedTransactionMessage struct {
-	//Signatures            []ecc.Signature `json:"signatures"`
-	//Compression           CompressionType `json:"compression"`
-	//PackedContextFreeData []byte          `json:"packed_context_free_data"`
-	//PackedTrx             []byte          `json:"packed_trx"`
-
 	PackedTransaction
 }
 

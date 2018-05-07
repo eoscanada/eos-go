@@ -15,7 +15,7 @@ import (
 
 var apiAddr = flag.String("api-addr", "http://localhost:8888", "RPC endpoint of the nodeos instance")
 var p2pAddr = flag.String("p2p-addr", "localhost:9876", "P2P socket connection")
-var signingKey = flag.String("signing-key", "", "Key to sign transactions we're about to blast")
+var signingKey = flag.String("signing-key", "5J5EE2cBDM4d3vWpKGcJsgiagsLVZkgWjJpxacz9mXodemXex6K", "Key to sign transactions we're about to blast")
 var chainID = flag.String("chain-id", "0000000000000000000000000000000000000000000000000000000000000000", "Chain id")
 var networkVersion = flag.Int("network-version", 25431, "Chain id")
 

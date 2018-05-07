@@ -2,9 +2,7 @@ package eos
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
 )
 
 // See: libraries/chain/include/eosio/chain/contracts/types.hpp:203
@@ -42,19 +40,19 @@ type Action struct {
 }
 
 func (a Action) Obj() interface{} { // Payload ? ActionData ? GetData ?
-	return a.Data.Obj
+	return a.Data.obj
 }
 
 type ActionData struct {
 	HexBytes
-	Obj interface{} // potentially unpacked from the Actions registry mapped through `RegisterAction`.
+	obj interface{} // potentially unpacked from the Actions registry mapped through `RegisterAction`.
 	abi []byte      // TBD: we could use the ABI to decode in obj
 }
 
 func NewActionData(obj interface{}) ActionData {
 	return ActionData{
 		HexBytes: []byte(""),
-		Obj:      obj,
+		obj:      obj,
 	}
 }
 
@@ -67,7 +65,7 @@ func (a *ActionData) UnmarshalJSON(v []byte) (err error) {
 }
 
 func (a ActionData) MarshalJSON() ([]byte, error) {
-	return json.Marshal(a.Obj)
+	return json.Marshal(a.obj)
 }
 
 type jsonAction struct {
@@ -100,21 +98,19 @@ func (a *Action) UnmarshalJSON(v []byte) (err error) {
 
 func (a *Action) MarshalJSON() ([]byte, error) {
 	var data HexBytes
-	if a.Data.Obj == nil {
+	if a.Data.obj == nil {
 		data = a.Data.HexBytes
 	} else {
 		var err error
 
 		buf := new(bytes.Buffer)
 		encoder := NewEncoder(buf)
-		fmt.Println("Will encode action.Data.obj")
-		encoder.Encode(a.Data.Obj)
+		encoder.Encode(a.Data.obj)
 
 		if err != nil {
 			return nil, err
 		}
 		data = buf.Bytes()
-		fmt.Print("-------->", hex.EncodeToString(data))
 	}
 
 	return json.Marshal(&jsonAction{

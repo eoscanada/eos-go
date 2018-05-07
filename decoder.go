@@ -73,10 +73,10 @@ type Decoder struct {
 var prefix = make([]string, 0)
 
 var print = func(s string) {
-	//for _, s := range prefix {
-	//	fmt.Print(s)
-	//}
-	//fmt.Print(s)
+	for _, s := range prefix {
+		fmt.Print(s)
+	}
+	fmt.Print(s)
 }
 var println = func(s string) {
 	print(fmt.Sprintf("%s\n", s))
@@ -562,7 +562,7 @@ func (d *Decoder) readActionData(action Action) (out ActionData, err error) {
 		return
 	}
 
-	out.Obj = obj.Elem().Interface()
+	out.obj = obj.Elem().Interface()
 
 	return
 }
