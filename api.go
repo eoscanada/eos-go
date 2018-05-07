@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"path"
 	"sync"
 	"time"
 
@@ -315,7 +314,7 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 		return err
 	}
 
-	targetURL := path.Join(api.BaseURL, fmt.Sprintf("/v1/%s/%s", baseAPI, endpoint))
+	targetURL := fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint)
 	req, err := http.NewRequest("POST", targetURL, jsonBody)
 	if err != nil {
 		return fmt.Errorf("NewRequest: %s", err)

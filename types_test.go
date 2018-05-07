@@ -97,7 +97,7 @@ func TestPackTransaction(t *testing.T) {
 	// permission level: 0000000000ea3055  00000000a8ed3232
 	// data: 00"
 
-	// Une tx:
+	// A transaction:
 	// expiration: 82a3ac5a
 	// region: 0000
 	// refblocknum: 2a2a
