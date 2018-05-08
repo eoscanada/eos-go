@@ -259,10 +259,15 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 		return
 		//case *PackedTransaction:
-		//	icis
-		//	unpack
+		//	err = d.decodeStruct(v, t, rv)
+		//	if err != nil {
+		//		return
+		//	}
+		//	tx := rv.Interface().(PackedTransaction)
+		//	tx.UnPack()
+		//	rv.Set(reflect.ValueOf(tx))
 		//	return
-		//
+
 	}
 
 	switch t.Kind() {

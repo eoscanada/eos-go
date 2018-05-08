@@ -24,7 +24,7 @@ func main() {
 	done := make(chan bool)
 
 	api := eos.New(*apiAddr, bytes.Repeat([]byte{0}, 32))
-	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion), *p2pAddr)
+	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion))
 	client.RegisterHandler(p2p.HandlerFunc(p2p.LoggerHandler))
 	err := client.Connect()
 	if err != nil {
