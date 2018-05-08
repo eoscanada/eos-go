@@ -96,8 +96,11 @@ func (b *KeyBag) ImportFromFile(path string) error {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		key := strings.TrimSpace(scanner.Text())
-		b.Add(key)
+		key := strings.TrimSpace(strings.Split(scanner.Text(), " ")[0])
+
+		if err := b.Add(key); err != nil {
+			return err
+		}
 	}
 	return nil
 }
