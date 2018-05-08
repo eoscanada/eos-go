@@ -207,7 +207,8 @@ func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
 	var tx Transaction
 	err = decoder.Decode(&tx)
 	if err != nil {
-		fmt.Println("PackedTransaction@tx err: ", err)
+
+		err = fmt.Errorf("unpacking Transaction, %s", err)
 		return
 	}
 

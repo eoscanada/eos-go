@@ -223,12 +223,14 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			return
 		}
 	case **Action:
-		d.decodeStruct(v, t, rv)
+		err = d.decodeStruct(v, t, rv)
+		if err != nil {
+			return
+		}
 		action := rv.Interface().(Action)
 
-		var data ActionData
-		data, err = d.readActionData(action)
-		action.Data = data
+		err = d.readActionData(&action)
+
 		return
 	case *P2PMessageEnvelope:
 
@@ -533,15 +535,8 @@ func (d *Decoder) readAsset() (out Asset, err error) {
 	return
 }
 
-func (d *Decoder) readActionData(action Action) (out ActionData, err error) {
-	//
-	out = ActionData{}
-	data, err := d.readByteArray()
-	if err != nil {
-		err = fmt.Errorf("read action data, %s", err)
-		return
-	}
-	out.HexBytes = HexBytes(data)
+func (d *Decoder) readActionData(action *Action) (err error) {
+
 	actionMap := registeredActions[action.Account]
 
 	var decodeInto reflect.Type
@@ -557,13 +552,14 @@ func (d *Decoder) readActionData(action Action) (out ActionData, err error) {
 
 	obj := reflect.New(decodeInto)
 
-	err = UnmarshalBinary(data, &obj)
+	err = UnmarshalBinary(action.ActionData.HexData, &obj)
 	if err != nil {
+		err = fmt.Errorf("decoding Action [%s], %s", obj.Type().Name(), err)
 		return
 	}
 
-	out.obj = obj.Elem().Interface()
-
+	fmt.Println("Object type :", obj.Type().Name())
+	action.ActionData.Data = obj
 	return
 }
 

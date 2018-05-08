@@ -9,7 +9,7 @@ func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio.token"), Permission: PN("active")},
 		},
-		Data: eos.NewActionData(Create{
+		ActionData: eos.NewActionData(Create{
 			Issuer:        issuer,
 			MaximumSupply: maxSupply,
 			CanFreeze:     canFreeze,

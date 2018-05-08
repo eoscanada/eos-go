@@ -9,7 +9,7 @@ func NewTransfer(from, to eos.AccountName, quantity eos.Asset, memo string) *eos
 		Authorization: []eos.PermissionLevel{
 			{Actor: from, Permission: PN("active")},
 		},
-		Data: eos.NewActionData(Transfer{
+		ActionData: eos.NewActionData(Transfer{
 			From:     from,
 			To:       to,
 			Quantity: quantity,

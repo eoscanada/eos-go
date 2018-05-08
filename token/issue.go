@@ -9,7 +9,7 @@ func NewIssue(to eos.AccountName, quantity eos.Asset, memo string) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: eos.NewActionData(Issue{
+		ActionData: eos.NewActionData(Issue{
 			To:       to,
 			Quantity: quantity,
 			Memo:     memo,

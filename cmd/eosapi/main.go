@@ -16,7 +16,7 @@ func main() {
 	api := eos.New(&url.URL{Scheme: "http", Host: "Charless-MacBook-Pro-2.local:8888"}, bytes.Repeat([]byte{0}, 32))
 	//api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
-	//api.Debug = true
+	api.Debug = true
 
 	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
@@ -32,8 +32,6 @@ func main() {
 	}
 
 	api.SetSigner(keyBag)
-
-	var err error
 
 	// Corresponding to the wallet, so we can sign on the live node.
 
@@ -101,60 +99,17 @@ func main() {
 	//	fmt.Println("RESP:", resp)
 	//}
 
+	//resp, err := api.GetTransaction("a343fcb285088bc955f721b9f22efad3e2fd131bad93421364f1b043a3aad00f")
+	//if err != nil {
+	//	fmt.Println("Grr", err)
+	//}
+	//fmt.Println(resp)
+
 	actionResp, err := api.SignPushActions(
 
-		//system.NewNewAccount(AC("eosio"), AC("eosio.msig"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		//system.NewNewAccount(AC("eosio"), AC("eosio.token"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
-		//system.NewNewAccount(AC("eosio"), AC("bilcproducer"), ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk")),
 		//system.NewNewAccount(AC("eosio"), AC("cbillett"), ecc.MustNewPublicKey("EOS66MfGpiepzs46DudrpSQw6GEn2QywFYVMWc18hBFVVVehdbKdi")),
 
-		//bios
-		//system.NewSetPriv(AC("eosio")),
-		//system.NewSetPriv(AC("eosio.msig")),
-		//system.NewSetPriv(AC("eosio.token")),
-		//token.NewCreate(AC("eosio"), eos.NewEOSAsset(1000000000.0000), false, false, false),
-		//token.NewIssue(AC("eosio"), eos.NewEOSAsset(1000000000.0000), ""),
-
 		token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
-
-	//system.NewRegProducer(
-	//	AC("bilcproducer"),
-	//	ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk"),
-	//	system.EOSIOParameters{
-	//		BasePerTransactionNetUsage:     100,
-	//		BasePerTransactionCPUUsage:     500,
-	//		BasePerActionCPUUsage:          1000,
-	//		BaseSetcodeCPUUsage:            2097152, //# 2 * 1024 * 1024 // overbilling cpu usage for setcode to cover incidental
-	//		PerSignatureCPUUsage:           100000,
-	//		PerLockNetUsage:                32,
-	//		ContextFreeDiscountCPUUsageNum: 20,
-	//		ContextFreeDiscountCPUUsageDen: 100,
-	//		MaxTransactionCPUUsage:         10485760,  //10 * 1024 * 1024
-	//		MaxTransactionNetUsage:         102400,    // 100 * 1024
-	//		MaxBlockCPUUsage:               104857600, // 100 * 1024 * 1024; at 500ms blocks and 20000instr trx, this enables ~10,000 TPS burst
-	//		TargetBlockCPUUsagePct:         1000,      // 10%, 2 decimal places
-	//		MaxBblockNetUsage:              1048576,
-	//		TargetBlockNetUsagePct:         1000, // 10%, 2 decimal places
-	//		MaxTransactionLifetime:         3600,
-	//		MaxTransactionExecTime:         0, //unused??
-	//		MaxAuthorityDepth:              6,
-	//		MaxInlineDepth:                 4,
-	//		MaxInlineActionSize:            4096,
-	//		MaxGeneratedTransactionCount:   16,
-	//		PercentOfMaxInflationRate:      10000, // percent, with 2 dec places.
-	//		//MaxStorageSize: 10485760,  //FIXME
-	//		StorageReserveRatio:            1000,  // ratio * 1000,
-	//	},
-	//),
-
-	//system.NewVoteProducer(AC("cbillett"), AC(""), AC("bilcproducer")),
-	//system.NewSetProds(1, []system.ProducerKey{
-	//	{
-	//			AC("eosio"),
-	//			ecc.MustNewPublicKey("EOS8ju96GnaKaYAs7b5EvvtwWqTVPepSCciDHvDCjiEhGb5joYtjk"),
-	//	},
-	//}),
-
 	)
 	if err != nil {
 		fmt.Println("ERROR calling :", err)
@@ -162,10 +117,10 @@ func main() {
 		fmt.Println("RESP:", actionResp)
 	}
 
-	//resp, err := api.GetCurrencyBalance(AC("eosio"), eos.EOSSymbol.Symbol, AC("eosio"))
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//fmt.Println(resp)
+	resp, err := api.GetCurrencyBalance(AC("eosio"), eos.EOSSymbol.Symbol, AC("eosio"))
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(resp)
 
 }
