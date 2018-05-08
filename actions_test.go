@@ -21,7 +21,7 @@ func TestActionNewAccount(t *testing.T) {
 		Authorization: []PermissionLevel{
 			{AccountName("eosio"), PermissionName("active")},
 		},
-		Data: NewActionData(NewAccount{
+		ActionData: NewActionData(NewAccount{
 			Creator: AccountName("eosio"),
 			Name:    AccountName("abourget"),
 			Owner: Authority{
@@ -85,7 +85,7 @@ func TestMarshalTransactionAndSigned(t *testing.T) {
 		Authorization: []PermissionLevel{
 			{AccountName("eosio"), PermissionName("active")},
 		},
-		Data: NewActionData(NewAccount{
+		ActionData: NewActionData(NewAccount{
 			Creator: AccountName("eosio"),
 			Name:    AccountName("abourget"),
 		}),

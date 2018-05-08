@@ -13,7 +13,7 @@ func NewSetPriv(account eos.AccountName) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: eos.NewActionData(SetPriv{
+		ActionData: eos.NewActionData(SetPriv{
 			Account: account,
 			IsPriv:  true,
 		}),

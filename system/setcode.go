@@ -30,7 +30,7 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 			Authorization: []eos.PermissionLevel{
 				{account, eos.PermissionName("active")},
 			},
-			Data: eos.NewActionData(SetCode{
+			ActionData: eos.NewActionData(SetCode{
 				Account:   account,
 				VMType:    0,
 				VMVersion: 0,
@@ -43,7 +43,7 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 			Authorization: []eos.PermissionLevel{
 				{account, eos.PermissionName("active")},
 			},
-			Data: eos.NewActionData(SetABI{
+			ActionData: eos.NewActionData(SetABI{
 				Account: account,
 				ABI:     abiDef,
 			}),

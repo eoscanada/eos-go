@@ -14,7 +14,7 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 		Authorization: []eos.PermissionLevel{
 			{Actor: creator, Permission: PN("active")},
 		},
-		Data: eos.NewActionData(NewAccount{
+		ActionData: eos.NewActionData(NewAccount{
 			Creator: creator,
 			Name:    newAccount,
 			Owner: eos.Authority{

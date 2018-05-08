@@ -13,7 +13,7 @@ func NewSetProds(version uint32, producers []ProducerKey) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: eos.NewActionData(SetProds{
+		ActionData: eos.NewActionData(SetProds{
 			Version:   version,
 			Producers: producers,
 		}),

@@ -53,7 +53,8 @@ func RegisterAction(accountName AccountName, actionName ActionName, obj interfac
 	if registeredActions[accountName] == nil {
 		registeredActions[accountName] = make(map[ActionName]reflect.Type)
 	}
-	registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
+	//registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
+	registeredActions[accountName][actionName] = reflect.TypeOf(obj)
 }
 
 // Decoder implements the EOS unpacking, similar to FC_BUFFER
@@ -73,10 +74,10 @@ type Decoder struct {
 var prefix = make([]string, 0)
 
 var print = func(s string) {
-	for _, s := range prefix {
-		fmt.Print(s)
-	}
-	fmt.Print(s)
+	//for _, s := range prefix {
+	//	fmt.Print(s)
+	//}
+	//fmt.Print(s)
 }
 var println = func(s string) {
 	print(fmt.Sprintf("%s\n", s))
@@ -102,7 +103,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	}
 	t := rv.Type()
 
-	println(fmt.Sprintf("Decode type [%s]", t.Name()))
+	println(fmt.Sprintf("Decode type [%T]", v))
 	if !rv.CanAddr() {
 		return errors.New("binary: can only Decode to pointer type")
 	}
@@ -230,7 +231,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		action := rv.Interface().(Action)
 
 		err = d.readActionData(&action)
-
+		rv.Set(reflect.ValueOf(action))
 		return
 	case *P2PMessageEnvelope:
 
@@ -257,6 +258,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.Set(reflect.ValueOf(*envelope))
 
 		return
+		//case *PackedTransaction:
+		//	icis
+		//	unpack
+		//	return
+		//
 	}
 
 	switch t.Kind() {
@@ -542,24 +548,26 @@ func (d *Decoder) readActionData(action *Action) (err error) {
 	var decodeInto reflect.Type
 	if actionMap != nil {
 		objType := actionMap[action.Name]
+		fmt.Println("object type :", objType)
 		if objType != nil {
-			decodeInto = reflect.TypeOf(objType)
+			decodeInto = objType
 		}
 	}
 	if decodeInto == nil {
 		return
 	}
 
+	fmt.Println("Reflect type :", decodeInto)
 	obj := reflect.New(decodeInto)
-
-	err = UnmarshalBinary(action.ActionData.HexData, &obj)
+	fmt.Println("obj :", obj)
+	err = UnmarshalBinary(action.ActionData.HexData, obj.Interface())
 	if err != nil {
 		err = fmt.Errorf("decoding Action [%s], %s", obj.Type().Name(), err)
 		return
 	}
 
-	fmt.Println("Object type :", obj.Type().Name())
-	action.ActionData.Data = obj
+	fmt.Println("Object type :", obj.Interface())
+	action.ActionData.Data = obj.Interface()
 	return
 }
 

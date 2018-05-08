@@ -250,7 +250,7 @@ func TestActionNoData(t *testing.T) {
 	require.NoError(t, err)
 	// account + name + emptylist + emptylist
 	assert.Equal(t,
-		`{"account":"eosio","name":"transfer","data":""}`,
+		`{"account":"eosio","name":"transfer"}`,
 		string(cnt),
 	)
 

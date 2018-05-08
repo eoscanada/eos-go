@@ -16,7 +16,7 @@ func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, params 
 		Authorization: []eos.PermissionLevel{
 			{Actor: producer, Permission: PN("active")},
 		},
-		Data: eos.NewActionData(RegProducer{
+		ActionData: eos.NewActionData(RegProducer{
 			Producer:    producer,
 			ProducerKey: []byte(producerKey),
 			Prefs:       params,

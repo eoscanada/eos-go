@@ -14,7 +14,7 @@ func NewUpdateAuth(account eos.AccountName, permission, parent eos.PermissionNam
 		Authorization: []eos.PermissionLevel{
 			{account, usingPermission},
 		},
-		Data: eos.NewActionData(UpdateAuth{
+		ActionData: eos.NewActionData(UpdateAuth{
 			Account:    account,
 			Permission: permission,
 			Parent:     parent,

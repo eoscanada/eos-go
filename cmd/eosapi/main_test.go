@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"net/url"
-
 	"bytes"
 
 	"log"
@@ -17,7 +15,7 @@ import (
 
 func newAPI() (api *eos.API) {
 
-	api = eos.New(&url.URL{Scheme: "http", Host: "localhost:8888"}, bytes.Repeat([]byte{0}, 32))
+	api = eos.New("http://localhost:8888", bytes.Repeat([]byte{0}, 32))
 
 	tr := &http.Transport{}
 	api.HttpClient = &http.Client{Transport: tr}

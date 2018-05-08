@@ -11,9 +11,9 @@ func NewNonce(nonce string) *eos.Action {
 		Account:       AN("eosio"),
 		Name:          ActN("nonce"),
 		Authorization: []eos.PermissionLevel{
-		//{Actor: AN("eosio"), Permission: PN("active")},
+			//{Actor: AN("eosio"), Permission: PN("active")},
 		},
-		Data: eos.NewActionData(Nonce{
+		ActionData: eos.NewActionData(Nonce{
 			Value: nonce,
 		}),
 	}

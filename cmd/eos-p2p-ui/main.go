@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"bytes"
-	"net/url"
 
 	"flag"
 
@@ -29,11 +28,6 @@ var networkVersion = flag.Int("network-version", 25431, "Chain id")
 func main() {
 
 	flag.Parse()
-
-	apiAddrURL, err := url.Parse(*apiAddr)
-	if err != nil {
-		log.Fatalln("could not parse --api-addr:", err)
-	}
 
 	//r, w, _ := os.Pipe()
 	//os.Stdout = w
@@ -98,13 +92,13 @@ func main() {
 
 	root := tui.NewHBox(sidebar, mainLogs)
 
-	ui, err = tui.New(root)
+	ui, err := tui.New(root)
 	if err != nil {
 		panic(err)
 	}
 	ui.SetKeybinding("Esc", func() { ui.Quit() })
 
-	api := eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32))
+	api := eos.New(*apiAddr, bytes.Repeat([]byte{0}, 32))
 	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion), "123")
 	client.RegisterHandler(p2p.HandlerFunc(UILoggerHandler))
 	client.RegisterHandler(p2p.LoggerHandler)

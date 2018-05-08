@@ -13,7 +13,7 @@ func NewVoteProducer(voter eos.AccountName, proxy eos.AccountName, producers ...
 		Authorization: []eos.PermissionLevel{
 			{Actor: AN("cbillett"), Permission: PN("active")},
 		},
-		Data: eos.NewActionData(
+		ActionData: eos.NewActionData(
 			VoteProducer{
 				Voter:     voter,
 				Proxy:     proxy,

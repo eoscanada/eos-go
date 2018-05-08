@@ -2,10 +2,8 @@ package main
 
 import (
 	"bytes"
-	"log"
-	"net/url"
-
 	"fmt"
+	"log"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/token"
@@ -13,7 +11,7 @@ import (
 
 func main() {
 	//api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
-	api := eos.New(&url.URL{Scheme: "http", Host: "Charless-MacBook-Pro-2.local:8888"}, bytes.Repeat([]byte{0}, 32))
+	api := eos.New("http://Charless-MacBook-Pro-2.local:8888", bytes.Repeat([]byte{0}, 32))
 	//api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
 	api.Debug = true
@@ -99,7 +97,7 @@ func main() {
 	//	fmt.Println("RESP:", resp)
 	//}
 
-	//resp, err := api.GetTransaction("a343fcb285088bc955f721b9f22efad3e2fd131bad93421364f1b043a3aad00f")
+	//resp, err := api.GetTransactions(eos.AccountName("cbillett"))
 	//if err != nil {
 	//	fmt.Println("Grr", err)
 	//}

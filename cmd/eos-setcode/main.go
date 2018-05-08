@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/system"
@@ -20,11 +19,11 @@ func main() {
 	flag.Parse()
 
 	//	api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
-	api := eos.New(&url.URL{Scheme: "http", Host: "localhost:9999"}, bytes.Repeat([]byte{0}, 32))
+	api := eos.New("http://localhost:9999", bytes.Repeat([]byte{0}, 32))
 	// api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
 	// api.Debug = true
-
+	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
 		*flagPrivKey,
 		"5KE5hGNCAs1YvV74Ho14y1rV1DrnqZpTwLugS8QvYbKbrGAvVA1", // EOS71W8hvF43Eq6GQBRhuc5mvWKtknxzmb9NzNwPGpcEm2xAZaG8c

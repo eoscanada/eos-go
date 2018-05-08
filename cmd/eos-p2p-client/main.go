@@ -7,8 +7,6 @@ import (
 
 	"bytes"
 
-	"net/url"
-
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/p2p"
 )
@@ -23,17 +21,12 @@ func main() {
 
 	flag.Parse()
 
-	apiAddrURL, err := url.Parse(*apiAddr)
-	if err != nil {
-		log.Fatalln("could not parse --api-addr:", err)
-	}
-
 	done := make(chan bool)
 
-	api := eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32))
+	api := eos.New(*apiAddr, bytes.Repeat([]byte{0}, 32))
 	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion), *p2pAddr)
 	client.RegisterHandler(p2p.HandlerFunc(p2p.LoggerHandler))
-	err = client.Connect()
+	err := client.Connect()
 	if err != nil {
 		log.Fatal(err)
 	}

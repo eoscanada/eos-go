@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/cmd/eos-mega-tx/random"
@@ -25,17 +24,12 @@ type transferChannel chan *eos.Action
 func main() {
 	flag.Parse()
 
-	apiAddrURL, err := url.Parse(*apiAddr)
-	if err != nil {
-		log.Fatalln("could not parse --api-addr:", err)
-	}
-
 	privKey, err := ecc.NewPrivateKey(*signingKey)
 	if err != nil {
 		log.Fatalln("failed loading private key:", err)
 	}
 
-	api := eos.New(apiAddrURL, bytes.Repeat([]byte{0}, 32)) // TODO: use chain ID from somewhere..
+	api := eos.New(*apiAddr, bytes.Repeat([]byte{0}, 32)) // TODO: use chain ID from somewhere..
 
 	keyBag := eos.NewKeyBag()
 	if err := keyBag.Add(*signingKey); err != nil {
