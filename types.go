@@ -153,7 +153,7 @@ type PermissionLevelWeight struct {
 	Weight     uint16          `json:"weight"`
 }
 
-type Authority struct {
+type git Authority struct {
 	Threshold uint32                  `json:"threshold"`
 	Keys      []KeyWeight             `json:"keys"`
 	Accounts  []PermissionLevelWeight `json:"accounts"`

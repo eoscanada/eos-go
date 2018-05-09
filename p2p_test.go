@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"encoding/json"
+
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/assert"
 )
