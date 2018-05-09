@@ -364,6 +364,7 @@ type EncodeTestStruct struct {
 	F14 Tstamp
 	F15 BlockTimestamp
 	F16 Varuint32
+	F17 bool
 }
 
 func TestDecoder_Encode(t *testing.T) {
@@ -387,6 +388,7 @@ func TestDecoder_Encode(t *testing.T) {
 		F14: tstamp,
 		F15: blockts,
 		F16: Varuint32(999),
+		F17: true,
 	}
 
 	buf := new(bytes.Buffer)
@@ -414,6 +416,7 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, tstamp, s.F14)
 	assert.Equal(t, blockts, s.F15)
 	assert.Equal(t, Varuint32(999), s.F16)
+	assert.Equal(t, true, s.F17)
 
 }
 

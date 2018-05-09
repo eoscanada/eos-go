@@ -286,7 +286,7 @@ func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
 	return
 }
 
-func (api *API) GetTransactions(name AccountName) (out *TransactionResp, err error) {
+func (api *API) GetTransactions(name AccountName) (out *TransactionsResp, err error) {
 	err = api.call("account_history", "get_transactions", M{"account_name": name}, &out)
 	return
 }

@@ -33,13 +33,22 @@ type BlockResp struct {
 type TransactionResp struct {
 	TransactionID string `json:"transaction_id"`
 	Transaction   struct {
-		Signatures            []ecc.Signature        `json:"signatures"`
-		Compression           CompressionType        `json:"compression"`
-		PackedContextFreeData HexBytes               `json:"packed_context_free_data"`
-		ContextFreeData       []HexBytes             `json:"context_free_data"`
-		PackedTransaction     HexBytes               `json:"packed_transaction"`
-		Transaction           map[string]interface{} `json:"transaction"`
+		Signatures            []ecc.Signature `json:"signatures"`
+		Compression           CompressionType `json:"compression"`
+		PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
+		ContextFreeData       []HexBytes      `json:"context_free_data"`
+		PackedTransaction     HexBytes        `json:"packed_transaction"`
+		Transaction           Transaction     `json:"transaction"`
 	} `json:"transaction"`
+}
+
+type SequencedTransactionResp struct {
+	SeqNum int `json:"seq_num"`
+	TransactionResp
+}
+
+type TransactionsResp struct {
+	Transactions []SequencedTransactionResp
 }
 
 type ProducerChange struct {

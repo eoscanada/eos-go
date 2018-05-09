@@ -9,13 +9,19 @@ import (
 
 	"log"
 
+	"fmt"
+
+	"encoding/hex"
+
 	"github.com/eoscanada/eos-go"
+	"github.com/gin-gonic/gin/json"
 	"github.com/stretchr/testify/assert"
 )
 
 func newAPI() (api *eos.API) {
 
 	api = eos.New("http://localhost:8888", bytes.Repeat([]byte{0}, 32))
+	//api = eos.New("http://stage0.eoscanada.com", bytes.Repeat([]byte{0}, 32))
 
 	tr := &http.Transport{}
 	api.HttpClient = &http.Client{Transport: tr}
@@ -23,6 +29,7 @@ func newAPI() (api *eos.API) {
 
 	for _, key := range []string{
 		"5HryYjdRzBtQKzM1H7L1Y4yokBMAoUYjcYpMvhQv1hzKhrKdfWp",
+		"5KALFt6C4nntzAsT1cDiiPgw1cdDJPzutadSCFLygqGvKBjvNqP",
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -86,6 +93,51 @@ func TestGetTableRows(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, out.Rows)
 
+}
+
+func TestGetTransactions(t *testing.T) {
+	api := newAPI()
+	api.Debug = true
+	out, err := api.GetTransactions(eos.AccountName("eosio.disco"))
+	assert.NoError(t, err)
+	data, err := json.Marshal(out)
+	fmt.Println(string(data))
+}
+
+func TestGetTransactionsForValidateChain(t *testing.T) {
+	api := newAPI()
+	api.Debug = true
+	accounts := []eos.AccountName{
+		//eos.AccountName("eosio"),
+		eos.AccountName("eosio.msig"),
+		eos.AccountName("eosio.disco"),
+		eos.AccountName("eosio.token"),
+	}
+	actions := make(map[string]*eos.Action, 0)
+	for _, account := range accounts {
+
+		out, err := api.GetTransactions(account)
+		assert.NoError(t, err)
+		for _, tx := range out.Transactions {
+			for _, action := range tx.Transaction.Transaction.Actions {
+
+				key := hex.EncodeToString(action.HexData)
+				fmt.Println("key : ", key)
+				data, err := json.Marshal(action)
+				assert.NoError(t, err)
+				fmt.Println("Data  : ", string(data))
+				if collision, ok := actions[key]; ok {
+					cdata, err := json.Marshal(collision)
+					assert.NoError(t, err)
+					fmt.Println("CData : ", string(cdata))
+					fmt.Println("Found a colision")
+				}
+				actions[key] = action
+			}
+		}
+	}
+
+	fmt.Printf("Found [%d] actions\n", len(actions))
 }
 
 func TestGetRequiredKeys(t *testing.T) {

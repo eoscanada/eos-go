@@ -18,11 +18,8 @@ func main() {
 
 	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
-		"5J5EE2cBDM4d3vWpKGcJsgiagsLVZkgWjJpxacz9mXodemXex6K",
-		"5Jd9CCuMGENFJTk1RGiCWCtLhCzkHcDLBnc8vnhGMArFu5dBfYF",
+		"5JuWeC5KwZRVUQZ4eneYCYQ6Pa132QgvDQzEVJBA7XTgNTBWWRw",
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
-		"5J77j8KYX33cgVPMQZ82zD967VNA9SPcXWnjRkb27z9M2suaZNn",
-		"5JJbFqMRLncsRXbVYSUwdMyQke1ULLH65nBLBsDPnxARDdsYnhK",
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -105,9 +102,9 @@ func main() {
 
 	actionResp, err := api.SignPushActions(
 
-		//system.NewNewAccount(AC("eosio"), AC("cbillett"), ecc.MustNewPublicKey("EOS66MfGpiepzs46DudrpSQw6GEn2QywFYVMWc18hBFVVVehdbKdi")),
+		//system.NewNewAccount(AC("cbillett"), AC("bozo"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 
-		token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("cbillett"), eos.NewEOSAsset(100000), ""),
+		token.NewTransfer(eos.AccountName("cbillett"), eos.AccountName("bozo"), eos.NewEOSAsset(100), ""),
 	)
 	if err != nil {
 		fmt.Println("ERROR calling :", err)

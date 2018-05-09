@@ -31,6 +31,7 @@ var TypeSize = struct {
 	Tstamp         int
 	BlockTimestamp int
 	CurrencyName   int
+	Bool           int
 }{
 	Byte:           1,
 	UInt16:         2,
@@ -43,6 +44,7 @@ var TypeSize = struct {
 	Tstamp:         8,
 	BlockTimestamp: 4,
 	CurrencyName:   7,
+	Bool:           1,
 }
 
 var registeredActions = map[AccountName]map[ActionName]reflect.Type{}
@@ -160,6 +162,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		var r uint64
 		r, err = d.readUvarint()
 		rv.SetUint(r)
+		return
+	case *bool:
+		var r bool
+		r, err = d.readBool()
+		rv.SetBool(r)
 		return
 	case HexBytes:
 		var data []byte
@@ -396,6 +403,23 @@ func (d *Decoder) readByte() (out byte, err error) {
 	d.pos++
 	println(fmt.Sprintf("readByte [%d]", out))
 	return
+}
+
+func (d *Decoder) readBool() (out bool, err error) {
+
+	if d.remaining() < TypeSize.Bool {
+		err = fmt.Errorf("bool required [%d] byte, remaining [%d]", TypeSize.Bool, d.remaining())
+		return
+	}
+
+	b, err := d.readByte()
+
+	if err != nil {
+		err = fmt.Errorf("readBool, %s", err)
+	}
+	out = b != 0
+	return
+
 }
 
 func (d *Decoder) readUint16() (out uint16, err error) {

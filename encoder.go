@@ -86,6 +86,9 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case Varuint32:
 		err = e.writeUVarInt(int(cv))
 		return
+	case bool:
+		err = e.writeBool(cv)
+		return
 	case JSONTime:
 		err = e.writeJsonTime(cv)
 		return
@@ -223,6 +226,14 @@ func (e *Encoder) writeByte(b byte) (err error) {
 	return e.toWriter([]byte{b})
 }
 
+func (e *Encoder) writeBool(b bool) (err error) {
+	var out byte
+	if b {
+		out = 1
+	}
+	return e.writeByte(out)
+}
+
 func (e *Encoder) writeUint16(i uint16) (err error) {
 	buf := make([]byte, TypeSize.UInt16)
 	binary.LittleEndian.PutUint16(buf, i)
@@ -337,10 +348,15 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 
 	if actionData.Data != nil {
 
+		//if reflect.TypeOf(actionData.Data) == reflect.TypeOf(&ActionData{}) {
+		//	log.Fatal("pas cool")
+		//}
+		println(fmt.Sprintf("encoding action data, %T", actionData.Data))
 		raw, err := MarshalBinary(actionData.Data)
 		if err != nil {
 			return err
 		}
+		println(fmt.Sprintf("writing action data, %T", actionData.Data))
 		e.writeByteArray(raw)
 
 	} else {

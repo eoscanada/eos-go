@@ -20,7 +20,7 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 			Owner: eos.Authority{
 				Threshold: 1,
 				Keys: []eos.KeyWeight{
-					eos.KeyWeight{
+					{
 						PublicKey: publicKey,
 						Weight:    1,
 					},
@@ -29,7 +29,7 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 			Active: eos.Authority{
 				Threshold: 1,
 				Keys: []eos.KeyWeight{
-					eos.KeyWeight{
+					{
 						PublicKey: publicKey,
 						Weight:    1,
 					},
@@ -38,8 +38,8 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 			Recovery: eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
-					eos.PermissionLevelWeight{
-						Permission: eos.PermissionLevel{creator, PN("active")},
+					{
+						Permission: eos.PermissionLevel{Actor: creator, Permission: PN("active")},
 						Weight:     1,
 					},
 				},
