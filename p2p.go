@@ -28,12 +28,12 @@ const (
 	PackedTransactionMessageType
 )
 
-type MessageAttributes struct {
+type MessageReflectTypes struct {
 	Name        string
 	ReflectType reflect.Type
 }
 
-var messageAttributes = []MessageAttributes{
+var messageAttributes = []MessageReflectTypes{
 	{Name: "Handshake", ReflectType: reflect.TypeOf(HandshakeMessage{})},
 	{Name: "GoAway", ReflectType: reflect.TypeOf(GoAwayMessage{})},
 	{Name: "Time", ReflectType: reflect.TypeOf(TimeMessage{})},
@@ -46,14 +46,12 @@ var messageAttributes = []MessageAttributes{
 	{Name: "PackedTransaction", ReflectType: reflect.TypeOf(PackedTransactionMessage{})},
 }
 
-var UnknownMessageTypeError = errors.New("unknown type")
+var ErrUnknownMessageType = errors.New("unknown type")
 
 func NewMessageType(aType byte) (t P2PMessageType, err error) {
-
 	t = P2PMessageType(aType)
 	if !t.isValid() {
-		err = UnknownMessageTypeError
-		return
+		return t, ErrUnknownMessageType
 	}
 
 	return
@@ -75,11 +73,11 @@ func (t P2PMessageType) Name() (string, bool) {
 	return attr.Name, true
 }
 
-func (t P2PMessageType) Attributes() (MessageAttributes, bool) {
+func (t P2PMessageType) reflectTypes() (MessageReflectTypes, bool) {
 	index := byte(t)
 
 	if !t.isValid() {
-		return MessageAttributes{}, false
+		return MessageReflectTypes{}, false
 	}
 
 	attr := messageAttributes[index]

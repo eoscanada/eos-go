@@ -69,14 +69,18 @@ type Decoder struct {
 
 var prefix = make([]string, 0)
 
+var Debug bool
+
 var print = func(s string) {
-	for _, s := range prefix {
+	if Debug {
+		for _, s := range prefix {
+			fmt.Print(s)
+		}
 		fmt.Print(s)
 	}
-	fmt.Print(s)
 }
-var println = func(s string) {
-	print(fmt.Sprintf("%s\n", s))
+var println = func(args ...interface{}) {
+	print(fmt.Sprintf("%s\n", args...))
 }
 
 func NewDecoder(data []byte) *Decoder {
@@ -91,8 +95,8 @@ func NewDecoder(data []byte) *Decoder {
 func (d *Decoder) DecodeP2PMessage(decode bool) {
 	d.decodeP2PMessage = decode
 }
-func (d *Decoder) Decode(v interface{}) (err error) {
 
+func (d *Decoder) Decode(v interface{}) (err error) {
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
 		return errors.New("decode, can only Decode to pointer type")
@@ -212,8 +216,8 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		asset, err = d.readAsset()
 		rv.Set(reflect.ValueOf(asset))
 		return
-	case *OptionalProducerSchedule:
 
+	case *OptionalProducerSchedule:
 		isPresent, e := d.readByte()
 		if e != nil {
 			err = fmt.Errorf("decode: OptionalProducerSchedule isPresent, %s", e)
@@ -224,6 +228,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			println("Skipping optional OptionalProducerSchedule")
 			return
 		}
+
 	case **Action:
 		err = d.decodeStruct(v, t, rv)
 		if err != nil {
@@ -234,6 +239,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		err = d.readActionData(&action)
 		rv.Set(reflect.ValueOf(action))
 		return
+
 	case *P2PMessageEnvelope:
 
 		envelope, e := d.readP2PMessageEnvelope()
@@ -243,7 +249,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 		if d.decodeP2PMessage {
-			attr, ok := envelope.Type.Attributes()
+			attr, ok := envelope.Type.reflectTypes()
 			if !ok {
 				return fmt.Errorf("decode, unknown p2p message type [%d]", envelope.Type)
 			}
@@ -259,16 +265,6 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.Set(reflect.ValueOf(*envelope))
 
 		return
-		//case *PackedTransaction:
-		//	err = d.decodeStruct(v, t, rv)
-		//	if err != nil {
-		//		return
-		//	}
-		//	tx := rv.Interface().(PackedTransaction)
-		//	tx.Unpack()
-		//	rv.Set(reflect.ValueOf(tx))
-		//	return
-
 	}
 
 	switch t.Kind() {
@@ -323,11 +319,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			}
 			rv.SetMapIndex(kv, vv)
 		}
+
 	default:
-
 		return errors.New("decode, unsupported type " + t.String())
-
 	}
+
 	return
 }
 
@@ -550,8 +546,7 @@ func (d *Decoder) readAsset() (out Asset, err error) {
 	amount, err := d.readInt64()
 	precision, err := d.readByte()
 	if err != nil {
-		err = fmt.Errorf("readSymbol precision, %s", err)
-		return
+		return out, fmt.Errorf("readSymbol precision, %s", err)
 	}
 
 	data := d.data[d.pos : d.pos+7]
@@ -571,7 +566,7 @@ func (d *Decoder) readActionData(action *Action) (err error) {
 	var decodeInto reflect.Type
 	if actionMap != nil {
 		objType := actionMap[action.Name]
-		fmt.Println("object type :", objType)
+		println("object type :", objType)
 		if objType != nil {
 			decodeInto = objType
 		}
@@ -580,17 +575,17 @@ func (d *Decoder) readActionData(action *Action) (err error) {
 		return
 	}
 
-	fmt.Println("Reflect type :", decodeInto)
+	println("Reflect type :", decodeInto)
 	obj := reflect.New(decodeInto)
-	fmt.Println("obj :", obj)
+	println("obj :", obj)
 	err = UnmarshalBinary(action.ActionData.HexData, obj.Interface())
 	if err != nil {
-		err = fmt.Errorf("decoding Action [%s], %s", obj.Type().Name(), err)
-		return
+		return fmt.Errorf("decoding Action [%s], %s", obj.Type().Name(), err)
 	}
 
-	fmt.Println("Object type :", obj.Interface())
+	println("Object type :", obj.Interface())
 	action.ActionData.Data = obj.Interface()
+
 	return
 }
 
@@ -627,7 +622,6 @@ func (d *Decoder) remaining() int {
 }
 
 func UnmarshalBinaryReader(reader io.Reader, v interface{}) (err error) {
-
 	data, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return
@@ -636,7 +630,6 @@ func UnmarshalBinaryReader(reader io.Reader, v interface{}) (err error) {
 }
 
 func UnmarshalBinary(data []byte, v interface{}) (err error) {
-
 	decoder := NewDecoder(data)
 	return decoder.Decode(v)
 }

@@ -458,12 +458,12 @@ func TestDecoder_Decode_Slice_Err(t *testing.T) {
 	decoder := NewDecoder(buf.Bytes())
 	var s []string
 	err := decoder.Decode(&s)
-	assert.EqualError(t, err, "varint: invalide buffer size")
+	assert.Equal(t, err, ErrVarIntBufferSize)
 
 	enc.writeUVarInt(1)
 	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&s)
-	assert.EqualError(t, err, "varint: invalide buffer size")
+	assert.Equal(t, err, ErrVarIntBufferSize)
 
 }
 
@@ -488,12 +488,12 @@ func TestDecoder_Decode_Map_Err(t *testing.T) {
 	decoder := NewDecoder(buf.Bytes())
 	var m map[string]string
 	err := decoder.Decode(&m)
-	assert.EqualError(t, err, "varint: invalide buffer size")
+	assert.Equal(t, err, ErrVarIntBufferSize)
 
 	enc.writeUVarInt(1)
 	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&m)
-	assert.EqualError(t, err, "varint: invalide buffer size")
+	assert.Equal(t, err, ErrVarIntBufferSize)
 }
 
 func TestDecoder_Decode_Bad_Map(t *testing.T) {

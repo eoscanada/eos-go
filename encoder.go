@@ -30,7 +30,6 @@ func NewEncoder(w io.Writer) *Encoder {
 }
 
 func (e *Encoder) writeName(name Name) (err error) {
-
 	val, er := StringToName(string(name))
 	if er != nil {
 		err = fmt.Errorf("encode, name, %s", er)
@@ -38,93 +37,67 @@ func (e *Encoder) writeName(name Name) (err error) {
 	}
 	err = e.writeUint64(val)
 	return
-
 }
+
 func (e *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
 	case Name:
-		err = e.writeName(cv)
-		return
+		return e.writeName(cv)
 	case AccountName:
 		name := Name(cv)
-		err = e.writeName(name)
-		return
+		return e.writeName(name)
 	case PermissionName:
 		name := Name(cv)
-		err = e.writeName(name)
-		return
+		return e.writeName(name)
 	case ActionName:
 		name := Name(cv)
-		err = e.writeName(name)
-		return
+		return e.writeName(name)
 	case TableName:
 		name := Name(cv)
-		err = e.writeName(name)
-		return
+		return e.writeName(name)
 	case ScopeName:
 		name := Name(cv)
-		err = e.writeName(name)
-		return
+		return e.writeName(name)
 	case string:
-		err = e.writeString(cv)
-		return
+		return e.writeString(cv)
 	case byte:
-		err = e.writeByte(cv)
-		return
+		return e.writeByte(cv)
 	case int16:
-		err = e.writeInt16(cv)
-		return
+		return e.writeInt16(cv)
 	case uint16:
-		err = e.writeUint16(cv)
-		return
+		return e.writeUint16(cv)
 	case uint32:
-		err = e.writeUint32(cv)
-		return
+		return e.writeUint32(cv)
 	case uint64:
-		err = e.writeUint64(cv)
-		return
+		return e.writeUint64(cv)
 	case Varuint32:
-		err = e.writeUVarInt(int(cv))
-		return
+		return e.writeUVarInt(int(cv))
 	case bool:
-		err = e.writeBool(cv)
-		return
+		return e.writeBool(cv)
 	case JSONTime:
-		err = e.writeJsonTime(cv)
-		return
+		return e.writeJSONTime(cv)
 	case HexBytes:
-		err = e.writeByteArray(cv)
-		return
+		return e.writeByteArray(cv)
 	case []byte:
-		err = e.writeByteArray(cv)
-		return
+		return e.writeByteArray(cv)
 	case SHA256Bytes:
-		err = e.writeSHA256Bytes(cv)
-		return
+		return e.writeSHA256Bytes(cv)
 	case ecc.PublicKey:
-		err = e.writePublicKey(cv)
-		return
+		return e.writePublicKey(cv)
 	case ecc.Signature:
-		err = e.writeSignature(cv)
-		return
+		return e.writeSignature(cv)
 	case Tstamp:
-		err = e.writeTstamp(cv)
-		return
+		return e.writeTstamp(cv)
 	case BlockTimestamp:
-		err = e.writeBlockTimestamp(cv)
-		return
+		return e.writeBlockTimestamp(cv)
 	case CurrencyName:
-		err = e.writeCurrencyName(cv)
-		return
+		return e.writeCurrencyName(cv)
 	case Asset:
-		err = e.writeAsset(cv)
-		return
+		return e.writeAsset(cv)
 	case ActionData:
-		err = e.writeActionData(cv)
-		return
+		return e.writeActionData(cv)
 	case *P2PMessageEnvelope:
-		err = e.writeBlockP2PMessageEnvelope(*cv)
-		return
+		return e.writeBlockP2PMessageEnvelope(*cv)
 	default:
 
 		rv := reflect.Indirect(reflect.ValueOf(v))
@@ -145,7 +118,9 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 			prefix = prefix[:len(prefix)-1]
 		case reflect.Slice:
 			l := rv.Len()
-			e.writeUVarInt(l)
+			if err = e.writeUVarInt(l); err != nil {
+				return
+			}
 			prefix = append(prefix, "     ")
 			println(fmt.Sprintf("Encode: slice [%T] of length: %d", v, l))
 
@@ -184,7 +159,9 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Map:
 			l := rv.Len()
-			e.writeUVarInt(l)
+			if err = e.writeUVarInt(l); err != nil {
+				return
+			}
 			println(fmt.Sprintf("Map [%T] of length: %d", v, l))
 			for _, key := range rv.MapKeys() {
 				value := rv.MapIndex(key)
@@ -212,7 +189,9 @@ func (e *Encoder) toWriter(bytes []byte) (err error) {
 }
 
 func (e *Encoder) writeByteArray(b []byte) error {
-	e.writeUVarInt(len(b))
+	if err := e.writeUVarInt(len(b)); err != nil {
+		return err
+	}
 	return e.toWriter(b)
 }
 
@@ -312,7 +291,7 @@ func (e *Encoder) writeAsset(asset Asset) (err error) {
 	return e.toWriter(symbol)
 }
 
-func (e *Encoder) writeJsonTime(time JSONTime) (err error) {
+func (e *Encoder) writeJSONTime(time JSONTime) (err error) {
 	return e.writeUint32(uint32(time.Unix()))
 }
 
@@ -345,9 +324,7 @@ func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) (err
 }
 
 func (e *Encoder) writeActionData(actionData ActionData) (err error) {
-
 	if actionData.Data != nil {
-
 		//if reflect.TypeOf(actionData.Data) == reflect.TypeOf(&ActionData{}) {
 		//	log.Fatal("pas cool")
 		//}
@@ -357,12 +334,10 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 			return err
 		}
 		println(fmt.Sprintf("writing action data, %T", actionData.Data))
-		e.writeByteArray(raw)
-
-	} else {
-		e.writeByteArray([]byte{})
+		return e.writeByteArray(raw)
 	}
-	return
+
+	return e.writeByteArray([]byte{})
 }
 
 func MarshalBinary(v interface{}) ([]byte, error) {
