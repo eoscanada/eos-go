@@ -62,6 +62,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeString(cv)
 	case byte:
 		return e.writeByte(cv)
+	case int8:
+		return e.writeByte(byte(cv))
 	case int16:
 		return e.writeInt16(cv)
 	case uint16:

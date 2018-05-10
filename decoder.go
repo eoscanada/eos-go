@@ -21,6 +21,7 @@ import (
 
 var TypeSize = struct {
 	Byte           int
+	Int8           int
 	UInt16         int
 	Int16          int
 	UInt32         int
@@ -34,6 +35,7 @@ var TypeSize = struct {
 	Bool           int
 }{
 	Byte:           1,
+	Int8:           1,
 	UInt16:         2,
 	Int16:          2,
 	UInt32:         4,

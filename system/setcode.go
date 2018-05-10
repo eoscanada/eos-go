@@ -2,6 +2,7 @@ package system
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	eos "github.com/eoscanada/eos-go"
@@ -20,7 +21,7 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 
 	var abiDef eos.ABI
 	if err := json.Unmarshal(abiContent, &abiDef); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal ABI file:, %s", err)
 	}
 
 	actions := []*eos.Action{
