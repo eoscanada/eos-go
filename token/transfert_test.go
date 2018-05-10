@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPackedTransaction_UnPack(t *testing.T) {
+func TestPackedTransaction_Unpack(t *testing.T) {
 
 	transfer := Transfer{}
 	fmt.Println(transfer)
@@ -21,7 +21,7 @@ func TestPackedTransaction_UnPack(t *testing.T) {
 		PackedTransaction: data,
 	}
 
-	signedTx, err := tx.UnPack()
+	signedTx, err := tx.Unpack()
 	assert.NoError(t, err)
 	fmt.Println(signedTx)
 }

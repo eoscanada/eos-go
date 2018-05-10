@@ -54,6 +54,8 @@ func NewActionData(obj interface{}) ActionData {
 	}
 }
 
+//  jsonActionToServer represents what /v1/chain/push_transaction
+//  expects, which isn't allllways the same everywhere.
 type jsonActionToServer struct {
 	Account       AccountName       `json:"account"`
 	Name          ActionName        `json:"name"`
@@ -70,8 +72,7 @@ type jsonActionFromServer struct {
 }
 
 func (a *Action) MarshalJSON() ([]byte, error) {
-
-	if a.toServer { //sending action to server
+	if a.toServer {
 		var err error
 		buf := new(bytes.Buffer)
 		encoder := NewEncoder(buf)

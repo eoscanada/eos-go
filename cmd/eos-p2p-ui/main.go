@@ -160,7 +160,7 @@ var UILoggerHandler = func(processable p2p.PostProcessable) {
 	case eos.PackedTransactionMessageType:
 
 		m := p2pMsg.(*eos.PackedTransactionMessage)
-		signedTx, err := m.UnPack()
+		signedTx, err := m.Unpack()
 		if err != nil {
 			fmt.Println("PackedTransactionMessage: ", err)
 			return

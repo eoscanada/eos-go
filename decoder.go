@@ -55,7 +55,6 @@ func RegisterAction(accountName AccountName, actionName ActionName, obj interfac
 	if registeredActions[accountName] == nil {
 		registeredActions[accountName] = make(map[ActionName]reflect.Type)
 	}
-	//registeredActions[accountName][actionName] = reflect.ValueOf(obj).Type()
 	registeredActions[accountName][actionName] = reflect.TypeOf(obj)
 }
 
@@ -66,20 +65,15 @@ type Decoder struct {
 	decodeP2PMessage   bool
 	decodeTransactions bool
 	decodeActions      bool
-
-	//actionMap    map[AccountName]map[ActionName]interface{}
-	//actionABIMap map[AccountName]map[ActionName]ABIDef
-
-	//lastSeenAction ActionName
 }
 
 var prefix = make([]string, 0)
 
 var print = func(s string) {
-	//for _, s := range prefix {
-	//	fmt.Print(s)
-	//}
-	//fmt.Print(s)
+	for _, s := range prefix {
+		fmt.Print(s)
+	}
+	fmt.Print(s)
 }
 var println = func(s string) {
 	print(fmt.Sprintf("%s\n", s))
@@ -271,7 +265,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		//		return
 		//	}
 		//	tx := rv.Interface().(PackedTransaction)
-		//	tx.UnPack()
+		//	tx.Unpack()
 		//	rv.Set(reflect.ValueOf(tx))
 		//	return
 
@@ -359,14 +353,14 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 	return
 }
 
-var VarIntBufferSizeError = fmt.Errorf("varint: invalide buffer size")
+var ErrVarIntBufferSize = errors.New("varint: invalid buffer size")
 
 func (d *Decoder) readUvarint() (uint64, error) {
 
 	l, read := binary.Uvarint(d.data[d.pos:])
 	if read <= 0 {
 		println(fmt.Sprintf("readUvarint [%d]", l))
-		return l, VarIntBufferSizeError
+		return l, ErrVarIntBufferSize
 	}
 
 	d.pos += read

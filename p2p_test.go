@@ -3,15 +3,11 @@ package eos
 import (
 	"bytes"
 	"encoding/hex"
-	"testing"
-
 	"encoding/json"
 	"fmt"
-
-	"encoding/json"
+	"testing"
 
 	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -278,21 +274,18 @@ func TestEncode_P2PMessageEnvelope_Error(t *testing.T) {
 	assert.EqualError(t, encoder.writeBlockP2PMessageEnvelope(P2PMessageEnvelope{}), "error.1")
 }
 
-func TestPackedTransaction_UnPack(t *testing.T) {
-
+func TestPackedTransaction_Unpack(t *testing.T) {
 	msgHex := "9b0000000901001f66cb0b5dcb12467bdbcc71eec30f3dc241399c7900485b16ffa89a816abd03851777c1d7db60a6f2b9c6ebc6000d6e3965bcb07da61b43a767c7d764daf451b0000054c31be75a00004c599c67143e000000000100a6823403ea3055000000572d3ccdcd010000000000ea305500000000a8ed3232210000000000ea305500000039ab18dd41a08601000000000004454f530000000000"
 
 	decoded, err := hex.DecodeString(msgHex)
 	assert.NoError(t, err)
 
-	var p2PMessageEnvelope P2PMessageEnvelope
-	assert.NoError(t, UnmarshalBinary(decoded, &p2PMessageEnvelope))
+	var p2pMessageEnvelope P2PMessageEnvelope
+	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessageEnvelope))
 
-	var msg PackedTransactionMessage
+	msg := p2pMessageEnvelope.P2PMessage.(*PackedTransactionMessage)
 
-	assert.NoError(t, p2PMessageEnvelope.DecodePayload(&msg))
-
-	signedTX, err := msg.UnPack()
+	signedTX, err := msg.Unpack()
 	assert.NoError(t, err)
 
 	data, err := json.Marshal(&signedTX)

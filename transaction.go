@@ -178,8 +178,7 @@ type PackedTransaction struct {
 	PackedTransaction     HexBytes        `json:"packed_trx"`
 }
 
-func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
-
+func (p *PackedTransaction) Unpack() (signedTx *SignedTransaction, err error) {
 	var txReader io.Reader
 	txReader = bytes.NewBuffer(p.PackedTransaction)
 
@@ -188,14 +187,15 @@ func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
 
 	switch p.Compression {
 	case CompressionZlib:
-
 		txReader, err = zlib.NewReader(txReader)
 		if err != nil {
 			return
 		}
 
-		freeDataReader, _ = zlib.NewReader(freeDataReader)
-
+		freeDataReader, err = zlib.NewReader(freeDataReader)
+		if err != nil {
+			return
+		}
 	}
 
 	data, err := ioutil.ReadAll(txReader)
@@ -207,11 +207,10 @@ func (p *PackedTransaction) UnPack() (signedTx *SignedTransaction, err error) {
 	var tx Transaction
 	err = decoder.Decode(&tx)
 	if err != nil {
-
-		err = fmt.Errorf("unpacking Transaction, %s", err)
-		return
+		return nil, fmt.Errorf("unpacking Transaction, %s", err)
 	}
 
+	// TODO: wire that in
 	//decoder = NewDecoder(freeDataReader)
 	//var contextFreeData []HexBytes
 	//err = decoder.Decode(&contextFreeData)

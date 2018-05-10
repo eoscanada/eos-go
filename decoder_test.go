@@ -54,7 +54,6 @@ func TestDecoder_Byte(t *testing.T) {
 }
 
 func TestDecoder_ByteArray(t *testing.T) {
-
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 	enc.writeByteArray([]byte{1, 2, 3})
@@ -74,7 +73,6 @@ func TestDecoder_ByteArray(t *testing.T) {
 }
 
 func TestDecoder_ByteArray_MissingData(t *testing.T) {
-
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 	enc.writeUVarInt(10)
@@ -93,11 +91,10 @@ func TestDecoder_ByteArrayDataTooSmall(t *testing.T) {
 	//to smalls
 	d := NewDecoder(buf.Bytes())
 	_, err := d.readByteArray()
-	assert.Equal(t, VarIntBufferSizeError, err)
-
+	assert.Equal(t, ErrVarIntBufferSize, err)
 }
-func TestDecoder_Uint16(t *testing.T) {
 
+func TestDecoder_Uint16(t *testing.T) {
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 	enc.writeUint16(uint16(99))
