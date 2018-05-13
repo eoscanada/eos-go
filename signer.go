@@ -170,8 +170,13 @@ func SigDigest(chainID, payload, contextFreeData []byte) []byte {
 	h := sha256.New()
 	_, _ = h.Write(chainID)
 	_, _ = h.Write(payload)
+
 	if len(contextFreeData) > 0 {
-		_, _ = h.Write(contextFreeData)
+		h2 := sha256.New()
+		_, _ = h2.Write(contextFreeData)
+		_, _ = h.Write(h2.Sum(nil)) // add the hash of CFD to the payload
+	} else {
+		_, _ = h.Write(make([]byte, 32, 32))
 	}
 	return h.Sum(nil)
 }

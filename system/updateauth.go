@@ -18,11 +18,23 @@ func NewUpdateAuth(account eos.AccountName, permission, parent eos.PermissionNam
 			Account:    account,
 			Permission: permission,
 			Parent:     parent,
-			Data:       authority,
+			Auth:       authority,
 		}),
 	}
 
 	return a
+}
+
+// UpdateAuth represents the hard-coded `updateauth` action.
+//
+// If you change the `active` permission, `owner` is the required parent.
+//
+// If you change the `owner` permission, there should be no parent.
+type UpdateAuth struct {
+	Account    eos.AccountName    `json:"account"`
+	Permission eos.PermissionName `json:"permission"`
+	Parent     eos.PermissionName `json:"parent"`
+	Auth       eos.Authority      `json:"auth"`
 }
 
 /**

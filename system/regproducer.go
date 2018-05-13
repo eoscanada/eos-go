@@ -9,7 +9,7 @@ import (
 // `eosio.bios` contract. It should exist only when booting a new
 // network, as it is replaced using the `eos-bios` boot process by the
 // `eosio.system` contract.
-func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, params EOSIOParameters) *eos.Action {
+func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, url string) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio"),
 		Name:    ActN("regproducer"),
@@ -18,8 +18,8 @@ func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, params 
 		},
 		ActionData: eos.NewActionData(RegProducer{
 			Producer:    producer,
-			ProducerKey: []byte(producerKey),
-			Prefs:       params,
+			ProducerKey: producerKey,
+			URL:         url,
 		}),
 	}
 }

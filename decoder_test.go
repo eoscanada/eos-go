@@ -234,11 +234,11 @@ func TestDecoder_Empty_SHA256Bytes(t *testing.T) {
 
 func TestDecoder_PublicKey(t *testing.T) {
 
-	pk := ecc.PublicKey(bytes.Repeat([]byte{1}, 34))
+	pk := ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{1}, 33)}
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.writePublicKey(pk)
+	assert.NoError(t, enc.writePublicKey(pk))
 
 	d := NewDecoder(buf.Bytes())
 
@@ -251,23 +251,16 @@ func TestDecoder_PublicKey(t *testing.T) {
 
 func TestDecoder_Empty_PublicKey(t *testing.T) {
 
-	pk := ecc.PublicKey([]byte{})
+	pk := ecc.PublicKey{Curve: ecc.CurveK1, Content: []byte{}}
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.writePublicKey(pk)
-
-	d := NewDecoder(buf.Bytes())
-
-	pk, err := d.readPublicKey()
-	assert.NoError(t, err)
-	assert.Equal(t, pk, ecc.PublicKey(bytes.Repeat([]byte{0}, 34)))
-	assert.Equal(t, 0, d.remaining())
+	assert.Error(t, enc.writePublicKey(pk))
 }
 
 func TestDecoder_Signature(t *testing.T) {
 
-	sig := ecc.Signature(bytes.Repeat([]byte{1}, 66))
+	sig := ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{1}, 65)}
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
@@ -283,18 +276,11 @@ func TestDecoder_Signature(t *testing.T) {
 
 func TestDecoder_Empty_Signature(t *testing.T) {
 
-	sig := ecc.Signature([]byte{})
+	sig := ecc.Signature{Content: []byte{}}
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.writeSignature(sig)
-
-	d := NewDecoder(buf.Bytes())
-
-	sig, err := d.readSignature()
-	assert.NoError(t, err)
-	assert.Equal(t, sig, ecc.Signature(bytes.Repeat([]byte{0}, 66)))
-	assert.Equal(t, 0, d.remaining())
+	assert.Error(t, enc.writeSignature(sig))
 }
 
 func TestDecoder_Tstamp(t *testing.T) {
@@ -377,8 +363,8 @@ func TestDecoder_Encode(t *testing.T) {
 		F6:  []string{"def", "789"},
 		F7:  [2]string{"foo", "bar"},
 		F8:  map[string]string{"foo": "bar", "hello": "you"},
-		F9:  ecc.PublicKey(bytes.Repeat([]byte{0}, 34)),
-		F10: ecc.Signature(bytes.Repeat([]byte{0}, 66)),
+		F9:  ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)},
+		F10: ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)},
 		F11: byte(1),
 		F12: uint64(87),
 		F13: []byte{1, 2, 3, 4, 5},
@@ -404,8 +390,8 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, []string{"def", "789"}, s.F6)
 	assert.Equal(t, [2]string{"foo", "bar"}, s.F7)
 	assert.Equal(t, map[string]string{"foo": "bar", "hello": "you"}, s.F8)
-	assert.Equal(t, ecc.PublicKey(bytes.Repeat([]byte{0}, 34)), s.F9)
-	assert.Equal(t, ecc.Signature(bytes.Repeat([]byte{0}, 66)), s.F10)
+	assert.Equal(t, ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, s.F9)
+	assert.Equal(t, ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, s.F10)
 	assert.Equal(t, byte(1), s.F11)
 	assert.Equal(t, uint64(87), s.F12)
 	assert.Equal(t, uint64(87), s.F12)

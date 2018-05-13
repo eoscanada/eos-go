@@ -5,19 +5,6 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 )
 
-// UpdateAuth represents the hard-coded `updateauth` action.
-//
-// If you change the `active` permission, `owner` is the required parent.
-//
-// If you change the `owner` permission, there should be no parent.
-type UpdateAuth struct {
-	Account    eos.AccountName    `json:"account"`
-	Permission eos.PermissionName `json:"permission"`
-	Parent     eos.PermissionName `json:"parent"`
-	Data       eos.Authority      `json:"data"`
-	Delay      uint32             `json:"delay"` // this represents what exactly?
-}
-
 // SetPriv sets privileged account status. Used in the bios boot mechanism.
 type SetPriv struct {
 	Account eos.AccountName `json:"account"`
@@ -40,8 +27,7 @@ type SetABI struct {
 
 // SetProds is present in `eosio.bios` contract. Used only at boot time.
 type SetProds struct {
-	Version   uint32        `json:"version"`
-	Producers []ProducerKey `json:"producers"`
+	Schedule []ProducerKey `json:"schedule"`
 }
 
 type ProducerKey struct {
@@ -88,12 +74,12 @@ type EOSIOGlobalState struct {
 }
 
 type DelegatedBandwidth struct {
-	From         eos.AccountName `json:"from"`
-	To           eos.AccountName `json:"to"`
-	NetWeight    eos.Asset       `json:"net_weight"`
-	CPUWeight    eos.Asset       `json:"cpu_weight"`
-	StorageStake eos.Asset       `json:"storage_stake"`
-	StorageBytes uint64      `json:"storage_bytes"`
+	From      eos.AccountName `json:"from"`
+	To        eos.AccountName `json:"to"`
+	NetWeight eos.Asset       `json:"net_weight"`
+	CPUWeight eos.Asset       `json:"cpu_weight"`
+	// TODO: whooops, please review this..
+	RAMBytes int64 `json:"ram_bytes"`
 }
 
 type TotalResources struct {
@@ -125,8 +111,8 @@ type Refund struct {
 // RegProducer represents the `eosio.system::regproducer` action
 type RegProducer struct {
 	Producer    eos.AccountName `json:"producer"`
-	ProducerKey []byte          `json:"producer_key"`
-	Prefs       EOSIOParameters `json:"eosio_parameters"`
+	ProducerKey ecc.PublicKey   `json:"producer_key"`
+	URL         string          `json:"url"`
 }
 
 // UnregProducer represents the `eosio.system::unregprod` action

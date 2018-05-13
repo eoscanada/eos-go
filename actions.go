@@ -22,15 +22,6 @@ type SetABI struct {
 	ABI     ABI         `json:"abi"`
 }
 
-// NewAccount represents the hard-coded `newaccount` action.
-type NewAccount struct {
-	Creator  AccountName `json:"creator"`
-	Name     AccountName `json:"name"`
-	Owner    Authority   `json:"owner"`
-	Active   Authority   `json:"active"`
-	Recovery Authority   `json:"recovery"`
-}
-
 // Action
 type Action struct {
 	Account       AccountName       `json:"account"`

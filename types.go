@@ -157,11 +157,17 @@ type Authority struct {
 	Threshold uint32                  `json:"threshold"`
 	Keys      []KeyWeight             `json:"keys"`
 	Accounts  []PermissionLevelWeight `json:"accounts"`
+	Waits     []WaitWeight            `json:"waits"`
 }
 
 type KeyWeight struct {
 	PublicKey ecc.PublicKey `json:"key"`
-	Weight    uint16        `json:"weight"`
+	Weight    uint16        `json:"weight"` // weight_type
+}
+
+type WaitWeight struct {
+	WaitSec uint32 `json:"wait_sec"`
+	Weight  uint16 `json:"weight"` // weight_type
 }
 
 type Code struct {

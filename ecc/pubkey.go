@@ -2,7 +2,6 @@ package ecc
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,30 +11,49 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-const PublicKeyPrefix = "EOS"
+const PublicKeyPrefix = "PUB_"
+const PublicKeyPrefixCompat = "EOS"
 
-type PublicKey []byte
+type PublicKey struct {
+	Curve   CurveID
+	Content []byte
+}
 
-func NewPublicKey(pubKey string) (PublicKey, error) {
-	if len(pubKey) < 5 {
-		return nil, fmt.Errorf("invalid format")
+func NewPublicKey(pubKey string) (out PublicKey, err error) {
+	if len(pubKey) < 8 {
+		return out, fmt.Errorf("invalid format")
 	}
 
-	if !strings.HasPrefix(pubKey, PublicKeyPrefix) {
-		return nil, fmt.Errorf("public key should start with %q", PublicKeyPrefix)
+	var pubKeyMaterial string
+	var curveID CurveID
+	if strings.HasPrefix(pubKey, PublicKeyPrefix) {
+		pubKeyMaterial = pubKey[len(PublicKeyPrefix):] // strip "PUB_"
+
+		curvePrefix := pubKeyMaterial[:3]
+		switch curvePrefix {
+		case "K1_":
+			curveID = CurveK1
+		case "R1_":
+			curveID = CurveR1
+		default:
+			return out, fmt.Errorf("unsupported curve prefix %q", curvePrefix)
+		}
+		pubKeyMaterial = pubKeyMaterial[3:] // strip "K1_"
+
+	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
+		pubKeyMaterial = pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
+		curveID = CurveK1
+
+	} else {
+		return out, fmt.Errorf("public key should start with %q (or the old %q)", PublicKeyPrefix, PublicKeyPrefixCompat)
 	}
 
-	pubDecoded, err := checkDecode(pubKey[3:])
+	pubDecoded, err := checkDecode(pubKeyMaterial, curveID)
 	if err != nil {
-		return nil, fmt.Errorf("checkDecode: %s", err)
+		return out, fmt.Errorf("checkDecode: %s", err)
 	}
 
-	// key, err := btcec.ParsePubKey(pubDecoded, btcec.S256())
-	// if err != nil {
-	// 	return nil, fmt.Errorf("parsePubKey: %s", err)
-	// }
-
-	return PublicKey(pubDecoded), nil
+	return PublicKey{Curve: curveID, Content: pubDecoded}, nil
 }
 
 func MustNewPublicKey(pubKey string) PublicKey {
@@ -47,14 +65,17 @@ func MustNewPublicKey(pubKey string) PublicKey {
 }
 
 // CheckDecode decodes a string that was encoded with CheckEncode and verifies the checksum.
-func checkDecode(input string) (result []byte, err error) {
+func checkDecode(input string, curve CurveID) (result []byte, err error) {
 	decoded := base58.Decode(input)
 	if len(decoded) < 5 {
 		return nil, fmt.Errorf("invalid format")
 	}
 	var cksum [4]byte
 	copy(cksum[:], decoded[len(decoded)-4:])
-	if bytes.Compare(ripemd160checksum(decoded[:len(decoded)-4]), cksum[:]) != 0 {
+	///// WARN: ok the ripemd160checksum should include the prefix in CERTAIN situations,
+	// like when we imported the PubKey without a prefix ?! tied to the string representation
+	// or something ? weird.. checksum shouldn't change based on the string reprsentation.
+	if bytes.Compare(ripemd160checksum(decoded[:len(decoded)-4], curve), cksum[:]) != 0 {
 		return nil, fmt.Errorf("invalid checksum")
 	}
 	// perhaps bitcoin has a leading net ID / version, but EOS doesn't
@@ -63,15 +84,31 @@ func checkDecode(input string) (result []byte, err error) {
 	return
 }
 
-func ripemd160checksum(in []byte) []byte {
+func ripemd160checksum(in []byte, curve CurveID) []byte {
 	h := ripemd160.New()
 	_, _ = h.Write(in) // this implementation has no error path
+
+	// if curve != CurveK1 {
+	// 	_, _ = h.Write([]byte(curve.String())) // conditionally ?
+	// }
+	sum := h.Sum(nil)
+	return sum[:4]
+}
+
+func ripemd160checksumHashCurve(in []byte, curve CurveID) []byte {
+	h := ripemd160.New()
+	_, _ = h.Write(in) // this implementation has no error path
+
+	// FIXME: this seems to be only rolled out to the `SIG_` things..
+	// proper support for importing `EOS` keys isn't rolled out into `dawn4`.
+	_, _ = h.Write([]byte(curve.String())) // conditionally ?
 	sum := h.Sum(nil)
 	return sum[:4]
 }
 
 func (p PublicKey) Key() (*btcec.PublicKey, error) {
-	key, err := btcec.ParsePubKey(p, btcec.S256())
+	// TODO: implement the curve switch according to `p.Curve`
+	key, err := btcec.ParsePubKey(p.Content, btcec.S256())
 	if err != nil {
 		return nil, fmt.Errorf("parsePubKey: %s", err)
 	}
@@ -80,15 +117,12 @@ func (p PublicKey) Key() (*btcec.PublicKey, error) {
 }
 
 func (p PublicKey) String() string {
-	//rawkey := p.pubKey.SerializeCompressed()
-	hash := ripemd160checksum(p)
-	rawkey := append(p, hash[:4]...)
-	return PublicKeyPrefix + base58.Encode(rawkey)
-}
-
-func (p PublicKey) ToHex() string {
-	// pubKey.SerializeCompressed()
-	return hex.EncodeToString(p)
+	//hash := ripemd160checksum(append([]byte{byte(p.Curve)}, p.Content...))  does the checksum include the curve ID?!
+	hash := ripemd160checksum(p.Content, p.Curve)
+	rawkey := append(p.Content, hash[:4]...)
+	return PublicKeyPrefixCompat + base58.Encode(rawkey)
+	// FIXME: when we decide to go ahead with the new representation.
+	//return PublicKeyPrefix + p.Curve.StringPrefix() + base58.Encode(rawkey)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {
@@ -112,29 +146,3 @@ func (p *PublicKey) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-
-func (p PublicKey) MarshalBinary() ([]byte, error) {
-	// str := a.String()
-	// raw := base58.Decode(str[3:])
-	// raw = raw[:33]
-	// ..34-len(raw), raw...
-	return append(bytes.Repeat([]byte{0}, 34-len(p)), p...), nil
-}
-
-func (p *PublicKey) UnmarshalBinary(data []byte) (err error) {
-	if len(data) != 34 {
-		return fmt.Errorf("public key should be 34 bytes: \x00 + 33 bytes of key material, had %d bytes", len(data))
-	}
-
-	*p = PublicKey(data[1:])
-	// newKey, err := NewPublicKey("EOS" + base58.Encode(data))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// a.pubKey = newKey.pubKey
-
-	return nil
-}
-
-func (a PublicKey) UnmarshalBinarySize() int { return 34 }

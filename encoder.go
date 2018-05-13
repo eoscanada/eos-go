@@ -29,14 +29,12 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 }
 
-func (e *Encoder) writeName(name Name) (err error) {
-	val, er := StringToName(string(name))
-	if er != nil {
-		err = fmt.Errorf("encode, name, %s", er)
-		return
+func (e *Encoder) writeName(name Name) error {
+	val, err := StringToName(string(name))
+	if err != nil {
+		return fmt.Errorf("writeName: %s", err)
 	}
-	err = e.writeUint64(val)
-	return
+	return e.writeUint64(val)
 }
 
 func (e *Encoder) Encode(v interface{}) (err error) {
@@ -251,18 +249,27 @@ func (e *Encoder) writeSHA256Bytes(s SHA256Bytes) error {
 }
 
 func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
-	if len(pk) == 0 {
-		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.PublicKey))
+	if len(pk.Content) != 33 {
+		return fmt.Errorf("public key %q should be 33 bytes, was %d", hex.EncodeToString(pk.Content), len(pk.Content))
 	}
 
-	return e.toWriter(append(bytes.Repeat([]byte{0}, 34-len(pk)), pk...))
+	if err = e.writeByte(byte(pk.Curve)); err != nil {
+		return err
+	}
+
+	return e.toWriter(pk.Content)
 }
 
 func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
-	if len(s) == 0 {
-		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Signature))
+	if len(s.Content) != 65 {
+		return fmt.Errorf("signature should be 65 bytes, was %d", len(s.Content))
 	}
-	return e.toWriter(s)
+
+	if err = e.writeByte(byte(s.Curve)); err != nil {
+		return
+	}
+
+	return e.toWriter(s.Content) // should write 65 bytes
 }
 
 func (e *Encoder) writeTstamp(t Tstamp) (err error) {

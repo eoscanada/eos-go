@@ -5,11 +5,9 @@ import (
 )
 
 func init() {
-
 	eos.RegisterAction(AN("eosio"), ActN("setcode"), &SetCode{})
 	eos.RegisterAction(AN("eosio"), ActN("setabi"), &SetABI{})
 	eos.RegisterAction(AN("eosio"), ActN("newaccount"), &NewAccount{})
-	// eos.RegisterAction(AN("eosio.token"), ActN("transfer"), &token.Transfer{})
 	// eos.RegisterAction(AN("eosio"), ActN("delegatebw"), &DelegateBW{})
 	// eos.RegisterAction(AN("eosio"), ActN("undelegatebw"), &UndelegateBW{})
 	// eos.RegisterAction(AN("eosio"), ActN("refund"), &Refund{})

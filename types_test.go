@@ -77,7 +77,9 @@ func TestPackTransaction(t *testing.T) {
 	stamp := time.Date(2018, time.March, 22, 1, 1, 1, 1, time.UTC)
 	blockID, _ := hex.DecodeString("00106438d58d4fcab54cf89ca8308e5971cff735979d6050c6c1b45d8aadcad6")
 	tx := &Transaction{
-		Expiration: JSONTime{stamp},
+		TransactionHeader: TransactionHeader{
+			Expiration: JSONTime{stamp},
+		},
 		Actions: []*Action{
 			{
 				Account: AccountName("eosio"),

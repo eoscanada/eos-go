@@ -35,15 +35,6 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 					},
 				},
 			},
-			Recovery: eos.Authority{
-				Threshold: 1,
-				Accounts: []eos.PermissionLevelWeight{
-					{
-						Permission: eos.PermissionLevel{Actor: creator, Permission: PN("active")},
-						Weight:     1,
-					},
-				},
-			},
 		}),
 	}
 }
@@ -52,9 +43,8 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 // contract. It is one of the rare ones to be hard-coded into the
 // blockchain.
 type NewAccount struct {
-	Creator  eos.AccountName `json:"creator"`
-	Name     eos.AccountName `json:"name"`
-	Owner    eos.Authority   `json:"owner"`
-	Active   eos.Authority   `json:"active"`
-	Recovery eos.Authority   `json:"recovery"`
+	Creator eos.AccountName `json:"creator"`
+	Name    eos.AccountName `json:"name"`
+	Owner   eos.Authority   `json:"owner"`
+	Active  eos.Authority   `json:"active"`
 }

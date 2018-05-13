@@ -6,20 +6,23 @@ import (
 	"log"
 
 	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/token"
+	"github.com/eoscanada/eos-go/ecc"
+	"github.com/eoscanada/eos-go/system"
 )
 
 func main() {
 	//api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
-	api := eos.New("http://Charless-MacBook-Pro-2.local:8888", bytes.Repeat([]byte{0}, 32))
+	api := eos.New("http://localhost:8888", bytes.Repeat([]byte{0}, 32))
 	//api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
 	api.Debug = true
+	eos.Debug = true
 
 	keyBag := eos.NewKeyBag()
 	for _, key := range []string{
 		"5JuWeC5KwZRVUQZ4eneYCYQ6Pa132QgvDQzEVJBA7XTgNTBWWRw",
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
+		"5K6CAnUcDpJzBJBCve3QfQjEsxHrC8jqYgnYE1tDv4rKbDLG58N", // latest bios boot
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -102,9 +105,9 @@ func main() {
 
 	actionResp, err := api.SignPushActions(
 
-		//system.NewNewAccount(AC("cbillett"), AC("bozo"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
+		system.NewNewAccount(AC("eosio"), AC("aaaaaaaaaaab"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 
-		token.NewTransfer(eos.AccountName("cbillett"), eos.AccountName("bozo"), eos.NewEOSAsset(100), ""),
+		//		token.NewTransfer(eos.AccountName("cbillett"), eos.AccountName("bozo"), eos.NewEOSAsset(100), ""),
 	)
 	if err != nil {
 		fmt.Println("ERROR calling :", err)
@@ -112,10 +115,10 @@ func main() {
 		fmt.Println("RESP:", actionResp)
 	}
 
-	resp, err := api.GetCurrencyBalance(AC("eosio"), eos.EOSSymbol.Symbol, AC("eosio"))
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(resp)
+	// resp, err := api.GetCurrencyBalance(AC("eosio"), eos.EOSSymbol.Symbol, AC("eosio"))
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(resp)
 
 }

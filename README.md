@@ -52,3 +52,24 @@ License
 -------
 
 MIT
+
+
+
+----------------------
+
+Changes to dawn4:
+* sig_digest always adds something even with empty context free actions.
+* PUB, PVT, SIG
+* implement `delegatebw` NewDelegateBandwidth(), etc..
+  (storage_stake)(storage_bytes) -> (ram_bytes)
+
+Unanswered questions:
+* what's the "location" field on a "producer_info" (eosio.system.abi)
+* they added "url" w00t :)
+* the `setglimits` and `setalimits` in the eosio.bios .. do we need to call that
+  to setup the chain ? what does bootseq_.. say in the eosio repo ?
+* what do `transaction_extensions` mean in a transaction ? any uses ? special cases ?
+* all the multisig things.. we should implement
+* usage is billed, means the "scope" of the storage on those multi_index tables is "contract" and "billed account", right ?! :) that's pretty cool :)
+
+* delay_sec.. is it required

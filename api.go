@@ -24,7 +24,7 @@ type API struct {
 	Signer                  Signer
 	Debug                   bool
 	Compress                CompressionType
-	DefaultMaxKCPUUsage     uint32 // in kilo-cpu cycles
+	DefaultMaxCPUUsageMS    uint8
 	DefaultMaxNetUsageWords uint32 // in 8-bytes words
 
 	lastGetInfo      *InfoResp
@@ -216,16 +216,16 @@ func (api *API) SignPushTransaction(tx *Transaction, opts *TxOptions) (out *Push
 
 	resp, err := api.GetRequiredKeys(tx)
 	if err != nil {
-		return nil, fmt.Errorf("GetRequiredKeys: %s", err)
+		return nil, fmt.Errorf("calling get_required_keys on the wallet: %s", err)
 	}
 
 	stx := NewSignedTransaction(tx)
 
-	stx.estimateResources(*opts, api.DefaultMaxKCPUUsage, api.DefaultMaxNetUsageWords)
+	stx.estimateResources(*opts, api.DefaultMaxCPUUsageMS, api.DefaultMaxNetUsageWords)
 
 	signedTx, err := api.Signer.Sign(stx, api.ChainID, resp.RequiredKeys...)
 	if err != nil {
-		return nil, fmt.Errorf("Sign: %s", err)
+		return nil, fmt.Errorf("signing through wallet: %s", err)
 	}
 
 	packed, err := signedTx.Pack(*opts)

@@ -18,20 +18,27 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 )
 
-type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
+type TransactionHeader struct {
 	Expiration     JSONTime `json:"expiration"`
-	Region         uint16   `json:"region"`
 	RefBlockNum    uint16   `json:"ref_block_num"`
 	RefBlockPrefix uint32   `json:"ref_block_prefix"`
 
 	MaxNetUsageWords Varuint32 `json:"max_net_usage_words"`
-	MaxKCPUUsage     Varuint32 `json:"max_kcpu_usage"`
+	MaxCPUUsageMS    uint8     `json:"max_cpu_usage_ms"`
 	DelaySec         Varuint32 `json:"delay_sec"` // number of secs to delay, making it cancellable for that duration
+}
 
-	// TODO: implement the estimators and write that in `.Fill()`.. for the transaction.
+type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
+	TransactionHeader
 
-	ContextFreeActions []*Action `json:"context_free_actions,omitempty"`
-	Actions            []*Action `json:"actions,omitempty"`
+	ContextFreeActions []*Action    `json:"context_free_actions"`
+	Actions            []*Action    `json:"actions"`
+	Extensions         []*Extension `json:"transaction_extensions"`
+}
+
+type Extension struct {
+	Type uint16   `json:"type"`
+	Data HexBytes `json:"data"`
 }
 
 // 69c9c15a 0000 1400 62f95d45 b31d 904e 00 00 020000000000ea305500000040258ab2c2010000000000ea305500000000a8ed
@@ -59,6 +66,9 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	if tx.ContextFreeActions == nil {
 		tx.ContextFreeActions = make([]*Action, 0, 0)
 	}
+	if tx.Extensions == nil {
+		tx.Extensions = make([]*Extension, 0, 0)
+	}
 
 	blockID, err := hex.DecodeString(info.HeadBlockID)
 	if err != nil {
@@ -71,6 +81,7 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	/// etc.. add a `.Timeout` with that duration, default to 30
 	/// seconds ?
 	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
+	//tx.DelaySec = 30
 
 	return blockID, nil
 }
@@ -153,7 +164,7 @@ func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 	return packed, nil
 }
 
-func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet uint32) {
+func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu uint8, maxnet uint32) {
 	// see programs/cleos/main.cpp for an estimation algo..
 	if opts.MaxNetUsageWords != 0 {
 		tx.MaxNetUsageWords = Varuint32(opts.MaxNetUsageWords)
@@ -161,10 +172,10 @@ func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu, maxnet ui
 		tx.MaxNetUsageWords = Varuint32(maxnet)
 	}
 
-	if opts.MaxKCPUUsage != 0 {
-		tx.MaxKCPUUsage = Varuint32(opts.MaxKCPUUsage)
+	if opts.MaxCPUUsageMS != 0 {
+		tx.MaxCPUUsageMS = opts.MaxCPUUsageMS
 	} else {
-		tx.MaxKCPUUsage = Varuint32(maxcpu)
+		tx.MaxCPUUsageMS = maxcpu
 	}
 }
 
@@ -240,7 +251,7 @@ type DeferredTransaction struct {
 type TxOptions struct {
 	MaxNetUsageWords uint32
 	Delay            time.Duration
-	MaxKCPUUsage     uint32 // If you want to override the CPU usage (in counts of 1024)
+	MaxCPUUsageMS    uint8 // If you want to override the CPU usage (in counts of 1024)
 	//ExtraKCPUUsage uint32 // If you want to *add* some CPU usage to the estimated amount (in counts of 1024)
 	Compress CompressionType
 }

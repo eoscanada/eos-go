@@ -186,12 +186,12 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case *ecc.PublicKey:
 		var p ecc.PublicKey
 		p, err = d.readPublicKey()
-		rv.SetBytes(p)
+		rv.Set(reflect.ValueOf(p))
 		return
 	case *ecc.Signature:
 		var s ecc.Signature
 		s, err = d.readSignature()
-		rv.SetBytes(s)
+		rv.Set(reflect.ValueOf(s))
 		return
 	case *Tstamp:
 		var ts Tstamp
@@ -487,10 +487,12 @@ func (d *Decoder) readPublicKey() (out ecc.PublicKey, err error) {
 		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
 		return
 	}
-
-	out = ecc.PublicKey(d.data[d.pos : d.pos+TypeSize.PublicKey])
+	out = ecc.PublicKey{
+		Curve:   ecc.CurveID(d.data[d.pos]),                 // 1 byte
+		Content: d.data[d.pos+1 : d.pos+TypeSize.PublicKey], // 33 bytes
+	}
 	d.pos += TypeSize.PublicKey
-	println(fmt.Sprintf("readPublicKey [%s]", hex.EncodeToString(out)))
+	println(fmt.Sprintf("readPublicKey [curve=%d, content=%s]", out.Curve, hex.EncodeToString(out.Content)))
 	return
 }
 
@@ -499,9 +501,12 @@ func (d *Decoder) readSignature() (out ecc.Signature, err error) {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
-	out = ecc.Signature(d.data[d.pos : d.pos+TypeSize.Signature])
+	out = ecc.Signature{
+		Curve:   ecc.CurveID(d.data[d.pos]),                 // 1 byte
+		Content: d.data[d.pos+1 : d.pos+TypeSize.Signature], // 65 bytes
+	}
 	d.pos += TypeSize.Signature
-	println(fmt.Sprintf("readSignature [%s]", hex.EncodeToString(out)))
+	println(fmt.Sprintf("readSignature [curve=%d, content=%s]", out.Curve, hex.EncodeToString(out.Content)))
 	return
 }
 

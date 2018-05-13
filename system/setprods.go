@@ -6,7 +6,7 @@ import eos "github.com/eoscanada/eos-go"
 // `eosio.bios` contract. It should exist only when booting a new
 // network, as it is replaced using the `eos-bios` boot process by the
 // `eosio.system` contract.
-func NewSetProds(version uint32, producers []ProducerKey) *eos.Action {
+func NewSetProds(producers []ProducerKey) *eos.Action {
 	a := &eos.Action{
 		Account: AN("eosio"),
 		Name:    ActN("setprods"),
@@ -14,8 +14,7 @@ func NewSetProds(version uint32, producers []ProducerKey) *eos.Action {
 			{Actor: AN("eosio"), Permission: PN("active")},
 		},
 		ActionData: eos.NewActionData(SetProds{
-			Version:   version,
-			Producers: producers,
+			Schedule: producers,
 		}),
 	}
 	return a

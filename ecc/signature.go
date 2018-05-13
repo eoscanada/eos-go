@@ -4,18 +4,28 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 )
 
 // Signature represents a signature for some hash
-type Signature []byte
+type Signature struct {
+	Curve   CurveID
+	Content []byte // the Compact signature as bytes
+}
 
 // Verify checks the signature against the pubKey. `hash` is a sha256
 // hash of the payload to verify.
 func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
-	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash)
+	if s.Curve != CurveK1 {
+		fmt.Println("WARN: github.com/eoscanada/eos-go/ecc library does not support the R1 curve yet")
+		return false
+	}
+
+	// TODO: choose the S256 curve, based on s.Curve
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s.Content, hash)
 	if err != nil {
 		return false
 	}
@@ -32,44 +42,63 @@ func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
 // PublicKey retrieves the public key, but requires the
 // payload.. that's the way to validate the signature. Use Verify() if
 // you only want to validate.
-func (s Signature) PublicKey(hash []byte) (PublicKey, error) {
-	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s, hash)
-	if err != nil {
-		return nil, err
+func (s Signature) PublicKey(hash []byte) (out PublicKey, err error) {
+	if s.Curve != CurveK1 {
+		return out, fmt.Errorf("WARN: github.com/eoscanada/eos-go/ecc library does not support the R1 curve yet")
 	}
 
-	return PublicKey(recoveredKey.SerializeCompressed()), nil
+	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s.Content, hash)
+	if err != nil {
+		return out, err
+	}
+
+	return PublicKey{
+		Curve:   s.Curve,
+		Content: recoveredKey.SerializeCompressed(),
+	}, nil
 }
 
 func (s Signature) String() string {
-	checksum := ripemd160checksum(s)
-	buf := append(s[:], checksum...)
-	return "EOS" + base58.Encode(buf)
+	checksum := ripemd160checksumHashCurve(s.Content, s.Curve)
+	buf := append(s.Content[:], checksum...)
+	return "SIG_" + s.Curve.StringPrefix() + base58.Encode(buf)
+	//return "SIG_" + base58.Encode(buf)
+	//return base58.Encode(buf)
 }
 
 func NewSignature(fromText string) (Signature, error) {
-	sigbytes := base58.Decode(fromText[3:]) // simply remove the `EOS` in front..
+	if !strings.HasPrefix(fromText, "SIG_") {
+		return Signature{}, fmt.Errorf("signature should start with SIG_")
+	}
+	if len(fromText) < 8 {
+		return Signature{}, fmt.Errorf("invalid signature length")
+	}
+
+	fromText = fromText[4:] // remove the `SIG_` prefix
+
+	var curveID CurveID
+	var curvePrefix = fromText[:3]
+	switch curvePrefix {
+	case "K1_":
+		curveID = CurveK1
+	case "R1_":
+		curveID = CurveR1
+	default:
+		return Signature{}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
+	}
+	fromText = fromText[3:] // strip curve ID
+
+	sigbytes := base58.Decode(fromText)
 
 	content := sigbytes[:len(sigbytes)-4]
 	checksum := sigbytes[len(sigbytes)-4:]
-	verifyChecksum := ripemd160checksum(content)
+	verifyChecksum := ripemd160checksum(content, curveID)
 	if !bytes.Equal(verifyChecksum, checksum) {
-		return nil, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
+		return Signature{}, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
 	}
 
-	return Signature(content), nil
+	return Signature{Curve: curveID, Content: content}, nil
 }
-
-func (a Signature) MarshalBinary() ([]byte, error) {
-	return append(bytes.Repeat([]byte{0}, 66-len(a)), a...), nil
-}
-
-func (a *Signature) UnmarshalBinary(data []byte) error {
-	*a = Signature(data)
-	return nil
-}
-
-func (a *Signature) UnmarshalBinarySize() int { return 66 }
 
 func (a Signature) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.String())
