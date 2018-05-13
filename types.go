@@ -150,14 +150,14 @@ type PermissionLevel struct {
 
 type PermissionLevelWeight struct {
 	Permission PermissionLevel `json:"permission"`
-	Weight     uint16          `json:"weight"`
+	Weight     uint16          `json:"weight"` // weight_type
 }
 
 type Authority struct {
 	Threshold uint32                  `json:"threshold"`
-	Keys      []KeyWeight             `json:"keys"`
-	Accounts  []PermissionLevelWeight `json:"accounts"`
-	Waits     []WaitWeight            `json:"waits"`
+	Keys      []KeyWeight             `json:"keys,omitempty"`
+	Accounts  []PermissionLevelWeight `json:"accounts,omitempty"`
+	Waits     []WaitWeight            `json:"waits,omitempty"`
 }
 
 type KeyWeight struct {

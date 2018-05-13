@@ -39,7 +39,7 @@ type ActionData struct {
 
 func NewActionData(obj interface{}) ActionData {
 	return ActionData{
-		HexData:  []byte(""),
+		HexData:  []byte{},
 		Data:     obj,
 		toServer: true,
 	}

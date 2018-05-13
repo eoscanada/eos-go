@@ -22,7 +22,7 @@ func main() {
 	for _, key := range []string{
 		"5JuWeC5KwZRVUQZ4eneYCYQ6Pa132QgvDQzEVJBA7XTgNTBWWRw",
 		"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
-		"5K6CAnUcDpJzBJBCve3QfQjEsxHrC8jqYgnYE1tDv4rKbDLG58N", // latest bios boot
+		"5Hq1ynaptFCkRCiZy4MRyJtHnXivCPBFMDaWw4bcnXpx7YuxQwo", // latest bios boot
 	} {
 		if err := keyBag.Add(key); err != nil {
 			log.Fatalln("Couldn't load private key:", err)
@@ -105,7 +105,7 @@ func main() {
 
 	actionResp, err := api.SignPushActions(
 
-		system.NewNewAccount(AC("eosio"), AC("aaaaaaaaaaab"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
+		system.NewNewAccount(AC("eosio"), AC("aaaaaaaaaaac"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 
 		//		token.NewTransfer(eos.AccountName("cbillett"), eos.AccountName("bozo"), eos.NewEOSAsset(100), ""),
 	)

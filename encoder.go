@@ -344,6 +344,8 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 		}
 		println(fmt.Sprintf("writing action data, %T", actionData.Data))
 		return e.writeByteArray(raw)
+	} else if actionData.HexData != nil {
+		return e.writeByteArray(actionData.HexData)
 	}
 
 	return e.writeByteArray([]byte{})
