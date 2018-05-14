@@ -1,7 +1,7 @@
 package system
 
 import (
-	eos "github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -25,6 +25,7 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 						Weight:    1,
 					},
 				},
+				Accounts: []eos.PermissionLevelWeight{},
 			},
 			Active: eos.Authority{
 				Threshold: 1,
@@ -34,6 +35,7 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 						Weight:    1,
 					},
 				},
+				Accounts: []eos.PermissionLevelWeight{},
 			},
 		}),
 	}

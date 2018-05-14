@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"bytes"
-
 	"flag"
 
 	"encoding/hex"
@@ -98,8 +96,7 @@ func main() {
 	}
 	ui.SetKeybinding("Esc", func() { ui.Quit() })
 
-	api := eos.New(*apiAddr, bytes.Repeat([]byte{0}, 32))
-	client := p2p.NewClient(*p2pAddr, api, p2p.DecodeHex(*chainID), int16(*networkVersion))
+	client := p2p.NewClient(*p2pAddr, p2p.DecodeHex(*chainID), int16(*networkVersion))
 	client.RegisterHandler(p2p.HandlerFunc(UILoggerHandler))
 	client.RegisterHandler(p2p.LoggerHandler)
 

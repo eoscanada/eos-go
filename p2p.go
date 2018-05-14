@@ -2,6 +2,7 @@ package eos
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -106,7 +107,12 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	size := binary.LittleEndian.Uint32(lengthBytes)
 
 	payloadBytes := make([]byte, size, size)
-	_, err = io.ReadFull(r, payloadBytes)
+	count, err := io.ReadFull(r, payloadBytes)
+
+	if count != int(size) {
+		err = fmt.Errorf("readfull not full read[%d] expected[%d]", count, size)
+		return
+	}
 
 	if err != nil {
 		fmt.Println("Connection error: ", err)
@@ -118,6 +124,8 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	envelope = &P2PMessageEnvelope{}
 	decoder := NewDecoder(data)
 	err = decoder.Decode(envelope)
-
+	if err != nil {
+		fmt.Println("Failling data: ", hex.EncodeToString(data))
+	}
 	return
 }

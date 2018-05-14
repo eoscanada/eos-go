@@ -58,6 +58,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeName(name)
 	case string:
 		return e.writeString(cv)
+	case TransactionStatus:
+		return e.writeByte(uint8(cv))
 	case byte:
 		return e.writeByte(cv)
 	case int8:
@@ -95,7 +97,11 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case Asset:
 		return e.writeAsset(cv)
 	case ActionData:
+		println("ActionData")
 		return e.writeActionData(cv)
+	case *ActionData:
+		println("*ActionData")
+		return e.writeActionData(*cv)
 	case *P2PMessageEnvelope:
 		return e.writeBlockP2PMessageEnvelope(*cv)
 	default:
@@ -107,7 +113,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 
 		case reflect.Array:
 			l := t.Len()
-			prefix = append(prefix, "     ")
+			//prefix = append(prefix, "     ")
 			println(fmt.Sprintf("Encode: array [%T] of length: %d", v, l))
 
 			for i := 0; i < l; i++ {
@@ -115,13 +121,13 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 					return
 				}
 			}
-			prefix = prefix[:len(prefix)-1]
+			//prefix = prefix[:len(prefix)-1]
 		case reflect.Slice:
 			l := rv.Len()
 			if err = e.writeUVarInt(l); err != nil {
 				return
 			}
-			prefix = append(prefix, "     ")
+			//prefix = append(prefix, "     ")
 			println(fmt.Sprintf("Encode: slice [%T] of length: %d", v, l))
 
 			for i := 0; i < l; i++ {
@@ -129,16 +135,23 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 					return
 				}
 			}
-			prefix = prefix[:len(prefix)-1]
+			//prefix = prefix[:len(prefix)-1]
+		//case reflect.Ptr:
+		//	println("*************************************************")
+		//	println("*************************************************")
+		//	println(fmt.Sprintf("PTR [%T]", v))
+		//	println("*************************************************")
+		//	println("*************************************************")
 		case reflect.Struct:
 			l := rv.NumField()
 			println(fmt.Sprintf("Encode: struct [%T] with %d field.", v, l))
-			prefix = append(prefix, "     ")
+			//prefix = append(prefix, "     ")
 
 			n := 0
 			for i := 0; i < l; i++ {
 				field := t.Field(i)
 				println(fmt.Sprintf("field -> %s", field.Name))
+				//fmt.Println(fmt.Sprintf("field -> %s", field.Name))
 
 				if tag := field.Tag.Get("eos"); tag == "-" {
 					continue
@@ -155,7 +168,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 					n++
 				}
 			}
-			prefix = prefix[:len(prefix)-1]
+			//prefix = prefix[:len(prefix)-1]
 
 		case reflect.Map:
 			l := rv.Len()
@@ -173,7 +186,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 				}
 			}
 		default:
-			return errors.New("binary: unsupported type " + t.String())
+			return errors.New("Encode: unsupported type " + t.String())
 		}
 	}
 
@@ -189,6 +202,7 @@ func (e *Encoder) toWriter(bytes []byte) (err error) {
 }
 
 func (e *Encoder) writeByteArray(b []byte) error {
+	println(fmt.Sprintf("writing byte array of len [%d]", len(b)))
 	if err := e.writeUVarInt(len(b)); err != nil {
 		return err
 	}
@@ -337,15 +351,20 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 		//if reflect.TypeOf(actionData.Data) == reflect.TypeOf(&ActionData{}) {
 		//	log.Fatal("pas cool")
 		//}
-		println(fmt.Sprintf("encoding action data, %T", actionData.Data))
-		raw, err := MarshalBinary(actionData.Data)
+
+		println(fmt.Sprintf("entering action data, %T", actionData))
+		var d interface{}
+		d = actionData.Data
+		if reflect.TypeOf(d).Kind() == reflect.Ptr {
+			d = reflect.ValueOf(actionData.Data).Elem().Interface()
+		}
+		println(fmt.Sprintf("encoding action data, %T", d))
+		raw, err := MarshalBinary(d)
 		if err != nil {
 			return err
 		}
-		println(fmt.Sprintf("writing action data, %T", actionData.Data))
+		println(fmt.Sprintf("writing action data, %T", d))
 		return e.writeByteArray(raw)
-	} else if actionData.HexData != nil {
-		return e.writeByteArray(actionData.HexData)
 	}
 
 	return e.writeByteArray([]byte{})

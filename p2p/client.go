@@ -27,22 +27,21 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, eosAPI *eos.API, chainID eos.SHA256Bytes, networkVersion int16) *Client {
+func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion int16) *Client {
 	c := &Client{
 		p2pAddress:     p2pAddr,
 		ChainID:        chainID,
 		NetworkVersion: networkVersion,
-		API:            eosAPI,
 	}
 	c.NodeID = chainID
 	return c
 }
 
 type Client struct {
-	handlers       []Handler
-	handlersLock   sync.Mutex
-	p2pAddress     string
-	API            *eos.API
+	handlers     []Handler
+	handlersLock sync.Mutex
+	p2pAddress   string
+	//API            *eos.API
 	ChainID        eos.SHA256Bytes
 	NetworkVersion int16
 	Conn           net.Conn
@@ -50,10 +49,13 @@ type Client struct {
 }
 
 func (c *Client) Connect() (err error) {
-	handshakeInfo, err := c.getHandshakeInfo()
-	if err != nil {
-		return err
-	}
+
+	//hi, err := c.getHandshakeInfo()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//handshakeInfo = &hi
 
 	conn, err := net.Dial("tcp", c.p2pAddress)
 	if err != nil {
@@ -71,7 +73,10 @@ func (c *Client) Connect() (err error) {
 	go c.handleConnection(&Route{From: c.p2pAddress}, ready)
 	<-ready
 
-	if err := c.SendHandshake(handshakeInfo); err != nil {
+	if err := c.SendHandshake(&HandshakeInfo{
+		HeadBlockNum:             0,
+		LastIrreversibleBlockNum: 0,
+	}); err != nil {
 		return err
 	}
 
@@ -99,12 +104,6 @@ func (c *Client) UnregisterHandler(h Handler) {
 }
 
 func (c *Client) setupFlow() error {
-	var hInfo handshakeInfo
-
-	hInfo, err := c.getHandshakeInfo()
-	if err != nil {
-		return err
-	}
 
 	initHandler := HandlerFunc(func(processable PostProcessable) {
 		msg, ok := processable.P2PMessageEnvelope.P2PMessage.(*eos.HandshakeMessage)
@@ -112,53 +111,58 @@ func (c *Client) setupFlow() error {
 			return
 		}
 
-		// c.SendSyncRequest(msg.LastIrreversibleBlockNum, msg.HeadNum)
-
-		fmt.Println("Handshake time from node : ", msg.Time)
-
-		hInfo = handshakeInfo{
+		//if blockHeight == msg.HeadNum {
+		hInfo := HandshakeInfo{
 			HeadBlockNum:             msg.HeadNum,
 			HeadBlockID:              msg.HeadID,
 			HeadBlockTime:            msg.Time.Time,
 			LastIrreversibleBlockNum: msg.LastIrreversibleBlockNum,
 			LastIrreversibleBlockID:  msg.LastIrreversibleBlockID,
 		}
-		if err := c.SendHandshake(hInfo); err != nil {
+		if err := c.SendHandshake(&hInfo); err != nil {
 			log.Println("Failed sending handshake:", err)
 		}
+
+		//} else {
+		//	err := c.SendSyncRequest(blockHeight, msg.HeadNum)
+		//	if err != nil {
+		//		log.Fatal(err)
+		//	}
+		//}
+
 	})
 	c.RegisterHandler(initHandler)
 
 	return nil
 }
 
-func (c *Client) getHandshakeInfo() (info handshakeInfo, err error) {
+//func (c *Client) getHandshakeInfo() (info HandshakeInfo, err error) {
+//
+//	peerInfo, err := c.API.GetInfo()
+//	if err != nil {
+//		return
+//	}
+//
+//	fmt.Println("Peer info: ", peerInfo)
+//
+//	blockInfo, err := c.API.GetBlockByNum(uint64(peerInfo.LastIrreversibleBlockNum))
+//	if err != nil {
+//		return
+//	}
+//
+//	info = HandshakeInfo{
+//		HeadBlockNum:             peerInfo.HeadBlockNum,
+//		HeadBlockID:              DecodeHex(peerInfo.HeadBlockID),
+//		HeadBlockTime:            peerInfo.HeadBlockTime.Time,
+//		LastIrreversibleBlockNum: uint32(blockInfo.BlockNum),
+//		LastIrreversibleBlockID:  DecodeHex(blockInfo.ID),
+//	}
+//
+//	return
+//
+//}
 
-	peerInfo, err := c.API.GetInfo()
-	if err != nil {
-		return
-	}
-
-	fmt.Println("Peer info: ", peerInfo)
-
-	blockInfo, err := c.API.GetBlockByNum(uint64(peerInfo.LastIrreversibleBlockNum))
-	if err != nil {
-		return
-	}
-
-	info = handshakeInfo{
-		HeadBlockNum:             peerInfo.HeadBlockNum,
-		HeadBlockID:              DecodeHex(peerInfo.HeadBlockID),
-		HeadBlockTime:            peerInfo.HeadBlockTime.Time,
-		LastIrreversibleBlockNum: uint32(blockInfo.BlockNum),
-		LastIrreversibleBlockID:  DecodeHex(blockInfo.ID),
-	}
-
-	return
-
-}
-
-type handshakeInfo struct {
+type HandshakeInfo struct {
 	HeadBlockNum             uint32
 	HeadBlockID              eos.SHA256Bytes
 	HeadBlockTime            time.Time
@@ -166,7 +170,7 @@ type handshakeInfo struct {
 	LastIrreversibleBlockID  eos.SHA256Bytes
 }
 
-func (c *Client) SendHandshake(info handshakeInfo) (err error) {
+func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 	pulbicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
 		return
@@ -204,6 +208,7 @@ func (c *Client) SendHandshake(info handshakeInfo) (err error) {
 
 func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
 
+	fmt.Printf("SendSyncRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
 	syncRequest := &eos.SyncRequestMessage{
 		StartBlock: startBlockNum,
 		EndBlock:   endBlockNumber,

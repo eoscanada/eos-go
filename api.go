@@ -178,6 +178,24 @@ func (api *API) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
+func (api *API) ListKeys() (out []*ecc.PrivateKey, err error) {
+	var textKeys []string
+	err = api.call("wallet", "list_keys", nil, &textKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, k := range textKeys {
+		newKey, err := ecc.NewPrivateKey(k)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, newKey)
+	}
+	return
+}
+
 func (api *API) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
 	var textKeys []string
 	for _, key := range pubKeys {

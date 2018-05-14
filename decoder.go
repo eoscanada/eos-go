@@ -69,15 +69,15 @@ type Decoder struct {
 	decodeActions      bool
 }
 
-var prefix = make([]string, 0)
+//var prefix = make([]string, 0)
 
 var Debug bool
 
 var print = func(s string) {
 	if Debug {
-		for _, s := range prefix {
-			fmt.Print(s)
-		}
+		//for _, s := range prefix {
+		//fmt.Print(s)
+		//}
 		fmt.Print(s)
 	}
 }
@@ -133,7 +133,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		println(fmt.Sprintf("readName [%s]", name))
 		rv.SetString(name)
 		return
-	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode:
+	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode, *GoAwayReason:
 		var n byte
 		n, err = d.readByte()
 		rv.SetUint(uint64(n))
@@ -332,7 +332,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) (err error) {
 	l := rv.NumField()
 
-	prefix = append(prefix, "     ")
+	//prefix = append(prefix, "     ")
 	for i := 0; i < l; i++ {
 
 		if tag := t.Field(i).Tag.Get("eos"); tag == "-" {
@@ -347,7 +347,7 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 			}
 		}
 	}
-	prefix = prefix[:len(prefix)-1]
+	//prefix = prefix[:len(prefix)-1]
 	return
 }
 
