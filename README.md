@@ -72,4 +72,6 @@ Unanswered questions:
 * all the multisig things.. we should implement
 * usage is billed, means the "scope" of the storage on those multi_index tables is "contract" and "billed account", right ?! :) that's pretty cool :)
 
-* delay_sec.. is it required
+* does --stake-net and friends create a separate action ?
+* cleos create newaccount --stake-net "1.0000 EOS" --stake-cpu "1.0000 EOS" --buy-ram-bytes 111 eoosio acct pubkey pubkey -p eosio
+* check `eosio` tables now: producers, global, voters, userres, totalband, delband, refunds, and `msig` table `proposal`

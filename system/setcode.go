@@ -52,3 +52,11 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 	}
 	return &eos.Transaction{Actions: actions}, nil
 }
+
+// SetCode represents the hard-coded `setcode` action.
+type SetCode struct {
+	Account   eos.AccountName `json:"account"`
+	VMType    byte            `json:"vmtype"`
+	VMVersion byte            `json:"vmversion"`
+	Code      eos.HexBytes    `json:"bytes"`
+}
