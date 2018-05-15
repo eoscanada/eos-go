@@ -18,6 +18,7 @@ type P2PMessageType byte
 
 const (
 	HandshakeMessageType P2PMessageType = iota
+	ChainSizeType
 	GoAwayMessageType
 	TimeMessageType
 	NoticeMessageType
@@ -25,7 +26,6 @@ const (
 	SyncRequestMessageType
 	SignedBlockMessageType
 	PackedTransactionMessageType
-	ChainSizeType
 )
 
 type MessageReflectTypes struct {
@@ -35,6 +35,7 @@ type MessageReflectTypes struct {
 
 var messageAttributes = []MessageReflectTypes{
 	{Name: "Handshake", ReflectType: reflect.TypeOf(HandshakeMessage{})},
+	{Name: "ChainSize", ReflectType: reflect.TypeOf(ChainSizeMessage{})},
 	{Name: "GoAway", ReflectType: reflect.TypeOf(GoAwayMessage{})},
 	{Name: "Time", ReflectType: reflect.TypeOf(TimeMessage{})},
 	{Name: "Notice", ReflectType: reflect.TypeOf(NoticeMessage{})},
@@ -42,7 +43,6 @@ var messageAttributes = []MessageReflectTypes{
 	{Name: "SyncRequest", ReflectType: reflect.TypeOf(SyncRequestMessage{})},
 	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlockMessage{})},
 	{Name: "PackedTransaction", ReflectType: reflect.TypeOf(PackedTransactionMessage{})},
-	{Name: "ChainSize", ReflectType: reflect.TypeOf(ChainSizeMessage{})},
 }
 
 var ErrUnknownMessageType = errors.New("unknown type")
