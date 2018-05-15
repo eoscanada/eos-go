@@ -77,15 +77,6 @@ type DelegatedBandwidth struct {
 type TotalResources struct {
 }
 
-// DelegateBW represents the `eosio.system::delegatebw` action.
-type DelegateBW struct {
-	From         eos.AccountName `json:"from"`
-	Receiver     eos.AccountName `json:"receiver"`
-	StakeNet     eos.Asset       `json:"stake_net"`
-	StakeCPU     eos.Asset       `json:"stake_cpu"`
-	StakeStorage eos.Asset       `json:"stake_storage"`
-}
-
 // UndelegateBW represents the `eosio.system::undelegatebw` action.
 type UndelegateBW struct {
 	From         eos.AccountName `json:"from"`

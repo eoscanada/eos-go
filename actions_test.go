@@ -5,12 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"fmt"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
 
 func TestActionUnmarshalBinary(t *testing.T) {
 	tests := []struct {

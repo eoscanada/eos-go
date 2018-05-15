@@ -92,7 +92,7 @@ func NewSignature(fromText string) (Signature, error) {
 
 	content := sigbytes[:len(sigbytes)-4]
 	checksum := sigbytes[len(sigbytes)-4:]
-	verifyChecksum := ripemd160checksum(content, curveID)
+	verifyChecksum := ripemd160checksumHashCurve(content, curveID)
 	if !bytes.Equal(verifyChecksum, checksum) {
 		return Signature{}, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
 	}

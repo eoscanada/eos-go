@@ -43,8 +43,8 @@ func NewNewAccount(creator, newAccount eos.AccountName, publicKey ecc.PublicKey)
 // contract. It is one of the rare ones to be hard-coded into the
 // blockchain.
 type NewAccount struct {
-	Creator eos.AccountName `json:"creator"`
-	Name    eos.AccountName `json:"name"`
-	Owner   eos.Authority   `json:"owner"`
-	Active  eos.Authority   `json:"active"`
+	Creator  eos.AccountName `json:"creator"`
+	Name     eos.AccountName `json:"name"`
+	Owner    eos.Authority   `json:"owner"`
+	Active   eos.Authority   `json:"active"`
 }
