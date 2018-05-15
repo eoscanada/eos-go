@@ -23,10 +23,9 @@ const (
 	NoticeMessageType
 	RequestMessageType
 	SyncRequestMessageType
-	SignedBlockSummaryMessageType
 	SignedBlockMessageType
-	SignedTransactionMessageType
 	PackedTransactionMessageType
+	ChainSizeType
 )
 
 type MessageReflectTypes struct {
@@ -41,10 +40,9 @@ var messageAttributes = []MessageReflectTypes{
 	{Name: "Notice", ReflectType: reflect.TypeOf(NoticeMessage{})},
 	{Name: "Request", ReflectType: reflect.TypeOf(RequestMessage{})},
 	{Name: "SyncRequest", ReflectType: reflect.TypeOf(SyncRequestMessage{})},
-	{Name: "SignedBlockSummary", ReflectType: reflect.TypeOf(SignedBlockSummaryMessage{})},
 	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlockMessage{})},
-	{Name: "SignedTransaction", ReflectType: reflect.TypeOf(SignedTransactionMessage{})},
 	{Name: "PackedTransaction", ReflectType: reflect.TypeOf(PackedTransactionMessage{})},
+	{Name: "ChainSize", ReflectType: reflect.TypeOf(ChainSizeMessage{})},
 }
 
 var ErrUnknownMessageType = errors.New("unknown type")

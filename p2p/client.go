@@ -175,7 +175,7 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 	if err != nil {
 		return
 	}
-	signature, err := ecc.NewSignature("EOS111111111111111111111111111111111111111111111111111111111111111111LHpNx")
+	signature, err := ecc.NewSignature("SIG_K1_K2WBNtiTY8o4mqFSz7HPnjkiT9JhUYGFa81RrzaXr3aWRF1F8qwVfutJXroqiL35ZiHTcvn8gPWGYJDwnKZTCcbAGJy4i9")
 	if err != nil {
 		return
 	}

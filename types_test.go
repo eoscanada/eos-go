@@ -163,18 +163,20 @@ func TestNameToString(t *testing.T) {
 		in  string
 		out string
 	}{
-		{"0000001e4d75af46", "currency"},
-		{"0000000000ea3055", "eosio"},
-		{"00409e9a2264b89a", "newaccount"},
-		{"00000003884ed1c9", "tbcox2.3"},
-		{"00000000a8ed3232", "active"},
-		{"000000572d3ccdcd", "transfer"},
-		{"00000059b1abe931", "abourget"},
-		{"c08fca86a9a8d2d4", "undelegatebw"},
-		{"0040cbdaa86c52d5", "updateauth"},
-		{"0000000080ab26a7", "owner"},
-		{"00000040258ab2c2", "setcode"},
-		{"00000000b863b2c2", "setabi"},
+		//{"0000001e4d75af46", "currency"},
+		//{"0000000000ea3055", "eosio"},
+		//{"00409e9a2264b89a", "newaccount"},
+		//{"00000003884ed1c9", "tbcox2.3"},
+		//{"00000000a8ed3232", "active"},
+		//{"000000572d3ccdcd", "transfer"},
+		//{"00000059b1abe931", "abourget"},
+		//{"c08fca86a9a8d2d4", "undelegatebw"},
+		//{"0040cbdaa86c52d5", "updateauth"},
+		//{"0000000080ab26a7", "owner"},
+		//{"00000040258ab2c2", "setcode"},
+		//{"00000000b863b2c2", "setabi"},
+		//{"00000000b863b2c2", "setabi"},
+		{"90803bea9ab83055", "eosflarebios"},
 	}
 
 	for _, test := range tests {

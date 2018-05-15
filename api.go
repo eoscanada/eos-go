@@ -291,6 +291,7 @@ func (api *API) GetBlockByID(id string) (out *BlockResp, err error) {
 
 func (api *API) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": fmt.Sprintf("%d", num)}, &out)
+	//err = api.call("chain", "get_block", M{"block_num_or_id": num}, &out)
 	return
 }
 

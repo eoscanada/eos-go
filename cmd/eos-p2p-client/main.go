@@ -8,8 +8,8 @@ import (
 	"github.com/eoscanada/eos-go/p2p"
 )
 
-var apiAddr = flag.String("api-addr", "http://stage2.eoscanada.com", "RPC endpoint of the nodeos instance")
-var p2pAddr = flag.String("p2p-addr", "stage2.eoscanada.com:9876", "P2P socket connection")
+var apiAddr = flag.String("api-addr", "http://patrick.testnets.eoscanada.com", "RPC endpoint of the nodeos instance")
+var p2pAddr = flag.String("p2p-addr", "patrick.testnets.eoscanada.com:9876", "P2P socket connection")
 var signingKey = flag.String("signing-key", "5J5EE2cBDM4d3vWpKGcJsgiagsLVZkgWjJpxacz9mXodemXex6K", "Key to sign transactions we're about to blast")
 var chainID = flag.String("chain-id", "0000000000000000000000000000000000000000000000000000000000000000", "Chain id")
 var networkVersion = flag.Int("network-version", 25431, "Chain id")
