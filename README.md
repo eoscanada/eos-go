@@ -65,7 +65,6 @@ Changes to dawn4:
 
 Unanswered questions:
 * what's the "location" field on a "producer_info" (eosio.system.abi)
-* they added "url" w00t :)
 * the `setglimits` and `setalimits` in the eosio.bios .. do we need to call that
   to setup the chain ? what does bootseq_.. say in the eosio repo ?
 * what do `transaction_extensions` mean in a transaction ? any uses ? special cases ?
@@ -75,3 +74,6 @@ Unanswered questions:
 * does --stake-net and friends create a separate action ?
 * cleos create newaccount --stake-net "1.0000 EOS" --stake-cpu "1.0000 EOS" --buy-ram-bytes 111 eoosio acct pubkey pubkey -p eosio
 * check `eosio` tables now: producers, global, voters, userres, totalband, delband, refunds, and `msig` table `proposal`
+
+* sync up `get_account` return struct.. way richer now.
+* sync up most /v1/chain outputs..

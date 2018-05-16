@@ -9,7 +9,7 @@ import (
 func NewDelegateBW(from, receiver eos.AccountName, stakeCPU, stakeNet eos.Asset, transfer bool) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio"),
-		Name:    ActN("newaccount"),
+		Name:    ActN("delegatebw"),
 		Authorization: []eos.PermissionLevel{
 			{Actor: from, Permission: PN("active")},
 		},
