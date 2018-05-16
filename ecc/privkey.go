@@ -93,7 +93,7 @@ func (p *PrivateKey) Sign(hash []byte) (out Signature, err error) {
 	// TODO: implement the R1 curve..
 	compactSig, err := p.privKey.SignCanonical(btcec.S256(), hash)
 	if err != nil {
-		return out, err
+		return out, fmt.Errorf("canonical, %s", err)
 	}
 
 	return Signature{Curve: p.Curve, Content: compactSig}, nil

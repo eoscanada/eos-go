@@ -152,10 +152,12 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 	//	return fmt.Errorf("hashing tstamp data, %s", err)
 	//}
 
-	time := fmt.Sprintf("%d nanoseconds", tstamp.UnixNano())
-	token := sha256.Sum256([]byte(time))
+	//time := fmt.Sprintf("%d", tstamp.Unix())
+	token := sha256.Sum256([]byte("1526431521355589"))
 
+	//c.SigningKey.Curve = ecc.CurveR1
 	signature, err := c.SigningKey.Sign(token[:])
+	fmt.Println("signature: ", signature)
 	if err != nil {
 		return fmt.Errorf("signing token data, %s", err)
 	}
