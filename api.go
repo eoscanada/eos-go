@@ -357,7 +357,7 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 
 	resp, err := api.HttpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("Do: %s", err)
+		return fmt.Errorf("%s: %s", req.URL.String(), err)
 	}
 	defer resp.Body.Close()
 
@@ -371,7 +371,7 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 		return ErrNotFound
 	}
 	if resp.StatusCode > 299 {
-		return fmt.Errorf("status code=%d, body=%s", resp.StatusCode, cnt.String())
+		return fmt.Errorf("%s: status code=%d, body=%s", req.URL.String(), resp.StatusCode, cnt.String())
 	}
 
 	if api.Debug {
