@@ -59,7 +59,7 @@ func (s Signature) PublicKey(hash []byte) (out PublicKey, err error) {
 }
 
 func (s Signature) String() string {
-	checksum := ripemd160checksumHashCurve(s.Content, s.Curve)
+	checksum := Ripemd160checksumHashCurve(s.Content, s.Curve)
 	buf := append(s.Content[:], checksum...)
 	return "SIG_" + s.Curve.StringPrefix() + base58.Encode(buf)
 	//return "SIG_" + base58.Encode(buf)

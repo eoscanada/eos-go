@@ -36,6 +36,17 @@ func (m *HandshakeMessage) GetType() P2PMessageType {
 	return HandshakeMessageType
 }
 
+type ChainSizeMessage struct {
+	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"`
+	LastIrreversibleBlockID  SHA256Bytes `json:"last_irreversible_block_id"`
+	//HeadNum                  uint32      `json:"head_num"`
+	//HeadID                   SHA256Bytes `json:"head_id"`
+}
+
+func (m *ChainSizeMessage) GetType() P2PMessageType {
+	return ChainSizeType
+}
+
 func (m *HandshakeMessage) String() string {
 	return fmt.Sprintf("Handshake: Head [%d] Last Irreversible [%d] Time [%s]", m.HeadNum, m.LastIrreversibleBlockNum, m.Time)
 }
@@ -213,10 +224,6 @@ type SignedBlockSummaryMessage struct {
 	Regions []RegionSummary `json:"regions"`
 }
 
-func (m *SignedBlockSummaryMessage) GetType() P2PMessageType {
-	return SignedBlockSummaryMessageType
-}
-
 type SignedBlockMessage struct {
 	SignedBlockSummaryMessage
 	InputTransactions []PackedTransaction `json:"input_transactions"`
@@ -285,10 +292,6 @@ func (m *RequestMessage) GetType() P2PMessageType {
 type SignedTransactionMessage struct {
 	Signatures      []ecc.Signature `json:"signatures"`
 	ContextFreeData []byte          `json:"context_free_data"`
-}
-
-func (m *SignedTransactionMessage) GetType() P2PMessageType {
-	return SignedTransactionMessageType
 }
 
 type PackedTransactionMessage struct {

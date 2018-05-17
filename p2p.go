@@ -2,6 +2,7 @@ package eos
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -17,14 +18,13 @@ type P2PMessageType byte
 
 const (
 	HandshakeMessageType P2PMessageType = iota
+	ChainSizeType
 	GoAwayMessageType
 	TimeMessageType
 	NoticeMessageType
 	RequestMessageType
 	SyncRequestMessageType
-	SignedBlockSummaryMessageType
 	SignedBlockMessageType
-	SignedTransactionMessageType
 	PackedTransactionMessageType
 )
 
@@ -35,14 +35,13 @@ type MessageReflectTypes struct {
 
 var messageAttributes = []MessageReflectTypes{
 	{Name: "Handshake", ReflectType: reflect.TypeOf(HandshakeMessage{})},
+	{Name: "ChainSize", ReflectType: reflect.TypeOf(ChainSizeMessage{})},
 	{Name: "GoAway", ReflectType: reflect.TypeOf(GoAwayMessage{})},
 	{Name: "Time", ReflectType: reflect.TypeOf(TimeMessage{})},
 	{Name: "Notice", ReflectType: reflect.TypeOf(NoticeMessage{})},
 	{Name: "Request", ReflectType: reflect.TypeOf(RequestMessage{})},
 	{Name: "SyncRequest", ReflectType: reflect.TypeOf(SyncRequestMessage{})},
-	{Name: "SignedBlockSummary", ReflectType: reflect.TypeOf(SignedBlockSummaryMessage{})},
 	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlockMessage{})},
-	{Name: "SignedTransaction", ReflectType: reflect.TypeOf(SignedTransactionMessage{})},
 	{Name: "PackedTransaction", ReflectType: reflect.TypeOf(PackedTransactionMessage{})},
 }
 
@@ -106,7 +105,12 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	size := binary.LittleEndian.Uint32(lengthBytes)
 
 	payloadBytes := make([]byte, size, size)
-	_, err = io.ReadFull(r, payloadBytes)
+	count, err := io.ReadFull(r, payloadBytes)
+
+	if count != int(size) {
+		err = fmt.Errorf("readfull not full read[%d] expected[%d]", count, size)
+		return
+	}
 
 	if err != nil {
 		fmt.Println("Connection error: ", err)
@@ -118,6 +122,8 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	envelope = &P2PMessageEnvelope{}
 	decoder := NewDecoder(data)
 	err = decoder.Decode(envelope)
-
+	if err != nil {
+		fmt.Println("Failling data: ", hex.EncodeToString(data))
+	}
 	return
 }

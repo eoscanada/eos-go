@@ -95,7 +95,7 @@ func ripemd160checksum(in []byte, curve CurveID) []byte {
 	return sum[:4]
 }
 
-func ripemd160checksumHashCurve(in []byte, curve CurveID) []byte {
+func Ripemd160checksumHashCurve(in []byte, curve CurveID) []byte {
 	h := ripemd160.New()
 	_, _ = h.Write(in) // this implementation has no error path
 

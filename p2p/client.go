@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"fmt"
 	"net"
 	"sync"
@@ -27,33 +28,30 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, eosAPI *eos.API, chainID eos.SHA256Bytes, networkVersion int16) *Client {
+func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion int16, signingKey *ecc.PrivateKey) *Client {
 	c := &Client{
 		p2pAddress:     p2pAddr,
 		ChainID:        chainID,
 		NetworkVersion: networkVersion,
-		API:            eosAPI,
+		SigningKey:     signingKey,
 	}
 	c.NodeID = chainID
 	return c
 }
 
 type Client struct {
-	handlers       []Handler
-	handlersLock   sync.Mutex
-	p2pAddress     string
-	API            *eos.API
+	handlers     []Handler
+	handlersLock sync.Mutex
+	p2pAddress   string
+	//API            *eos.API
 	ChainID        eos.SHA256Bytes
 	NetworkVersion int16
 	Conn           net.Conn
 	NodeID         eos.SHA256Bytes
+	SigningKey     *ecc.PrivateKey
 }
 
 func (c *Client) Connect() (err error) {
-	handshakeInfo, err := c.getHandshakeInfo()
-	if err != nil {
-		return err
-	}
 
 	conn, err := net.Dial("tcp", c.p2pAddress)
 	if err != nil {
@@ -71,7 +69,11 @@ func (c *Client) Connect() (err error) {
 	go c.handleConnection(&Route{From: c.p2pAddress}, ready)
 	<-ready
 
-	if err := c.SendHandshake(handshakeInfo); err != nil {
+	if err := c.SendHandshake(&HandshakeInfo{
+		HeadBlockNum:             0,
+		LastIrreversibleBlockNum: 0,
+		HeadBlockTime:            time.Now(),
+	}); err != nil {
 		return err
 	}
 
@@ -99,12 +101,6 @@ func (c *Client) UnregisterHandler(h Handler) {
 }
 
 func (c *Client) setupFlow() error {
-	var hInfo handshakeInfo
-
-	hInfo, err := c.getHandshakeInfo()
-	if err != nil {
-		return err
-	}
 
 	initHandler := HandlerFunc(func(processable PostProcessable) {
 		msg, ok := processable.P2PMessageEnvelope.P2PMessage.(*eos.HandshakeMessage)
@@ -112,53 +108,24 @@ func (c *Client) setupFlow() error {
 			return
 		}
 
-		// c.SendSyncRequest(msg.LastIrreversibleBlockNum, msg.HeadNum)
-
-		fmt.Println("Handshake time from node : ", msg.Time)
-
-		hInfo = handshakeInfo{
+		hInfo := HandshakeInfo{
 			HeadBlockNum:             msg.HeadNum,
 			HeadBlockID:              msg.HeadID,
 			HeadBlockTime:            msg.Time.Time,
 			LastIrreversibleBlockNum: msg.LastIrreversibleBlockNum,
 			LastIrreversibleBlockID:  msg.LastIrreversibleBlockID,
 		}
-		if err := c.SendHandshake(hInfo); err != nil {
+		if err := c.SendHandshake(&hInfo); err != nil {
 			log.Println("Failed sending handshake:", err)
 		}
+
 	})
 	c.RegisterHandler(initHandler)
 
 	return nil
 }
 
-func (c *Client) getHandshakeInfo() (info handshakeInfo, err error) {
-
-	peerInfo, err := c.API.GetInfo()
-	if err != nil {
-		return
-	}
-
-	fmt.Println("Peer info: ", peerInfo)
-
-	blockInfo, err := c.API.GetBlockByNum(uint64(peerInfo.LastIrreversibleBlockNum))
-	if err != nil {
-		return
-	}
-
-	info = handshakeInfo{
-		HeadBlockNum:             peerInfo.HeadBlockNum,
-		HeadBlockID:              DecodeHex(peerInfo.HeadBlockID),
-		HeadBlockTime:            peerInfo.HeadBlockTime.Time,
-		LastIrreversibleBlockNum: uint32(blockInfo.BlockNum),
-		LastIrreversibleBlockID:  DecodeHex(blockInfo.ID),
-	}
-
-	return
-
-}
-
-type handshakeInfo struct {
+type HandshakeInfo struct {
 	HeadBlockNum             uint32
 	HeadBlockID              eos.SHA256Bytes
 	HeadBlockTime            time.Time
@@ -166,12 +133,8 @@ type handshakeInfo struct {
 	LastIrreversibleBlockID  eos.SHA256Bytes
 }
 
-func (c *Client) SendHandshake(info handshakeInfo) (err error) {
+func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 	pulbicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
-	if err != nil {
-		return
-	}
-	signature, err := ecc.NewSignature("EOS111111111111111111111111111111111111111111111111111111111111111111LHpNx")
 	if err != nil {
 		return
 	}
@@ -179,6 +142,25 @@ func (c *Client) SendHandshake(info handshakeInfo) (err error) {
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
 	fmt.Println("Time from fake: ", tstamp)
+	//tData, err := eos.MarshalBinary(&tstamp)
+	//if err != nil {
+	//	return fmt.Errorf("marshalling tstamp, %s", err)
+	//}
+	//h := ripemd160.New()
+	//_, err = h.Write(tData)
+	//if err != nil {
+	//	return fmt.Errorf("hashing tstamp data, %s", err)
+	//}
+
+	//time := fmt.Sprintf("%d", tstamp.Unix())
+	token := sha256.Sum256([]byte("1526431521355589"))
+
+	//c.SigningKey.Curve = ecc.CurveR1
+	signature, err := c.SigningKey.Sign(token[:])
+	fmt.Println("signature: ", signature)
+	if err != nil {
+		return fmt.Errorf("signing token data, %s", err)
+	}
 
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           c.NetworkVersion,
@@ -186,7 +168,7 @@ func (c *Client) SendHandshake(info handshakeInfo) (err error) {
 		NodeID:                   c.NodeID,
 		Key:                      pulbicKey,
 		Time:                     tstamp,
-		Token:                    DecodeHex("0000000000000000000000000000000000000000000000000000000000000000"),
+		Token:                    token[:],
 		Signature:                signature,
 		P2PAddress:               c.p2pAddress,
 		LastIrreversibleBlockNum: info.LastIrreversibleBlockNum,
@@ -204,6 +186,7 @@ func (c *Client) SendHandshake(info handshakeInfo) (err error) {
 
 func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
 
+	fmt.Printf("SendSyncRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
 	syncRequest := &eos.SyncRequestMessage{
 		StartBlock: startBlockNum,
 		EndBlock:   endBlockNumber,

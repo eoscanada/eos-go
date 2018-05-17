@@ -8,6 +8,10 @@ import (
 
 	"log"
 
+	"bytes"
+
+	"encoding/hex"
+
 	"github.com/eoscanada/eos-go"
 )
 
@@ -44,11 +48,20 @@ func (p *Proxy) handleTransmission(channel chan routeCommunication) {
 
 	for communication := range channel {
 
-		encoder := eos.NewEncoder(communication.DestinationConnection)
+		//_, err := communication.DestinationConnection.Write(communication.P2PMessageEnvelope.Payload)
+		buf := new(bytes.Buffer)
+		encoder := eos.NewEncoder(buf)
 		err := encoder.Encode(communication.P2PMessageEnvelope)
 		if err != nil {
-			fmt.Println("Sender error: ", err)
+			fmt.Println("Sender encode error: ", err)
 		}
+
+		fmt.Println("Data to send: ", hex.EncodeToString(buf.Bytes()))
+		_, err = communication.DestinationConnection.Write(buf.Bytes())
+		if err != nil {
+			fmt.Println("Sender comm error: ", err)
+		}
+
 	}
 }
 
@@ -127,7 +140,7 @@ func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn
 
 		envelope, err := eos.ReadP2PMessageData(r)
 		if err != nil {
-			fmt.Println("Connection error: ", err)
+			fmt.Printf("Connection error from [%s] to [%s] : %s\n ", route.From, route.To, err)
 			forwardConnection.Close()
 			log.Fatal("Handle connection, ", err)
 		}

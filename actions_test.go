@@ -1,40 +1,5 @@
 package eos
 
-import (
-	"encoding/hex"
-	"encoding/json"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-func TestActionUnmarshalBinary(t *testing.T) {
-	tests := []struct {
-		in     string
-		jsonTx string
-	}{
-		{
-			"967abe5a000003002a48328c0000000000010000000000ea3055000000572d3ccdcd010000000000ea305500000000a8ed32322f0000000000ea3055000000023baca66200a0724e1809000004454f53000000000e57656c636f6d6520306461303930",
-			"{\"expiration\":\"2018-03-30T17:57:42\",\"region\":0,\"ref_block_num\":3,\"ref_block_prefix\":2352105514,\"max_net_usage_words\":0,\"max_kcpu_usage\":0,\"delay_sec\":0}",
-		},
-	}
-
-	for _, test := range tests {
-		var tx Transaction
-		b, err := hex.DecodeString(test.in)
-		require.NoError(t, err)
-
-		decoder := NewDecoder(b)
-		require.NoError(t, decoder.Decode(&tx))
-
-		js, err := json.Marshal(tx)
-		require.NoError(t, err)
-		assert.Equal(t, test.jsonTx, string(js))
-	}
-
-}
-
 // FETCHED FROM A SIMILAR TRANSACTION VIA `eosioc`, includes the Transaction headers though:
 // This was BEFORE the `keys` and `accounts` were swapped on `Authority`.
 // transaction header:

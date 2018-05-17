@@ -18,16 +18,24 @@ type InfoResp struct {
 }
 
 type BlockResp struct {
-	Previous              string           `json:"previous"`                // : "0000007a9dde66f1666089891e316ac4cb0c47af427ae97f93f36a4f1159a194",
-	Timestamp             JSONTime         `json:"timestamp"`               // : "2017-12-04T17:12:08",
-	TransactionMerkleRoot string           `json:"transaction_merkle_root"` // : "0000000000000000000000000000000000000000000000000000000000000000",
-	Producer              AccountName      `json:"producer"`                // : "initj",
-	ProducerChanges       []ProducerChange `json:"producer_changes"`        // : [],
-	ProducerSignature     string           `json:"producer_signature"`      // : "203dbf00b0968bfc47a8b749bbfdb91f8362b27c3e148a8a3c2e92f42ec55e9baa45d526412c8a2fc0dd35b484e4262e734bea49000c6f9c8dbac3d8861c1386c0",
-	Cycles                []Cycle          `json:"cycles"`                  // : [],
-	ID                    string           `json:"id"`                      // : "0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b",
-	BlockNum              uint64           `json:"block_num"`               // : 123,
-	RefBlockPrefix        uint64           `json:"ref_block_prefix"`        // : 2624744919
+	Previous              string             `json:"previous"`                // : "0000007a9dde66f1666089891e316ac4cb0c47af427ae97f93f36a4f1159a194",
+	Timestamp             JSONTime           `json:"timestamp"`               // : "2017-12-04T17:12:08",
+	TransactionMerkleRoot string             `json:"transaction_merkle_root"` // : "0000000000000000000000000000000000000000000000000000000000000000",
+	Producer              AccountName        `json:"producer"`                // : "initj",
+	ProducerChanges       []ProducerChange   `json:"producer_changes"`        // : [],
+	ProducerSignature     string             `json:"producer_signature"`      // : "203dbf00b0968bfc47a8b749bbfdb91f8362b27c3e148a8a3c2e92f42ec55e9baa45d526412c8a2fc0dd35b484e4262e734bea49000c6f9c8dbac3d8861c1386c0",
+	Cycles                []Cycle            `json:"cycles"`                  // : [],
+	ID                    string             `json:"id"`                      // : "0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b",
+	BlockNum              uint64             `json:"block_num"`               // : 123,
+	RefBlockPrefix        uint64             `json:"ref_block_prefix"`        // : 2624744919
+	Transactions          []BlockTransaction `json:"transactions"`
+}
+
+type BlockTransaction struct {
+	Status        string            `json:"status"`
+	CPUUsageUS    int               `json:"cpu_usage_us"`
+	NetUsageWords int               `json:"net_usage_words"`
+	Trx           []json.RawMessage `json:"trx"`
 }
 
 type TransactionResp struct {

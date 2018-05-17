@@ -52,6 +52,13 @@ func TestSignatureMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, fromEOSIOC, sig.String())
 	assert.True(t, isCanonical([]byte(sig.Content)))
 }
+func TestSignatureMarshalUnmarshal_bilc(t *testing.T) {
+	fromEOSIOC := "SIG_K1_Jy9G6SgmGSjAbu7n82veUiqV8LFFL6wqr9G26H37dy1WExUj9kYwS17X3ffT5W9M51HkpKF4xQ6MoFCCMxBEHbk64dgbMg"
+	sig, err := NewSignature(fromEOSIOC)
+	require.NoError(t, err)
+	assert.Equal(t, fromEOSIOC, sig.String())
+	assert.True(t, isCanonical([]byte(sig.Content)))
+}
 
 func isCanonical(compactSig []byte) bool {
 	// !(c.data[1] & 0x80)
