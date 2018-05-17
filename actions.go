@@ -68,21 +68,21 @@ type jsonActionFromServer struct {
 
 func (a *Action) MarshalJSON() ([]byte, error) {
 
-	fmt.Println(fmt.Sprintf("MarshalJSON toServer? %t", a.toServer))
+	println(fmt.Sprintf("MarshalJSON toServer? %t", a.toServer))
 
 	if a.toServer {
 		var err error
 		buf := new(bytes.Buffer)
 		encoder := NewEncoder(buf)
 
-		fmt.Println("MarshalJSON, encoding action data to binary")
+		println("MarshalJSON, encoding action data to binary")
 		encoder.Encode(a.ActionData.Data)
 
 		if err != nil {
 			return nil, err
 		}
 		data := buf.Bytes()
-		fmt.Println("MarshalJSON data length : ", len(data))
+		println("MarshalJSON data length : ", len(data)) /**/
 
 		return json.Marshal(&jsonActionToServer{
 			Account:       a.Account,
