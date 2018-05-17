@@ -3,7 +3,6 @@ package eos
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 )
 
 // See: libraries/chain/include/eosio/chain/contracts/types.hpp:203
