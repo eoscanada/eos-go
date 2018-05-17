@@ -3,7 +3,6 @@ package eos
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 )
 
 // See: libraries/chain/include/eosio/chain/contracts/types.hpp:203
@@ -68,21 +67,17 @@ type jsonActionFromServer struct {
 
 func (a *Action) MarshalJSON() ([]byte, error) {
 
-	fmt.Println(fmt.Sprintf("MarshalJSON toServer? %t", a.toServer))
-
 	if a.toServer {
 		var err error
 		buf := new(bytes.Buffer)
 		encoder := NewEncoder(buf)
 
-		fmt.Println("MarshalJSON, encoding action data to binary")
 		encoder.Encode(a.ActionData.Data)
 
 		if err != nil {
 			return nil, err
 		}
 		data := buf.Bytes()
-		fmt.Println("MarshalJSON data length : ", len(data))
 
 		return json.Marshal(&jsonActionToServer{
 			Account:       a.Account,
