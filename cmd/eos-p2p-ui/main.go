@@ -110,7 +110,7 @@ func main() {
 	}
 }
 
-var UILoggerHandler = func(processable p2p.PostProcessable) {
+var UILoggerHandler = func(processable p2p.Message) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -118,7 +118,7 @@ var UILoggerHandler = func(processable p2p.PostProcessable) {
 		}
 	}()
 
-	p2pMsg := processable.P2PMessageEnvelope.P2PMessage
+	p2pMsg := processable.Envelope.P2PMessage
 	switch p2pMsg.GetType() {
 
 	case eos.SignedBlockMessageType:

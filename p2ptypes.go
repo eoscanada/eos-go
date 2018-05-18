@@ -39,8 +39,8 @@ func (m *HandshakeMessage) GetType() P2PMessageType {
 type ChainSizeMessage struct {
 	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"`
 	LastIrreversibleBlockID  SHA256Bytes `json:"last_irreversible_block_id"`
-	//HeadNum                  uint32      `json:"head_num"`
-	//HeadID                   SHA256Bytes `json:"head_id"`
+	HeadNum                  uint32      `json:"head_num"`
+	HeadID                   SHA256Bytes `json:"head_id"`
 }
 
 func (m *ChainSizeMessage) GetType() P2PMessageType {
@@ -157,13 +157,6 @@ func (s TransactionStatus) String() string {
 
 //type TransactionID SHA256Bytes
 
-type TransactionReceipt struct {
-	Status        TransactionStatus `json:"status"`
-	KCPUUsage     Varuint32         `json:"kcpu_usage"`
-	NetUsageWords Varuint32         `json:"net_usage_words"`
-	ID            SHA256Bytes       `json:"id"`
-}
-
 type ShardLock struct {
 	AccountName AccountName `json:"account_name"`
 	ScopeName   ScopeName   `json:"scope_name"`
@@ -192,14 +185,16 @@ type ProducerSchedule struct {
 }
 
 type BlockHeader struct {
-	Previous         SHA256Bytes              `json:"previous"`
-	Timestamp        BlockTimestamp           `json:"timestamp"`
-	TransactionMRoot SHA256Bytes              `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes              `json:"action_mroot"`
-	BlockMRoot       SHA256Bytes              `json:"block_mroot"`
-	Producer         AccountName              `json:"producer"`
+	Timestamp        BlockTimestamp `json:"timestamp"`
+	Producer         AccountName    `json:"producer"`
+	Confirmed        uint16         `json:"confirmed"`
+	Previous         SHA256Bytes    `json:"previous"`
+	TransactionMRoot SHA256Bytes    `json:"transaction_mroot"`
+	ActionMRoot      SHA256Bytes    `json:"action_mroot"`
+	//BlockMRoot       SHA256Bytes              `json:"block_mroot"`
 	ScheduleVersion  uint32                   `json:"schedule_version"`
 	NewProducers     OptionalProducerSchedule `json:"new_producers"`
+	HeaderExtensions []*Extension             `json:"extensions_type"`
 }
 
 func (b *BlockHeader) BlockNumber() uint32 {
@@ -219,22 +214,66 @@ type SignedBlockHeader struct {
 	ProducerSignature ecc.Signature `json:"producer_signature"`
 }
 
-type SignedBlockSummaryMessage struct {
+type SignedBlock struct {
 	SignedBlockHeader
-	Regions []RegionSummary `json:"regions"`
+	Transactions    []TransactionReceipt `json:"transactions"`
+	BlockExtensions []*Extension         `json:"block_extensions"`
 }
 
-type SignedBlockMessage struct {
-	SignedBlockSummaryMessage
-	InputTransactions []PackedTransaction `json:"input_transactions"`
+func (m *SignedBlock) String() string {
+	return "SignedBlock"
 }
 
-func (m *SignedBlockMessage) String() string {
-	return "SignedBlockMessage"
+func (m *SignedBlock) GetType() P2PMessageType {
+	return SignedBlockType
 }
 
-func (m *SignedBlockMessage) GetType() P2PMessageType {
-	return SignedBlockMessageType
+type TransactionReceiptHeader struct {
+	Status               TransactionStatus `json:"status"`
+	CPUUsageMicroSeconds uint32            `json:"cpu_usage_us"`
+	NetUsageWords        Varuint32         `json:"net_usage_words"`
+}
+
+type TransactionReceipt struct {
+	TransactionReceiptHeader
+	Transaction TransactionWithID `json:"trx"`
+}
+
+type TransactionWithID struct {
+	ID     uint8
+	Packed PackedTransaction
+}
+
+func (t TransactionWithID) MarshalJSON() ([]byte, error) {
+	return json.Marshal([]interface{}{
+		t.ID,
+		t.Packed,
+	})
+}
+
+func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
+	var in []json.RawMessage
+	err := json.Unmarshal(data, &in)
+	if err != nil {
+		return err
+	}
+
+	if len(in) != 2 {
+		return fmt.Errorf("expected two params for TransactionWithID, got %d", len(in))
+	}
+
+	// ignore the ID field right now..
+	var packed PackedTransaction
+	err = json.Unmarshal(in[1], &packed)
+	if err != nil {
+		return err
+	}
+
+	*t = TransactionWithID{
+		Packed: packed,
+	}
+
+	return nil
 }
 
 type IDListMode uint8

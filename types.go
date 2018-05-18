@@ -69,6 +69,20 @@ type Asset struct {
 	Symbol
 }
 
+func (a Asset) Add(other Asset) Asset {
+	if a.Symbol != other.Symbol {
+		panic("Add applies only to assets with the same symbol")
+	}
+	return Asset{Amount: a.Amount + other.Amount, Symbol: a.Symbol}
+}
+
+func (a Asset) Sub(other Asset) Asset {
+	if a.Symbol != other.Symbol {
+		panic("Sub applies only to assets with the same symbol")
+	}
+	return Asset{Amount: a.Amount - other.Amount, Symbol: a.Symbol}
+}
+
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
 type Symbol struct {
 	Precision uint8

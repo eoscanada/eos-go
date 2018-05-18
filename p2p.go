@@ -17,15 +17,15 @@ import (
 type P2PMessageType byte
 
 const (
-	HandshakeMessageType P2PMessageType = iota
+	HandshakeMessageType P2PMessageType = iota // 0
 	ChainSizeType
-	GoAwayMessageType
+	GoAwayMessageType // 2
 	TimeMessageType
-	NoticeMessageType
+	NoticeMessageType // 4
 	RequestMessageType
-	SyncRequestMessageType
-	SignedBlockMessageType
-	PackedTransactionMessageType
+	SyncRequestMessageType // 6
+	SignedBlockType
+	PackedTransactionMessageType // 8
 )
 
 type MessageReflectTypes struct {
@@ -41,7 +41,7 @@ var messageAttributes = []MessageReflectTypes{
 	{Name: "Notice", ReflectType: reflect.TypeOf(NoticeMessage{})},
 	{Name: "Request", ReflectType: reflect.TypeOf(RequestMessage{})},
 	{Name: "SyncRequest", ReflectType: reflect.TypeOf(SyncRequestMessage{})},
-	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlockMessage{})},
+	{Name: "SignedBlock", ReflectType: reflect.TypeOf(SignedBlock{})},
 	{Name: "PackedTransaction", ReflectType: reflect.TypeOf(PackedTransactionMessage{})},
 }
 
@@ -91,7 +91,6 @@ type P2PMessageEnvelope struct {
 }
 
 func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
-
 	data := make([]byte, 0)
 
 	lengthBytes := make([]byte, 4, 4)
@@ -121,9 +120,10 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 
 	envelope = &P2PMessageEnvelope{}
 	decoder := NewDecoder(data)
+	decoder.DecodeActions(false)
 	err = decoder.Decode(envelope)
 	if err != nil {
-		fmt.Println("Failling data: ", hex.EncodeToString(data))
+		fmt.Println("Failing data: ", hex.EncodeToString(data))
 	}
 	return
 }

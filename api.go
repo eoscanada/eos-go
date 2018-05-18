@@ -234,7 +234,7 @@ func (api *API) SignPushTransaction(tx *Transaction, opts *TxOptions) (out *Push
 
 	resp, err := api.GetRequiredKeys(tx)
 	if err != nil {
-		return nil, fmt.Errorf("calling get_required_keys on the wallet: %s", err)
+		return nil, fmt.Errorf("get_required_keys: %s", err)
 	}
 
 	stx := NewSignedTransaction(tx)
@@ -295,7 +295,7 @@ func (api *API) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	return
 }
 
-func (api *API) GetBlockByNumOrID(query string) (out *SignedBlockMessage, err error) {
+func (api *API) GetBlockByNumOrID(query string) (out *SignedBlock, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": query}, &out)
 	return
 }

@@ -98,6 +98,10 @@ func (d *Decoder) DecodeP2PMessage(decode bool) {
 	d.decodeP2PMessage = decode
 }
 
+func (d *Decoder) DecodeActions(decode bool) {
+	d.decodeActions = decode
+}
+
 func (d *Decoder) Decode(v interface{}) (err error) {
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
@@ -168,7 +172,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		r, err = d.readBool()
 		rv.SetBool(r)
 		return
-	case HexBytes:
+	case *HexBytes:
 		var data []byte
 		data, err = d.readByteArray()
 		rv.SetBytes(data)
@@ -238,7 +242,10 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 		action := rv.Interface().(Action)
 
-		err = d.readActionData(&action)
+		if d.decodeActions {
+			err = d.readActionData(&action)
+		}
+
 		rv.Set(reflect.ValueOf(action))
 		return
 

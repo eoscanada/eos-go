@@ -29,7 +29,7 @@ type routeAction struct {
 type routeCommunication struct {
 	Route                 *Route `json:"route"`
 	DestinationConnection net.Conn
-	P2PMessageEnvelope    *eos.P2PMessageEnvelope
+	Envelope              *eos.P2PMessageEnvelope
 }
 
 var routerActionChannel = make(chan routeAction)
@@ -48,10 +48,10 @@ func (p *Proxy) handleTransmission(channel chan routeCommunication) {
 
 	for communication := range channel {
 
-		//_, err := communication.DestinationConnection.Write(communication.P2PMessageEnvelope.Payload)
+		//_, err := communication.DestinationConnection.Write(communication.Envelope.Payload)
 		buf := new(bytes.Buffer)
 		encoder := eos.NewEncoder(buf)
-		err := encoder.Encode(communication.P2PMessageEnvelope)
+		err := encoder.Encode(communication.Envelope)
 		if err != nil {
 			fmt.Println("Sender encode error: ", err)
 		}
@@ -80,13 +80,13 @@ func (p *Proxy) handleRouting(routingChannel chan routeCommunication) {
 
 var postProcessChannel = make(chan routeCommunication)
 
-func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, postProcessorChannels []chan PostProcessable) {
+func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, postProcessorChannels []chan Message) {
 
 	for communication := range postProcessChannel {
 
-		pp := PostProcessable{
-			Route:              communication.Route,
-			P2PMessageEnvelope: communication.P2PMessageEnvelope,
+		pp := Message{
+			Route:    communication.Route,
+			Envelope: communication.Envelope,
 		}
 
 		for _, c := range postProcessorChannels {
@@ -95,7 +95,7 @@ func (p *Proxy) handlePostProcess(postProcessChannel chan routeCommunication, po
 	}
 }
 
-func (p *Proxy) handlePluginPostProcess(handle Handler, channel chan PostProcessable) {
+func (p *Proxy) handlePluginPostProcess(handle Handler, channel chan Message) {
 
 	for postProcessable := range channel {
 		handle.Handle(postProcessable)
@@ -146,9 +146,9 @@ func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn
 		}
 
 		router <- routeCommunication{
-			Route:                 route,
+			Route: route,
 			DestinationConnection: forwardConnection,
-			P2PMessageEnvelope:    envelope,
+			Envelope:              envelope,
 		}
 
 	}
@@ -163,11 +163,11 @@ func (p *Proxy) Start() {
 
 	done := make(chan bool)
 
-	var postProcessorChannels []chan PostProcessable
+	var postProcessorChannels []chan Message
 
 	for _, plugin := range p.Handlers {
 
-		pc := make(chan PostProcessable)
+		pc := make(chan Message)
 		postProcessorChannels = append(postProcessorChannels, pc)
 		go p.handlePluginPostProcess(plugin, pc)
 

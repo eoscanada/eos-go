@@ -91,13 +91,6 @@ type Refund struct {
 	Owner eos.AccountName `json:"owner"`
 }
 
-// RegProducer represents the `eosio.system::regproducer` action
-type RegProducer struct {
-	Producer    eos.AccountName `json:"producer"`
-	ProducerKey ecc.PublicKey   `json:"producer_key"`
-	URL         string          `json:"url"`
-}
-
 // UnregProducer represents the `eosio.system::unregprod` action
 type UnregProducer struct {
 	Producer eos.AccountName `json:"producer"`

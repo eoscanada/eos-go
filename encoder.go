@@ -367,7 +367,7 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 		return e.writeByteArray(raw)
 	}
 
-	return e.writeByteArray([]byte{})
+	return e.writeByteArray(actionData.HexData)
 }
 
 func MarshalBinary(v interface{}) ([]byte, error) {

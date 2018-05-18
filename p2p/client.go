@@ -2,9 +2,9 @@ package p2p
 
 import (
 	"bufio"
-	"crypto/sha256"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
 
 	"encoding/hex"
@@ -28,13 +28,15 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion int16, signingKey *ecc.PrivateKey) *Client {
+func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion int16) *Client {
 	c := &Client{
 		p2pAddress:     p2pAddr,
 		ChainID:        chainID,
 		NetworkVersion: networkVersion,
-		SigningKey:     signingKey,
+		AgentName:      "eos-go client",
+		// by default, fake being a peer at the same level as the other..
 	}
+	c.registerInitHandler()
 	c.NodeID = chainID
 	return c
 }
@@ -49,10 +51,13 @@ type Client struct {
 	Conn           net.Conn
 	NodeID         eos.SHA256Bytes
 	SigningKey     *ecc.PrivateKey
+	AgentName      string
+	ShowEmptyChain bool
+
+	LastHandshakeReceived *eos.HandshakeMessage
 }
 
 func (c *Client) Connect() (err error) {
-
 	conn, err := net.Dial("tcp", c.p2pAddress)
 	if err != nil {
 		return err
@@ -60,14 +65,12 @@ func (c *Client) Connect() (err error) {
 
 	c.Conn = conn
 
-	if err := c.setupFlow(); err != nil {
-		return err
-	}
-
-	fmt.Println("Connected to: ", c.p2pAddress)
+	fmt.Println("Connecting to: ", c.p2pAddress)
 	ready := make(chan bool)
 	go c.handleConnection(&Route{From: c.p2pAddress}, ready)
 	<-ready
+
+	fmt.Println("Connected")
 
 	if err := c.SendHandshake(&HandshakeInfo{
 		HeadBlockNum:             0,
@@ -87,6 +90,12 @@ func (c *Client) RegisterHandler(h Handler) {
 	c.handlers = append(c.handlers, h)
 }
 
+func (c *Client) RegisterHandlerFunc(f func(Message)) Handler {
+	h := HandlerFunc(f)
+	c.RegisterHandler(h)
+	return h
+}
+
 func (c *Client) UnregisterHandler(h Handler) {
 	c.handlersLock.Lock()
 	defer c.handlersLock.Unlock()
@@ -100,20 +109,33 @@ func (c *Client) UnregisterHandler(h Handler) {
 	c.handlers = newHandlers
 }
 
-func (c *Client) setupFlow() error {
-
-	initHandler := HandlerFunc(func(processable PostProcessable) {
-		msg, ok := processable.P2PMessageEnvelope.P2PMessage.(*eos.HandshakeMessage)
+func (c *Client) registerInitHandler() {
+	initHandler := HandlerFunc(func(processable Message) {
+		msg, ok := processable.Envelope.P2PMessage.(*eos.HandshakeMessage)
 		if !ok {
 			return
 		}
 
-		hInfo := HandshakeInfo{
-			HeadBlockNum:             msg.HeadNum,
-			HeadBlockID:              msg.HeadID,
-			HeadBlockTime:            msg.Time.Time,
-			LastIrreversibleBlockNum: msg.LastIrreversibleBlockNum,
-			LastIrreversibleBlockID:  msg.LastIrreversibleBlockID,
+		// Keep track of last handshake received..
+		c.LastHandshakeReceived = msg
+
+		var hInfo HandshakeInfo
+		if c.ShowEmptyChain {
+			hInfo = HandshakeInfo{
+				HeadBlockNum:             0,
+				HeadBlockID:              make([]byte, 32, 32),
+				HeadBlockTime:            msg.Time.Time,
+				LastIrreversibleBlockNum: 0,
+				LastIrreversibleBlockID:  make([]byte, 32, 32),
+			}
+		} else {
+			hInfo = HandshakeInfo{
+				HeadBlockNum:             msg.HeadNum,
+				HeadBlockID:              msg.HeadID,
+				HeadBlockTime:            msg.Time.Time,
+				LastIrreversibleBlockNum: msg.LastIrreversibleBlockNum,
+				LastIrreversibleBlockID:  msg.LastIrreversibleBlockID,
+			}
 		}
 		if err := c.SendHandshake(&hInfo); err != nil {
 			log.Println("Failed sending handshake:", err)
@@ -121,8 +143,6 @@ func (c *Client) setupFlow() error {
 
 	})
 	c.RegisterHandler(initHandler)
-
-	return nil
 }
 
 type HandshakeInfo struct {
@@ -134,7 +154,7 @@ type HandshakeInfo struct {
 }
 
 func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
-	pulbicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
+	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
 		return
 	}
@@ -153,30 +173,34 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 	//}
 
 	//time := fmt.Sprintf("%d", tstamp.Unix())
-	token := sha256.Sum256([]byte("1526431521355589"))
+	//token := sha256.Sum256([]byte("1526431521355589"))
 
 	//c.SigningKey.Curve = ecc.CurveR1
-	signature, err := c.SigningKey.Sign(token[:])
-	fmt.Println("signature: ", signature)
-	if err != nil {
-		return fmt.Errorf("signing token data, %s", err)
+	// signature, err := c.SigningKey.Sign(token[:])
+	// fmt.Println("signature: ", signature)
+	// if err != nil {
+	// 	return fmt.Errorf("signing token data, %s", err)
+	// }
+	signature := ecc.Signature{
+		Curve:   ecc.CurveK1,
+		Content: make([]byte, 65, 65),
 	}
 
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           c.NetworkVersion,
 		ChainID:                  c.ChainID,
 		NodeID:                   c.NodeID,
-		Key:                      pulbicKey,
+		Key:                      publicKey,
 		Time:                     tstamp,
-		Token:                    token[:],
+		Token:                    make([]byte, 32, 32), // token[:]
 		Signature:                signature,
 		P2PAddress:               c.p2pAddress,
 		LastIrreversibleBlockNum: info.LastIrreversibleBlockNum,
 		LastIrreversibleBlockID:  info.LastIrreversibleBlockID,
 		HeadNum:                  info.HeadBlockNum,
 		HeadID:                   info.HeadBlockID,
-		OS:                       "linux",
-		Agent:                    "Charles Billette Agent",
+		OS:                       runtime.GOOS,
+		Agent:                    c.AgentName,
 		Generation:               int16(1),
 	}
 
@@ -185,20 +209,16 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 }
 
 func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-
 	fmt.Printf("SendSyncRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
 	syncRequest := &eos.SyncRequestMessage{
 		StartBlock: startBlockNum,
 		EndBlock:   endBlockNumber,
 	}
 
-	c.sendMessage(syncRequest)
-
-	return
+	return c.sendMessage(syncRequest)
 }
 
 func (c *Client) sendMessage(message eos.P2PMessage) (err error) {
-
 	n, _ := message.GetType().Name()
 	fmt.Printf("Sending message [%s] to server\n", n)
 
@@ -222,12 +242,13 @@ func (c *Client) handleConnection(route *Route, ready chan bool) {
 
 		envelope, err := eos.ReadP2PMessageData(r)
 		if err != nil {
-			log.Fatal("Handle connection, ", err)
+			log.Println("Error reading from p2p client:", err)
+			return
 		}
 
-		pp := PostProcessable{
-			Route:              route,
-			P2PMessageEnvelope: envelope,
+		pp := Message{
+			Route:    route,
+			Envelope: envelope,
 		}
 
 		c.handlersLock.Lock()
