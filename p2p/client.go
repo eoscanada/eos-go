@@ -65,12 +65,12 @@ func (c *Client) Connect() (err error) {
 
 	c.Conn = conn
 
-	fmt.Println("Connecting to: ", c.p2pAddress)
+	println("Connecting to: ", c.p2pAddress)
 	ready := make(chan bool)
 	go c.handleConnection(&Route{From: c.p2pAddress}, ready)
 	<-ready
 
-	fmt.Println("Connected")
+	println("Connected")
 
 	if err := c.SendHandshake(&HandshakeInfo{
 		HeadBlockNum:             0,
@@ -161,7 +161,7 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	fmt.Println("Time from fake: ", tstamp)
+	println("Time from fake: ", tstamp)
 	//tData, err := eos.MarshalBinary(&tstamp)
 	//if err != nil {
 	//	return fmt.Errorf("marshalling tstamp, %s", err)
@@ -209,7 +209,7 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 }
 
 func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	fmt.Printf("SendSyncRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
+	println("SendSyncRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
 	syncRequest := &eos.SyncRequestMessage{
 		StartBlock: startBlockNum,
 		EndBlock:   endBlockNumber,
@@ -220,7 +220,7 @@ func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (e
 
 func (c *Client) sendMessage(message eos.P2PMessage) (err error) {
 	n, _ := message.GetType().Name()
-	fmt.Printf("Sending message [%s] to server\n", n)
+	println("Sending message [%s] to server\n", n)
 
 	envelope := &eos.P2PMessageEnvelope{
 		Type:       message.GetType(),
