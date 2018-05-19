@@ -240,7 +240,7 @@ type TransactionReceipt struct {
 }
 
 type TransactionWithID struct {
-	ID     uint8
+	ID     uint8 //
 	Packed PackedTransaction
 }
 

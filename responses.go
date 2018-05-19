@@ -8,13 +8,36 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 )
 
+/*
+{
+  "server_version": "f537bc50",
+  "head_block_num": 9,
+  "last_irreversible_block_num": 8,
+  "last_irreversible_block_id": "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084",
+  "head_block_id": "00000009ecd0e9fb5719431f4b86f5c9ca1887f6b6f73e5a301aaff740fd6bd3",
+  "head_block_time": "2018-05-19T07:47:31",
+  "head_block_producer": "eosio",
+  "virtual_block_cpu_limit": 100800,
+  "virtual_block_net_limit": 1056996,
+  "block_cpu_limit": 99900,
+  "block_net_limit": 1048576
+}
+
+*/
+
 type InfoResp struct {
 	ServerVersion            string      `json:"server_version"`              // "2cc40a4e"
 	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
 	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
-	HeadBlockID              string      `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	LastIrreversibleBlockID  SHA256Bytes `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
+	HeadBlockID              SHA256Bytes `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
 	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
 	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
+
+	VirtualBlockCPULimit uint64 `json:"virtual_block_cpu_limit"`
+	VirtualBlockNetLimit uint64 `json:"virtual_block_net_limit"`
+	BlockCPULimit        uint64 `json:"block_cpu_limit"`
+	BlockNetLimit        uint64 `json:"block_net_limit"`
 }
 
 type BlockResp struct {
@@ -142,6 +165,7 @@ type GetRequiredKeysResp struct {
 // PushTransactionFullResp unwraps the responses from a successful `push_transaction`.
 // FIXME: REVIEW the actual output, things have moved here.
 type PushTransactionFullResp struct {
+	StatusCode    string
 	TransactionID string               `json:"transaction_id"`
 	Processed     TransactionProcessed `json:"processed"` // WARN: is an `fc::variant` in server..
 }
@@ -204,3 +228,7 @@ type NetStatusResp struct {
 type NetConnectResp string
 
 type NetDisconnectResp string
+
+type ProducersResp struct {
+	// TODO: fill this in !
+}

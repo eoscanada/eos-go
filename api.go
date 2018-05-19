@@ -289,6 +289,14 @@ func (api *API) GetBlockByID(id string) (out *BlockResp, err error) {
 	return
 }
 
+func (api *API) GetProducers() (out *ProducersResp, err error) {
+	/*
++FC_REFLECT( eosio::chain_apis::read_only::get_producers_params, (json)(lower_bound)(limit) )
++FC_REFLECT( eosio::chain_apis::read_only::get_producers_result, (rows)(total_producer_vote_weight)(more) ); */
+	err = api.call("chain", "get_producers", nil, &out)
+	return
+}
+
 func (api *API) GetBlockByNum(num uint64) (out *BlockResp, err error) {
 	err = api.call("chain", "get_block", M{"block_num_or_id": fmt.Sprintf("%d", num)}, &out)
 	//err = api.call("chain", "get_block", M{"block_num_or_id": num}, &out)

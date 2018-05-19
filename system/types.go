@@ -11,12 +11,6 @@ type SetPriv struct {
 	IsPriv  bool            `json:"is_priv"`
 }
 
-// SetABI represents the hard-coded `setabi` action.
-type SetABI struct {
-	Account eos.AccountName `json:"account"`
-	ABI     eos.ABI         `json:"abi"`
-}
-
 // SetProds is present in `eosio.bios` contract. Used only at boot time.
 type SetProds struct {
 	Schedule []ProducerKey `json:"schedule"`

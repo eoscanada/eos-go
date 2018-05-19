@@ -21,7 +21,12 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 
 	var abiDef eos.ABI
 	if err := json.Unmarshal(abiContent, &abiDef); err != nil {
-		return nil, fmt.Errorf("unmarshal ABI file:, %s", err)
+		return nil, fmt.Errorf("unmarshal ABI file: %s", err)
+	}
+
+	abiPacked, err := eos.MarshalBinary(abiDef)
+	if err != nil {
+		return nil, fmt.Errorf("packing ABI: %s", err)
 	}
 
 	actions := []*eos.Action{
@@ -46,7 +51,7 @@ func NewSetCodeTx(account eos.AccountName, wasmPath, abiPath string) (out *eos.T
 			},
 			ActionData: eos.NewActionData(SetABI{
 				Account: account,
-				ABI:     abiDef,
+				ABI:     eos.HexBytes(abiPacked),
 			}),
 		},
 	}
@@ -58,5 +63,11 @@ type SetCode struct {
 	Account   eos.AccountName `json:"account"`
 	VMType    byte            `json:"vmtype"`
 	VMVersion byte            `json:"vmversion"`
-	Code      eos.HexBytes    `json:"bytes"`
+	Code      eos.HexBytes    `json:"code"`
+}
+
+// SetABI represents the hard-coded `setabi` action.
+type SetABI struct {
+	Account eos.AccountName `json:"account"`
+	ABI     eos.HexBytes    `json:"abi"`
 }

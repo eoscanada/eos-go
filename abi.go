@@ -3,11 +3,14 @@ package eos
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
 // see: libraries/chain/include/eosio/chain/contracts/types.hpp:100
 type ABI struct {
-	Types            []ABIType    `json:"types,omitempty"`
-	Structs          []StructDef  `json:"structs,omitempty"`
-	Actions          []ActionDef  `json:"actions,omitempty"`
-	Tables           []TableDef   `json:"tables,omitempty"`
-	RicardianClauses []ClausePair `json:"ricardian_clauses,omitempty"`
+	Version          string            `json:"version"`
+	Types            []ABIType         `json:"types,omitempty"`
+	Structs          []StructDef       `json:"structs,omitempty"`
+	Actions          []ActionDef       `json:"actions,omitempty"`
+	Tables           []TableDef        `json:"tables,omitempty"`
+	RicardianClauses []ClausePair      `json:"ricardian_clauses,omitempty"`
+	ErrorMessages    []ABIErrorMessage `json:"error_messages,omitempty"`
+	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
 }
 
 type ABIType struct {
@@ -45,4 +48,9 @@ type TableDef struct {
 type ClausePair struct {
 	ID   string `json:"id"`
 	Body string `json:"body"`
+}
+
+type ABIErrorMessage struct {
+	Code    uint64 `json:"error_code"`
+	Message string `json:"error_msg"`
 }

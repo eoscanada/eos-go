@@ -5,7 +5,6 @@ import (
 	"compress/flate"
 	"compress/zlib"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -41,8 +40,6 @@ type Extension struct {
 	Data HexBytes `json:"data"`
 }
 
-// 69c9c15a 0000 1400 62f95d45 b31d 904e 00 00 020000000000ea305500000040258ab2c2010000000000ea305500000000a8ed
-
 func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	var info *InfoResp
 	var err error
@@ -70,12 +67,7 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 		tx.Extensions = make([]*Extension, 0, 0)
 	}
 
-	blockID, err := hex.DecodeString(info.HeadBlockID)
-	if err != nil {
-		return nil, fmt.Errorf("decode hex: %s", err)
-	}
-
-	tx.setRefBlock(blockID)
+	tx.setRefBlock(info.HeadBlockID)
 
 	/// TODO: configure somewhere the default time for transactions,
 	/// etc.. add a `.Timeout` with that duration, default to 30
@@ -83,7 +75,7 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
 	//tx.DelaySec = 30
 
-	return blockID, nil
+	return info.HeadBlockID, nil
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
