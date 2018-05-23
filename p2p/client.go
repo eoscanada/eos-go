@@ -243,6 +243,7 @@ func (c *Client) handleConnection(route *Route, ready chan bool) {
 		envelope, err := eos.ReadP2PMessageData(r)
 		if err != nil {
 			log.Println("Error reading from p2p client:", err)
+			// TODO: kill the socket, do something !
 			return
 		}
 

@@ -25,6 +25,39 @@ func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
+type AccountResourceLimit struct {
+	Used      int64 `json:"used"`
+	Available int64 `json:"available"`
+	Max       int64 `json:"max"`
+}
+
+type DelegatedBandwidth struct {
+	From      AccountName `json:"from"`
+	To        AccountName `json:"to"`
+	NetWeight Asset       `json:"net_weight"`
+	CPUWeight Asset       `json:"cpu_weight"`
+}
+
+type TotalResources struct {
+	Owner     AccountName `json:"owner"`
+	NetWeight Asset       `json:"net_weight"`
+	CPUWeight Asset       `json:"cpu_weight"`
+	RAMBytes  uint64      `json:"ram_bytes"`
+}
+
+type VoterInfo struct {
+	Owner             AccountName   `json:"owner"`
+	Proxy             AccountName   `json:"proxy"`
+	Producers         []AccountName `json:"producers"`
+	Staked            int64         `json:"staked"`
+	LastVoteWeight    float64       `json:"last_vote_weight"`
+	ProxiedVoteWeight float64       `json:"proxied_vote_weight"`
+	IsProxy           bool          `json:"is_proxy"`
+	DeferredTrxID     uint32        `json:"deferred_trx_id"`
+	LastUnstakeTime   Tstamp        `json:"last_unstake_time"`
+	Unstaking         Asset         `json:"unstaking"`
+}
+
 type CompressionType uint8
 
 const (

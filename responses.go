@@ -41,25 +41,18 @@ type InfoResp struct {
 }
 
 type BlockResp struct {
-	Previous              string             `json:"previous"`                // : "0000007a9dde66f1666089891e316ac4cb0c47af427ae97f93f36a4f1159a194",
-	Timestamp             JSONTime           `json:"timestamp"`               // : "2017-12-04T17:12:08",
-	TransactionMerkleRoot string             `json:"transaction_merkle_root"` // : "0000000000000000000000000000000000000000000000000000000000000000",
-	Producer              AccountName        `json:"producer"`                // : "initj",
-	ProducerChanges       []ProducerChange   `json:"producer_changes"`        // : [],
-	ProducerSignature     string             `json:"producer_signature"`      // : "203dbf00b0968bfc47a8b749bbfdb91f8362b27c3e148a8a3c2e92f42ec55e9baa45d526412c8a2fc0dd35b484e4262e734bea49000c6f9c8dbac3d8861c1386c0",
-	Cycles                []Cycle            `json:"cycles"`                  // : [],
-	ID                    string             `json:"id"`                      // : "0000007b677719bdd76d729c3ac36bed5790d5548aadc26804489e5e179f4a5b",
-	BlockNum              uint64             `json:"block_num"`               // : 123,
-	RefBlockPrefix        uint64             `json:"ref_block_prefix"`        // : 2624744919
-	Transactions          []BlockTransaction `json:"transactions"`
+	SignedBlock
+	ID             SHA256Bytes `json:"id"`
+	BlockNum       uint32      `json:"block_num"`
+	RefBlockPrefix uint32      `json:"ref_block_prefix"`
 }
 
-type BlockTransaction struct {
-	Status        string            `json:"status"`
-	CPUUsageUS    int               `json:"cpu_usage_us"`
-	NetUsageWords int               `json:"net_usage_words"`
-	Trx           []json.RawMessage `json:"trx"`
-}
+// type BlockTransaction struct {
+// 	Status        string            `json:"status"`
+// 	CPUUsageUS    int               `json:"cpu_usage_us"`
+// 	NetUsageWords int               `json:"net_usage_words"`
+// 	Trx           []json.RawMessage `json:"trx"`
+// }
 
 type TransactionResp struct {
 	TransactionID string `json:"transaction_id"`
@@ -85,12 +78,21 @@ type TransactionsResp struct {
 type ProducerChange struct {
 }
 
-type Cycle struct {
-}
-
 type AccountResp struct {
-	AccountName AccountName  `json:"account_name"`
-	Permissions []Permission `json:"permissions"`
+	AccountName        AccountName          `json:"account_name"`
+	Privileged         bool                 `json:"privileged"`
+	LastCodeUpdate     JSONTime             `json:"last_code_update"`
+	Created            JSONTime             `json:"created"`
+	RAMQuota           int64                `json:"ram_quota"`
+	RAMUsage           int64                `json:"ram_usage"`
+	NetWeight          int64                `json:"net_weight"`
+	CPUWeight          int64                `json:"cpu_weight"`
+	NetLimit           AccountResourceLimit `json:"net_limit"`
+	CPULimit           AccountResourceLimit `json:"cpu_limit"`
+	Permissions        []Permission         `json:"permissions"`
+	TotalResources     TotalResources       `json:"total_resources"`
+	DelegatedBandwidth DelegatedBandwidth   `json:"delegated_bandwidth"`
+	VoterInfo          VoterInfo            `json:"voter_info"`
 }
 
 type CurrencyBalanceResp struct {
@@ -181,8 +183,6 @@ type ActionTrace struct {
 	Receiver AccountName `json:"receiver"`
 	// Action     Action       `json:"act"` // FIXME: how do we unpack that ? what's on the other side anyway?
 	Console    string       `json:"console"`
-	RegionID   uint16       `json:"region_id"`
-	CycleIndex int          `json:"cycle_index"`
 	DataAccess []DataAccess `json:"data_access"`
 }
 

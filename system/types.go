@@ -59,18 +59,6 @@ type EOSIOGlobalState struct {
 	PaymentPerBlock           uint64 `json:"payment_per_block"`
 }
 
-type DelegatedBandwidth struct {
-	From      eos.AccountName `json:"from"`
-	To        eos.AccountName `json:"to"`
-	NetWeight eos.Asset       `json:"net_weight"`
-	CPUWeight eos.Asset       `json:"cpu_weight"`
-	// TODO: whooops, please review this..
-	RAMBytes int64 `json:"ram_bytes"`
-}
-
-type TotalResources struct {
-}
-
 // UndelegateBW represents the `eosio.system::undelegatebw` action.
 type UndelegateBW struct {
 	From         eos.AccountName `json:"from"`

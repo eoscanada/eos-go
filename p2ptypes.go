@@ -194,7 +194,7 @@ type BlockHeader struct {
 	//BlockMRoot       SHA256Bytes              `json:"block_mroot"`
 	ScheduleVersion  uint32                   `json:"schedule_version"`
 	NewProducers     OptionalProducerSchedule `json:"new_producers"`
-	HeaderExtensions []*Extension             `json:"extensions_type"`
+	HeaderExtensions []*Extension             `json:"header_extensions"`
 }
 
 func (b *BlockHeader) BlockNumber() uint32 {
@@ -252,6 +252,18 @@ func (t TransactionWithID) MarshalJSON() ([]byte, error) {
 }
 
 func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
+	var packed PackedTransaction
+	if data[0] == '{' {
+		if err := json.Unmarshal(data, &packed); err != nil {
+			return err
+		}
+		*t = TransactionWithID{
+			Packed: packed,
+		}
+
+		return nil
+	}
+
 	var in []json.RawMessage
 	err := json.Unmarshal(data, &in)
 	if err != nil {
@@ -263,7 +275,6 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 	}
 
 	// ignore the ID field right now..
-	var packed PackedTransaction
 	err = json.Unmarshal(in[1], &packed)
 	if err != nil {
 		return err
