@@ -68,7 +68,7 @@ func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys 
 
 // KeyBag holds private keys in memory, for signing transactions.
 type KeyBag struct {
-	Keys []*ecc.PrivateKey
+	Keys []*ecc.PrivateKey `json:"keys"`
 }
 
 func NewKeyBag() *KeyBag {
