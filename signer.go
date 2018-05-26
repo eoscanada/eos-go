@@ -173,7 +173,11 @@ func (b *KeyBag) keyMap() map[string]*ecc.PrivateKey {
 
 func SigDigest(chainID, payload, contextFreeData []byte) []byte {
 	h := sha256.New()
-	_, _ = h.Write(chainID)
+	if len(chainID) == 0 {
+		_, _ = h.Write(make([]byte, 32, 32))
+	} else {
+		_, _ = h.Write(chainID)
+	}
 	_, _ = h.Write(payload)
 
 	if len(contextFreeData) > 0 {
