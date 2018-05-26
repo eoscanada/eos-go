@@ -117,6 +117,12 @@ func (p *PrivateKey) UnmarshalJSON(v []byte) (err error) {
 		return
 	}
 
-	p, err = NewPrivateKey(s)
+	newPrivKey, err := NewPrivateKey(s)
+	if err != nil {
+		return
+	}
+
+	*p = *newPrivKey
+
 	return
 }

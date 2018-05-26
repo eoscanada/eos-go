@@ -217,10 +217,10 @@ type WaitWeight struct {
 	Weight  uint16 `json:"weight"` // weight_type
 }
 
-type Code struct {
+type GetCodeResp struct {
 	AccountName AccountName `json:"account_name"`
 	CodeHash    string      `json:"code_hash"`
-	WAST        string      `json:"wast"` // TODO: decode into Go ast, see https://github.com/go-interpreter/wagon
+	WASM        string      `json:"wasm"`
 	ABI         ABI         `json:"abi"`
 }
 

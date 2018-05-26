@@ -150,8 +150,8 @@ func (api *API) GetAccount(name AccountName) (out *AccountResp, err error) {
 	return
 }
 
-func (api *API) GetCode(account AccountName) (out *Code, err error) {
-	err = api.call("chain", "get_code", M{"account_name": account}, &out)
+func (api *API) GetCode(account AccountName) (out *GetCodeResp, err error) {
+	err = api.call("chain", "get_code", M{"account_name": account, "code_as_wasm": true}, &out)
 	return
 }
 
@@ -291,8 +291,8 @@ func (api *API) GetBlockByID(id string) (out *BlockResp, err error) {
 
 func (api *API) GetProducers() (out *ProducersResp, err error) {
 	/*
-+FC_REFLECT( eosio::chain_apis::read_only::get_producers_params, (json)(lower_bound)(limit) )
-+FC_REFLECT( eosio::chain_apis::read_only::get_producers_result, (rows)(total_producer_vote_weight)(more) ); */
+		+FC_REFLECT( eosio::chain_apis::read_only::get_producers_params, (json)(lower_bound)(limit) )
+		+FC_REFLECT( eosio::chain_apis::read_only::get_producers_result, (rows)(total_producer_vote_weight)(more) ); */
 	err = api.call("chain", "get_producers", nil, &out)
 	return
 }
