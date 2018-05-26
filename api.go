@@ -20,7 +20,6 @@ import (
 type API struct {
 	HttpClient              *http.Client
 	BaseURL                 string
-	ChainID                 []byte
 	Signer                  Signer
 	Debug                   bool
 	Compress                CompressionType
@@ -32,11 +31,7 @@ type API struct {
 	lastGetInfoLock  sync.Mutex
 }
 
-func New(baseURL string, chainID []byte) *API {
-	if len(chainID) != 32 {
-		panic("chainID must be 32 bytes")
-	}
-
+func New(baseURL string) *API {
 	api := &API{
 		HttpClient: &http.Client{
 			Transport: &http.Transport{
@@ -54,7 +49,6 @@ func New(baseURL string, chainID []byte) *API {
 			},
 		},
 		BaseURL:  baseURL,
-		ChainID:  chainID,
 		Compress: CompressionZlib,
 	}
 
@@ -205,7 +199,7 @@ func (api *API) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pub
 	err = api.call("wallet", "sign_transaction", []interface{}{
 		tx,
 		textKeys,
-		hex.EncodeToString(api.ChainID), // eventually, we should receive the `chainID` from somewhere instead.
+		hex.EncodeToString(chainID),
 	}, &out)
 	return
 }
@@ -241,7 +235,7 @@ func (api *API) SignPushTransaction(tx *Transaction, opts *TxOptions) (out *Push
 
 	stx.estimateResources(*opts, api.DefaultMaxCPUUsageMS, api.DefaultMaxNetUsageWords)
 
-	signedTx, err := api.Signer.Sign(stx, api.ChainID, resp.RequiredKeys...)
+	signedTx, err := api.Signer.Sign(stx, api.lastGetInfo.ChainID, resp.RequiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("signing through wallet: %s", err)
 	}
