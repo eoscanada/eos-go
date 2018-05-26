@@ -47,7 +47,7 @@ type BlockchainParameters struct {
 }
 
 type EOSIOGlobalState struct {
-	EOSIOParameters
+	BlockchainParameters
 	TotalStorageBytesReserved uint64 `json:"total_storage_bytes_reserved"`
 	TotalStorageStake         uint64 `json:"total_storage_stake"`
 	PaymentPerBlock           uint64 `json:"payment_per_block"`
