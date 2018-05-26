@@ -98,6 +98,10 @@ func (b *KeyBag) ImportFromFile(path string) error {
 	for scanner.Scan() {
 		key := strings.TrimSpace(strings.Split(scanner.Text(), " ")[0])
 
+		if strings.Contains(key, "/") || strings.Contains(key, "#") || strings.Contains(key, ";") {
+			return fmt.Errorf("lines should consist of a private key on each line, with an optional whitespace and comment")
+		}
+
 		if err := b.Add(key); err != nil {
 			return err
 		}
@@ -130,6 +134,7 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, err
 		}
 	}
+
 	keyMap := b.keyMap()
 	for _, key := range requiredKeys {
 		privKey := keyMap[key.String()]
