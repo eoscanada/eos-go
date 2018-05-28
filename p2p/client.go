@@ -28,7 +28,7 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion int16) *Client {
+func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *Client {
 	c := &Client{
 		p2pAddress:     p2pAddr,
 		ChainID:        chainID,
@@ -42,12 +42,11 @@ func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion int16) *C
 }
 
 type Client struct {
-	handlers     []Handler
-	handlersLock sync.Mutex
-	p2pAddress   string
-	//API            *eos.API
+	handlers       []Handler
+	handlersLock   sync.Mutex
+	p2pAddress     string
 	ChainID        eos.SHA256Bytes
-	NetworkVersion int16
+	NetworkVersion uint16
 	Conn           net.Conn
 	NodeID         eos.SHA256Bytes
 	SigningKey     *ecc.PrivateKey
