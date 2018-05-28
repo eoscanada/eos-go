@@ -26,7 +26,8 @@ import (
 */
 
 type InfoResp struct {
-	ServerVersion            string      `json:"server_version"`              // "2cc40a4e"
+	ServerVersion            string      `json:"server_version"` // "2cc40a4e"
+	ChainID                  SHA256Bytes `json:"chain_id"`
 	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
 	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
 	LastIrreversibleBlockID  SHA256Bytes `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"

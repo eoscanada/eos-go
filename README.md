@@ -55,25 +55,10 @@ MIT
 
 
 
-----------------------
+
+TODO notes
+----------
 
 Changes to dawn4:
 * sig_digest always adds something even with empty context free actions.
 * PUB, PVT, SIG
-* implement `delegatebw` NewDelegateBandwidth(), etc..
-  (storage_stake)(storage_bytes) -> (ram_bytes)
-
-Unanswered questions:
-* what's the "location" field on a "producer_info" (eosio.system.abi)
-* the `setglimits` and `setalimits` in the eosio.bios .. do we need to call that
-  to setup the chain ? what does bootseq_.. say in the eosio repo ?
-* what do `transaction_extensions` mean in a transaction ? any uses ? special cases ?
-* all the multisig things.. we should implement
-* usage is billed, means the "scope" of the storage on those multi_index tables is "contract" and "billed account", right ?! :) that's pretty cool :)
-
-* does --stake-net and friends create a separate action ?
-* cleos create newaccount --stake-net "1.0000 EOS" --stake-cpu "1.0000 EOS" --buy-ram-bytes 111 eoosio acct pubkey pubkey -p eosio
-* check `eosio` tables now: producers, global, voters, userres, totalband, delband, refunds, and `msig` table `proposal`
-
-* sync up `get_account` return struct.. way richer now.
-* sync up most /v1/chain outputs..

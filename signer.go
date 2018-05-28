@@ -68,7 +68,7 @@ func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys 
 
 // KeyBag holds private keys in memory, for signing transactions.
 type KeyBag struct {
-	Keys []*ecc.PrivateKey
+	Keys []*ecc.PrivateKey `json:"keys"`
 }
 
 func NewKeyBag() *KeyBag {
@@ -97,6 +97,10 @@ func (b *KeyBag) ImportFromFile(path string) error {
 
 	for scanner.Scan() {
 		key := strings.TrimSpace(strings.Split(scanner.Text(), " ")[0])
+
+		if strings.Contains(key, "/") || strings.Contains(key, "#") || strings.Contains(key, ";") {
+			return fmt.Errorf("lines should consist of a private key on each line, with an optional whitespace and comment")
+		}
 
 		if err := b.Add(key); err != nil {
 			return err
@@ -130,6 +134,7 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, err
 		}
 	}
+
 	keyMap := b.keyMap()
 	for _, key := range requiredKeys {
 		privKey := keyMap[key.String()]
@@ -168,7 +173,11 @@ func (b *KeyBag) keyMap() map[string]*ecc.PrivateKey {
 
 func SigDigest(chainID, payload, contextFreeData []byte) []byte {
 	h := sha256.New()
-	_, _ = h.Write(chainID)
+	if len(chainID) == 0 {
+		_, _ = h.Write(make([]byte, 32, 32))
+	} else {
+		_, _ = h.Write(chainID)
+	}
 	_, _ = h.Write(payload)
 
 	if len(contextFreeData) > 0 {

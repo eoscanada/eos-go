@@ -3,6 +3,7 @@ package ecc
 import (
 	cryptorand "crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -104,4 +105,24 @@ func (p *PrivateKey) String() string {
 	return wif.String()
 	// FIXME: when we decide to go ahead with the new representation.
 	//return PrivateKeyPrefix + p.Curve.StringPrefix() + wif.String()
+}
+
+func (p *PrivateKey) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.String())
+}
+
+func (p *PrivateKey) UnmarshalJSON(v []byte) (err error) {
+	var s string
+	if err = json.Unmarshal(v, &s); err != nil {
+		return
+	}
+
+	newPrivKey, err := NewPrivateKey(s)
+	if err != nil {
+		return
+	}
+
+	*p = *newPrivKey
+
+	return
 }
