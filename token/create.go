@@ -2,7 +2,7 @@ package token
 
 import eos "github.com/eoscanada/eos-go"
 
-func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall, canWhitelist bool) *eos.Action {
+func NewCreate(issuer eos.AccountName, maxSupply eos.Asset) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio.token"),
 		Name:    ActN("create"),
@@ -12,9 +12,6 @@ func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall
 		ActionData: eos.NewActionData(Create{
 			Issuer:        issuer,
 			MaximumSupply: maxSupply,
-			CanFreeze:     canFreeze,
-			CanRecall:     canRecall,
-			CanWhitelist:  canWhitelist,
 		}),
 	}
 }
@@ -23,7 +20,4 @@ func NewCreate(issuer eos.AccountName, maxSupply eos.Asset, canFreeze, canRecall
 type Create struct {
 	Issuer        eos.AccountName `json:"issuer"`
 	MaximumSupply eos.Asset       `json:"maximum_supply"`
-	CanFreeze     bool            `json:"can_freeze"`
-	CanRecall     bool            `json:"can_recall"`
-	CanWhitelist  bool            `json:"can_whitelist"`
 }
