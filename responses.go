@@ -86,8 +86,8 @@ type AccountResp struct {
 	Created            JSONTime             `json:"created"`
 	RAMQuota           int64                `json:"ram_quota"`
 	RAMUsage           int64                `json:"ram_usage"`
-	NetWeight          int64                `json:"net_weight"`
-	CPUWeight          int64                `json:"cpu_weight"`
+	NetWeight          string               `json:"net_weight"`
+	CPUWeight          string               `json:"cpu_weight"`
 	NetLimit           AccountResourceLimit `json:"net_limit"`
 	CPULimit           AccountResourceLimit `json:"cpu_limit"`
 	Permissions        []Permission         `json:"permissions"`

@@ -1,18 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
 func main() {
 	//api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
-	api := eos.New("http://35.203.101.218:8888", bytes.Repeat([]byte{0}, 32))
-	//api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
+	//api := eos.New("http://35.203.101.218:8888", bytes.Repeat([]byte{0}, 32))
+	api := eos.New("http://localhost:8888")
 
 	api.Debug = true
 	eos.Debug = true
@@ -102,21 +102,22 @@ func main() {
 
 	actionResp, err := api.SignPushActions(
 
+		system.NewNewAccount(AC("eosio"), AC("aabbccddeeff"), ecc.MustNewPublicKey("EOS71UgDXVDXd56UUhCCLyn2U8QbjniESZLxRsBkkogNUHZwizY3b")),
 		system.NewBuyRAM(
 			eos.AccountName("eosio"),
-			eos.AccountName("aaaaaaaaaaaa"),
+			eos.AccountName("aabbccddeeff"),
 			8192,
 		),
-		system.NewDelegateBW(
-			eos.AccountName("eosio"),
-			eos.AccountName("aaaaaaaaaaaa"),
-			eos.NewEOSAsset(10000),
-			eos.NewEOSAsset(10000),
-			true,
-		),
+		//system.NewDelegateBW(
+		//	eos.AccountName("eosio"),
+		//	eos.AccountName("bbbbbbbbbbbb"),
+		//	eos.NewEOSAsset(10000),
+		//	eos.NewEOSAsset(10000),
+		//	true,
+		//),
 		//system.NewNewAccount(AC("eosio"), AC("aaaaaaaaaaac"), ecc.MustNewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")),
 
-		//		token.NewTransfer(eos.AccountName("cbillett"), eos.AccountName("bozo"), eos.NewEOSAsset(100), ""),
+		//token.NewTransfer(eos.AccountName("eosio"), eos.AccountName("bbbbbbbbbbbb"), eos.NewEOSAsset(100000), ""),
 	)
 	if err != nil {
 		fmt.Println("ERROR calling :", err)
