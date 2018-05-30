@@ -287,7 +287,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type IDListMode uint8
+type IDListMode byte
 
 const (
 	none IDListMode = iota

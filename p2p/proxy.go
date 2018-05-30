@@ -6,12 +6,6 @@ import (
 	"bufio"
 	"fmt"
 
-	"log"
-
-	"bytes"
-
-	"encoding/hex"
-
 	"github.com/eoscanada/eos-go"
 )
 
@@ -49,15 +43,16 @@ func (p *Proxy) handleTransmission(channel chan routeCommunication) {
 	for communication := range channel {
 
 		//_, err := communication.DestinationConnection.Write(communication.Envelope.Payload)
-		buf := new(bytes.Buffer)
-		encoder := eos.NewEncoder(buf)
-		err := encoder.Encode(communication.Envelope)
-		if err != nil {
-			fmt.Println("Sender encode error: ", err)
-		}
+		//buf := new(bytes.Buffer)
+		//encoder := eos.NewEncoder(buf)
+		//err := encoder.Encode(communication.Envelope)
+		//if err != nil {
+		//	fmt.Println("Sender encode error: ", err)
+		//}
 
-		fmt.Println("Data to send: ", hex.EncodeToString(buf.Bytes()))
-		_, err = communication.DestinationConnection.Write(buf.Bytes())
+		//fmt.Println("Data to send: ", hex.EncodeToString(buf.Bytes()))
+
+		_, err := communication.DestinationConnection.Write(communication.Envelope.Raw)
 		if err != nil {
 			fmt.Println("Sender comm error: ", err)
 		}
@@ -140,13 +135,14 @@ func (p *Proxy) handleConnection(connection net.Conn, forwardConnection net.Conn
 
 		envelope, err := eos.ReadP2PMessageData(r)
 		if err != nil {
-			fmt.Printf("Connection error from [%s] to [%s] : %s\n ", route.From, route.To, err)
+			fmt.Printf("WARNING: Connection from [%s] to [%s] : %s\n ", route.From, route.To, err)
 			forwardConnection.Close()
-			log.Fatal("Handle connection, ", err)
+			//log.Fatal("Handle connection, ", err)
+			return err
 		}
 
 		router <- routeCommunication{
-			Route: route,
+			Route:                 route,
 			DestinationConnection: forwardConnection,
 			Envelope:              envelope,
 		}

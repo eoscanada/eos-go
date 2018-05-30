@@ -88,15 +88,29 @@ type P2PMessageEnvelope struct {
 	Type       P2PMessageType `json:"type"`
 	Payload    []byte         `json:"-"`
 	P2PMessage P2PMessage     `json:"message" eos:"-"`
+	Raw        []byte         `json:"-"`
 }
 
 func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	data := make([]byte, 0)
 
-	lengthBytes := make([]byte, 4, 4)
-	_, err = r.Read(lengthBytes)
-	if err != nil {
-		return
+	toRead := 4
+	lengthBytes := make([]byte, 0)
+
+	for {
+		b := make([]byte, toRead, toRead)
+		l, err := r.Read(b)
+		if err != nil {
+			return nil, fmt.Errorf("readfull lengh, %s", err)
+
+		}
+		toRead -= l
+		lengthBytes = append(lengthBytes, b[:l]...)
+
+		if toRead == 0 {
+			fmt.Println("length all read")
+			break
+		}
 	}
 
 	data = append(data, lengthBytes...)
@@ -112,7 +126,7 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	}
 
 	if err != nil {
-		fmt.Println("Connection error: ", err)
+		fmt.Println("ReadFull, error: ", err)
 		return
 	}
 
@@ -125,5 +139,6 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 	if err != nil {
 		fmt.Println("Failing data: ", hex.EncodeToString(data))
 	}
+	envelope.Raw = data
 	return
 }

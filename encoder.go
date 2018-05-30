@@ -60,6 +60,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeString(cv)
 	case TransactionStatus:
 		return e.writeByte(uint8(cv))
+	case IDListMode:
+		return e.writeByte(byte(cv))
 	case byte:
 		return e.writeByte(cv)
 	case int8:
