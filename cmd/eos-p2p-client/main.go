@@ -5,6 +5,8 @@ import (
 
 	"flag"
 
+	"encoding/hex"
+
 	"github.com/eoscanada/eos-go/p2p"
 )
 
@@ -19,8 +21,12 @@ func main() {
 	flag.Parse()
 
 	done := make(chan bool)
-	//eos.Debug = true
-	client, err := p2p.NewClient(*p2pAddr, *chainID, uint16(*networkVersion))
+	cID, err := hex.DecodeString(*chainID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client, err := p2p.NewClient(*p2pAddr, cID, uint16(*networkVersion))
 	if err != nil {
 		log.Fatal(err)
 	}

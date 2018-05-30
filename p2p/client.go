@@ -28,20 +28,16 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, chainID string, networkVersion uint16) (*Client, error) {
-	cID, err := hex.DecodeString(chainID)
-	if err != nil {
-		return nil, err
-	}
+func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) (*Client, error) {
 	c := &Client{
 		p2pAddress:     p2pAddr,
-		ChainID:        cID,
+		ChainID:        chainID,
 		NetworkVersion: networkVersion,
 		AgentName:      "eos-go client",
 		// by default, fake being a peer at the same level as the other..
 	}
 	c.registerInitHandler()
-	c.NodeID = cID
+	c.NodeID = chainID
 	return c, nil
 }
 
