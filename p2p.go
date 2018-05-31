@@ -24,7 +24,7 @@ const (
 	NoticeMessageType // 4
 	RequestMessageType
 	SyncRequestMessageType // 6
-	SignedBlockType
+	SignedBlockType // 7
 	PackedTransactionMessageType // 8
 )
 

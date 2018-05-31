@@ -28,7 +28,7 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 	return length, nil
 }
 
-func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) (*Client, error) {
+func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *Client {
 	c := &Client{
 		p2pAddress:     p2pAddr,
 		ChainID:        chainID,
@@ -38,7 +38,7 @@ func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) (
 	}
 	c.registerInitHandler()
 	c.NodeID = chainID
-	return c, nil
+	return c
 }
 
 type Client struct {

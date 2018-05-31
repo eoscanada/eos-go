@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client, err := p2p.NewClient(*p2pAddr, cID, uint16(*networkVersion))
+	client := p2p.NewClient(*p2pAddr, cID, uint16(*networkVersion))
 	if err != nil {
 		log.Fatal(err)
 	}
