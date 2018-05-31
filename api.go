@@ -29,6 +29,8 @@ type API struct {
 	lastGetInfo      *InfoResp
 	lastGetInfoStamp time.Time
 	lastGetInfoLock  sync.Mutex
+
+	customGetRequiredKeys func(tx *Transaction) ([]ecc.PublicKey, error)
 }
 
 func New(baseURL string) *API {
@@ -93,6 +95,10 @@ func (api *API) EnableKeepAlives() bool {
 		return true
 	}
 	return false
+}
+
+func (api *API) SetCustomGetRequiredKeys(f func(tx *Transaction) ([]ecc.PublicKey, error)) {
+	api.customGetRequiredKeys = f
 }
 
 func (api *API) SetSigner(s Signer) {
@@ -206,16 +212,25 @@ func (api *API) SignPushTransaction(tx *Transaction, opts *TxOptions) (out *Push
 		return nil, err
 	}
 
-	resp, err := api.GetRequiredKeys(tx)
-	if err != nil {
-		return nil, fmt.Errorf("get_required_keys: %s", err)
+	var requiredKeys []ecc.PublicKey
+	if api.customGetRequiredKeys != nil {
+		requiredKeys, err = api.customGetRequiredKeys(tx)
+		if err != nil {
+			return nil, fmt.Errorf("custom_get_required_keys: %s", err)
+		}
+	} else {
+		resp, err := api.GetRequiredKeys(tx)
+		if err != nil {
+			return nil, fmt.Errorf("get_required_keys: %s", err)
+		}
+		requiredKeys = resp.RequiredKeys
 	}
 
 	stx := NewSignedTransaction(tx)
 
 	stx.estimateResources(*opts, api.DefaultMaxCPUUsageMS, api.DefaultMaxNetUsageWords)
 
-	signedTx, err := api.Signer.Sign(stx, api.lastGetInfo.ChainID, resp.RequiredKeys...)
+	signedTx, err := api.Signer.Sign(stx, api.lastGetInfo.ChainID, requiredKeys...)
 	if err != nil {
 		return nil, fmt.Errorf("signing through wallet: %s", err)
 	}
