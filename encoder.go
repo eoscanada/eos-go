@@ -360,6 +360,18 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 		if reflect.TypeOf(d).Kind() == reflect.Ptr {
 			d = reflect.ValueOf(actionData.Data).Elem().Interface()
 		}
+
+		if reflect.TypeOf(d).Kind() == reflect.String { //todo : this is a very bad ack ......
+
+			data, err := hex.DecodeString(d.(string))
+			if err != nil {
+				return fmt.Errorf("ack, %s", err)
+			}
+			e.writeByteArray(data)
+			return nil
+
+		}
+
 		println(fmt.Sprintf("encoding action data, %T", d))
 		raw, err := MarshalBinary(d)
 		if err != nil {
