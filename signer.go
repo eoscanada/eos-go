@@ -120,6 +120,16 @@ func (b *KeyBag) ImportPrivateKey(wifPrivKey string) (err error) {
 	return b.Add(wifPrivKey)
 }
 
+func (b *KeyBag) SignDigest(digest []byte, requiredKey ecc.PublicKey) (ecc.Signature, error) {
+
+	privateKey := b.keyMap()[requiredKey.String()]
+	if privateKey == nil {
+		return ecc.Signature{}, fmt.Errorf("private key not found for public key [%s]", requiredKey.String())
+	}
+
+	return privateKey.Sign(digest)
+}
+
 func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
 	// TODO: probably want to use `tx.packed` and hash the ContextFreeData also.
 	txdata, err := MarshalBinary(tx.Transaction)
