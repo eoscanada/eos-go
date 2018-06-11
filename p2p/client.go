@@ -8,9 +8,12 @@ import (
 	"sync"
 
 	"encoding/hex"
+	"encoding/json"
 	"log"
 
 	"time"
+
+	"math"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
@@ -36,7 +39,7 @@ func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *
 		AgentName:      "eos-go client",
 		// by default, fake being a peer at the same level as the other..
 	}
-	c.registerInitHandler()
+	c.api = eos.New("http://mainnet.eoscanada.com")
 	c.NodeID = chainID
 	return c
 }
@@ -51,12 +54,15 @@ type Client struct {
 	NodeID         eos.SHA256Bytes
 	SigningKey     *ecc.PrivateKey
 	AgentName      string
-	ShowEmptyChain bool
 
 	LastHandshakeReceived *eos.HandshakeMessage
+	api                   *eos.API
 }
 
-func (c *Client) Connect() (err error) {
+func (c *Client) Connect(sync bool, headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) (err error) {
+
+	c.registerInitHandler(sync, headBlock, headBlockID, headBlockTime, lib, libID)
+
 	conn, err := net.Dial("tcp", c.p2pAddress)
 	if err != nil {
 		return err
@@ -72,9 +78,9 @@ func (c *Client) Connect() (err error) {
 	println("Connected")
 
 	if err := c.SendHandshake(&HandshakeInfo{
-		HeadBlockNum:             0,
-		LastIrreversibleBlockNum: 0,
-		HeadBlockTime:            time.Now(),
+		HeadBlockNum:             headBlock,
+		LastIrreversibleBlockNum: lib,
+		HeadBlockTime:            headBlockTime,
 	}); err != nil {
 		return err
 	}
@@ -108,38 +114,96 @@ func (c *Client) UnregisterHandler(h Handler) {
 	c.handlers = newHandlers
 }
 
-func (c *Client) registerInitHandler() {
+var peerHeadBlock = uint32(0)
+var syncHeadBlock = uint32(0)
+var requestedBlock = uint32(0)
+var syncing = false
+
+func (c *Client) registerInitHandler(sync bool, headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) {
+
 	initHandler := HandlerFunc(func(processable Message) {
-		msg, ok := processable.Envelope.P2PMessage.(*eos.HandshakeMessage)
-		if !ok {
-			return
-		}
 
-		// Keep track of last handshake received..
-		c.LastHandshakeReceived = msg
+		switch msg := processable.Envelope.P2PMessage.(type) {
+		case *eos.HandshakeMessage:
+			c.LastHandshakeReceived = msg
 
-		var hInfo HandshakeInfo
-		if c.ShowEmptyChain {
-			hInfo = HandshakeInfo{
-				HeadBlockNum:             0,
-				HeadBlockID:              make([]byte, 32, 32),
-				HeadBlockTime:            msg.Time.Time,
-				LastIrreversibleBlockNum: 0,
-				LastIrreversibleBlockID:  make([]byte, 32, 32),
-			}
-		} else {
-			hInfo = HandshakeInfo{
+			hInfo := &HandshakeInfo{
 				HeadBlockNum:             msg.HeadNum,
 				HeadBlockID:              msg.HeadID,
 				HeadBlockTime:            msg.Time.Time,
 				LastIrreversibleBlockNum: msg.LastIrreversibleBlockNum,
 				LastIrreversibleBlockID:  msg.LastIrreversibleBlockID,
 			}
-		}
-		if err := c.SendHandshake(&hInfo); err != nil {
-			log.Println("Failed sending handshake:", err)
-		}
 
+			if sync {
+
+				if msg.HeadNum > headBlock {
+					syncHeadBlock = headBlock + 1
+					peerHeadBlock = msg.HeadNum
+
+					delta := peerHeadBlock - syncHeadBlock
+					fmt.Printf("Out of sync by %d blocks \n", delta)
+					requestedBlock = syncHeadBlock + uint32(math.Min(float64(delta), 250))
+					fmt.Printf("Requestion block from %d to %d\n", syncHeadBlock, requestedBlock)
+					syncing = true
+					c.SendSyncRequest(syncHeadBlock, requestedBlock)
+					return
+
+				} else {
+					fmt.Println("In sync ... Sending handshake!!!")
+					hInfo = &HandshakeInfo{
+						HeadBlockNum:             headBlock,
+						HeadBlockID:              headBlockID,
+						HeadBlockTime:            headBlockTime,
+						LastIrreversibleBlockNum: lib,
+						LastIrreversibleBlockID:  libID,
+					}
+				}
+			}
+
+			if err := c.SendHandshake(hInfo); err != nil {
+				log.Println("Failed sending handshake:", err)
+			}
+
+			fmt.Println("Sent handshake:", hInfo)
+
+		case *eos.SignedBlock:
+
+			syncHeadBlock = msg.BlockNumber()
+
+			if syncHeadBlock == requestedBlock {
+
+				delta := peerHeadBlock - syncHeadBlock
+				if delta == 0 {
+
+					syncing = false
+					sync = false
+					fmt.Println("Sync completed ... Sending handshake")
+					hInfo := &HandshakeInfo{
+						HeadBlockNum:             0,
+						HeadBlockID:              make([]byte, 32, 32),
+						HeadBlockTime:            time.Now(),
+						LastIrreversibleBlockNum: 0,
+						LastIrreversibleBlockID:  make([]byte, 32, 32),
+					}
+					if err := c.SendHandshake(hInfo); err != nil {
+						log.Println("Failed sending handshake:", err)
+						return
+					}
+
+					fmt.Println("Send handshake: ", hInfo)
+
+					return
+				}
+
+				requestedBlock = syncHeadBlock + uint32(math.Min(float64(delta), 250))
+				syncHeadBlock++
+				fmt.Println("************************************")
+				fmt.Printf("Requestion more block from %d to %d\n", syncHeadBlock, requestedBlock)
+				fmt.Println("************************************")
+				c.SendSyncRequest(syncHeadBlock, requestedBlock)
+			}
+		}
 	})
 	c.RegisterHandler(initHandler)
 }
@@ -153,14 +217,16 @@ type HandshakeInfo struct {
 }
 
 func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
+	fmt.Println("Will send handshake.")
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
+		fmt.Println("publicKey : ", err)
 		return
 	}
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	println("Time from fake: ", tstamp)
+	fmt.Println("Time from fake: ", tstamp)
 	//tData, err := eos.MarshalBinary(&tstamp)
 	//if err != nil {
 	//	return fmt.Errorf("marshalling tstamp, %s", err)
@@ -204,6 +270,9 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 	}
 
 	err = c.sendMessage(handshake)
+	if err != nil {
+		fmt.Println("send HandshakeMessage, ", err)
+	}
 	return
 }
 
@@ -219,11 +288,18 @@ func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (e
 
 func (c *Client) sendMessage(message eos.P2PMessage) (err error) {
 	n, _ := message.GetType().Name()
-	println("Sending message [%s] to server\n", n)
+	fmt.Printf("Sending message [%s] to server\n", n)
 
 	envelope := &eos.P2PMessageEnvelope{
 		Type:       message.GetType(),
 		P2PMessage: message,
+	}
+
+	jsonData, err := json.Marshal(&message)
+	if err != nil {
+		fmt.Println("sending json :", err)
+	} else {
+		fmt.Println("sending json :", string(jsonData))
 	}
 
 	encoder := eos.NewEncoder(c.Conn)
