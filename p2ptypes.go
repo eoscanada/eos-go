@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -207,8 +206,6 @@ func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("MAM", hex.EncodeToString(cereal), b.BlockNumber(), hex.EncodeToString(b.Previous))
 
 	h := sha256.New()
 	_, _ = h.Write(cereal)
