@@ -59,7 +59,15 @@ type Client struct {
 	api                   *eos.API
 }
 
-func (c *Client) Connect(sync bool, headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) (err error) {
+func (c *Client) ConnectRecent() error {
+	return c.connect(false, 0, make([]byte, 32), time.Now(), 0, make([]byte, 32))
+}
+
+func (c *Client) ConnectAndSync(headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) error {
+	return c.connect(true, headBlock, headBlockID, headBlockTime, lib, libID)
+}
+
+func (c *Client) connect(sync bool, headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) (err error) {
 
 	c.registerInitHandler(sync, headBlock, headBlockID, headBlockTime, lib, libID)
 
