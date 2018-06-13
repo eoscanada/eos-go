@@ -98,6 +98,12 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeCurrencyName(cv)
 	case Asset:
 		return e.writeAsset(cv)
+	// case *OptionalProducerSchedule:
+	// 	isPresent := cv != nil
+	// 	e.writeBool(isPresent)
+	// 	if isPresent {
+
+	// 	}
 	case ActionData:
 		println("ActionData")
 		return e.writeActionData(cv)
@@ -149,25 +155,32 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 			println(fmt.Sprintf("Encode: struct [%T] with %d field.", v, l))
 			//prefix = append(prefix, "     ")
 
-			n := 0
 			for i := 0; i < l; i++ {
 				field := t.Field(i)
 				println(fmt.Sprintf("field -> %s", field.Name))
 				//fmt.Println(fmt.Sprintf("field -> %s", field.Name))
 
-				if tag := field.Tag.Get("eos"); tag == "-" {
+				tag := field.Tag.Get("eos")
+				if tag == "-" {
 					continue
 				}
+
 				if v := rv.Field(i); t.Field(i).Name != "_" {
 					if v.CanInterface() {
-						iface := v.Interface()
-						if iface != nil {
-							if err = e.Encode(iface); err != nil {
+						isPresent := true
+						if tag == "optional" {
+							isPresent = !v.IsNil()
+							e.writeBool(isPresent)
+						}
+
+						//fmt.Printf("IS PRESENT: %T %#v\n", iface, iface, isPresent)
+
+						if isPresent {
+							if err = e.Encode(v.Interface()); err != nil {
 								return
 							}
 						}
 					}
-					n++
 				}
 			}
 			//prefix = prefix[:len(prefix)-1]

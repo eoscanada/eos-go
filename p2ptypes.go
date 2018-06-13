@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -186,15 +187,15 @@ type ProducerSchedule struct {
 }
 
 type BlockHeader struct {
-	Timestamp        BlockTimestamp           `json:"timestamp"`
-	Producer         AccountName              `json:"producer"`
-	Confirmed        uint16                   `json:"confirmed"`
-	Previous         SHA256Bytes              `json:"previous"`
-	TransactionMRoot SHA256Bytes              `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes              `json:"action_mroot"`
-	ScheduleVersion  uint32                   `json:"schedule_version"`
-	NewProducers     OptionalProducerSchedule `json:"new_producers"`
-	HeaderExtensions []*Extension             `json:"header_extensions"`
+	Timestamp        BlockTimestamp            `json:"timestamp"`
+	Producer         AccountName               `json:"producer"`
+	Confirmed        uint16                    `json:"confirmed"`
+	Previous         SHA256Bytes               `json:"previous"`
+	TransactionMRoot SHA256Bytes               `json:"transaction_mroot"`
+	ActionMRoot      SHA256Bytes               `json:"action_mroot"`
+	ScheduleVersion  uint32                    `json:"schedule_version"`
+	NewProducers     *OptionalProducerSchedule `json:"new_producers" eos:"optional"`
+	HeaderExtensions []*Extension              `json:"header_extensions"`
 }
 
 func (b *BlockHeader) BlockNumber() uint32 {
@@ -207,17 +208,19 @@ func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
 		return nil, err
 	}
 
+	fmt.Println("MAM", hex.EncodeToString(cereal), b.BlockNumber(), hex.EncodeToString(b.Previous))
+
 	h := sha256.New()
 	_, _ = h.Write(cereal)
-	return SHA256Bytes(h.Sum(nil)), nil
+	hashed := h.Sum(nil)
+
+	binary.BigEndian.PutUint32(hashed, b.BlockNumber())
+
+	return SHA256Bytes(hashed), nil
 }
 
 type OptionalProducerSchedule struct {
 	ProducerSchedule
-}
-
-func (a *OptionalProducerSchedule) OptionalBinaryMarshalerPresent() bool {
-	return a == nil
 }
 
 type SignedBlockHeader struct {

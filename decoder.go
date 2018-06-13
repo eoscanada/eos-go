@@ -121,7 +121,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv = reflect.Indirect(newRV)
 	}
 
-	switch v.(type) {
+	switch realV := v.(type) {
 	case *string:
 		s, e := d.readString()
 		if e != nil {
@@ -223,7 +223,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.Set(reflect.ValueOf(asset))
 		return
 
-	case *OptionalProducerSchedule:
+	case **OptionalProducerSchedule:
 		isPresent, e := d.readByte()
 		if e != nil {
 			err = fmt.Errorf("decode: OptionalProducerSchedule isPresent, %s", e)
@@ -232,6 +232,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 		if isPresent == 0 {
 			println("Skipping optional OptionalProducerSchedule")
+			*realV = nil
 			return
 		}
 
