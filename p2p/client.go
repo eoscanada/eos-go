@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"encoding/hex"
-	"encoding/json"
 	"log"
 
 	"time"
@@ -173,8 +172,6 @@ func (c *Client) registerInitHandler(sync bool, headBlock uint32, headBlockID eo
 				log.Println("Failed sending handshake:", err)
 			}
 
-			fmt.Println("Sent handshake:", hInfo)
-
 		case *eos.SignedBlock:
 
 			syncHeadBlock = msg.BlockNumber()
@@ -225,7 +222,6 @@ type HandshakeInfo struct {
 }
 
 func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
-	fmt.Println("Will send handshake.")
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
 		fmt.Println("publicKey : ", err)
@@ -295,19 +291,10 @@ func (c *Client) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (e
 }
 
 func (c *Client) sendMessage(message eos.P2PMessage) (err error) {
-	n, _ := message.GetType().Name()
-	fmt.Printf("Sending message [%s] to server\n", n)
 
 	envelope := &eos.P2PMessageEnvelope{
 		Type:       message.GetType(),
 		P2PMessage: message,
-	}
-
-	jsonData, err := json.Marshal(&message)
-	if err != nil {
-		fmt.Println("sending json :", err)
-	} else {
-		fmt.Println("sending json :", string(jsonData))
 	}
 
 	encoder := eos.NewEncoder(c.Conn)
