@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	"encoding/binary"
@@ -185,13 +186,12 @@ type ProducerSchedule struct {
 }
 
 type BlockHeader struct {
-	Timestamp        BlockTimestamp `json:"timestamp"`
-	Producer         AccountName    `json:"producer"`
-	Confirmed        uint16         `json:"confirmed"`
-	Previous         SHA256Bytes    `json:"previous"`
-	TransactionMRoot SHA256Bytes    `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes    `json:"action_mroot"`
-	//BlockMRoot       SHA256Bytes              `json:"block_mroot"`
+	Timestamp        BlockTimestamp           `json:"timestamp"`
+	Producer         AccountName              `json:"producer"`
+	Confirmed        uint16                   `json:"confirmed"`
+	Previous         SHA256Bytes              `json:"previous"`
+	TransactionMRoot SHA256Bytes              `json:"transaction_mroot"`
+	ActionMRoot      SHA256Bytes              `json:"action_mroot"`
 	ScheduleVersion  uint32                   `json:"schedule_version"`
 	NewProducers     OptionalProducerSchedule `json:"new_producers"`
 	HeaderExtensions []*Extension             `json:"header_extensions"`
@@ -199,6 +199,17 @@ type BlockHeader struct {
 
 func (b *BlockHeader) BlockNumber() uint32 {
 	return binary.BigEndian.Uint32(b.Previous[:4]) + 1
+}
+
+func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
+	cereal, err := MarshalBinary(b)
+	if err != nil {
+		return nil, err
+	}
+
+	h := sha256.New()
+	_, _ = h.Write(cereal)
+	return SHA256Bytes(h.Sum(nil)), nil
 }
 
 type OptionalProducerSchedule struct {

@@ -135,6 +135,11 @@ func (api *API) GetCode(account AccountName) (out *GetCodeResp, err error) {
 	return
 }
 
+func (api *API) GetABI(account AccountName) (out *GetABIResp, err error) {
+	err = api.call("chain", "get_abi", M{"account_name": account}, &out)
+	return
+}
+
 // WalletImportKey loads a new WIF-encoded key into the wallet.
 func (api *API) WalletImportKey(walletName, wifPrivKey string) (err error) {
 	return api.call("wallet", "import_key", []string{walletName, wifPrivKey}, nil)

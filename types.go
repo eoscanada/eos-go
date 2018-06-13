@@ -224,6 +224,11 @@ type GetCodeResp struct {
 	ABI         ABI         `json:"abi"`
 }
 
+type GetABIResp struct {
+	AccountName AccountName `json:"account_name"`
+	ABI         ABI         `json:"abi"`
+}
+
 // JSONTime
 
 type JSONTime struct {
