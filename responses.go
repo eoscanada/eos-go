@@ -3,7 +3,9 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"reflect"
+	"strconv"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -264,14 +266,14 @@ type Global struct {
 }
 
 type Producer struct {
-	Owner         string  `json:"owner"`
-	TotalVotes    float64 `json:"total_votes,string"`
-	ProducerKey   string  `json:"producer_key"`
-	IsActive      int     `json:"is_active"`
-	URL           string  `json:"url"`
-	UnpaidBlocks  int     `json:"unpaid_blocks"`
-	LastClaimTime int     `json:"last_claim_time"`
-	Location      int     `json:"location"`
+	Owner         string      `json:"owner"`
+	TotalVotes    float64     `json:"total_votes,string"`
+	ProducerKey   string      `json:"producer_key"`
+	IsActive      int         `json:"is_active"`
+	URL           string      `json:"url"`
+	UnpaidBlocks  int         `json:"unpaid_blocks"`
+	LastClaimTime JSONFloat64 `json:"last_claim_time"`
+	Location      int         `json:"location"`
 }
 type ProducersResp struct {
 	Producers []Producer `json:"producers"`

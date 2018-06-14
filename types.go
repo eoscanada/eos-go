@@ -3,6 +3,7 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -345,4 +346,37 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 		t.Time, err = time.Parse(`"`+BlockTimestampFormat+`Z07:00"`, string(data))
 	}
 	return err
+}
+
+type JSONFloat64 float64
+
+func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		return errors.New("empty value")
+	}
+
+	if data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+
+		val, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return err
+		}
+
+		*f = JSONFloat64(val)
+
+		return nil
+	}
+
+	var fl float64
+	if err := json.Unmarshal(data, &fl); err != nil {
+		return err
+	}
+
+	*f = JSONFloat64(fl)
+
+	return nil
 }
