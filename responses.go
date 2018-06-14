@@ -3,9 +3,7 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"reflect"
-	"strconv"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
