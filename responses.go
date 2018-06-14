@@ -252,12 +252,12 @@ type Global struct {
 	TotalRAMBytesReserved          int     `json:"total_ram_bytes_reserved"`
 	TotalRAMStake                  int     `json:"total_ram_stake"`
 	LastProducerScheduleUpdate     string  `json:"last_producer_schedule_update"`
-	LastPervoteBucketFill          int     `json:"last_pervote_bucket_fill"`
+	LastPervoteBucketFill          int64   `json:"last_pervote_bucket_fill,string"`
 	PervoteBucket                  int     `json:"pervote_bucket"`
 	PerblockBucket                 int     `json:"perblock_bucket"`
 	TotalUnpaidBlocks              int     `json:"total_unpaid_blocks"`
 	TotalActivatedStake            float64 `json:"total_activated_stake,string"`
-	ThreshActivatedStakeTime       int     `json:"thresh_activated_stake_time"`
+	ThreshActivatedStakeTime       int64   `json:"thresh_activated_stake_time,string"`
 	LastProducerScheduleSize       int     `json:"last_producer_schedule_size"`
 	TotalProducerVoteWeight        float64 `json:"total_producer_vote_weight,string"`
 	LastNameClose                  string  `json:"last_name_close"`

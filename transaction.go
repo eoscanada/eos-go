@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/zlib"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"time"
@@ -179,6 +180,12 @@ type PackedTransaction struct {
 	Compression           CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
 	PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
 	PackedTransaction     HexBytes        `json:"packed_trx"`
+}
+
+func (p *PackedTransaction) ID() SHA256Bytes {
+	h := sha256.New()
+	_, _ = h.Write(p.PackedTransaction)
+	return h.Sum(nil)
 }
 
 func (p *PackedTransaction) Unpack() (signedTx *SignedTransaction, err error) {
