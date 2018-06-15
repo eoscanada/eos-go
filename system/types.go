@@ -67,31 +67,9 @@ type Refund struct {
 	Owner eos.AccountName `json:"owner"`
 }
 
-// UnregProducer represents the `eosio.system::unregprod` action
-type UnregProducer struct {
-	Producer eos.AccountName `json:"producer"`
-}
-
-// RegProxy represents the `eosio.system::regproxy` action
-type RegProxy struct {
-	Proxy eos.AccountName `json:"proxy"`
-}
-
 // UnregProxy represents the `eosio.system::unregproxy` action
 type UnregProxy struct {
 	Proxy eos.AccountName `json:"proxy"`
-}
-
-// VoteProducer represents the `eosio.system::voteproducer` action
-type VoteProducer struct {
-	Voter     eos.AccountName   `json:"voter"`
-	Proxy     eos.AccountName   `json:"proxy"`
-	Producers []eos.AccountName `json:"producers"`
-}
-
-// ClaimRewards repreents the `eosio.system::claimrewards` action
-type ClaimRewards struct {
-	Owner eos.AccountName `json:"owner"`
 }
 
 // Nonce represents the `eosio.system::nonce` action. It is used to

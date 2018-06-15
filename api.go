@@ -303,7 +303,7 @@ func (api *API) GetBlockByNumOrID(query string) (out *SignedBlock, err error) {
 }
 
 func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
-	err = api.call("account_history", "get_transaction", M{"transaction_id": id}, &out)
+	err = api.call("history", "get_transaction", M{"id": id}, &out)
 	return
 }
 

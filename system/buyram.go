@@ -9,7 +9,7 @@ func NewBuyRAM(payer, receiver eos.AccountName, eosQuantity uint64) *eos.Action 
 		Account: AN("eosio"),
 		Name:    ActN("buyram"),
 		Authorization: []eos.PermissionLevel{
-			{payer, eos.PermissionName("active")},
+			{Actor: payer, Permission: PN("active")},
 		},
 		ActionData: eos.NewActionData(BuyRAM{
 			Payer:    payer,

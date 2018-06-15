@@ -23,3 +23,10 @@ func NewVoteProducer(voter eos.AccountName, proxy eos.AccountName, producers ...
 	}
 	return a
 }
+
+// VoteProducer represents the `eosio.system::voteproducer` action
+type VoteProducer struct {
+	Voter     eos.AccountName   `json:"voter"`
+	Proxy     eos.AccountName   `json:"proxy"`
+	Producers []eos.AccountName `json:"producers"`
+}

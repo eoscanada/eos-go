@@ -11,7 +11,7 @@ func NewBuyRAMBytes(payer, receiver eos.AccountName, bytes uint32) *eos.Action {
 		Account: AN("eosio"),
 		Name:    ActN("buyrambytes"),
 		Authorization: []eos.PermissionLevel{
-			{payer, eos.PermissionName("active")},
+			{Actor: payer, Permission: eos.PermissionName("active")},
 		},
 		ActionData: eos.NewActionData(BuyRAMBytes{
 			Payer:    payer,

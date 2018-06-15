@@ -56,15 +56,40 @@ type BlockResp struct {
 // }
 
 type TransactionResp struct {
-	TransactionID string `json:"transaction_id"`
-	Transaction   struct {
-		Signatures            []ecc.Signature `json:"signatures"`
-		Compression           CompressionType `json:"compression"`
-		PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
-		ContextFreeData       []HexBytes      `json:"context_free_data"`
-		PackedTransaction     HexBytes        `json:"packed_transaction"`
-		Transaction           Transaction     `json:"transaction"`
-	} `json:"transaction"`
+	ID      SHA256Bytes `json:"id"`
+	Receipt struct {
+		Status            TransactionStatus `json:"status"`
+		CPUUsageMicrosec  int               `json:"cpu_usage_us"`
+		NetUsageWords     int               `json:"net_usage_words"`
+		PackedTransaction TransactionWithID `json:"trx"`
+	} `json:"receipt"`
+	Transaction           ProcessedTransaction `json:"trx"`
+	BlockTime             JSONTime             `json:"block_time"`
+	BlockNum              uint32               `json:"block_num"`
+	LastIrreversibleBlock uint32               `json:"last_irreversible_block"`
+	Traces                []TransactionTrace   `json:"traces"`
+}
+
+type ProcessedTransaction struct {
+	Transaction SignedTransaction `json:"trx"`
+}
+
+type TransactionTrace struct {
+	Receipt struct {
+		Receiver        AccountName `json:"receiver"`
+		GlobalSequence  int         `json:"global_sequence"`
+		ReceiveSequence int         `json:"recv_sequence"`
+		// AuthSequence.. complex..
+		CodeSequence int `json:"code_sequence"`
+		ABISequence  int `json:"abi_sequence"`
+	} `json:"receipt"`
+	Action        Action      `json:"act"`
+	Elapsed       int         `json:"elapsed"`
+	CPUUsage      int         `json:"cpu_usage"`
+	Console       string      `json:"console"`
+	TotalCPUUsage int         `json:"total_cpu_usage"`
+	TransactionID SHA256Bytes `json:"trx_id"`
+	// InlineTraces ??
 }
 
 type SequencedTransactionResp struct {
