@@ -53,20 +53,6 @@ type EOSIOGlobalState struct {
 	PaymentPerBlock           uint64 `json:"payment_per_block"`
 }
 
-// UndelegateBW represents the `eosio.system::undelegatebw` action.
-type UndelegateBW struct {
-	From         eos.AccountName `json:"from"`
-	Receiver     eos.AccountName `json:"receiver"`
-	UnstakeNet   eos.Asset       `json:"unstake_net"`
-	UnstakeCPU   eos.Asset       `json:"unstake_cpu"`
-	UnstakeBytes uint64          `json:"unstake_bytes"`
-}
-
-// Refund represents the `eosio.system::refund` action
-type Refund struct {
-	Owner eos.AccountName `json:"owner"`
-}
-
 // UnregProxy represents the `eosio.system::unregproxy` action
 type UnregProxy struct {
 	Proxy eos.AccountName `json:"proxy"`

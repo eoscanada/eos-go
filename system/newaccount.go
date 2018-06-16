@@ -84,6 +84,25 @@ func NewDelegatedNewAccount(creator, newAccount eos.AccountName, delegatedTo eos
 	}
 }
 
+// NewCustomNewAccount returns a `newaccount` action that lives on the
+// `eosio.system` contract. You can specify your own `owner` and
+// `active` permissions.
+func NewCustomNewAccount(creator, newAccount eos.AccountName, owner, active eos.Authority) *eos.Action {
+	return &eos.Action{
+		Account: AN("eosio"),
+		Name:    ActN("newaccount"),
+		Authorization: []eos.PermissionLevel{
+			{Actor: creator, Permission: PN("active")},
+		},
+		ActionData: eos.NewActionData(NewAccount{
+			Creator: creator,
+			Name:    newAccount,
+			Owner:   owner,
+			Active:  active,
+		}),
+	}
+}
+
 // NewAccount represents a `newaccount` action on the `eosio.system`
 // contract. It is one of the rare ones to be hard-coded into the
 // blockchain.
