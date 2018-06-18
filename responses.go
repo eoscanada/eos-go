@@ -277,7 +277,15 @@ func (i *eosJsonInt) UnmarshalJSON(data []byte) (err error) {
 		}
 		*i = eosJsonInt(v)
 	}
-	return UnmarshalBinary(data, i)
+	var v int
+	err = UnmarshalBinary(data, &v)
+	if err != nil {
+		return
+	}
+
+	*i = eosJsonInt(v)
+
+	return
 }
 
 type Global struct {
