@@ -184,10 +184,15 @@ func (c *Client) registerInitHandler(sync bool, headBlock uint32, headBlockID eo
 					syncing = false
 					sync = false
 					fmt.Println("Sync completed ... Sending handshake")
+					id, err := msg.BlockID()
+					if err != nil {
+						log.Println("blockID: ", err)
+						return
+					}
 					hInfo := &HandshakeInfo{
-						HeadBlockNum:             0,
-						HeadBlockID:              make([]byte, 32, 32),
-						HeadBlockTime:            time.Now(),
+						HeadBlockNum:             msg.BlockNumber(),
+						HeadBlockID:              id,
+						HeadBlockTime:            msg.Timestamp.Time,
 						LastIrreversibleBlockNum: 0,
 						LastIrreversibleBlockID:  make([]byte, 32, 32),
 					}
