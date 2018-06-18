@@ -380,3 +380,36 @@ func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+type JSONInt64 int64
+
+func (i *JSONInt64) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		return errors.New("empty value")
+	}
+
+	if data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+
+		val, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		*i = JSONInt64(val)
+
+		return nil
+	}
+
+	var v int64
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	*i = JSONInt64(v)
+
+	return nil
+}
