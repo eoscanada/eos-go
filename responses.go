@@ -267,12 +267,13 @@ func (i *eosJsonInt) UnmarshalJSON(data []byte) (err error) {
 	}
 	if data[0] == '"' {
 		if len(data) < 2 {
-			return errors.New("data to short to be a string")
+			err = errors.New("data to short to be a string")
+			return
 		}
 		s := string(data[1 : len(data)-1])
 		v, err := strconv.Atoi(s)
 		if err != nil {
-			return
+			return err
 		}
 		*i = eosJsonInt(v)
 	}
