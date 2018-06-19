@@ -43,9 +43,10 @@ type InfoResp struct {
 
 type BlockResp struct {
 	SignedBlock
-	ID             SHA256Bytes `json:"id"`
-	BlockNum       uint32      `json:"block_num"`
-	RefBlockPrefix uint32      `json:"ref_block_prefix"`
+	ID              SHA256Bytes  `json:"id"`
+	BlockNum        uint32       `json:"block_num"`
+	RefBlockPrefix  uint32       `json:"ref_block_prefix"`
+	BlockExtensions []*Extension `json:"block_extensions"`
 }
 
 // type BlockTransaction struct {
