@@ -79,7 +79,8 @@ func (c *Client) connect(sync bool, headBlock uint32, headBlockID eos.SHA256Byte
 
 	println("Connecting to: ", c.p2pAddress)
 	ready := make(chan bool)
-	go c.handleConnection(&Route{From: c.p2pAddress}, ready)
+	errChannel := make(chan error)
+	go c.handleConnection(&Route{From: c.p2pAddress}, ready, errChannel)
 	<-ready
 
 	println("Connected")
@@ -92,7 +93,7 @@ func (c *Client) connect(sync bool, headBlock uint32, headBlockID eos.SHA256Byte
 		return err
 	}
 
-	return nil
+	return <-errChannel
 }
 
 func (c *Client) RegisterHandler(h Handler) {
@@ -308,7 +309,7 @@ func (c *Client) sendMessage(message eos.P2PMessage) (err error) {
 	return
 }
 
-func (c *Client) handleConnection(route *Route, ready chan bool) {
+func (c *Client) handleConnection(route *Route, ready chan bool, errChannel chan error) {
 
 	r := bufio.NewReader(c.Conn)
 
@@ -318,7 +319,7 @@ func (c *Client) handleConnection(route *Route, ready chan bool) {
 		envelope, err := eos.ReadP2PMessageData(r)
 		if err != nil {
 			log.Println("Error reading from p2p client:", err)
-			// TODO: kill the socket, do something !
+			errChannel <- err
 			return
 		}
 
