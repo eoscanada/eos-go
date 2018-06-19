@@ -223,6 +223,35 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.Set(reflect.ValueOf(asset))
 		return
 
+	case *TransactionWithID:
+
+		t, e := d.readByte()
+		if err != nil {
+			err = fmt.Errorf("decode: TransactionWithID failed to read type byte: %s", e)
+			return
+		}
+
+		println(fmt.Sprintf("Type byte value : %d", t))
+
+		if t == 0 {
+			id, e := d.readSHA256Bytes()
+			if err != nil {
+				err = fmt.Errorf("decode: TransactionWithID failed to read id: %s", e)
+				return
+			}
+
+			trx := TransactionWithID{ID: &id}
+			rv.Set(reflect.ValueOf(trx))
+			return nil
+
+		} else {
+			packedTrx := &PackedTransaction{}
+			d.Decode(packedTrx)
+			trx := TransactionWithID{Packed: packedTrx}
+			rv.Set(reflect.ValueOf(trx))
+			return nil
+		}
+
 	case **OptionalProducerSchedule:
 		isPresent, e := d.readByte()
 		if e != nil {

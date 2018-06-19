@@ -236,7 +236,7 @@ func (c *Client) SendHandshake(info *HandshakeInfo) (err error) {
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	fmt.Println("Time from fake: ", tstamp)
+	//fmt.Println("Time from fake: ", tstamp)
 	//tData, err := eos.MarshalBinary(&tstamp)
 	//if err != nil {
 	//	return fmt.Errorf("marshalling tstamp, %s", err)

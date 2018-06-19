@@ -251,8 +251,8 @@ type TransactionReceipt struct {
 }
 
 type TransactionWithID struct {
-	ID     uint8 //
-	Packed PackedTransaction
+	ID     *SHA256Bytes
+	Packed *PackedTransaction
 }
 
 func (t TransactionWithID) MarshalJSON() ([]byte, error) {
@@ -269,7 +269,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		*t = TransactionWithID{
-			Packed: packed,
+			Packed: &packed,
 		}
 
 		return nil
@@ -292,7 +292,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 	}
 
 	*t = TransactionWithID{
-		Packed: packed,
+		Packed: &packed,
 	}
 
 	return nil
