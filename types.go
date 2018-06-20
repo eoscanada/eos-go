@@ -117,6 +117,23 @@ func (a Asset) Sub(other Asset) Asset {
 	return Asset{Amount: a.Amount - other.Amount, Symbol: a.Symbol}
 }
 
+func (a Asset) String() string {
+	strInt := fmt.Sprintf("%d", a.Amount)
+	if len(strInt) < int(a.Symbol.Precision+1) {
+		// prepend `0` for the difference:
+		strInt = strings.Repeat("0", int(a.Symbol.Precision+uint8(1))-len(strInt)) + strInt
+	}
+
+	var result string
+	if a.Symbol.Precision == 0 {
+		result = strInt
+	} else {
+		result = strInt[:len(strInt)-int(a.Symbol.Precision)] + "." + strInt[len(strInt)-int(a.Symbol.Precision):]
+	}
+
+	return fmt.Sprintf("%s %s", result, a.Symbol.Symbol)
+}
+
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
 type Symbol struct {
 	Precision uint8

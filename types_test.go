@@ -46,6 +46,31 @@ func TestAssetMarshalUnmarshal(t *testing.T) {
 	*/
 }
 
+func TestAssetToString(t *testing.T) {
+	tests := []struct {
+		in  Asset
+		out string
+	}{
+		// Haven't seen such a thing yet though..
+		{
+			Asset{6000000, Symbol{Precision: 4, Symbol: "EOS"}},
+			"600.0000 EOS",
+		},
+		{
+			Asset{10, Symbol{Precision: 5, Symbol: "SYS"}},
+			"0.00010 SYS",
+		},
+		{
+			Asset{6000, Symbol{Precision: 0, Symbol: "MAMA"}},
+			"6000 MAMA",
+		},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.out, test.in.String())
+	}
+}
+
 func TestSimplePacking(t *testing.T) {
 	type S struct {
 		P string

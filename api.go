@@ -328,7 +328,11 @@ func (api *API) GetRequiredKeys(tx *Transaction) (out *GetRequiredKeysResp, err 
 }
 
 func (api *API) GetCurrencyBalance(account AccountName, symbol string, code AccountName) (out []Asset, err error) {
-	err = api.call("chain", "get_currency_balance", M{"account": account, "symbol": symbol, "code": code}, &out)
+	params := M{"account": account, "code": code}
+	if symbol != "" {
+		params["symbol"] = symbol
+	}
+	err = api.call("chain", "get_currency_balance", params, &out)
 	return
 }
 

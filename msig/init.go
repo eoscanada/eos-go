@@ -11,3 +11,7 @@ func init() {
 	eos.RegisterAction(AN("eosio.msig"), ActN("cancel"), &Cancel{})
 	eos.RegisterAction(AN("eosio.msig"), ActN("exec"), &Exec{})
 }
+
+var AN = eos.AN
+var PN = eos.PN
+var ActN = eos.ActN
