@@ -12,7 +12,7 @@ func NewExec(proposer eos.AccountName, proposalName eos.Name, executer eos.Accou
 		Name:    eos.ActionName("exec"),
 		// TODO: double check in this package that the `Actor` is always the `proposer`..
 		Authorization: []eos.PermissionLevel{
-			{Actor: proposer, Permission: eos.PermissionName("active")},
+			{Actor: executer, Permission: eos.PermissionName("active")},
 		},
 		ActionData: eos.NewActionData(Exec{proposer, proposalName, executer}),
 	}

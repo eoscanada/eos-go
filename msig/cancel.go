@@ -12,7 +12,7 @@ func NewCancel(proposer eos.AccountName, proposalName eos.Name, canceler eos.Acc
 		Name:    eos.ActionName("cancel"),
 		// TODO: double check in this package that the `Actor` is always the `proposer`..
 		Authorization: []eos.PermissionLevel{
-			{Actor: proposer, Permission: eos.PermissionName("active")},
+			{Actor: canceler, Permission: eos.PermissionName("active")},
 		},
 		ActionData: eos.NewActionData(Cancel{proposer, proposalName, canceler}),
 	}
