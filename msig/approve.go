@@ -8,12 +8,10 @@ import (
 // `eosio.msig` contract.
 func NewApprove(proposer eos.AccountName, proposalName eos.Name, level eos.PermissionLevel) *eos.Action {
 	return &eos.Action{
-		Account: eos.AccountName("eosio.msig"),
-		Name:    eos.ActionName("approve"),
-		Authorization: []eos.PermissionLevel{
-			{Actor: proposer, Permission: eos.PermissionName("active")},
-		},
-		ActionData: eos.NewActionData(Approve{proposer, proposalName, level}),
+		Account:       eos.AccountName("eosio.msig"),
+		Name:          eos.ActionName("approve"),
+		Authorization: []eos.PermissionLevel{level},
+		ActionData:    eos.NewActionData(Approve{proposer, proposalName, level}),
 	}
 }
 
