@@ -27,9 +27,9 @@ func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
 type AccountResourceLimit struct {
-	Used      int64  `json:"used"`
-	Available string `json:"available"`
-	Max       string `json:"max"`
+	Used      JSONInt64 `json:"used"`
+	Available JSONInt64 `json:"available"`
+	Max       JSONInt64 `json:"max"`
 }
 
 type DelegatedBandwidth struct {
@@ -43,16 +43,16 @@ type TotalResources struct {
 	Owner     AccountName `json:"owner"`
 	NetWeight Asset       `json:"net_weight"`
 	CPUWeight Asset       `json:"cpu_weight"`
-	RAMBytes  uint64      `json:"ram_bytes"`
+	RAMBytes  JSONInt64   `json:"ram_bytes"`
 }
 
 type VoterInfo struct {
 	Owner             AccountName    `json:"owner"`
 	Proxy             AccountName    `json:"proxy"`
 	Producers         []AccountName  `json:"producers"`
-	Staked            string         `json:"staked"`
-	LastVoteWeight    string         `json:"last_vote_weight"`
-	ProxiedVoteWeight string         `json:"proxied_vote_weight"`
+	Staked            JSONInt64      `json:"staked"`
+	LastVoteWeight    JSONFloat64    `json:"last_vote_weight"`
+	ProxiedVoteWeight JSONFloat64    `json:"proxied_vote_weight"`
 	IsProxy           byte           `json:"is_proxy"`
 	DeferredTrxID     uint32         `json:"deferred_trx_id"`
 	LastUnstakeTime   BlockTimestamp `json:"last_unstake_time"`
@@ -211,6 +211,34 @@ type Permission struct {
 type PermissionLevel struct {
 	Actor      AccountName    `json:"actor"`
 	Permission PermissionName `json:"permission"`
+}
+
+// NewPermissionLevel parses strings like `account@active`,
+// `otheraccount@owner` and builds a PermissionLevel struct. It
+// validates that there is a single optional @ (where permission
+// defaults to 'active'), and validates length of account and
+// permission names.
+func NewPermissionLevel(in string) (out PermissionLevel, err error) {
+	parts := strings.Split(in, "@")
+	if len(parts) > 2 {
+		return out, fmt.Errorf("permission %q invalid, use account[@permission]", in)
+	}
+
+	if len(parts[0]) > 12 {
+		return out, fmt.Errorf("account name %q too long", parts[0])
+	}
+
+	out.Actor = AccountName(parts[0])
+	out.Permission = PermissionName("active")
+	if len(parts) == 2 {
+		if len(parts[1]) > 12 {
+			return out, fmt.Errorf("permission %q name too long", parts[1])
+		}
+
+		out.Permission = PermissionName(parts[1])
+	}
+
+	return
 }
 
 type PermissionLevelWeight struct {
