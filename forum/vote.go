@@ -11,7 +11,7 @@ func NewVote(voter eos.AccountName, proposition, propositionHash, voteValue stri
 		Account: AN("eosforumtest"),
 		Name:    ActN("vote"),
 		Authorization: []eos.PermissionLevel{
-			{Actor: account, Permission: eos.PermissionName("active")},
+			{Actor: voter, Permission: eos.PermissionName("active")},
 		},
 		ActionData: eos.NewActionData(Vote{
 			Voter:           voter,
