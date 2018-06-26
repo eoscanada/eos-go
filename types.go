@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -145,11 +146,31 @@ type Symbol struct {
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
 
 func NewEOSAssetFromString(amount string) (out Asset, err error) {
+	if strings.Contains(amount, " EOS") {
+		amount = strings.Replace(amount, " EOS", "", 1)
+	}
+	if !strings.Contains(amount, ".") {
+		val, err := strconv.ParseInt(amount, 10, 64)
+		if err != nil {
+			return out, err
+		}
+		return NewEOSAsset(val * 10000), nil
+	}
+
+	parts := strings.Split(amount, ".")
+	if len(parts) != 2 {
+		return out, fmt.Errorf("cannot have two . in amount")
+	}
+
+	if len(parts[1]) > 4 {
+		return out, fmt.Errorf("EOS has only 4 decimals")
+	}
+
 	val, err := strconv.ParseInt(strings.Replace(amount, ".", "", 1), 10, 64)
 	if err != nil {
 		return out, err
 	}
-	return NewEOSAsset(val), nil
+	return NewEOSAsset(val * int64(math.Pow10(4-len(parts[1])))), nil
 }
 
 func NewEOSAsset(amount int64) Asset {

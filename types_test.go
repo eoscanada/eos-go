@@ -330,3 +330,59 @@ func TestNewAsset(t *testing.T) {
 		assert.Equal(t, asset.Symbol.Precision, uint8(test.precision))
 	}
 }
+
+func TestNewEOSAssetFromString(t *testing.T) {
+
+	tests := []struct {
+		in     string
+		amount int64
+	}{
+		{
+			"1000.0000 EOS",
+			10000000,
+		},
+		{
+			"1000",
+			10000000,
+		},
+		{
+			"1000 EOS",
+			10000000,
+		},
+		{
+			"1000.1 EOS",
+			10001000,
+		},
+		{
+			"1000.1",
+			10001000,
+		},
+		{
+			"1000.01",
+			10000100,
+		},
+		{
+			"1000.001",
+			10000010,
+		},
+		{
+			"1.0001",
+			10001,
+		},
+		{
+			"0.1",
+			1000,
+		},
+	}
+
+	for _, test := range tests {
+		asset, err := NewEOSAssetFromString(test.in)
+		require.NoError(t, err)
+		assert.Equal(t, asset.Amount, int64(test.amount))
+		assert.Equal(t, asset.Symbol.Symbol, "EOS")
+		assert.Equal(t, asset.Symbol.Precision, uint8(4))
+	}
+
+	_, err := NewEOSAssetFromString("10.00001")
+	assert.Error(t, err)
+}
