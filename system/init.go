@@ -19,3 +19,7 @@ func init() {
 	// eos.RegisterAction(AN("eosio"), ActN("claimrewards"), &ClaimRewards{})
 	// eos.RegisterAction(AN("eosio"), ActN("nonce"), &Nonce{})
 }
+
+var AN = eos.AN
+var PN = eos.PN
+var ActN = eos.ActN
