@@ -172,6 +172,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		r, err = d.readBool()
 		rv.SetBool(r)
 		return
+	case *Bool:
+		var r bool
+		r, err = d.readBool()
+		rv.SetBool(r)
+		return
 	case *HexBytes:
 		var data []byte
 		data, err = d.readByteArray()

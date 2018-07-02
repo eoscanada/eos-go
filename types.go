@@ -96,6 +96,25 @@ func (c *CompressionType) UnmarshalJSON(data []byte) error {
 
 type CurrencyName string
 
+type Bool bool
+
+func (b *Bool) UnmarshalJSON(data []byte) error {
+	var num int
+	err := json.Unmarshal(data, &num)
+	if err == nil {
+		*b = Bool(num != 0)
+		return nil
+	}
+
+	var boolVal bool
+	if err := json.Unmarshal(data, &boolVal); err != nil {
+		return fmt.Errorf("couldn't unmarshal bool as int or true/false: %s", err)
+	}
+
+	*b = Bool(boolVal)
+	return nil
+}
+
 // Asset
 
 // NOTE: there's also ExtendedAsset which is a quantity with the attached contract (AccountName)

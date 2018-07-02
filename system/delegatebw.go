@@ -18,7 +18,7 @@ func NewDelegateBW(from, receiver eos.AccountName, stakeCPU, stakeNet eos.Asset,
 			Receiver: receiver,
 			StakeNet: stakeNet,
 			StakeCPU: stakeCPU,
-			Transfer: transfer,
+			Transfer: eos.Bool(transfer),
 		}),
 	}
 }
@@ -29,5 +29,5 @@ type DelegateBW struct {
 	Receiver eos.AccountName `json:"receiver"`
 	StakeNet eos.Asset       `json:"stake_net"`
 	StakeCPU eos.Asset       `json:"stake_cpu"`
-	Transfer bool            `json:"transfer"`
+	Transfer eos.Bool        `json:"transfer"`
 }

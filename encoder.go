@@ -78,6 +78,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeUVarInt(int(cv))
 	case bool:
 		return e.writeBool(cv)
+	case Bool:
+		return e.writeBool(bool(cv))
 	case JSONTime:
 		return e.writeJSONTime(cv)
 	case HexBytes:

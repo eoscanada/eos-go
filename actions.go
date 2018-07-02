@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"reflect"
 )
 
 // See: libraries/chain/include/eosio/chain/contracts/types.hpp:203
@@ -115,4 +116,40 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 		HexData:       a.HexData,
 		Data:          a.Data,
 	})
+}
+
+func (a *Action) MapToRegisteredAction() error {
+	src, ok := a.ActionData.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	actionMap := RegisteredActions[a.Account]
+
+	var decodeInto reflect.Type
+	if actionMap != nil {
+		objType := actionMap[a.Name]
+		if objType != nil {
+			decodeInto = objType
+		}
+	}
+	if decodeInto == nil {
+		return nil
+	}
+
+	obj := reflect.New(decodeInto)
+	objIface := obj.Interface()
+
+	cnt, err := json.Marshal(src)
+	if err != nil {
+		return fmt.Errorf("marshaling data: %s", err)
+	}
+	err = json.Unmarshal(cnt, objIface)
+	if err != nil {
+		return fmt.Errorf("json unmarshal into registered actions: %s", err)
+	}
+
+	a.ActionData.Data = objIface
+
+	return nil
 }
