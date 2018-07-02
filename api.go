@@ -302,6 +302,11 @@ func (api *API) GetBlockByNumOrID(query string) (out *SignedBlock, err error) {
 	return
 }
 
+func (api *API) GetBlockByNumOrIDRaw(query string) (out interface{}, err error) {
+	err = api.call("chain", "get_block", M{"block_num_or_id": query}, &out)
+	return
+}
+
 func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
 	err = api.call("history", "get_transaction", M{"id": id}, &out)
 	return
