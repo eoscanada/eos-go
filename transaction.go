@@ -110,24 +110,49 @@ func (s *SignedTransaction) String() string {
 	return string(data)
 }
 
+func (s *SignedTransaction) SignedByKeys(chainID SHA256Bytes) (out []ecc.PublicKey, err error) {
+	trx, cfd, err := s.PackedTransactionAndCFD()
+	if err != nil {
+		return
+	}
+
+	for _, sig := range s.Signatures {
+		pubKey, err := sig.PublicKey(SigDigest(chainID, trx, cfd))
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, pubKey)
+	}
+
+	return
+}
+
+func (s *SignedTransaction) PackedTransactionAndCFD() ([]byte, []byte, error) {
+	rawtrx, err := MarshalBinary(s.Transaction)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rawcfd := []byte{}
+	if len(s.ContextFreeData) > 0 {
+		rawcfd, err = MarshalBinary(s.ContextFreeData)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return rawtrx, rawcfd, nil
+}
+
 func (tx *Transaction) ID() string {
 	return "ID here" //todo
 }
 
 func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
-	rawtrx, err := MarshalBinary(s.Transaction)
+	rawtrx, rawcfd, err := s.PackedTransactionAndCFD()
 	if err != nil {
 		return nil, err
-	}
-
-	rawcfd, err := MarshalBinary(s.ContextFreeData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Is it so ?
-	if len(s.ContextFreeData) == 0 {
-		rawcfd = []byte{}
 	}
 
 	switch opts.Compress {

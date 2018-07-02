@@ -3,6 +3,7 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -77,20 +78,50 @@ type ProcessedTransaction struct {
 
 type TransactionTrace struct {
 	Receipt struct {
-		Receiver        AccountName `json:"receiver"`
-		GlobalSequence  int         `json:"global_sequence"`
-		ReceiveSequence int         `json:"recv_sequence"`
-		// AuthSequence.. complex..
-		CodeSequence int `json:"code_sequence"`
-		ABISequence  int `json:"abi_sequence"`
+		Receiver        AccountName                    `json:"receiver"`
+		GlobalSequence  int64                          `json:"global_sequence"`
+		ReceiveSequence int64                          `json:"recv_sequence"`
+		AuthSequence    []TransactionTraceAuthSequence `json:"auth_sequence"` // [["account", sequence], ["account", sequence]]
+		CodeSequence    int64                          `json:"code_sequence"`
+		ABISequence     int64                          `json:"abi_sequence"`
 	} `json:"receipt"`
-	Action        Action      `json:"act"`
-	Elapsed       int         `json:"elapsed"`
-	CPUUsage      int         `json:"cpu_usage"`
-	Console       string      `json:"console"`
-	TotalCPUUsage int         `json:"total_cpu_usage"`
-	TransactionID SHA256Bytes `json:"trx_id"`
-	// InlineTraces ??
+	Action        *Action             `json:"act"`
+	Elapsed       int                 `json:"elapsed"`
+	CPUUsage      int                 `json:"cpu_usage"`
+	Console       string              `json:"console"`
+	TotalCPUUsage int                 `json:"total_cpu_usage"`
+	TransactionID SHA256Bytes         `json:"trx_id"`
+	InlineTraces  []*TransactionTrace `json:"inline_traces"`
+}
+
+type TransactionTraceAuthSequence struct {
+	Account  AccountName
+	Sequence int64
+}
+
+func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
+	var ins []interface{}
+	if err := json.Unmarshal(data, &ins); err != nil {
+		return err
+	}
+
+	if len(ins) != 2 {
+		return fmt.Errorf("expected 2 items, received %d", len(ins))
+	}
+
+	account, ok := ins[0].(string)
+	if !ok {
+		return fmt.Errorf("expected 1st item to be a string (account name)")
+	}
+
+	seq, ok := ins[0].(float64)
+	if !ok {
+		return fmt.Errorf("expected 2nd item to be a sequence number (float64)")
+	}
+
+	*auth = TransactionTraceAuthSequence{AccountName(account), int64(seq)}
+
+	return nil
 }
 
 type SequencedTransactionResp struct {

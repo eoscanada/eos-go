@@ -132,18 +132,12 @@ func (b *KeyBag) SignDigest(digest []byte, requiredKey ecc.PublicKey) (ecc.Signa
 
 func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
 	// TODO: probably want to use `tx.packed` and hash the ContextFreeData also.
-	txdata, err := MarshalBinary(tx.Transaction)
+	txdata, cfd, err := tx.PackedTransactionAndCFD()
 	if err != nil {
 		return nil, err
 	}
 
-	cfd := []byte{}
-	if len(tx.ContextFreeData) > 0 {
-		cfd, err = MarshalBinary(tx.ContextFreeData)
-		if err != nil {
-			return nil, err
-		}
-	}
+	sigDigest := SigDigest(chainID, txdata, cfd)
 
 	keyMap := b.keyMap()
 	for _, key := range requiredKeys {
@@ -152,7 +146,6 @@ func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc
 			return nil, fmt.Errorf("private key for %q not in keybag", key)
 		}
 
-		sigDigest := SigDigest(chainID, txdata, cfd)
 		// fmt.Println("Signing with", key.String(), privKey.String())
 		// fmt.Println("SIGNING THIS DIGEST:", hex.EncodeToString(sigDigest))
 		// fmt.Println("SIGNING THIS payload:", hex.EncodeToString(txdata))

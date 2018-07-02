@@ -146,6 +146,10 @@ type Symbol struct {
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
 
 func NewEOSAssetFromString(amount string) (out Asset, err error) {
+	if len(amount) == 0 {
+		return out, fmt.Errorf("cannot be an empty string")
+	}
+
 	if strings.Contains(amount, " EOS") {
 		amount = strings.Replace(amount, " EOS", "", 1)
 	}
