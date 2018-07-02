@@ -245,7 +245,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 				return
 			}
 
-			trx := TransactionWithID{ID: &id}
+			trx := TransactionWithID{ID: id}
 			rv.Set(reflect.ValueOf(trx))
 			return nil
 
