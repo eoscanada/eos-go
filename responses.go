@@ -114,7 +114,7 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expected 1st item to be a string (account name)")
 	}
 
-	seq, ok := ins[0].(float64)
+	seq, ok := ins[1].(float64)
 	if !ok {
 		return fmt.Errorf("expected 2nd item to be a sequence number (float64)")
 	}

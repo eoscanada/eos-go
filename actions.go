@@ -2,6 +2,7 @@ package eos
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 )
@@ -29,6 +30,23 @@ type Action struct {
 	Name          ActionName        `json:"name"`
 	Authorization []PermissionLevel `json:"authorization,omitempty"`
 	ActionData
+}
+
+func (a Action) Digest() SHA256Bytes {
+	toEat := jsonActionToServer{
+		Account:       a.Account,
+		Name:          a.Name,
+		Authorization: a.Authorization,
+		Data:          a.ActionData.HexData,
+	}
+	bin, err := MarshalBinary(toEat)
+	if err != nil {
+		panic("this should never panic, we know it marshals properly all the time")
+	}
+
+	h := sha256.New()
+	_, _ = h.Write(bin)
+	return h.Sum(nil)
 }
 
 type ActionData struct {
