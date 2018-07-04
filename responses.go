@@ -79,6 +79,7 @@ type ProcessedTransaction struct {
 type TransactionTrace struct {
 	Receipt struct {
 		Receiver        AccountName                    `json:"receiver"`
+		ActionDigest    string                         `json:"act_digest"`
 		GlobalSequence  int64                          `json:"global_sequence"`
 		ReceiveSequence int64                          `json:"recv_sequence"`
 		AuthSequence    []TransactionTraceAuthSequence `json:"auth_sequence"` // [["account", sequence], ["account", sequence]]
