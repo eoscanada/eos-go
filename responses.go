@@ -99,6 +99,7 @@ type TransactionTraceAuthSequence struct {
 	Sequence int64
 }
 
+// [ ["account", 123123], ["account2", 345] ]
 func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 	var ins []interface{}
 	if err := json.Unmarshal(data, &ins); err != nil {
@@ -122,6 +123,10 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 	*auth = TransactionTraceAuthSequence{AccountName(account), int64(seq)}
 
 	return nil
+}
+
+func (auth TransactionTraceAuthSequence) MarshalJSON() (data []byte, err error) {
+	return json.Marshal([]interface{}{auth.Account, auth.Sequence})
 }
 
 type SequencedTransactionResp struct {
