@@ -36,30 +36,25 @@ type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransac
 	Extensions         []*Extension `json:"transaction_extensions"`
 }
 
+// NewTransaction creates a transaction. Unless you plan on adding HeadBlockID later, to be complete, opts should contain it.  Sign
+func NewTransaction(actions []*Action, opts *TxOptions) *Transaction {
+	if opts == nil {
+		opts = &TxOptions{}
+	}
+
+	tx := &Transaction{Actions: actions}
+	tx.Fill(opts.HeadBlockID, opts.DelaySecs, opts.MaxNetUsageWords, opts.MaxCPUUsageMS)
+	return tx
+}
+
 type Extension struct {
 	Type uint16   `json:"type"`
 	Data HexBytes `json:"data"`
 }
 
-func (tx *Transaction) Fill(api *API) ([]byte, error) {
-	var info *InfoResp
-	var err error
-
-	api.lastGetInfoLock.Lock()
-	if !api.lastGetInfoStamp.IsZero() && time.Now().Add(-1*time.Second).Before(api.lastGetInfoStamp) {
-		info = api.lastGetInfo
-	} else {
-		info, err = api.GetInfo()
-		if err != nil {
-			return nil, err
-		}
-		api.lastGetInfoStamp = time.Now()
-		api.lastGetInfo = info
-	}
-	api.lastGetInfoLock.Unlock()
-	if err != nil {
-		return nil, err
-	}
+// Fill sets the fields on a transaction.  If you pass `headBlockID`, then `api` can be nil. If you don't pass `headBlockID`, then the `api` is going to be called to fetch
+func (tx *Transaction) Fill(headBlockID SHA256Bytes, delaySecs, maxNetUsageWords uint32, maxCPUUsageMS uint8) {
+	tx.setRefBlock(headBlockID)
 
 	if tx.ContextFreeActions == nil {
 		tx.ContextFreeActions = make([]*Action, 0, 0)
@@ -68,15 +63,11 @@ func (tx *Transaction) Fill(api *API) ([]byte, error) {
 		tx.Extensions = make([]*Extension, 0, 0)
 	}
 
-	tx.setRefBlock(info.HeadBlockID)
+	tx.MaxNetUsageWords = Varuint32(maxNetUsageWords)
+	tx.MaxCPUUsageMS = maxCPUUsageMS
+	tx.DelaySec = Varuint32(delaySecs)
 
-	/// TODO: configure somewhere the default time for transactions,
-	/// etc.. add a `.Timeout` with that duration, default to 30
-	/// seconds ?
-	tx.Expiration = JSONTime{info.HeadBlockTime.Add(30 * time.Second)}
-	//tx.DelaySec = 30
-
-	return info.HeadBlockID, nil
+	tx.Expiration = JSONTime{time.Now().UTC().Add(30 * time.Second)}
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
@@ -149,13 +140,13 @@ func (tx *Transaction) ID() string {
 	return "ID here" //todo
 }
 
-func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
+func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransaction, error) {
 	rawtrx, rawcfd, err := s.PackedTransactionAndCFD()
 	if err != nil {
 		return nil, err
 	}
 
-	switch opts.Compress {
+	switch compression {
 	case CompressionZlib:
 		var trx bytes.Buffer
 		var cfd bytes.Buffer
@@ -174,27 +165,12 @@ func (s *SignedTransaction) Pack(opts TxOptions) (*PackedTransaction, error) {
 
 	packed := &PackedTransaction{
 		Signatures:            s.Signatures,
-		Compression:           opts.Compress,
+		Compression:           compression,
 		PackedContextFreeData: rawcfd,
 		PackedTransaction:     rawtrx,
 	}
 
 	return packed, nil
-}
-
-func (tx *SignedTransaction) estimateResources(opts TxOptions, maxcpu uint8, maxnet uint32) {
-	// see programs/cleos/main.cpp for an estimation algo..
-	if opts.MaxNetUsageWords != 0 {
-		tx.MaxNetUsageWords = Varuint32(opts.MaxNetUsageWords)
-	} else {
-		tx.MaxNetUsageWords = Varuint32(maxnet)
-	}
-
-	if opts.MaxCPUUsageMS != 0 {
-		tx.MaxCPUUsageMS = opts.MaxCPUUsageMS
-	} else {
-		tx.MaxCPUUsageMS = maxcpu
-	}
 }
 
 // PackedTransaction represents a fully packed transaction, with
@@ -273,9 +249,35 @@ type DeferredTransaction struct {
 // TxOptions represents options you want to pass to the transaction
 // you're sending.
 type TxOptions struct {
+	ChainID          SHA256Bytes // If specified, we won't hit the API to fetch it
+	HeadBlockID      SHA256Bytes // If provided, don't hit API to fetch it.  This allows offline transaction signing.
 	MaxNetUsageWords uint32
-	Delay            time.Duration
+	DelaySecs        uint32
 	MaxCPUUsageMS    uint8 // If you want to override the CPU usage (in counts of 1024)
 	//ExtraKCPUUsage uint32 // If you want to *add* some CPU usage to the estimated amount (in counts of 1024)
 	Compress CompressionType
+}
+
+// FillFromChain will load ChainID (for signing transactions) and
+// HeadBlockID (to fill transaction with TaPoS data).
+func (opts *TxOptions) FillFromChain(api *API) error {
+	if opts == nil {
+		opts = &TxOptions{}
+	}
+
+	if opts.HeadBlockID == nil || opts.ChainID == nil {
+		info, err := api.cachedGetInfo()
+		if err != nil {
+			return err
+		}
+
+		if opts.HeadBlockID == nil {
+			opts.HeadBlockID = info.HeadBlockID
+		}
+		if opts.ChainID == nil {
+			opts.ChainID = info.ChainID
+		}
+	}
+
+	return nil
 }

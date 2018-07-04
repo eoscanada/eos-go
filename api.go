@@ -195,60 +195,82 @@ func (api *API) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pub
 	return
 }
 
+// SignPushActions will create a transaction, fill it with default
+// values, sign it and submit it to the chain.  It is the highest
+// level function on top of the `/v1/chain/push_transaction` endpoint.
 func (api *API) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err error) {
-	return api.SignPushTransaction(&Transaction{Actions: a}, nil)
+	return api.SignPushActionsWithOpts(a, nil)
 }
 
-func (api *API) SignPushActionsWithOpts(opts TxOptions, a ...*Action) (out *PushTransactionFullResp, err error) {
-	return api.SignPushTransaction(&Transaction{Actions: a}, &opts)
+func (api *API) SignPushActionsWithOpts(actions []*Action, opts *TxOptions) (out *PushTransactionFullResp, err error) {
+	if err := opts.FillFromChain(api); err != nil {
+		return nil, err
+	}
+
+	tx := NewTransaction(actions, opts)
+
+	return api.SignPushTransaction(tx, opts.ChainID, opts.Compress)
 }
 
-func (api *API) SignPushTransaction(tx *Transaction, opts *TxOptions) (out *PushTransactionFullResp, err error) {
-	if api.Signer == nil {
-		return nil, fmt.Errorf("no Signer configured")
-	}
-
-	if opts == nil {
-		opts = &TxOptions{}
-	}
-
-	_, err = tx.Fill(api)
+// SignPushTransaction will sign a transaction and submit it to the
+// chain.
+func (api *API) SignPushTransaction(tx *Transaction, chainID SHA256Bytes, compression CompressionType) (out *PushTransactionFullResp, err error) {
+	_, packed, err := api.SignTransaction(tx, chainID, compression)
 	if err != nil {
 		return nil, err
 	}
 
-	var requiredKeys []ecc.PublicKey
-	if api.customGetRequiredKeys != nil {
-		requiredKeys, err = api.customGetRequiredKeys(tx)
-		if err != nil {
-			return nil, fmt.Errorf("custom_get_required_keys: %s", err)
-		}
-	} else {
-		resp, err := api.GetRequiredKeys(tx)
-		if err != nil {
-			return nil, fmt.Errorf("get_required_keys: %s", err)
-		}
-		requiredKeys = resp.RequiredKeys
+	return api.PushTransaction(packed)
+}
+
+// SignTransaction will sign and pack a transaction, but not submit to
+// the chain.  It lives on the `api` object because it might query the
+// blockchain to learn which keys are required to sign this particular
+// transaction.
+//
+// You can override the way we request keys (which defaults to
+// `api.GetRequiredKeys()`) with SetCustomGetRequiredKeys().
+//
+// To sign a transaction, you need a Signer defined on the `API`
+// object. See SetSigner.
+func (api *API) SignTransaction(tx *Transaction, chainID SHA256Bytes, compression CompressionType) (*SignedTransaction, *PackedTransaction, error) {
+	if api.Signer == nil {
+		return nil, nil, fmt.Errorf("no Signer configured")
 	}
 
 	stx := NewSignedTransaction(tx)
 
-	stx.estimateResources(*opts, api.DefaultMaxCPUUsageMS, api.DefaultMaxNetUsageWords)
-
-	signedTx, err := api.Signer.Sign(stx, api.lastGetInfo.ChainID, requiredKeys...)
-	if err != nil {
-		return nil, fmt.Errorf("signing through wallet: %s", err)
+	var requiredKeys []ecc.PublicKey
+	if api.customGetRequiredKeys != nil {
+		var err error
+		requiredKeys, err = api.customGetRequiredKeys(tx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("custom_get_required_keys: %s", err)
+		}
+	} else {
+		resp, err := api.GetRequiredKeys(tx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get_required_keys: %s", err)
+		}
+		requiredKeys = resp.RequiredKeys
 	}
 
-	packed, err := signedTx.Pack(*opts)
+	signedTx, err := api.Signer.Sign(stx, chainID, requiredKeys...)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("signing through wallet: %s", err)
 	}
 
-	return api.PushSignedTransaction(packed)
+	packed, err := signedTx.Pack(compression)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return signedTx, packed, nil
 }
 
-func (api *API) PushSignedTransaction(tx *PackedTransaction) (out *PushTransactionFullResp, err error) {
+// PushTransaction submits a properly filled (tapos), packed and
+// signed transaction to the blockchain.
+func (api *API) PushTransaction(tx *PackedTransaction) (out *PushTransactionFullResp, err error) {
 	err = api.call("chain", "push_transaction", tx, &out)
 	return
 }
@@ -256,6 +278,29 @@ func (api *API) PushSignedTransaction(tx *PackedTransaction) (out *PushTransacti
 func (api *API) GetInfo() (out *InfoResp, err error) {
 	err = api.call("chain", "get_info", nil, &out)
 	return
+}
+
+func (api *API) cachedGetInfo() (*InfoResp, error) {
+	var info *InfoResp
+	var err error
+
+	api.lastGetInfoLock.Lock()
+	if !api.lastGetInfoStamp.IsZero() && time.Now().Add(-1*time.Second).Before(api.lastGetInfoStamp) {
+		info = api.lastGetInfo
+	} else {
+		info, err = api.GetInfo()
+		if err != nil {
+			return nil, err
+		}
+		api.lastGetInfoStamp = time.Now()
+		api.lastGetInfo = info
+	}
+	api.lastGetInfoLock.Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return api.lastGetInfo, nil
 }
 
 func (api *API) GetNetConnections() (out []*NetConnectionsResp, err error) {
