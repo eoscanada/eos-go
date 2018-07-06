@@ -19,6 +19,14 @@ func init() {
 	eos.RegisterAction(AN("eosio"), ActN("claimrewards"), ClaimRewards{})
 	eos.RegisterAction(AN("eosio"), ActN("buyram"), BuyRAM{})
 	eos.RegisterAction(AN("eosio"), ActN("buyrambytes"), BuyRAMBytes{})
+	eos.RegisterAction(AN("eosio"), ActN("linkauth"), LinkAuth{})
+	eos.RegisterAction(AN("eosio"), ActN("unlinkauth"), UnlinkAuth{})
+	eos.RegisterAction(AN("eosio"), ActN("deleteauth"), DeleteAuth{})
+	eos.RegisterAction(AN("eosio"), ActN("rmvproducer"), RemoveProducer{})
+	eos.RegisterAction(AN("eosio"), ActN("setprods"), SetProds{})
+	eos.RegisterAction(AN("eosio"), ActN("setpriv"), SetPriv{})
+	eos.RegisterAction(AN("eosio"), ActN("canceldelay"), CancelDelay{})
+	eos.RegisterAction(AN("eosio"), ActN("bidname"), Bidname{})
 	// eos.RegisterAction(AN("eosio"), ActN("nonce"), &Nonce{})
 }
 
