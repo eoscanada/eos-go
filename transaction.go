@@ -6,6 +6,7 @@ import (
 	"compress/zlib"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 
@@ -262,7 +263,7 @@ type TxOptions struct {
 // HeadBlockID (to fill transaction with TaPoS data).
 func (opts *TxOptions) FillFromChain(api *API) error {
 	if opts == nil {
-		opts = &TxOptions{}
+		return errors.New("TxOptions should not be nil, send an object")
 	}
 
 	if opts.HeadBlockID == nil || opts.ChainID == nil {

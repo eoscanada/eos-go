@@ -203,6 +203,10 @@ func (api *API) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err
 }
 
 func (api *API) SignPushActionsWithOpts(actions []*Action, opts *TxOptions) (out *PushTransactionFullResp, err error) {
+	if opts == nil {
+		opts = &TxOptions{}
+	}
+
 	if err := opts.FillFromChain(api); err != nil {
 		return nil, err
 	}
