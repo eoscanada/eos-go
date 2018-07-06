@@ -48,16 +48,20 @@ type TotalResources struct {
 }
 
 type VoterInfo struct {
-	Owner             AccountName    `json:"owner"`
-	Proxy             AccountName    `json:"proxy"`
-	Producers         []AccountName  `json:"producers"`
-	Staked            JSONInt64      `json:"staked"`
-	LastVoteWeight    JSONFloat64    `json:"last_vote_weight"`
-	ProxiedVoteWeight JSONFloat64    `json:"proxied_vote_weight"`
-	IsProxy           byte           `json:"is_proxy"`
-	DeferredTrxID     uint32         `json:"deferred_trx_id"`
-	LastUnstakeTime   BlockTimestamp `json:"last_unstake_time"`
-	Unstaking         Asset          `json:"unstaking"`
+	Owner             AccountName   `json:"owner"`
+	Proxy             AccountName   `json:"proxy"`
+	Producers         []AccountName `json:"producers"`
+	Staked            JSONInt64     `json:"staked"`
+	LastVoteWeight    JSONFloat64   `json:"last_vote_weight"`
+	ProxiedVoteWeight JSONFloat64   `json:"proxied_vote_weight"`
+	IsProxy           byte          `json:"is_proxy"`
+}
+
+type RefundRequest struct {
+	Owner       AccountName `json:"owner"`
+	RequestTime Tstamp      `json:"request_time"` //         {"name":"request_time", "type":"time_point_sec"},
+	NetAmount   Asset       `json:"net_amount"`
+	CPUAmount   Asset       `json:"cpu_amount"`
 }
 
 type CompressionType uint8
