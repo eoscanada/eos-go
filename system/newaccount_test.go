@@ -139,7 +139,7 @@ func TestMarshalTransactionAndPack(t *testing.T) {
 	buf, err = json.Marshal(signedTx)
 	fmt.Println("Signed Transaction: ", string(buf))
 
-	packedTx, err := signedTx.Pack(eos.TxOptions{})
+	packedTx, err := signedTx.Pack(eos.CompressionNone)
 	assert.NoError(t, err)
 
 	buf, err = json.Marshal(packedTx)
