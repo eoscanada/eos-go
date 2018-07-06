@@ -246,6 +246,10 @@ func (a *Asset) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (a Asset) MarshalJSON() (data []byte, err error) {
+	return json.Marshal(a.String())
+}
+
 type Permission struct {
 	PermName     string    `json:"perm_name"`
 	Parent       string    `json:"parent"`

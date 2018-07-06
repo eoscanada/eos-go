@@ -48,6 +48,10 @@ func NewTransaction(actions []*Action, opts *TxOptions) *Transaction {
 	return tx
 }
 
+func (tx *Transaction) SetExpiration(in time.Duration) {
+	tx.Expiration = JSONTime{time.Now().UTC().Add(in)}
+}
+
 type Extension struct {
 	Type uint16   `json:"type"`
 	Data HexBytes `json:"data"`
@@ -68,7 +72,7 @@ func (tx *Transaction) Fill(headBlockID SHA256Bytes, delaySecs, maxNetUsageWords
 	tx.MaxCPUUsageMS = maxCPUUsageMS
 	tx.DelaySec = Varuint32(delaySecs)
 
-	tx.Expiration = JSONTime{time.Now().UTC().Add(30 * time.Second)}
+	tx.SetExpiration(30 * time.Second)
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
