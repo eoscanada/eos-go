@@ -37,8 +37,8 @@ Example
 
 See example usages of the library:
 
-* https://github.com/eoscanada/eos-bios/blob/master/bios.go
-* https://github.com/eoscanada/eos-bios/blob/master/ops.go
+* https://github.com/eoscanada/eos-bios/blob/master/bios/bios.go
+* https://github.com/eoscanada/eos-bios/blob/master/bios/ops.go
 * Some other `main` packages under `cmd/`.
 
 
