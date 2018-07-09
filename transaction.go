@@ -6,6 +6,7 @@ import (
 	"compress/zlib"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 
@@ -47,6 +48,10 @@ func NewTransaction(actions []*Action, opts *TxOptions) *Transaction {
 	return tx
 }
 
+func (tx *Transaction) SetExpiration(in time.Duration) {
+	tx.Expiration = JSONTime{time.Now().UTC().Add(in)}
+}
+
 type Extension struct {
 	Type uint16   `json:"type"`
 	Data HexBytes `json:"data"`
@@ -67,7 +72,7 @@ func (tx *Transaction) Fill(headBlockID SHA256Bytes, delaySecs, maxNetUsageWords
 	tx.MaxCPUUsageMS = maxCPUUsageMS
 	tx.DelaySec = Varuint32(delaySecs)
 
-	tx.Expiration = JSONTime{time.Now().UTC().Add(30 * time.Second)}
+	tx.SetExpiration(30 * time.Second)
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
@@ -264,7 +269,7 @@ type TxOptions struct {
 // HeadBlockID (to fill transaction with TaPoS data).
 func (opts *TxOptions) FillFromChain(api *API) error {
 	if opts == nil {
-		opts = &TxOptions{}
+		return errors.New("TxOptions should not be nil, send an object")
 	}
 
 	if opts.HeadBlockID == nil || opts.ChainID == nil {

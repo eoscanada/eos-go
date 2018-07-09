@@ -2,7 +2,6 @@ package ecc
 
 import (
 	cryptorand "crypto/rand"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,9 +31,7 @@ func newRandomPrivateKey(randSource io.Reader) (*PrivateKey, error) {
 		return nil, fmt.Errorf("couldn't write 32 bytes of randomness to seed ephemeral private key")
 	}
 
-	h := sha256.New()
-	h.Write(rawPrivKey)
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), h.Sum(nil))
+	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), rawPrivKey)
 
 	return &PrivateKey{Curve: CurveK1, privKey: privKey}, nil
 }

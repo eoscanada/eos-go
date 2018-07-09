@@ -203,6 +203,10 @@ func (api *API) SignPushActions(a ...*Action) (out *PushTransactionFullResp, err
 }
 
 func (api *API) SignPushActionsWithOpts(actions []*Action, opts *TxOptions) (out *PushTransactionFullResp, err error) {
+	if opts == nil {
+		opts = &TxOptions{}
+	}
+
 	if err := opts.FillFromChain(api); err != nil {
 		return nil, err
 	}
@@ -281,10 +285,12 @@ func (api *API) GetInfo() (out *InfoResp, err error) {
 }
 
 func (api *API) cachedGetInfo() (*InfoResp, error) {
+	api.lastGetInfoLock.Lock()
+	defer api.lastGetInfoLock.Unlock()
+
 	var info *InfoResp
 	var err error
 
-	api.lastGetInfoLock.Lock()
 	if !api.lastGetInfoStamp.IsZero() && time.Now().Add(-1*time.Second).Before(api.lastGetInfoStamp) {
 		info = api.lastGetInfo
 	} else {
@@ -295,7 +301,6 @@ func (api *API) cachedGetInfo() (*InfoResp, error) {
 		api.lastGetInfoStamp = time.Now()
 		api.lastGetInfo = info
 	}
-	api.lastGetInfoLock.Unlock()
 	if err != nil {
 		return nil, err
 	}
