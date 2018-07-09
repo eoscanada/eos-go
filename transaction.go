@@ -200,18 +200,20 @@ func (p *PackedTransaction) Unpack() (signedTx *SignedTransaction, err error) {
 	case CompressionZlib:
 		txReader, err = zlib.NewReader(txReader)
 		if err != nil {
-			return
+			return nil, fmt.Errorf("new reader for tx, %s", err)
 		}
 
-		freeDataReader, err = zlib.NewReader(freeDataReader)
-		if err != nil {
-			return
+		if len(p.PackedContextFreeData) > 0 {
+			freeDataReader, err = zlib.NewReader(freeDataReader)
+			if err != nil {
+				return nil, fmt.Errorf("new reader for free data, %s", err)
+			}
 		}
 	}
 
 	data, err := ioutil.ReadAll(txReader)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("unpack read all, %s", err)
 	}
 	decoder := NewDecoder(data)
 

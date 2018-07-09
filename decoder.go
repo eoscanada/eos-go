@@ -464,6 +464,7 @@ func (d *Decoder) readUint16() (out uint16, err error) {
 
 	out = binary.LittleEndian.Uint16(d.data[d.pos:])
 	d.pos += TypeSize.UInt16
+	println(fmt.Sprintf("readUint16 [%d]", out))
 	return
 }
 
@@ -578,6 +579,7 @@ func (d *Decoder) readBlockTimestamp() (out BlockTimestamp, err error) {
 func (d *Decoder) readJSONTime() (jsonTime JSONTime, err error) {
 	n, err := d.readUint32()
 	jsonTime = JSONTime{time.Unix(int64(n), 0).UTC()}
+	println("readJSONTime: ", jsonTime)
 	return
 }
 
