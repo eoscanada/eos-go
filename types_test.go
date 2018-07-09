@@ -402,4 +402,8 @@ func TestJsonWithZLIBcompression(t *testing.T) {
 	unpacked, err := tx.Transaction.Packed.Unpack()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(unpacked.Actions))
+
+	packed, err := unpacked.Pack(CompressionZlib)
+	assert.NoError(t, err)
+	assert.Equal(t, unpacked.packed.PackedTransaction, packed.PackedTransaction)
 }

@@ -159,11 +159,19 @@ func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransactio
 		// Compress Trx
 		writer, _ := zlib.NewWriterLevel(&trx, flate.BestCompression) // can only fail if invalid `level`..
 		writer.Write(rawtrx)                                          // ignore error, could only bust memory
+		err = writer.Close()
+		if err != nil {
+			return nil, fmt.Errorf("tx writer close %s", err)
+		}
 		rawtrx = trx.Bytes()
 
 		// Compress ContextFreeData
 		writer, _ = zlib.NewWriterLevel(&cfd, flate.BestCompression) // can only fail if invalid `level`..
 		writer.Write(rawcfd)                                         // ignore errors, memory errors only
+		err = writer.Close()
+		if err != nil {
+			return nil, fmt.Errorf("cfd writer close %s", err)
+		}
 		rawcfd = cfd.Bytes()
 
 	}
