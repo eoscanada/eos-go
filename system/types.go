@@ -5,12 +5,6 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 )
 
-// SetPriv sets privileged account status. Used in the bios boot mechanism.
-type SetPriv struct {
-	Account eos.AccountName `json:"account"`
-	IsPriv  bool            `json:"is_priv"`
-}
-
 // SetProds is present in `eosio.bios` contract. Used only at boot time.
 type SetProds struct {
 	Schedule []ProducerKey `json:"schedule"`

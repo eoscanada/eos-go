@@ -15,8 +15,14 @@ func NewSetPriv(account eos.AccountName) *eos.Action {
 		},
 		ActionData: eos.NewActionData(SetPriv{
 			Account: account,
-			IsPriv:  true,
+			IsPriv:  eos.Bool(true),
 		}),
 	}
 	return a
+}
+
+// SetPriv sets privileged account status. Used in the bios boot mechanism.
+type SetPriv struct {
+	Account eos.AccountName `json:"account"`
+	IsPriv  eos.Bool        `json:"is_priv"`
 }
