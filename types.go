@@ -59,7 +59,7 @@ type VoterInfo struct {
 
 type RefundRequest struct {
 	Owner       AccountName `json:"owner"`
-	RequestTime Tstamp      `json:"request_time"` //         {"name":"request_time", "type":"time_point_sec"},
+	RequestTime JSONTime    `json:"request_time"` //         {"name":"request_time", "type":"time_point_sec"},
 	NetAmount   Asset       `json:"net_amount"`
 	CPUAmount   Asset       `json:"cpu_amount"`
 }
