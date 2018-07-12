@@ -357,6 +357,11 @@ func (api *API) GetBlockByNumOrIDRaw(query string) (out interface{}, err error) 
 	return
 }
 
+func (api *API) GetDBSize() (out *DBSizeResp, err error) {
+	err = api.call("db_size", "get", nil, &out)
+	return
+}
+
 func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
 	err = api.call("history", "get_transaction", M{"id": id}, &out)
 	return

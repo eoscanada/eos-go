@@ -57,6 +57,16 @@ type BlockResp struct {
 // 	Trx           []json.RawMessage `json:"trx"`
 // }
 
+type DBSizeResp struct {
+	FreeBytes JSONInt64 	`json:"free_bytes"`
+	UsedBytes JSONInt64 	`json:"used_bytes"`
+	Size      JSONInt64 	`json:"size"`
+	Indices   []struct {
+		Index    string 	`json:"index"`
+		RowCount JSONInt64  `json:"row_count"`
+	} `json:"indices"`
+}
+
 type TransactionResp struct {
 	ID      SHA256Bytes `json:"id"`
 	Receipt struct {
