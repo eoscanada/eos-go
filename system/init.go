@@ -28,6 +28,7 @@ func init() {
 	eos.RegisterAction(AN("eosio"), ActN("canceldelay"), CancelDelay{})
 	eos.RegisterAction(AN("eosio"), ActN("bidname"), Bidname{})
 	// eos.RegisterAction(AN("eosio"), ActN("nonce"), &Nonce{})
+	eos.RegisterAction(AN("eosio"), ActN("sellram"), SellRAM{})
 	eos.RegisterAction(AN("eosio"), ActN("updateauth"), UpdateAuth{})
 }
 
