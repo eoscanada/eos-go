@@ -36,10 +36,10 @@ type InfoResp struct {
 	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
 	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
 
-	VirtualBlockCPULimit uint64 `json:"virtual_block_cpu_limit"`
-	VirtualBlockNetLimit uint64 `json:"virtual_block_net_limit"`
-	BlockCPULimit        uint64 `json:"block_cpu_limit"`
-	BlockNetLimit        uint64 `json:"block_net_limit"`
+	VirtualBlockCPULimit JSONInt64 `json:"virtual_block_cpu_limit"`
+	VirtualBlockNetLimit JSONInt64 `json:"virtual_block_net_limit"`
+	BlockCPULimit        JSONInt64 `json:"block_cpu_limit"`
+	BlockNetLimit        JSONInt64 `json:"block_net_limit"`
 }
 
 type BlockResp struct {
