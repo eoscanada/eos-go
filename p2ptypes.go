@@ -232,11 +232,35 @@ type TransactionMetadata struct {
 	SignedID          SHA256Bytes       `json:"signed_id"`
 	Trx               SignedTransaction `json:"trx"`
 	PackedTransaction PackedTransaction `json:"packed_trx"`
-	SigningKeys       struct {
-		ChainID    SHA256Bytes     `json:"first"`
-		PublicKeys []ecc.PublicKey `json:"second"`
-	} `json:"signing_keys"`
-	Accepted bool `json:"accepted"`
+	SigningKeys       []SigningKeys     `json:"signing_keys"`
+	Accepted          bool              `json:"accepted"`
+}
+
+type SigningKeys struct {
+	ChainID    SHA256Bytes     `json:"first"`
+	PublicKeys []ecc.PublicKey `json:"second"`
+}
+
+func (t *SigningKeys) UnmarshalJSON(data []byte) error {
+	var arr []json.RawMessage
+	json.Unmarshal(data, &arr)
+
+	var chainID SHA256Bytes
+	err := json.Unmarshal(arr[0], chainID)
+	if err != nil {
+		return fmt.Errorf("unmarshal chain id %s", err)
+	}
+
+	var publicKeys []ecc.PublicKey
+	err = json.Unmarshal(arr[1], publicKeys)
+	if err != nil {
+		return fmt.Errorf("unmarshal public keys %s", err)
+	}
+
+	t.ChainID = chainID
+	t.PublicKeys = publicKeys
+
+	return nil
 }
 
 type BlockState struct {
