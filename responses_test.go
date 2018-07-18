@@ -5,17 +5,16 @@ import (
 
 	"encoding/json"
 
-	eos "github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUnmarshalAccountResp(t *testing.T) {
-	resp := &eos.AccountResp{}
+	resp := &AccountResp{}
 
 	err := json.Unmarshal([]byte(jsonData), resp)
 	assert.NoError(t, err)
 
-	assert.Equal(t, eos.AccountName("eosriobrazil"), resp.AccountName)
+	assert.Equal(t, AccountName("eosriobrazil"), resp.AccountName)
 }
 
 var jsonData = `{

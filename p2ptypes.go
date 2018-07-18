@@ -304,17 +304,33 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expected two params for TransactionWithID, got %d", len(in))
 	}
 
-	// ignore the ID field right now..
-	err = json.Unmarshal(in[1], &packed)
-	if err != nil {
-		return err
-	}
+	typ := string(in[0])
+	switch typ {
+	case "0":
+		var s string
+		if err := json.Unmarshal(in[1], &s); err != nil {
+			return err
+		}
 
-	*t = TransactionWithID{
-		ID:     packed.ID(),
-		Packed: &packed,
-	}
+		*t = TransactionWithID{}
+		if err := json.Unmarshal(in[1], &t.ID); err != nil {
+			return err
+		}
+	case "1":
 
+		// ignore the ID field right now..
+		err = json.Unmarshal(in[1], &packed)
+		if err != nil {
+			return err
+		}
+
+		*t = TransactionWithID{
+			ID:     packed.ID(),
+			Packed: &packed,
+		}
+	default:
+		return fmt.Errorf("unsupported multi-variant trx serialization type from C++ code into Go: %q", typ)
+	}
 	return nil
 }
 
