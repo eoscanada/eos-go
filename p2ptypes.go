@@ -217,8 +217,53 @@ func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
 	return SHA256Bytes(hashed), nil
 }
 
+type HeaderConfirmation struct {
+	BlockID           SHA256Bytes   `json:"block_id"`
+	AccountName       AccountName   `json:"account_name"`
+	ProducerSignature ecc.Signature `json:"producer_signature"`
+}
+
 type OptionalProducerSchedule struct {
 	ProducerSchedule
+}
+
+type TransactionMetadata struct {
+	ID                SHA256Bytes       `json:"id"`
+	SignedID          SHA256Bytes       `json:"signed_id"`
+	Trx               SignedTransaction `json:"trx"`
+	PackedTransaction PackedTransaction `json:"packed_trx"`
+	SigningKeys       struct {
+		ChainID    SHA256Bytes     `json:"first"`
+		PublicKeys []ecc.PublicKey `json:"second"`
+	} `json:"signing_keys"`
+	Accepted bool `json:"accepted"`
+}
+
+type BlockState struct {
+	BlockHeaderState
+	Block          SignedBlock           `json:"block"`
+	Validated      bool                  `json:"validated"`
+	InCurrentChain bool                  `json:"in_current_chain"`
+	Trxs           []TransactionMetadata `json:"trxs"`
+}
+
+type BlockHeaderState struct {
+	ID                               SHA256Bytes            `json:"id"`
+	BlockNum                         uint32                 `json:"block_num"`
+	Header                           SignedBlockHeader      `json:"header"`
+	DPOSProposedIrreversibleBlockNum uint32                 `json:"dpos_proposed_irreversible_blocknum"`
+	DPOSIrreversibleBlockNum         uint32                 `json:"dpos_irreversible_blocknum"`
+	BFTSIrreversibleBlockNum         uint32                 `json:"bft_irreversible_blocknum"`
+	PendingScheduleLibNum            uint32                 `json:"pending_schedule_lib_num"`
+	PendingScheduleHash              SHA256Bytes            `json:"pending_schedule_hash"`
+	PendingSchedule                  ProducerSchedule       `json:"pending_schedule"`
+	ActiveSchedule                   ProducerSchedule       `json:"active_schedule"`
+	BlockRootMerkle                  SHA256Bytes            `json:"blockroot_merkle"`
+	ProducerToLastProduced           map[AccountName]uint32 `json:"producer_to_last_produced"`
+	ProducerToLastImpliedIRB         map[AccountName]uint32 `json:"producer_to_last_implied_irb"`
+	BlockSigningKey                  ecc.PublicKey          `json:"block_signing_key"`
+	ConfirmCount                     []uint8                `json:"confirm_count"`
+	Confirmations                    []HeaderConfirmation   `json:"confirmations"`
 }
 
 type SignedBlockHeader struct {
