@@ -227,69 +227,6 @@ type OptionalProducerSchedule struct {
 	ProducerSchedule
 }
 
-type TransactionMetadata struct {
-	ID                SHA256Bytes       `json:"id"`
-	SignedID          SHA256Bytes       `json:"signed_id"`
-	Trx               SignedTransaction `json:"trx"`
-	PackedTransaction PackedTransaction `json:"packed_trx"`
-	SigningKeys       []SigningKeys     `json:"signing_keys"`
-	Accepted          bool              `json:"accepted"`
-}
-
-type SigningKeys struct {
-	ChainID    SHA256Bytes     `json:"first"`
-	PublicKeys []ecc.PublicKey `json:"second"`
-}
-
-func (t *SigningKeys) UnmarshalJSON(data []byte) error {
-	var arr []json.RawMessage
-	json.Unmarshal(data, &arr)
-
-	var chainID SHA256Bytes
-	err := json.Unmarshal(arr[0], chainID)
-	if err != nil {
-		return fmt.Errorf("unmarshal chain id %s", err)
-	}
-
-	var publicKeys []ecc.PublicKey
-	err = json.Unmarshal(arr[1], publicKeys)
-	if err != nil {
-		return fmt.Errorf("unmarshal public keys %s", err)
-	}
-
-	t.ChainID = chainID
-	t.PublicKeys = publicKeys
-
-	return nil
-}
-
-type BlockState struct {
-	BlockHeaderState
-	Block          SignedBlock           `json:"block"`
-	Validated      bool                  `json:"validated"`
-	InCurrentChain bool                  `json:"in_current_chain"`
-	Trxs           []TransactionMetadata `json:"trxs"`
-}
-
-type BlockHeaderState struct {
-	ID                               SHA256Bytes            `json:"id"`
-	BlockNum                         uint32                 `json:"block_num"`
-	Header                           SignedBlockHeader      `json:"header"`
-	DPOSProposedIrreversibleBlockNum uint32                 `json:"dpos_proposed_irreversible_blocknum"`
-	DPOSIrreversibleBlockNum         uint32                 `json:"dpos_irreversible_blocknum"`
-	BFTSIrreversibleBlockNum         uint32                 `json:"bft_irreversible_blocknum"`
-	PendingScheduleLibNum            uint32                 `json:"pending_schedule_lib_num"`
-	PendingScheduleHash              SHA256Bytes            `json:"pending_schedule_hash"`
-	PendingSchedule                  ProducerSchedule       `json:"pending_schedule"`
-	ActiveSchedule                   ProducerSchedule       `json:"active_schedule"`
-	BlockRootMerkle                  SHA256Bytes            `json:"blockroot_merkle"`
-	ProducerToLastProduced           map[AccountName]uint32 `json:"producer_to_last_produced"`
-	ProducerToLastImpliedIRB         map[AccountName]uint32 `json:"producer_to_last_implied_irb"`
-	BlockSigningKey                  ecc.PublicKey          `json:"block_signing_key"`
-	ConfirmCount                     []uint8                `json:"confirm_count"`
-	Confirmations                    []HeaderConfirmation   `json:"confirmations"`
-}
-
 type SignedBlockHeader struct {
 	BlockHeader
 	ProducerSignature ecc.Signature `json:"producer_signature"`
