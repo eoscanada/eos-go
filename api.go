@@ -183,8 +183,8 @@ func (api *API) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
-func (api *API) ListWallets() (out []string, err error) {
-	err = api.call("wallet", "list_wallets", nil, &out)
+func (api *API) ListWallets(walletName ...string) (out []string, err error) {
+	err = api.call("wallet", "list_wallets", walletName, &out)
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +192,9 @@ func (api *API) ListWallets() (out []string, err error) {
 	return
 }
 
-func (api *API) ListKeys() (out []*ecc.PrivateKey, err error) {
+func (api *API) ListKeys(walletNames ...string) (out []*ecc.PrivateKey, err error) {
 	var textKeys []string
-	err = api.call("wallet", "list_keys", nil, &textKeys)
+	err = api.call("wallet", "list_keys", walletNames, &textKeys)
 	if err != nil {
 		return nil, err
 	}
