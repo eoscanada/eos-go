@@ -217,12 +217,6 @@ func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
 	return SHA256Bytes(hashed), nil
 }
 
-type HeaderConfirmation struct {
-	BlockID           SHA256Bytes   `json:"block_id"`
-	AccountName       AccountName   `json:"account_name"`
-	ProducerSignature ecc.Signature `json:"producer_signature"`
-}
-
 type OptionalProducerSchedule struct {
 	ProducerSchedule
 }

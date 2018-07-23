@@ -14,6 +14,8 @@ import (
 
 	"math"
 
+	"math/rand"
+
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -31,6 +33,10 @@ func (l loggerWriter) Write(p []byte) (n int, err error) {
 }
 
 func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *Client {
+
+	nodeID := make([]byte, 32)
+	rand.Read(nodeID)
+
 	c := &Client{
 		p2pAddress:     p2pAddr,
 		ChainID:        chainID,
@@ -39,7 +45,7 @@ func NewClient(p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *
 		// by default, fake being a peer at the same level as the other..
 	}
 	c.api = eos.New("http://mainnet.eoscanada.com")
-	c.NodeID = chainID
+	c.NodeID = nodeID
 	return c
 }
 
