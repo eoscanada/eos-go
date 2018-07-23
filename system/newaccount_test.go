@@ -63,7 +63,7 @@ func TestActionNewAccount(t *testing.T) {
 	buf, err = json.Marshal(a.ActionData.Data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null,\"waits\":null},\"active\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}],\"accounts\":null,\"waits\":null}}", string(buf))
+	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}]},\"active\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}]}}", string(buf))
 	// 00096e88 0000 0000 00000000 00 00 00 00 01 0000000000ea3055
 
 	// WUTz that ?
@@ -101,7 +101,7 @@ func TestMarshalTransactionAndSigned(t *testing.T) {
 
 	buf, err = json.Marshal(a)
 	assert.NoError(t, err)
-	assert.Equal(t, `{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe931000000000000000000000000000000000000"}`, string(buf))
+	assert.Equal(t, `{"account":"eosio","name":"newaccount","authorization":[{"actor":"eosio","permission":"active"}],"data":"0000000000ea305500000059b1abe9310000000000000000000000000000"}`, string(buf))
 }
 
 func TestMarshalTransactionAndPack(t *testing.T) {
