@@ -372,6 +372,11 @@ func (api *API) GetTransactionRaw(id string) (out json.RawMessage, err error) {
 	return
 }
 
+func (api *API) GetActions(params GetActionsRequest) (out *ActionsResp, err error) {
+	err = api.call("history", "get_actions", params, &out)
+	return
+}
+
 func (api *API) GetTransactions(name AccountName) (out *TransactionsResp, err error) {
 	err = api.call("account_history", "get_transactions", M{"account_name": name}, &out)
 	return
