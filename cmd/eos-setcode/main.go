@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -19,7 +18,7 @@ func main() {
 	flag.Parse()
 
 	//	api := eos.New(&url.URL{Scheme: "http", Host: "cbillett.eoscanada.com"}, bytes.Repeat([]byte{0}, 32))
-	api := eos.New("http://localhost:9999", bytes.Repeat([]byte{0}, 32))
+	api := eos.New("http://localhost:9999")
 	// api := eos.New(&url.URL{Scheme: "http", Host: "localhost:8889"}, bytes.Repeat([]byte{0}, 32))
 
 	// api.Debug = true
@@ -62,7 +61,7 @@ func main() {
 	}
 	setCodeTx.Actions = []*eos.Action{setCodeTx.Actions[0]}
 
-	resp, err := api.SignPushTransaction(setCodeTx, nil)
+	resp, err := api.SignPushTransaction(setCodeTx, nil, eos.CompressionNone)
 	if err != nil {
 		fmt.Println("ERROR calling SetCode:", err)
 	} else {

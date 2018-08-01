@@ -22,5 +22,5 @@ func main() {
 		log.Fatalln("invalid public key:", err)
 	}
 
-	fmt.Printf("public key in hex form: %q\n", hex.EncodeToString(pubkey))
+	fmt.Printf("public key in hex form: %q\n", hex.EncodeToString(pubkey.Content))
 }
