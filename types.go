@@ -172,7 +172,8 @@ type Symbol struct {
 
 // EOSSymbol represents the standard EOS symbol on the chain.  It's
 // here just to speed up things.
-var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
+// now is SYS
+var EOSSymbol = Symbol{Precision: 4, Symbol: "SYS"}
 
 func NewEOSAssetFromString(amount string) (out Asset, err error) {
 	if len(amount) == 0 {
@@ -182,6 +183,11 @@ func NewEOSAssetFromString(amount string) (out Asset, err error) {
 	if strings.Contains(amount, " EOS") {
 		amount = strings.Replace(amount, " EOS", "", 1)
 	}
+
+	if strings.Contains(amount, " SYS") {
+		amount = strings.Replace(amount, " SYS", "", 1)
+	}
+
 	if !strings.Contains(amount, ".") {
 		val, err := strconv.ParseInt(amount, 10, 64)
 		if err != nil {

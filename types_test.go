@@ -342,6 +342,10 @@ func TestNewEOSAssetFromString(t *testing.T) {
 			10000000,
 		},
 		{
+			"1000.0000 SYS",
+			10000000,
+		},
+		{
 			"1000",
 			10000000,
 		},
@@ -351,6 +355,14 @@ func TestNewEOSAssetFromString(t *testing.T) {
 		},
 		{
 			"1000.1 EOS",
+			10001000,
+		},
+		{
+			"1000 SYS",
+			10000000,
+		},
+		{
+			"1000.1 SYS",
 			10001000,
 		},
 		{

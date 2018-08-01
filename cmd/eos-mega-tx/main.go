@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -29,7 +28,7 @@ func main() {
 		log.Fatalln("failed loading private key:", err)
 	}
 
-	api := eos.New(*apiAddr, bytes.Repeat([]byte{0}, 32)) // TODO: use chain ID from somewhere..
+	api := eos.New(*apiAddr) // TODO: use chain ID from somewhere..
 
 	keyBag := eos.NewKeyBag()
 	if err := keyBag.Add(*signingKey); err != nil {
