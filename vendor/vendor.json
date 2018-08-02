@@ -9,6 +9,12 @@
 			"revisionTime": "2018-02-21T22:46:20Z"
 		},
 		{
+			"checksumSHA1": "ljd3FhYRJ91cLZz3wsH9BQQ2JbA=",
+			"path": "github.com/pkg/errors",
+			"revision": "816c9085562cd7ee03e7f8188a1cfd942858cded",
+			"revisionTime": "2018-03-11T21:45:15Z"
+		},
+		{
 			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
 			"path": "github.com/pmezard/go-difflib/difflib",
 			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
