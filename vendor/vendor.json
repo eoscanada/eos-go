@@ -1,0 +1,59 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "CSPbwbyzqA6sfORicn4HFtIhF/c=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "8991bc29aa16c548c550c7ff78260e27b9ab7c73",
+			"revisionTime": "2018-02-21T22:46:20Z"
+		},
+		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
+			"checksumSHA1": "XHH8+1ESYdBoyKSD4FXwdy1liUk=",
+			"path": "github.com/stretchr/objx",
+			"revision": "b8b73a35e9830ae509858c10dec5866b4d5c8bff",
+			"revisionTime": "2018-07-02T10:34:55Z"
+		},
+		{
+			"checksumSHA1": "nj123dGxKPIF17B6y3VEK2pihRk=",
+			"path": "github.com/stretchr/testify",
+			"revision": "f35b8ab0b5a2cef36673838d662e249dd9c94686",
+			"revisionTime": "2018-05-06T18:05:49Z"
+		},
+		{
+			"checksumSHA1": "c6pbpF7eowwO59phRTpF8cQ80Z0=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "f35b8ab0b5a2cef36673838d662e249dd9c94686",
+			"revisionTime": "2018-05-06T18:05:49Z"
+		},
+		{
+			"checksumSHA1": "fg3TzS9/QK3wZbzei3Z6O8XPLHg=",
+			"path": "github.com/stretchr/testify/http",
+			"revision": "f35b8ab0b5a2cef36673838d662e249dd9c94686",
+			"revisionTime": "2018-05-06T18:05:49Z"
+		},
+		{
+			"checksumSHA1": "WmBSFdqpdYRIkp0I408JIZ3LDMY=",
+			"path": "github.com/stretchr/testify/mock",
+			"revision": "f35b8ab0b5a2cef36673838d662e249dd9c94686",
+			"revisionTime": "2018-05-06T18:05:49Z"
+		},
+		{
+			"checksumSHA1": "wnEANt4k5X/KGwoFyfSSnpxULm4=",
+			"path": "github.com/stretchr/testify/require",
+			"revision": "f35b8ab0b5a2cef36673838d662e249dd9c94686",
+			"revisionTime": "2018-05-06T18:05:49Z"
+		},
+		{
+			"path": "golang.org/x/crypto",
+			"revision": ""
+		}
+	],
+	"rootPath": "github.com/eoscanada/eos-go"
+}
