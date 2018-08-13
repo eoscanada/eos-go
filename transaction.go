@@ -6,6 +6,7 @@ import (
 	"compress/zlib"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -141,8 +142,12 @@ func (s *SignedTransaction) PackedTransactionAndCFD() ([]byte, []byte, error) {
 	return rawtrx, rawcfd, nil
 }
 
+// ID gen trx id
 func (tx *Transaction) ID() string {
-	return "ID here" //todo
+	rawtrx, _ := MarshalBinary(*tx)
+	h := sha256.New()
+	_, _ = h.Write(rawtrx)
+	return hex.EncodeToString(SHA256Bytes(h.Sum(nil)))
 }
 
 func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransaction, error) {
