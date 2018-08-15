@@ -430,13 +430,12 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 	return nil
 }
 
-type BlockID string
-
-func (b BlockID) BlockNum() uint32 {
-	if len(b) < 8 {
+// BlockNum extracts the block number (or height) from a hex-encoded block ID.
+func BlockNum(blockID string) uint32 {
+	if len(blockID) < 8 {
 		return 0
 	}
-	bin, err := hex.DecodeString(string(b)[:8])
+	bin, err := hex.DecodeString(blockID[:8])
 	if err != nil {
 		return 0
 	}
