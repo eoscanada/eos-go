@@ -455,12 +455,6 @@ func signRFC6979(privateKey *PrivateKey, hash []byte, nonce int) (*Signature, er
 // nonceRFC6979 generates an ECDSA nonce (`k`) deterministically according to RFC 6979.
 // It takes a 32-byte hash as an input and returns 32-byte nonce to be used in ECDSA algorithm.
 func nonceRFC6979(privkey *big.Int, hash []byte, nonce int) *big.Int {
-	if nonce > 0 {
-		moreHash := sha256.New()
-		moreHash.Write(hash)
-		moreHash.Write(bytes.Repeat([]byte{0x00}, nonce))
-		hash = moreHash.Sum(nil)
-	}
 
 	curve := S256()
 	q := curve.Params().N
@@ -491,9 +485,10 @@ func nonceRFC6979(privkey *big.Int, hash []byte, nonce int) *big.Int {
 	v = mac(alg, k, v)
 
 	// Step H
-	for {
+	var t []byte
+	for i := 0; i <= nonce; i++ {
 		// Step H1
-		var t []byte
+		t = t[:0]
 
 		// Step H2
 		for len(t)*8 < qlen {
@@ -502,13 +497,10 @@ func nonceRFC6979(privkey *big.Int, hash []byte, nonce int) *big.Int {
 		}
 
 		// Step H3
-		secret := hashToInt(t, curve)
-		if secret.Cmp(one) >= 0 && secret.Cmp(q) < 0 {
-			return secret
-		}
 		k = mac(alg, k, append(v, 0x00))
 		v = mac(alg, k, v)
 	}
+	return hashToInt(t, curve)
 }
 
 // mac returns an HMAC of the given key and message.

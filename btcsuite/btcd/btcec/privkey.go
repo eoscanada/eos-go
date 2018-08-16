@@ -66,7 +66,7 @@ func (p *PrivateKey) Sign(hash []byte) (*Signature, error) {
 // SignCanonical goes through signatures and returns only a canonical
 // representations.  This matches the EOS blockchain expectations.
 func (p *PrivateKey) SignCanonical(curve *KoblitzCurve, hash []byte) ([]byte, error) {
-	for i := 0; i < 25; i++ {
+	for i := 1; i < 25; i++ {
 		sig, err := signRFC6979(p, hash, i)
 		if err != nil {
 			return nil, err
