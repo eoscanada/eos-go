@@ -40,6 +40,7 @@ type InfoResp struct {
 	VirtualBlockNetLimit JSONInt64 `json:"virtual_block_net_limit"`
 	BlockCPULimit        JSONInt64 `json:"block_cpu_limit"`
 	BlockNetLimit        JSONInt64 `json:"block_net_limit"`
+	ServerVersionString  string    `json:"server_version_string"`
 }
 
 type BlockResp struct {
