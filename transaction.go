@@ -76,6 +76,9 @@ func (tx *Transaction) Fill(headBlockID SHA256Bytes, delaySecs, maxNetUsageWords
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
+	if len(blockID) == 0 {
+		return
+	}
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint32(blockID[:4]))
 	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
 }
