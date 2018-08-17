@@ -201,7 +201,16 @@ type PackedTransaction struct {
 
 func (p *PackedTransaction) ID() SHA256Bytes {
 	h := sha256.New()
-	_, _ = h.Write(p.PackedTransaction)
+
+	switch p.Compression {
+	case CompressionZlib:
+		r, _ := zlib.NewReader(bytes.NewBuffer(p.PackedTransaction))
+		d, _ := ioutil.ReadAll(r)
+		_, _ = h.Write(d)
+	case CompressionNone:
+		_, _ = h.Write(p.PackedTransaction)
+	}
+
 	return h.Sum(nil)
 }
 
