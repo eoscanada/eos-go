@@ -367,6 +367,11 @@ func (api *API) GetTransaction(id string) (out *TransactionResp, err error) {
 	return
 }
 
+func (api *API) GetTransactionWithBlockNumHint(id string, num uint32) (out *TransactionResp, err error) {
+	err = api.call("history", "get_transaction", M{"id": id, "block_num_hint": num}, &out)
+	return
+}
+
 func (api *API) GetTransactionRaw(id string) (out json.RawMessage, err error) {
 	err = api.call("history", "get_transaction", M{"id": id}, &out)
 	return
