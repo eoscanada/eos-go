@@ -20,6 +20,7 @@ import (
 type API struct {
 	HttpClient              *http.Client
 	BaseURL                 string
+	WalletURL               string
 	Signer                  Signer
 	Debug                   bool
 	Compress                CompressionType
@@ -409,7 +410,13 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 		return err
 	}
 
-	targetURL := fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint)
+	var targetURL string
+	if baseAPI == "wallet" && api.WalletURL != "" {
+		targetURL = fmt.Sprintf("%s/v1/%s/%s", api.WalletURL, baseAPI, endpoint)
+	} else {
+		targetURL = fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint)
+	}
+
 	req, err := http.NewRequest("POST", targetURL, jsonBody)
 	if err != nil {
 		return fmt.Errorf("NewRequest: %s", err)
