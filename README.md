@@ -54,13 +54,3 @@ License
 -------
 
 MIT
-
-
-
-
-TODO notes
-----------
-
-Changes to dawn4:
-* sig_digest always adds something even with empty context free actions.
-* PUB, PVT, SIG
