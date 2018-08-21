@@ -34,7 +34,7 @@ type MessageReflectTypes struct {
 }
 
 var messageAttributes = []MessageReflectTypes{
-	{Name: "Handshake", ReflectType: reflect.TypeOf(HandshakeMessage{})},
+	{Name: "handshake", ReflectType: reflect.TypeOf(HandshakeMessage{})},
 	{Name: "ChainSize", ReflectType: reflect.TypeOf(ChainSizeMessage{})},
 	{Name: "GoAway", ReflectType: reflect.TypeOf(GoAwayMessage{})},
 	{Name: "Time", ReflectType: reflect.TypeOf(TimeMessage{})},

@@ -50,7 +50,7 @@ func (m *ChainSizeMessage) GetType() P2PMessageType {
 }
 
 func (m *HandshakeMessage) String() string {
-	return fmt.Sprintf("Handshake: Head [%d] Last Irreversible [%d] Time [%s]", m.HeadNum, m.LastIrreversibleBlockNum, m.Time)
+	return fmt.Sprintf("handshake: Head [%d] Last Irreversible [%d] Time [%s]", m.HeadNum, m.LastIrreversibleBlockNum, m.Time)
 }
 
 type GoAwayReason uint8
