@@ -7,7 +7,7 @@ import (
 
 // NewRegProducer returns a `regproducer` action that lives on the
 // `eosio.system` contract.
-func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, url string) *eos.Action {
+func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, url string, location uint16) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio"),
 		Name:    ActN("regproducer"),
@@ -18,7 +18,7 @@ func NewRegProducer(producer eos.AccountName, producerKey ecc.PublicKey, url str
 			Producer:    producer,
 			ProducerKey: producerKey,
 			URL:         url,
-			Location:    0,
+			Location:    location,
 		}),
 	}
 }

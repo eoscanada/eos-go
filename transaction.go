@@ -76,6 +76,9 @@ func (tx *Transaction) Fill(headBlockID SHA256Bytes, delaySecs, maxNetUsageWords
 }
 
 func (tx *Transaction) setRefBlock(blockID []byte) {
+	if len(blockID) == 0 {
+		return
+	}
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint32(blockID[:4]))
 	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
 }
@@ -202,7 +205,19 @@ func (p *PackedTransaction) ID() SHA256Bytes {
 	return h.Sum(nil)
 }
 
+// Unpack decodes the bytestream of the transaction, and attempts to
+// decode the registered actions.
 func (p *PackedTransaction) Unpack() (signedTx *SignedTransaction, err error) {
+	return p.unpack(false)
+}
+
+// UnpackBare decodes the transcation payload, but doesn't decode the
+// nested action data structure.  See also `Unpack`.
+func (p *PackedTransaction) UnpackBare() (signedTx *SignedTransaction, err error) {
+	return p.unpack(true)
+}
+
+func (p *PackedTransaction) unpack(bare bool) (signedTx *SignedTransaction, err error) {
 	var txReader io.Reader
 	txReader = bytes.NewBuffer(p.PackedTransaction)
 
@@ -229,6 +244,7 @@ func (p *PackedTransaction) Unpack() (signedTx *SignedTransaction, err error) {
 		return nil, fmt.Errorf("unpack read all, %s", err)
 	}
 	decoder := NewDecoder(data)
+	decoder.DecodeActions(!bare)
 
 	var tx Transaction
 	err = decoder.Decode(&tx)

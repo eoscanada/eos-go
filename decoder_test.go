@@ -455,7 +455,6 @@ func TestDecoder_Decode_Slice_Err(t *testing.T) {
 	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&s)
 	assert.Equal(t, err, ErrVarIntBufferSize)
-
 }
 
 type structWithInvalidType struct {
