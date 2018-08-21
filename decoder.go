@@ -149,6 +149,16 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		n, err = d.readInt16()
 		rv.SetInt(int64(n))
 		return
+	case *int64:
+		var n int64
+		n, err = d.readInt64()
+		rv.SetInt(int64(n))
+		return
+	case *JSONInt64:
+		var n int64
+		n, err = d.readInt64()
+		rv.SetInt(int64(n))
+		return
 	case *uint16:
 		var n uint16
 		n, err = d.readUint16()
