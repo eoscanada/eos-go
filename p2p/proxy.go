@@ -27,13 +27,16 @@ func (p *Proxy) registerHandler(handler Handler) {
 	p.handlers = append(p.handlers, handler)
 }
 
-func readMessage(connection *Connection, msgChannel chan *eos.P2PMessageEnvelope, errChannel chan error) {
+func readMessage(connection *Connection, handle handle, errChannel chan error) {
 	for {
 		msg, err := connection.Read()
 		if err != nil {
 			errChannel <- fmt.Errorf("read message from %s: %s", connection.address, err)
 		}
-		msgChannel <- msg
+		err = handle(msg)
+		if err != nil {
+			errChannel <- err
+		}
 	}
 }
 
@@ -139,7 +142,7 @@ func (p *Proxy) handleDefault(envelope *eos.P2PMessageEnvelope, peer *Peer) erro
 	case *eos.GoAwayMessage:
 		return fmt.Errorf("handling message: go away: reason [%d]", m.Reason)
 	default:
-		err := p.send(envelope.P2PMessage, peer)
+		_, err := peer.Connection.nodeConnection.Write(envelope.Raw)
 		if err != nil {
 			return fmt.Errorf("handleDefault: %s", err)
 		}
@@ -167,13 +170,13 @@ func (p *Proxy) triggerHandshake() error {
 	return p.route.Destination.Connection.SendHandshake(dummyHandshakeInfo)
 }
 
+type handle func(envelope *eos.P2PMessageEnvelope) error
+
 func (p *Proxy) Start() {
-	originChannel := make(chan *eos.P2PMessageEnvelope)
-	destinationChannel := make(chan *eos.P2PMessageEnvelope)
 	errorChannel := make(chan error)
 
-	go readMessage(p.route.Origin.Connection, originChannel, errorChannel)
-	go readMessage(p.route.Destination.Connection, destinationChannel, errorChannel)
+	go readMessage(p.route.Origin.Connection, p.handleOrigin, errorChannel)
+	go readMessage(p.route.Destination.Connection, p.handleDestination, errorChannel)
 
 	err := p.triggerHandshake()
 	if err != nil {
@@ -182,16 +185,6 @@ func (p *Proxy) Start() {
 
 	for {
 		select {
-		case msg := <-originChannel:
-			err := p.handleOrigin(msg)
-			if err != nil {
-				log.Fatal("proxy: handle origin:", err)
-			}
-		case msg := <-destinationChannel:
-			err := p.handleDestination(msg)
-			if err != nil {
-				log.Fatal("proxy: handle destination:", err)
-			}
 		case err := <-errorChannel:
 			log.Fatal(err)
 		}

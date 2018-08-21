@@ -9,7 +9,6 @@ import (
 
 	"fmt"
 
-	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/p2p"
 )
 
@@ -24,13 +23,13 @@ func peer(address string, chainID []byte) *p2p.Peer {
 	return p2p.NewPeer(originConnection)
 
 }
-func readMessage(connection *p2p.Connection, msgChannel chan *eos.P2PMessageEnvelope, errChannel chan error) {
+func readMessage(connection *p2p.Connection) {
 	for {
 		msg, err := connection.Read()
 		if err != nil {
-			errChannel <- fmt.Errorf("read message from %s: %s", connection., err)
+			log.Fatal(fmt.Errorf("read message from: %s", err))
 		}
-		msgChannel <- msg
+		fmt.Println("MSG:", msg)
 	}
 }
 
@@ -47,7 +46,9 @@ func main() {
 		HeadBlockTime: time.Now(),
 	}
 	peer := peer("localhost:9876", chainID)
+	go readMessage(peer.Connection)
 	peer.Connection.SendHandshake(dummyHandshakeInfo)
+	peer.Connection.SendSyncRequest(1, 10)
 	fmt.Println("Handshake sent!")
 
 	select {}

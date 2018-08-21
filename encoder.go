@@ -58,6 +58,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeName(name)
 	case string:
 		return e.writeString(cv)
+	case CompressionType:
+		return e.writeByte(uint8(cv))
 	case TransactionStatus:
 		return e.writeByte(uint8(cv))
 	case IDListMode:
