@@ -55,12 +55,12 @@ func NewOutgoingPeer(address string, chainID eos.SHA256Bytes, agent string, mock
 	return newPeer(address, chainID, agent, false, mockHandshake)
 }
 
-func (p *Peer) Read() (*eos.P2PMessageEnvelope, error) {
-	envelope, err := eos.ReadP2PMessageData(p.reader)
+func (p *Peer) Read() (*eos.Packet, error) {
+	packet, err := eos.ReadPacket(p.reader)
 	if err != nil {
 		return nil, fmt.Errorf("connection: read: %s", err)
 	}
-	return envelope, nil
+	return packet, nil
 }
 
 func (p *Peer) Init(errChan chan error) (ready chan bool) {
@@ -109,13 +109,13 @@ func (p *Peer) Write(bytes []byte) (int, error) {
 
 func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 
-	envelope := &eos.P2PMessageEnvelope{
+	packet := &eos.Packet{
 		Type:       message.GetType(),
 		P2PMessage: message,
 	}
 
 	encoder := eos.NewEncoder(p.connection)
-	err = encoder.Encode(envelope)
+	err = encoder.Encode(packet)
 
 	return
 }

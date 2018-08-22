@@ -114,7 +114,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case *ActionData:
 		println("*ActionData")
 		return e.writeActionData(*cv)
-	case *P2PMessageEnvelope:
+	case *Packet:
 		return e.writeBlockP2PMessageEnvelope(*cv)
 	default:
 
@@ -337,7 +337,7 @@ func (e *Encoder) writeJSONTime(time JSONTime) (err error) {
 	return e.writeUint32(uint32(time.Unix()))
 }
 
-func (e *Encoder) writeBlockP2PMessageEnvelope(envelope P2PMessageEnvelope) (err error) {
+func (e *Encoder) writeBlockP2PMessageEnvelope(envelope Packet) (err error) {
 
 	println("writeBlockP2PMessageEnvelope")
 

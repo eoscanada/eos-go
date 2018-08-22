@@ -296,7 +296,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.Set(reflect.ValueOf(action))
 		return
 
-	case *P2PMessageEnvelope:
+	case *Packet:
 
 		envelope, e := d.readP2PMessageEnvelope()
 		if e != nil {
@@ -656,9 +656,9 @@ func (d *Decoder) readActionData(action *Action) (err error) {
 	return
 }
 
-func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope, err error) {
+func (d *Decoder) readP2PMessageEnvelope() (out *Packet, err error) {
 
-	out = &P2PMessageEnvelope{}
+	out = &Packet{}
 	l, err := d.readUint32()
 	if err != nil {
 		err = fmt.Errorf("p2p envelope length: %s", err)

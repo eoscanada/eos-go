@@ -29,19 +29,19 @@ func (c *Client) RegisterHandler(handler Handler) {
 
 func (c *Client) read(peer *Peer, errChannel chan error) {
 	for {
-		envelope, err := peer.Read()
+		packet, err := peer.Read()
 		if err != nil {
 			errChannel <- fmt.Errorf("read message from %s: %s", peer.Address, err)
 		}
 
-		packet := NewPacket(peer, peer, envelope)
+		envelope := NewEnvelope(peer, peer, packet)
 		c.handlersLock.Lock()
 		for _, handle := range c.handlers {
-			handle.Handle(packet)
+			handle.Handle(envelope)
 		}
 		c.handlersLock.Unlock()
 
-		switch m := envelope.P2PMessage.(type) {
+		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
 			log.Fatalf("handling message: go away: reason [%d]", m.Reason)
 
@@ -58,7 +58,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				log.Fatal(fmt.Errorf("HandshakeMessage: %s", err))
 			}
 		default:
-			name, _ := envelope.Type.Name()
+			name, _ := packet.Type.Name()
 			fmt.Println("Drop:", name)
 		}
 	}

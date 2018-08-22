@@ -6,18 +6,18 @@ import (
 )
 
 type Handler interface {
-	Handle(msg *Packet)
+	Handle(envelope *Envelope)
 }
 
-type HandlerFunc func(packet *Packet)
+type HandlerFunc func(envelope *Envelope)
 
-func (f HandlerFunc) Handle(packet *Packet) {
-	f(packet)
+func (f HandlerFunc) Handle(envelope *Envelope) {
+	f(envelope)
 }
 
 // LoggerHandler logs the messages back and forth.
-var LoggerHandler = HandlerFunc(func(packet *Packet) {
-	data, err := json.Marshal(packet)
+var LoggerHandler = HandlerFunc(func(envelope *Envelope) {
+	data, err := json.Marshal(envelope)
 	if err != nil {
 		fmt.Println("logger plugin err: ", err)
 		return
@@ -27,13 +27,13 @@ var LoggerHandler = HandlerFunc(func(packet *Packet) {
 })
 
 // StringLoggerHandler simply prints the messages as they go through the client.
-var StringLoggerHandler = HandlerFunc(func(packet *Packet) {
-	name, _ := packet.Envelope.Type.Name()
+var StringLoggerHandler = HandlerFunc(func(envelope *Envelope) {
+	name, _ := envelope.Packet.Type.Name()
 	fmt.Printf(
 		"type %s from %s to %s: %s\n",
 		name,
-		packet.Sender.Address,
-		packet.Receiver.Address,
-		packet.Envelope.P2PMessage,
+		envelope.Sender.Address,
+		envelope.Receiver.Address,
+		envelope.Packet.P2PMessage,
 	)
 })

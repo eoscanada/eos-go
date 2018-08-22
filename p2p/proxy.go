@@ -35,34 +35,34 @@ func (p *Proxy) RegisterHandler(handler Handler) {
 
 func (p *Proxy) read(sender *Peer, receiver *Peer, errChannel chan error) {
 	for {
-		envelop, err := sender.Read()
+		packet, err := sender.Read()
 		if err != nil {
 			errChannel <- fmt.Errorf("read message from %s: %s", sender.Address, err)
 		}
-		err = p.handle(envelop, sender, receiver)
+		err = p.handle(packet, sender, receiver)
 		if err != nil {
 			errChannel <- err
 		}
 	}
 }
 
-func (p *Proxy) handle(envelope *eos.P2PMessageEnvelope, sender *Peer, receiver *Peer) error {
+func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 
-	_, err := receiver.Write(envelope.Raw)
+	_, err := receiver.Write(packet.Raw)
 	if err != nil {
 		return fmt.Errorf("handleDefault: %s", err)
 	}
 
-	switch m := envelope.P2PMessage.(type) {
+	switch m := packet.P2PMessage.(type) {
 	case *eos.GoAwayMessage:
 		return fmt.Errorf("handling message: go away: reason [%d]", m.Reason)
 	}
 
-	packet := NewPacket(sender, receiver, envelope)
+	envelope := NewEnvelope(sender, receiver, packet)
 
 	p.handlersLock.Lock()
 	for _, handle := range p.handlers {
-		handle.Handle(packet)
+		handle.Handle(envelope)
 	}
 	p.handlersLock.Unlock()
 

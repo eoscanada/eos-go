@@ -4,16 +4,16 @@ import (
 	"github.com/eoscanada/eos-go"
 )
 
-type Packet struct {
+type Envelope struct {
 	Sender   *Peer
 	Receiver *Peer
-	Envelope *eos.P2PMessageEnvelope `json:"envelope"`
+	Packet   *eos.Packet `json:"envelope"`
 }
 
-func NewPacket(sender *Peer, receiver *Peer, envelope *eos.P2PMessageEnvelope) *Packet {
-	return &Packet{
+func NewEnvelope(sender *Peer, receiver *Peer, packet *eos.Packet) *Envelope {
+	return &Envelope{
 		Sender:   sender,
 		Receiver: receiver,
-		Envelope: envelope,
+		Packet:   packet,
 	}
 }

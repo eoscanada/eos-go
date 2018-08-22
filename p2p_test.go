@@ -19,7 +19,7 @@ func TestP2PMessage_UnmarshalBinaryRead(t *testing.T) {
 		t.Error(err)
 	}
 
-	var s P2PMessageEnvelope
+	var s Packet
 
 	assert.NoError(t, UnmarshalBinary(decoded, &s))
 	assert.Equal(t, uint32(9), s.Length)
@@ -128,7 +128,7 @@ func TestP2PMessage_DecodePayload(t *testing.T) {
 		data, err := hex.DecodeString(c.HexString)
 		assert.NoError(t, err)
 
-		var p2PMessageEnvelope P2PMessageEnvelope
+		var p2PMessageEnvelope Packet
 		decoder := NewDecoder(data)
 		err = decoder.Decode(&p2PMessageEnvelope)
 		assert.NoError(t, err, c.Name)
@@ -178,7 +178,7 @@ func TestDecoder_P2PMessageEnvelope(t *testing.T) {
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 
-	msg := &P2PMessageEnvelope{
+	msg := &Packet{
 		Length:  4,
 		Type:    PackedTransactionMessageType,
 		Payload: []byte{1, 2, 3},
@@ -188,7 +188,7 @@ func TestDecoder_P2PMessageEnvelope(t *testing.T) {
 	assert.NoError(t, err)
 	d := NewDecoder(buf.Bytes())
 
-	var decoded P2PMessageEnvelope
+	var decoded Packet
 
 	d.DecodeP2PMessage(false)
 	err = d.Decode(&decoded)
@@ -203,7 +203,7 @@ func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 
-	msg := &P2PMessageEnvelope{
+	msg := &Packet{
 		Length:  4,
 		Type:    99,
 		Payload: []byte{1, 2, 3},
@@ -213,7 +213,7 @@ func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
 	assert.NoError(t, err)
 	d := NewDecoder(buf.Bytes())
 
-	var decoded P2PMessageEnvelope
+	var decoded Packet
 
 	err = d.Decode(&decoded)
 	assert.EqualError(t, err, "decode, unknown p2p message type [99]")
@@ -232,14 +232,14 @@ func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
 	buf := new(bytes.Buffer)
 
 	decoder := NewDecoder([]byte{})
-	err := decoder.Decode(&P2PMessageEnvelope{})
+	err := decoder.Decode(&Packet{})
 	assert.EqualError(t, err, "decode, p2p envelope length: uint32 required [4] bytes, remaining [0]")
 
 	encoder := NewEncoder(buf)
 	encoder.writeUint32(4)
 
 	decoder = NewDecoder(buf.Bytes())
-	err = decoder.Decode(&P2PMessageEnvelope{})
+	err = decoder.Decode(&Packet{})
 	assert.EqualError(t, err, "decode, p2p envelope type: byte required [1] byte, remaining [0]")
 
 	buf = new(bytes.Buffer)
@@ -248,7 +248,7 @@ func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
 	encoder.writeByte(9)
 
 	decoder = NewDecoder(buf.Bytes())
-	err = decoder.Decode(&P2PMessageEnvelope{})
+	err = decoder.Decode(&Packet{})
 	assert.EqualError(t, err, "decode, p2p envelope payload required [10] bytes, remaining [0]")
 
 }
@@ -263,7 +263,7 @@ func (w mockWriter) Write(p []byte) (n int, err error) {
 func TestEncode_P2PMessageEnvelope_Error(t *testing.T) {
 	buf := mockWriter{}
 	encoder := NewEncoder(buf)
-	assert.EqualError(t, encoder.writeBlockP2PMessageEnvelope(P2PMessageEnvelope{}), "error.1")
+	assert.EqualError(t, encoder.writeBlockP2PMessageEnvelope(Packet{}), "error.1")
 }
 
 func TestPackedTransaction_Unpack(t *testing.T) {
@@ -272,7 +272,7 @@ func TestPackedTransaction_Unpack(t *testing.T) {
 	decoded, err := hex.DecodeString(msgHex)
 	assert.NoError(t, err)
 
-	var p2pMessageEnvelope P2PMessageEnvelope
+	var p2pMessageEnvelope Packet
 	assert.NoError(t, UnmarshalBinary(decoded, &p2pMessageEnvelope))
 
 	msg := p2pMessageEnvelope.P2PMessage.(*PackedTransactionMessage)

@@ -83,7 +83,7 @@ func (t P2PMessageType) reflectTypes() (MessageReflectTypes, bool) {
 	return attr, true
 }
 
-type P2PMessageEnvelope struct {
+type Packet struct {
 	Length     uint32         `json:"length"`
 	Type       P2PMessageType `json:"type"`
 	Payload    []byte         `json:"-"`
@@ -91,7 +91,7 @@ type P2PMessageEnvelope struct {
 	Raw        []byte         `json:"-"`
 }
 
-func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
+func ReadPacket(r io.Reader) (packet *Packet, err error) {
 	data := make([]byte, 0)
 
 	lengthBytes := make([]byte, 4, 4)
@@ -120,13 +120,13 @@ func ReadP2PMessageData(r io.Reader) (envelope *P2PMessageEnvelope, err error) {
 
 	data = append(data, payloadBytes...)
 
-	envelope = &P2PMessageEnvelope{}
+	packet = &Packet{}
 	decoder := NewDecoder(data)
 	decoder.DecodeActions(false)
-	err = decoder.Decode(envelope)
+	err = decoder.Decode(packet)
 	if err != nil {
 		fmt.Println("Failing data: ", hex.EncodeToString(data))
 	}
-	envelope.Raw = data
+	packet.Raw = data
 	return
 }
