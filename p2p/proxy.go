@@ -7,186 +7,117 @@ import (
 
 	"time"
 
+	"sync"
+
 	"github.com/eoscanada/eos-go"
 )
 
 type Proxy struct {
-	route                       *Route
+	Peer1                       *Peer
+	Peer2                       *Peer
 	handlers                    []Handler
+	handlersLock                sync.Mutex
 	waitingOriginHandShake      bool
 	waitingDestinationHandShake bool
 }
 
-func NewProxy(route *Route) *Proxy {
+func NewProxy(peer1 *Peer, peer2 *Peer) *Proxy {
 	return &Proxy{
-		route: route,
+		Peer1: peer1,
+		Peer2: peer2,
 	}
 }
 
-func (p *Proxy) registerHandler(handler Handler) {
+func (p *Proxy) RegisterHandler(handler Handler) {
+	p.handlersLock.Lock()
+	defer p.handlersLock.Unlock()
+
 	p.handlers = append(p.handlers, handler)
 }
 
-func readMessage(connection *Connection, handle handle, errChannel chan error) {
+func (p *Proxy) read(sender *Peer, receiver *Peer, errChannel chan error) {
 	for {
-		msg, err := connection.Read()
+		envelop, err := sender.Read()
 		if err != nil {
-			errChannel <- fmt.Errorf("read message from %s: %s", connection.address, err)
+			errChannel <- fmt.Errorf("read message from %s: %s", sender.Address, err)
 		}
-		err = handle(msg)
+		err = p.handle(envelop, sender, receiver)
 		if err != nil {
 			errChannel <- err
 		}
 	}
 }
 
-func (p *Proxy) handleOrigin(envelope *eos.P2PMessageEnvelope) error {
+func (p *Proxy) handle(envelope *eos.P2PMessageEnvelope, sender *Peer, receiver *Peer) error {
 
-	destination := p.route.Destination
-
-	switch m := envelope.P2PMessage.(type) {
-	case *eos.HandshakeMessage:
-
-		//do not forward handshake to destination to prevent a handshake storm
-
-		fmt.Printf("Received handshake from origin: head block [%d]\n", m.HeadNum)
-		destination.catchup.originHeadBlock = m.HeadNum
-
-		if destination.handshake.HeadNum < m.HeadNum {
-			fmt.Println("Destination need to catchup")
-			err := destination.catchup.sendSyncRequestTo(p.route.Origin)
-			if err != nil {
-				return fmt.Errorf("handling origin handshake: %s", err)
-			}
-		}
-
-		return nil
-
-	case *eos.SignedBlock:
-
-		if destination.catchup.IsCatchingUp {
-			fmt.Printf("\rBlock: %d / %d", m.BlockNumber(), destination.catchup.requestedEndBlock)
-		} else {
-			fmt.Printf("\rBlock: %d (live)", m.BlockNumber())
-		}
-
-		err := p.handleDefault(envelope, p.route.Destination)
-		if err != nil {
-			return fmt.Errorf("handling origin signed block [%d]: %s", m.BlockNumber(), err)
-		}
-
-		if destination.catchup.IsCatchingUp {
-			destination.catchup.headBlock = m.BlockNumber()
-
-			if destination.catchup.headBlock == destination.catchup.requestedEndBlock {
-
-				fmt.Println(" Sync request completed")
-				destination.catchup.IsCatchingUp = false
-
-				if destination.catchup.headBlock == destination.catchup.originHeadBlock {
-					fmt.Println("Destination has catchup with origin last handshake sending handshake to origin")
-					blockID, err := m.BlockID()
-					if err != nil {
-						return fmt.Errorf("handling origin signed block [%d]: block id: %s", m.BlockNumber(), err)
-					}
-					return p.route.Origin.Connection.SendHandshake(
-						&HandshakeInfo{
-							HeadBlockNum:  destination.catchup.headBlock,
-							HeadBlockTime: m.Timestamp.Time,
-							HeadBlockID:   blockID,
-							//LastIrreversibleBlockID:  m.L,
-							//LastIrreversibleBlockNum: m.LastIrreversibleBlockNum,
-						})
-
-				} else {
-					fmt.Println("Need more block")
-					err := destination.catchup.sendSyncRequestTo(p.route.Origin)
-					if err != nil {
-						return fmt.Errorf("handling origin signed block [%d] need more block: %s", m.BlockNumber(), err)
-					}
-				}
-			}
-		}
-
-	default:
-		return p.handleDefault(envelope, p.route.Destination)
+	_, err := receiver.Write(envelope.Raw)
+	if err != nil {
+		return fmt.Errorf("handleDefault: %s", err)
 	}
-	return nil
-}
-
-func (p *Proxy) handleDestination(envelope *eos.P2PMessageEnvelope) error {
-	switch m := envelope.P2PMessage.(type) {
-	case *eos.HandshakeMessage:
-
-		fmt.Printf("Received handshake from destination: head block [%d]\n", m.HeadNum)
-
-		//Forward handshake from destination to origin. Process will resume in handleOrigin()
-		p.route.Destination.handshake = *m
-		p.route.Destination.catchup.headBlock = m.HeadNum
-		return p.route.Origin.Connection.SendHandshake(
-			&HandshakeInfo{
-				HeadBlockNum:             m.HeadNum,
-				HeadBlockTime:            m.Time.Time,
-				HeadBlockID:              m.HeadID,
-				LastIrreversibleBlockID:  m.LastIrreversibleBlockID,
-				LastIrreversibleBlockNum: m.LastIrreversibleBlockNum,
-			})
-	default:
-		return p.handleDefault(envelope, p.route.Origin)
-	}
-}
-
-func (p *Proxy) handleDefault(envelope *eos.P2PMessageEnvelope, peer *Peer) error {
 
 	switch m := envelope.P2PMessage.(type) {
 	case *eos.GoAwayMessage:
 		return fmt.Errorf("handling message: go away: reason [%d]", m.Reason)
-	default:
-		_, err := peer.Connection.nodeConnection.Write(envelope.Raw)
-		if err != nil {
-			return fmt.Errorf("handleDefault: %s", err)
-		}
 	}
+
+	packet := NewPacket(sender, receiver, envelope)
+
+	p.handlersLock.Lock()
+	for _, handle := range p.handlers {
+		handle.Handle(packet)
+	}
+	p.handlersLock.Unlock()
+
 	return nil
 }
 
-func (p *Proxy) send(message eos.P2PMessage, peer *Peer) error {
-
-	err := peer.Connection.Write(message)
-	if err != nil {
-		return fmt.Errorf("writing message to %s: %s", peer.Connection.address, err)
-	}
-	return nil
-}
-
-func (p *Proxy) triggerHandshake() error {
+func triggerHandshake(peer *Peer) error {
 	dummyHandshakeInfo := &HandshakeInfo{
 		HeadBlockID:   make([]byte, 32),
 		HeadBlockNum:  0,
 		HeadBlockTime: time.Now(),
 	}
-	fmt.Println("Sending dummy handshake to: ", p.route.Destination.Connection.address)
-	// Process will resume in handleDestination()
-	return p.route.Destination.Connection.SendHandshake(dummyHandshakeInfo)
+	fmt.Println("Sending dummy handshake to: ", peer.Address)
+	// Process will resume in handle()
+	return peer.SendHandshake(dummyHandshakeInfo)
 }
 
-type handle func(envelope *eos.P2PMessageEnvelope) error
-
 func (p *Proxy) Start() {
+
 	errorChannel := make(chan error)
 
-	go readMessage(p.route.Origin.Connection, p.handleOrigin, errorChannel)
-	go readMessage(p.route.Destination.Connection, p.handleDestination, errorChannel)
+	peer1ReadyChannel := p.Peer1.Init(errorChannel)
+	peer2ReadyChannel := p.Peer2.Init(errorChannel)
 
-	err := p.triggerHandshake()
-	if err != nil {
-		log.Fatal("proxy start: trigger handshake:", err)
-	}
-
+	peer1Ready := false
+	peer2Ready := false
 	for {
+
 		select {
+		case <-peer1ReadyChannel:
+			peer1Ready = true
+			if p.Peer1.mockHandshake {
+				err := triggerHandshake(p.Peer1)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		case <-peer2ReadyChannel:
+			peer2Ready = true
+			if p.Peer2.mockHandshake {
+				err := triggerHandshake(p.Peer2)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 		case err := <-errorChannel:
 			log.Fatal(err)
+		}
+
+		if peer1Ready && peer2Ready {
+			go p.read(p.Peer1, p.Peer2, errorChannel)
+			go p.read(p.Peer2, p.Peer1, errorChannel)
+
 		}
 	}
 }

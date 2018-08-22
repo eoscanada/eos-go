@@ -81,10 +81,10 @@ package p2p
 //	//c.Conn = conn
 //	//
 //	//println("Connecting to: ", c.p2pAddress)
-//	//ready := make(chan bool)
+//	//Ready := make(chan bool)
 //	//errChannel := make(chan error)
-//	//go c.handleConnection(&Route{From: c.p2pAddress}, ready, errChannel)
-//	//<-ready
+//	//go c.handleConnection(&Route{From: c.p2pAddress}, Ready, errChannel)
+//	//<-Ready
 //	//
 //	//println("Connected")
 //	//
@@ -306,11 +306,11 @@ package p2p
 //	return
 //}
 //
-//func (c *Client) handleConnection(route *Route, ready chan bool, errChannel chan error) {
+//func (c *Client) handleConnection(route *Route, Ready chan bool, errChannel chan error) {
 //
 //	r := bufio.NewReader(c.Conn)
 //
-//	ready <- true
+//	Ready <- true
 //	for {
 //
 //		envelope, err := eos.ReadP2PMessageData(r)
