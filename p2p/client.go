@@ -34,7 +34,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 			errChannel <- fmt.Errorf("read message from %s: %s", peer.Address, err)
 		}
 
-		packet := NewPacket(peer, peer, envelope) //todo: how should be the receiver ...?
+		packet := NewPacket(peer, peer, envelope)
 		c.handlersLock.Lock()
 		for _, handle := range c.handlers {
 			handle.Handle(packet)
@@ -61,7 +61,6 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 			name, _ := envelope.Type.Name()
 			fmt.Println("Drop:", name)
 		}
-
 	}
 }
 
@@ -79,11 +78,11 @@ func (c *Client) Start() error {
 			if c.peer.mockHandshake {
 				err := triggerHandshake(c.peer)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 			}
 		case err := <-errorChannel:
-			log.Fatal(err)
+			return err
 		}
 	}
 }

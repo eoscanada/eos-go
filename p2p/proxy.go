@@ -3,8 +3,6 @@ package p2p
 import (
 	"fmt"
 
-	"log"
-
 	"time"
 
 	"sync"
@@ -82,7 +80,7 @@ func triggerHandshake(peer *Peer) error {
 	return peer.SendHandshake(dummyHandshakeInfo)
 }
 
-func (p *Proxy) Start() {
+func (p *Proxy) Start() error {
 
 	errorChannel := make(chan error)
 
@@ -99,7 +97,7 @@ func (p *Proxy) Start() {
 			if p.Peer1.mockHandshake {
 				err := triggerHandshake(p.Peer1)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 			}
 		case <-peer2ReadyChannel:
@@ -107,11 +105,11 @@ func (p *Proxy) Start() {
 			if p.Peer2.mockHandshake {
 				err := triggerHandshake(p.Peer2)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 			}
 		case err := <-errorChannel:
-			log.Fatal(err)
+			return err
 		}
 
 		if peer1Ready && peer2Ready {
