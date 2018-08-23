@@ -8,8 +8,8 @@ import (
 
 func main() {
 
-	relay := p2p.NewRelay("0.0.0.0:6789", "peering.mainnet.eoscanada.com:9876")
-	relay.RegisterHandler(p2p.StringLoggerHandler)
+	relay := p2p.NewRelay("0.0.0.0:6789", "localhost:9876")
+	//relay.RegisterHandler(p2p.StringLoggerHandler)
 
 	fmt.Println(relay.Start())
 }
