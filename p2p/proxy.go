@@ -5,8 +5,6 @@ import (
 
 	"time"
 
-	"sync"
-
 	"encoding/hex"
 
 	"github.com/eoscanada/eos-go"
@@ -16,7 +14,6 @@ type Proxy struct {
 	Peer1                       *Peer
 	Peer2                       *Peer
 	handlers                    []Handler
-	handlersLock                sync.Mutex
 	waitingOriginHandShake      bool
 	waitingDestinationHandShake bool
 }
@@ -29,10 +26,11 @@ func NewProxy(peer1 *Peer, peer2 *Peer) *Proxy {
 }
 
 func (p *Proxy) RegisterHandler(handler Handler) {
-	p.handlersLock.Lock()
-	defer p.handlersLock.Unlock()
-
 	p.handlers = append(p.handlers, handler)
+}
+
+func (p *Proxy) RegisterHandlers(handlers []Handler) {
+	p.handlers = append(p.handlers, handlers...)
 }
 
 func (p *Proxy) read(sender *Peer, receiver *Peer, errChannel chan error) {
@@ -62,11 +60,9 @@ func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 
 	envelope := NewEnvelope(sender, receiver, packet)
 
-	p.handlersLock.Lock()
 	for _, handle := range p.handlers {
 		handle.Handle(envelope)
 	}
-	p.handlersLock.Unlock()
 
 	return nil
 }

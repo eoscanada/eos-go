@@ -8,6 +8,7 @@ import (
 type Relay struct {
 	listeningAddress       string
 	destinationPeerAddress string
+	handlers               []Handler
 }
 
 func NewRelay(listeningAddress string, destinationPeerAddress string) *Relay {
@@ -15,6 +16,11 @@ func NewRelay(listeningAddress string, destinationPeerAddress string) *Relay {
 		listeningAddress:       listeningAddress,
 		destinationPeerAddress: destinationPeerAddress,
 	}
+}
+
+func (r *Relay) RegisterHandler(handler Handler) {
+
+	r.handlers = append(r.handlers, handler)
 }
 
 func (r *Relay) startProxy(conn net.Conn) {
@@ -36,8 +42,7 @@ func (r *Relay) startProxy(conn net.Conn) {
 		remotePeer.SetConnection(conn)
 		proxy := NewProxy(remotePeer, destinationPeer)
 
-		//todo: fix this ...
-		proxy.RegisterHandler(StringLoggerHandler)
+		proxy.RegisterHandlers(r.handlers)
 
 		err := proxy.Start()
 		fmt.Printf("Started proxy error between %s and %s : %s\n", conn.RemoteAddr(), r.destinationPeerAddress, err)
@@ -61,7 +66,8 @@ func (r *Relay) Start() error {
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				return fmt.Errorf("lost listening connection with: %s", err)
+				fmt.Printf("lost listening connection with: %s\n", err)
+				break
 			}
 			fmt.Println("Connected to:", conn.RemoteAddr())
 			go r.startProxy(conn)

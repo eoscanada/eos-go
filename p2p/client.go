@@ -3,7 +3,6 @@ package p2p
 import (
 	"fmt"
 	"log"
-	"sync"
 
 	"encoding/hex"
 
@@ -11,9 +10,8 @@ import (
 )
 
 type Client struct {
-	peer         *Peer
-	handlers     []Handler
-	handlersLock sync.Mutex
+	peer     *Peer
+	handlers []Handler
 }
 
 func NewClient(peer *Peer) *Client {
@@ -23,8 +21,6 @@ func NewClient(peer *Peer) *Client {
 }
 
 func (c *Client) RegisterHandler(handler Handler) {
-	c.handlersLock.Lock()
-	defer c.handlersLock.Unlock()
 
 	c.handlers = append(c.handlers, handler)
 }
@@ -37,11 +33,9 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 		}
 
 		envelope := NewEnvelope(peer, peer, packet)
-		c.handlersLock.Lock()
 		for _, handle := range c.handlers {
 			handle.Handle(envelope)
 		}
-		c.handlersLock.Unlock()
 
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
