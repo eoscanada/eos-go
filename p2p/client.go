@@ -57,9 +57,6 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 			if err != nil {
 				log.Fatal(fmt.Errorf("HandshakeMessage: %s", err))
 			}
-		default:
-			name, _ := packet.Type.Name()
-			fmt.Println("Drop:", name)
 		}
 	}
 }
