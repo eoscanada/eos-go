@@ -17,18 +17,17 @@ import (
 )
 
 type Peer struct {
-	Address       string
-	chainID       eos.SHA256Bytes
-	agent         string
-	connection    net.Conn
-	reader        io.Reader
-	handshake     eos.HandshakeMessage
-	catchup       Catchup
-	listener      bool
-	mockHandshake bool
+	Address    string
+	agent      string
+	connection net.Conn
+	reader     io.Reader
+	handshake  eos.HandshakeMessage
+	catchup    Catchup
+	listener   bool
 }
 
 type HandshakeInfo struct {
+	chainID                  eos.SHA256Bytes
 	HeadBlockNum             uint32
 	HeadBlockID              eos.SHA256Bytes
 	HeadBlockTime            time.Time
@@ -36,23 +35,21 @@ type HandshakeInfo struct {
 	LastIrreversibleBlockID  eos.SHA256Bytes
 }
 
-func newPeer(address string, chainID eos.SHA256Bytes, agent string, listener bool, mockHandshake bool) *Peer {
+func newPeer(address string, agent string, listener bool) *Peer {
 
 	return &Peer{
-		Address:       address,
-		chainID:       chainID,
-		agent:         agent,
-		listener:      listener,
-		mockHandshake: mockHandshake,
+		Address:  address,
+		agent:    agent,
+		listener: listener,
 	}
 }
 
-func NewIncommingPeer(address string, chainID eos.SHA256Bytes, agent string) *Peer {
-	return newPeer(address, chainID, agent, true, false)
+func NewIncommingPeer(address string, agent string) *Peer {
+	return newPeer(address, agent, true)
 }
 
-func NewOutgoingPeer(address string, chainID eos.SHA256Bytes, agent string, mockHandshake bool) *Peer {
-	return newPeer(address, chainID, agent, false, mockHandshake)
+func NewOutgoingPeer(address string, agent string) *Peer {
+	return newPeer(address, agent, false)
 }
 
 func (p *Peer) Read() (*eos.Packet, error) {
@@ -63,7 +60,12 @@ func (p *Peer) Read() (*eos.Packet, error) {
 	return packet, nil
 }
 
-func (p *Peer) Init(errChan chan error) (ready chan bool) {
+func (p *Peer) SetConnection(conn net.Conn) {
+	p.connection = conn
+	p.reader = bufio.NewReader(p.connection)
+}
+
+func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 
 	ready = make(chan bool, 1)
 	if p.listener {
@@ -83,8 +85,7 @@ func (p *Peer) Init(errChan chan error) (ready chan bool) {
 			}
 			fmt.Println("Connected on:", p.Address)
 
-			p.connection = conn
-			p.reader = bufio.NewReader(p.connection)
+			p.SetConnection(conn)
 			ready <- true
 		}()
 
@@ -148,7 +149,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           1206,
-		ChainID:                  p.chainID,
+		ChainID:                  info.chainID,
 		NodeID:                   make([]byte, 32),
 		Key:                      publicKey,
 		Time:                     tstamp,

@@ -5,6 +5,8 @@ import (
 	"log"
 	"sync"
 
+	"encoding/hex"
+
 	"github.com/eoscanada/eos-go"
 )
 
@@ -61,21 +63,26 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 	}
 }
 
-func (c *Client) Start() error {
+func (c *Client) Start(chainID string) error {
 
 	errorChannel := make(chan error)
 
-	readyChannel := c.peer.Init(errorChannel)
+	readyChannel := c.peer.Connect(errorChannel)
 
 	for {
 
 		select {
 		case <-readyChannel:
 			go c.read(c.peer, errorChannel)
-			if c.peer.mockHandshake {
-				err := triggerHandshake(c.peer)
+			if chainID != "" {
+				cID, err := hex.DecodeString(chainID)
 				if err != nil {
-					return err
+					return fmt.Errorf("connect and start: parsing chain id: %s", err)
+				}
+
+				err = triggerHandshake(c.peer, cID)
+				if err != nil {
+					return fmt.Errorf("connect and start: trigger handshake: %s", err)
 				}
 			}
 		case err := <-errorChannel:
