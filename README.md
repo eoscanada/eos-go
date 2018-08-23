@@ -1,6 +1,8 @@
 EOS.IO API library for Go
 =========================
 
+[点击查看中文版](./README-cn.md)
+
 [![GoDoc](https://godoc.org/github.com/eoscanada/eos-go?status.svg)](https://godoc.org/github.com/eoscanada/eos-go)
 
 This library provides simple access to data structures (binary packing
@@ -52,13 +54,3 @@ License
 -------
 
 MIT
-
-
-
-
-TODO notes
-----------
-
-Changes to dawn4:
-* sig_digest always adds something even with empty context free actions.
-* PUB, PVT, SIG
