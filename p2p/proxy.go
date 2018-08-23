@@ -38,6 +38,7 @@ func (p *Proxy) read(sender *Peer, receiver *Peer, errChannel chan error) {
 		packet, err := sender.Read()
 		if err != nil {
 			errChannel <- fmt.Errorf("read message from %s: %s", sender.Address, err)
+			return
 		}
 		err = p.handle(packet, sender, receiver)
 		if err != nil {

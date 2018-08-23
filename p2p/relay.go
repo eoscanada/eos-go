@@ -29,8 +29,6 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 	fmt.Printf("Initiating proxy between %s and %s\n", remoteAddress, r.destinationPeerAddress)
 
-	defer conn.Close()
-
 	destinationPeer := NewOutgoingPeer(r.destinationPeerAddress, "eos-relay")
 
 	errorChannel := make(chan error)
@@ -45,7 +43,10 @@ func (r *Relay) startProxy(conn net.Conn) {
 		proxy.RegisterHandlers(r.handlers)
 
 		err := proxy.Start()
-		fmt.Printf("Started proxy error between %s and %s : %s\n", conn.RemoteAddr(), r.destinationPeerAddress, err)
+		fmt.Printf("Started proxy error between %s and %s : %s\n", remoteAddress, r.destinationPeerAddress, err)
+		destinationPeer.connection.Close()
+		remotePeer.connection.Close()
+		fmt.Printf("Closing connection between %s and %s\n", remoteAddress, r.destinationPeerAddress)
 		break
 	case err := <-errorChannel:
 		fmt.Printf("Proxy error between %s and %s : %s\n", conn.RemoteAddr(), r.destinationPeerAddress, err)
