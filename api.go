@@ -106,6 +106,10 @@ func (api *API) SetSigner(s Signer) {
 	api.Signer = s
 }
 
+func (api *API) SetWalletUrl(walletUrl string) {
+	api.WalletURL = walletUrl
+}
+
 // ProducerPause will pause block production on a nodeos with
 // `producer_api` plugin loaded.
 func (api *API) ProducerPause() error {
@@ -411,7 +415,10 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 	}
 
 	var targetURL string
-	if baseAPI == "wallet" && api.WalletURL != "" {
+	if baseAPI == "wallet" {
+		if api.WalletURL == "" {
+			return fmt.Errorf("WalletURL: %s while calling wallet API", ErrNotSet)
+		}
 		targetURL = fmt.Sprintf("%s/v1/%s/%s", api.WalletURL, baseAPI, endpoint)
 	} else {
 		targetURL = fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint)
@@ -466,6 +473,7 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 }
 
 var ErrNotFound = errors.New("resource not found")
+var ErrNotSet = errors.New("config is not set")
 
 type M map[string]interface{}
 
