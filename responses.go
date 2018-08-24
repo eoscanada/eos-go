@@ -159,8 +159,8 @@ type ActionResp struct {
 }
 
 type ActionsResp struct {
-	Actions               []ActionResp
-	LastIrreversibleBlock uint32 `json:"last_irreversible_block"`
+	Actions               []ActionResp `json:"actions"`
+	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
 }
 
 type ProducerChange struct {
