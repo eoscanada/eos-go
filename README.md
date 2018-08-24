@@ -1,6 +1,7 @@
-ENUMIVO API library for Go
-==========================
-Based on [eos-go](https://github.com/eoscanada/eos-go)
+EOS.IO API library for Go
+=========================
+
+[![GoDoc](https://godoc.org/github.com/eoscanada/eos-go?status.svg)](https://godoc.org/github.com/eoscanada/eos-go)
 
 This library provides simple access to data structures (binary packing
 and JSON interface) and API calls to an EOS.IO RPC server, running
@@ -51,3 +52,13 @@ License
 -------
 
 MIT
+
+
+
+
+TODO notes
+----------
+
+Changes to dawn4:
+* sig_digest always adds something even with empty context free actions.
+* PUB, PVT, SIG
