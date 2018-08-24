@@ -377,6 +377,11 @@ func (api *API) GetTransactions(name AccountName) (out *TransactionsResp, err er
 	return
 }
 
+func (api *API) GetActions(name AccountName, pos, offset int) (out *ActionsResp, err error) {
+	err = api.call("history", "get_actions", M{"account_name": name, "pos": pos, "offset": offset}, &out)
+	return
+}
+
 func (api *API) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
 	err = api.call("chain", "get_table_rows", params, &out)
 	return

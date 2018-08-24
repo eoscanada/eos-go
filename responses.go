@@ -150,6 +150,19 @@ type TransactionsResp struct {
 	Transactions []SequencedTransactionResp
 }
 
+type ActionResp struct {
+	GlobalActionSeq  uint64      `json:"global_action_seq"`
+	AccountActionSeq uint64      `json:"account_action_seq"`
+	BlockNum         uint32      `json:"block_num"`
+	BlockTime        JSONTime    `json:"block_time"`
+	ActionTrace      ActionTrace `json:"action_trace"`
+}
+
+type ActionsResp struct {
+	Actions               []ActionResp `json:"actions"`
+	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
+}
+
 type ProducerChange struct {
 }
 
