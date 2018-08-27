@@ -1,14 +1,11 @@
 package main
 
 import (
-	"log"
-	"time"
-
 	"flag"
+	"log"
 
 	"encoding/hex"
 
-	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/p2p"
 )
 
@@ -18,33 +15,16 @@ var networkVersion = flag.Int("network-version", 1206, "Network version")
 
 func main() {
 
-	flag.Parse()
-
-	done := make(chan bool)
-	cID, err := hex.DecodeString(*chainID)
+	chainID, err := hex.DecodeString("9bf6c5d3610260507f3a37340c43ff186c1810c984e9ad0b99b6fb8d6a3c94a3")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Chain id:", err)
 	}
 
-	api := eos.New("http://mainnet.eoscanada.com")
-	info, err := api.GetInfo()
-	if err != nil {
-		log.Fatal("Error getting info: ", err)
-	}
+	client := p2p.NewClient(
+		p2p.NewOutgoingPeer("localhost:9876", chainID, "eos-proxy", true),
+	)
 
-	client := p2p.NewClient(*p2pAddr, cID, uint16(*networkVersion))
-	if err != nil {
-		log.Fatal(err)
-	}
-	client.RegisterHandler(p2p.HandlerFunc(p2p.LoggerHandler))
-	time.Sleep(120 * time.Second)
-
-	err = client.ConnectAndSync(info.HeadBlockNum, info.HeadBlockID, info.HeadBlockTime.Time, 0, make([]byte, 32))
-	//err = client.ConnectRecent()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	<-done
+	client.RegisterHandler(p2p.StringLoggerHandler)
+	client.Start()
 
 }

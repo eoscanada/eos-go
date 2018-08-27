@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -427,6 +428,18 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 	*t = Tstamp{time.Unix(0, unixNano)}
 
 	return nil
+}
+
+// BlockNum extracts the block number (or height) from a hex-encoded block ID.
+func BlockNum(blockID string) uint32 {
+	if len(blockID) < 8 {
+		return 0
+	}
+	bin, err := hex.DecodeString(blockID[:8])
+	if err != nil {
+		return 0
+	}
+	return binary.BigEndian.Uint32(bin)
 }
 
 type BlockTimestamp struct {
