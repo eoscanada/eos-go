@@ -12,12 +12,18 @@ type Type struct {
 }
 
 type Struct struct {
-	Name   string `json:"name"`
-	Base   string `json:"base"`
-	Fields []struct {
-		Name string `json:"name"`
-		Type string `json:"type"`
-	} `json:"fields"`
+	Name   string  `json:"name"`
+	Base   string  `json:"base"`
+	Fields []Field `json:"fields"`
+}
+
+type Field struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+func (s *Struct) BaseFields() []Field {
+
 }
 
 type Action struct {
@@ -44,6 +50,15 @@ type ABI struct {
 	AbiExtensions    []interface{} `json:"abi_extensions"`
 }
 
+func (a *ABI) ActionForName(name string) *Action {
+	for _, a := range a.Actions {
+		if a.Name == name {
+			return &a
+		}
+	}
+	return nil
+}
+
 type ABIDecoder struct {
 	data      []byte
 	abiReader io.Reader
@@ -66,6 +81,17 @@ func (d *ABIDecoder) Decode(result map[string]interface{}, actionName string) er
 	if err != nil {
 		return fmt.Errorf("read abi: %s", err)
 	}
+
+	action := abi.ActionForName(actionName)
+	if action == nil {
+		return fmt.Errorf("action %s not found in abi", actionName)
+	}
+
+	//toto append base and fields from action
+	//todo get type,
+	//search in type and and change type name if found.
+	//search in struct and loop on fields
+	//read value from data
 
 	return nil
 }
