@@ -70,7 +70,7 @@ func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 
 func triggerHandshake(peer *Peer, chainID eos.SHA256Bytes) error {
 	dummyHandshakeInfo := &HandshakeInfo{
-		chainID:       chainID,
+		ChainID:       chainID,
 		HeadBlockID:   make([]byte, 32),
 		HeadBlockNum:  0,
 		HeadBlockTime: time.Now(),

@@ -27,7 +27,7 @@ type Peer struct {
 }
 
 type HandshakeInfo struct {
-	chainID                  eos.SHA256Bytes
+	ChainID                  eos.SHA256Bytes
 	HeadBlockNum             uint32
 	HeadBlockID              eos.SHA256Bytes
 	HeadBlockTime            time.Time
@@ -130,6 +130,36 @@ func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err
 
 	return p.WriteP2PMessage(syncRequest)
 }
+func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
+	fmt.Printf("SendRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
+	request := &eos.RequestMessage{
+		ReqTrx: eos.OrderedBlockIDs{
+			Unknown: [3]byte{},
+			Mode:    0,
+			Pending: startBlockNum,
+		},
+		ReqBlocks: eos.OrderedBlockIDs{
+			Unknown: [3]byte{},
+			Mode:    0,
+			Pending: endBlockNumber,
+		},
+	}
+
+	return p.WriteP2PMessage(request)
+}
+
+func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32) (err error) {
+	fmt.Printf("Send Notice head [%d] lib [%d]\n", headBlockNum, libNum)
+
+	notice := &eos.NoticeMessage{
+		KnownTrx: eos.OrderedBlockIDs{
+			Unknown: [3]byte{},
+			Mode:    0,
+			Pending: headBlockNum,
+		},
+	}
+	return p.WriteP2PMessage(notice)
+}
 
 func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
@@ -149,7 +179,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           1206,
-		ChainID:                  info.chainID,
+		ChainID:                  info.ChainID,
 		NodeID:                   make([]byte, 32),
 		Key:                      publicKey,
 		Time:                     tstamp,
@@ -180,7 +210,7 @@ type Catchup struct {
 	originHeadBlock     uint32
 }
 
-func (c *Catchup) sendSyncRequestTo(peer *Peer) error {
+func (c *Catchup) sendSyncRequest(peer *Peer) error {
 
 	c.IsCatchingUp = true
 

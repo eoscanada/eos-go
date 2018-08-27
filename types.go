@@ -392,6 +392,9 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 	*t, err = hex.DecodeString(s)
 	return
 }
+func (t SHA256Bytes) String() string {
+	return hex.EncodeToString(t)
+}
 
 type Varuint32 uint32
 

@@ -12,7 +12,7 @@ func main() {
 
 	proxy := p2p.NewProxy(
 		p2p.NewOutgoingPeer("localhost:9876", "eos-proxy"),
-		p2p.NewOutgoingPeer("localhost:9875", "eos-proxy"),
+		p2p.NewOutgoingPeer("localhost:2222", "eos-proxy"),
 	)
 
 	//proxy := p2p.NewProxy(
@@ -27,6 +27,6 @@ func main() {
 
 	proxy.RegisterHandler(p2p.StringLoggerHandler)
 	//fmt.Println(proxy.ConnectAndStart("aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906"))
-	fmt.Println(proxy.ConnectAndStart("9bf6c5d3610260507f3a37340c43ff186c1810c984e9ad0b99b6fb8d6a3c94a3"))
+	fmt.Println(proxy.ConnectAndStart("cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f"))
 
 }
