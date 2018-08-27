@@ -32,6 +32,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 		packet, err := peer.Read()
 		if err != nil {
 			errChannel <- fmt.Errorf("read message from %s: %s", peer.Address, err)
+			break
 		}
 
 		envelope := NewEnvelope(peer, peer, packet)
@@ -46,16 +47,14 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 			log.Fatalf("handling message: go away: reason [%d]", m.Reason)
 
 		case *eos.HandshakeMessage:
-			if err != nil {
-				log.Fatal(fmt.Errorf("nodeID: %s", err))
-			}
 			fmt.Println("Handshake resent!")
 			m.P2PAddress = "localhost:5555"
 			m.NodeID = make([]byte, 32)
 
 			err = peer.WriteP2PMessage(m)
 			if err != nil {
-				log.Fatal(fmt.Errorf("HandshakeMessage: %s", err))
+				errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
+				break
 			}
 		}
 	}
