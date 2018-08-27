@@ -149,7 +149,11 @@ func (a Asset) Sub(other Asset) Asset {
 }
 
 func (a Asset) String() string {
-	strInt := fmt.Sprintf("%d", a.Amount)
+	amt := a.Amount
+	if amt < 0 {
+		amt = -amt
+	}
+	strInt := fmt.Sprintf("%d", amt)
 	if len(strInt) < int(a.Symbol.Precision+1) {
 		// prepend `0` for the difference:
 		strInt = strings.Repeat("0", int(a.Symbol.Precision+uint8(1))-len(strInt)) + strInt
@@ -160,6 +164,9 @@ func (a Asset) String() string {
 		result = strInt
 	} else {
 		result = strInt[:len(strInt)-int(a.Symbol.Precision)] + "." + strInt[len(strInt)-int(a.Symbol.Precision):]
+	}
+	if a.Amount < 0 {
+		result = "-" + result
 	}
 
 	return fmt.Sprintf("%s %s", result, a.Symbol.Symbol)
