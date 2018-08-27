@@ -140,6 +140,26 @@ func (api *API) GetABI(account AccountName) (out *GetABIResp, err error) {
 	return
 }
 
+func (api *API) WalletCreate(walletName string) (err error) {
+	return api.call("wallet", "create", walletName, nil)
+}
+
+func (api *API) WalletOpen(walletName string) (err error) {
+	return api.call("wallet", "open", walletName, nil)
+}
+
+func (api *API) WalletLock(walletName string) (err error) {
+	return api.call("wallet", "lock", walletName, nil)
+}
+
+func (api *API) WalletLockAll() (err error) {
+	return api.call("wallet", "lock_all", nil, nil)
+}
+
+func (api *API) WalletUnlock(walletName, password string) (err error) {
+	return api.call("wallet", "unlock", []string{walletName, password}, nil)
+}
+
 // WalletImportKey loads a new WIF-encoded key into the wallet.
 func (api *API) WalletImportKey(walletName, wifPrivKey string) (err error) {
 	return api.call("wallet", "import_key", []string{walletName, wifPrivKey}, nil)
@@ -163,9 +183,18 @@ func (api *API) WalletPublicKeys() (out []ecc.PublicKey, err error) {
 	return
 }
 
-func (api *API) ListKeys() (out []*ecc.PrivateKey, err error) {
+func (api *API) ListWallets(walletName ...string) (out []string, err error) {
+	err = api.call("wallet", "list_wallets", walletName, &out)
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (api *API) ListKeys(walletNames ...string) (out []*ecc.PrivateKey, err error) {
 	var textKeys []string
-	err = api.call("wallet", "list_keys", nil, &textKeys)
+	err = api.call("wallet", "list_keys", walletNames, &textKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +208,28 @@ func (api *API) ListKeys() (out []*ecc.PrivateKey, err error) {
 		out = append(out, newKey)
 	}
 	return
+}
+
+func (api *API) GetPublicKeys() (out []*ecc.PublicKey, err error) {
+	var textKeys []string
+	err = api.call("wallet", "get_public_keys", nil, &textKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, k := range textKeys {
+		newKey, err := ecc.PublicKey(k)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, newKey)
+	}
+	return
+}
+
+func (api *API) WalletSetTimeout(timeout int32) (err error) {
+	return api.call("wallet", "set_timeout", timeout, nil)
 }
 
 func (api *API) WalletSignTransaction(tx *SignedTransaction, chainID []byte, pubKeys ...ecc.PublicKey) (out *WalletSignTransactionResp, err error) {
