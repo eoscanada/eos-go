@@ -26,6 +26,7 @@ type Peer struct {
 	catchup       Catchup
 	listener      bool
 	mockHandshake bool
+	connectionTimeout time.Duration
 }
 
 type HandshakeInfo struct {
@@ -34,6 +35,10 @@ type HandshakeInfo struct {
 	HeadBlockTime            time.Time
 	LastIrreversibleBlockNum uint32
 	LastIrreversibleBlockID  eos.SHA256Bytes
+}
+
+func (p *Peer) SetConnectionTimeout(timeout time.Duration) {
+	p.connectionTimeout = timeout
 }
 
 func newPeer(address string, chainID eos.SHA256Bytes, agent string, listener bool, mockHandshake bool) *Peer {
@@ -90,7 +95,7 @@ func (p *Peer) Init(errChan chan error) (ready chan bool) {
 
 	} else {
 		fmt.Println("Dialing:", p.Address)
-		conn, err := net.Dial("tcp", p.Address)
+		conn, err := net.DialTimeout("tcp", p.Address, p.connectionTimeout)
 		if err != nil {
 			errChan <- fmt.Errorf("peer init: dial %s: %s", p.Address, err)
 		}
