@@ -341,6 +341,14 @@ type GetABIResp struct {
 	ABI         ABI         `json:"abi"`
 }
 
+type ABIJSONToBinResp struct {
+	Binargs string `json:"binargs"`
+}
+
+type ABIBinToJSONResp struct {
+	Args M `json:"args"`
+}
+
 // JSONTime
 
 type JSONTime struct {

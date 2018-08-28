@@ -140,6 +140,27 @@ func (api *API) GetABI(account AccountName) (out *GetABIResp, err error) {
 	return
 }
 
+func (api *API) ABIJSONToBin(code AccountName, action Name, payload M) (out HexBytes, err error) {
+	resp := ABIJSONToBinResp{}
+	err = api.call("chain", "abi_json_to_bin", M{"code": code, "action": action, "args": payload}, &resp)
+	if err != nil {
+		return
+	}
+
+	buffer, err := hex.DecodeString(resp.Binargs)
+	return HexBytes(buffer), err
+}
+
+func (api *API) ABIBinToJSON(code AccountName, action Name, payload HexBytes) (out M, err error) {
+	resp := ABIBinToJSONResp{}
+	err = api.call("chain", "abi_bin_to_json", M{"code": code, "action": action, "binargs": payload}, &resp)
+	if err != nil {
+		return
+	}
+
+	return resp.Args, nil
+}
+
 func (api *API) WalletCreate(walletName string) (err error) {
 	return api.call("wallet", "create", walletName, nil)
 }
