@@ -64,6 +64,15 @@ func NewActionData(obj interface{}) ActionData {
 		toServer: true,
 	}
 }
+
+func NewActionDataFromHexData(data []byte) ActionData {
+	return ActionData{
+		HexData:  data,
+		Data:     nil,
+		toServer: true,
+	}
+}
+
 func (a *ActionData) SetToServer(toServer bool) {
 	// FIXME: let's clarify this design, make it simpler..
 	// toServer doesn't speak of the intent..
@@ -91,14 +100,11 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 	println(fmt.Sprintf("MarshalJSON toServer? %t", a.toServer))
 
 	if a.toServer {
-		buf := new(bytes.Buffer)
-		encoder := NewEncoder(buf)
-
-		println("MarshalJSON, encoding action data to binary")
-		if err := encoder.Encode(a.ActionData.Data); err != nil {
+		data, err := a.ActionData.EncodeActionData()
+		if err != nil {
 			return nil, err
 		}
-		data := buf.Bytes()
+
 		println("MarshalJSON data length : ", len(data)) /**/
 
 		return json.Marshal(&jsonActionToServer{
@@ -116,6 +122,22 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 		HexData:       a.HexData,
 		Data:          a.Data,
 	})
+}
+
+func (data *ActionData) EncodeActionData() ([]byte, error) {
+	if data.Data == nil {
+		return data.HexData, nil
+	}
+
+	buf := new(bytes.Buffer)
+	encoder := NewEncoder(buf)
+
+	println("MarshalJSON, encoding action data to binary")
+	if err := encoder.Encode(data); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func (a *Action) MapToRegisteredAction() error {
