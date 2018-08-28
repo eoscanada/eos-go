@@ -218,12 +218,12 @@ func (api *API) GetPublicKeys() (out []*ecc.PublicKey, err error) {
 	}
 
 	for _, k := range textKeys {
-		newKey, err := ecc.PublicKey(k)
+		newKey, err := ecc.NewPublicKey(k)
 		if err != nil {
 			return nil, err
 		}
 
-		out = append(out, newKey)
+		out = append(out, &newKey)
 	}
 	return
 }

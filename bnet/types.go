@@ -67,4 +67,4 @@ type Pong struct {
 
 // Also use `eos.SignedBlock`
 // Also use `eos.SignedTransaction`
-var SignedBlock = eos.SignedTransaction
+var SignedBlock = eos.SignedTransaction{}
