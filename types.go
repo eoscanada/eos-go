@@ -165,11 +165,18 @@ func (a Asset) String() string {
 	return fmt.Sprintf("%s %s", result, a.Symbol.Symbol)
 }
 
+type ExtendedAsset struct {
+	Asset    Asset `json:"asset"`
+	Contract AccountName
+}
+
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
 type Symbol struct {
 	Precision uint8
 	Symbol    string
 }
+
+type SymbolCode uint64
 
 // EOSSymbol represents the standard EOS symbol on the chain.  It's
 // here just to speed up things.
@@ -376,6 +383,9 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 
 // SHA256Bytes
 
+type Checksum160 []byte // should always be 32 bytes
+type Checksum256 []byte // should always be 32 bytes
+type Checksum512 []byte // should always be 32 bytes
 type SHA256Bytes []byte // should always be 32 bytes
 
 func (t SHA256Bytes) MarshalJSON() ([]byte, error) {
@@ -394,6 +404,7 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 }
 
 type Varuint32 uint32
+type Varint32 int32
 
 // Tstamp
 
@@ -463,6 +474,9 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 	}
 	return err
 }
+
+type TimePoint uint64
+type TimePointSec uint32
 
 type JSONFloat64 float64
 

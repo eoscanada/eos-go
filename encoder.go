@@ -9,6 +9,8 @@ import (
 	"io"
 	"reflect"
 
+	"math"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -72,10 +74,20 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeInt16(cv)
 	case uint16:
 		return e.writeUint16(cv)
+	case int32:
+		return e.writeInt32(cv)
 	case uint32:
 		return e.writeUint32(cv)
 	case uint64:
 		return e.writeUint64(cv)
+	case int64:
+		return e.writeInt64(cv)
+	case float32:
+		return e.writeFloat32(cv)
+	case float64:
+		return e.writeFloat64(cv)
+	case Varint32:
+		return e.writeVarInt(int(cv))
 	case Varuint32:
 		return e.writeUVarInt(int(cv))
 	case bool:
@@ -86,6 +98,12 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeJSONTime(cv)
 	case HexBytes:
 		return e.writeByteArray(cv)
+	case Checksum160:
+		return e.writeChecksum160(cv)
+	case Checksum256:
+		return e.writeChecksum256(cv)
+	case Checksum512:
+		return e.writeChecksum512(cv)
 	case []byte:
 		return e.writeByteArray(cv)
 	case SHA256Bytes:
@@ -100,6 +118,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeBlockTimestamp(cv)
 	case CurrencyName:
 		return e.writeCurrencyName(cv)
+	case SymbolCode:
+		return e.writeUint64(uint64(cv))
 	case Asset:
 		return e.writeAsset(cv)
 	// case *OptionalProducerSchedule:
@@ -116,6 +136,11 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeActionData(*cv)
 	case *Packet:
 		return e.writeBlockP2PMessageEnvelope(*cv)
+	case TimePoint:
+		return e.writeUint64(uint64(cv))
+	case TimePointSec:
+		return e.writeUint64(uint64(cv))
+	case nil:
 	default:
 
 		rv := reflect.Indirect(reflect.ValueOf(v))
@@ -234,6 +259,12 @@ func (e *Encoder) writeUVarInt(v int) (err error) {
 	return e.toWriter(buf[:l])
 }
 
+func (e *Encoder) writeVarInt(v int) (err error) {
+	buf := make([]byte, 8)
+	l := binary.PutVarint(buf, int64(v))
+	return e.toWriter(buf[:l])
+}
+
 func (e *Encoder) writeByte(b byte) (err error) {
 	return e.toWriter([]byte{b})
 }
@@ -256,6 +287,10 @@ func (e *Encoder) writeInt16(i int16) (err error) {
 	return e.writeUint16(uint16(i))
 }
 
+func (e *Encoder) writeInt32(i int32) (err error) {
+	return e.writeUint32(uint32(i))
+}
+
 func (e *Encoder) writeUint32(i uint32) (err error) {
 	buf := make([]byte, TypeSize.UInt32)
 	binary.LittleEndian.PutUint32(buf, i)
@@ -263,11 +298,32 @@ func (e *Encoder) writeUint32(i uint32) (err error) {
 
 }
 
+func (e *Encoder) writeInt64(i int64) (err error) {
+	return e.writeUint64(uint64(i))
+}
+
 func (e *Encoder) writeUint64(i uint64) (err error) {
 	buf := make([]byte, TypeSize.UInt64)
 	binary.LittleEndian.PutUint64(buf, i)
 	return e.toWriter(buf)
 
+}
+
+func (e *Encoder) writeFloat32(f float32) (err error) {
+
+	i := math.Float32bits(f)
+	buf := make([]byte, TypeSize.UInt32)
+	binary.LittleEndian.PutUint32(buf, i)
+
+	return e.toWriter(buf)
+}
+func (e *Encoder) writeFloat64(f float64) (err error) {
+
+	i := math.Float64bits(f)
+	buf := make([]byte, TypeSize.UInt64)
+	binary.LittleEndian.PutUint64(buf, i)
+
+	return e.toWriter(buf)
 }
 
 func (e *Encoder) writeString(s string) (err error) {
@@ -279,6 +335,26 @@ func (e *Encoder) writeSHA256Bytes(s SHA256Bytes) error {
 		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.SHA256Bytes))
 	}
 	return e.toWriter(s)
+}
+func (e *Encoder) writeChecksum160(checksum Checksum160) error {
+	if len(checksum) == 0 {
+		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Checksum160))
+	}
+	return e.toWriter(checksum)
+}
+
+func (e *Encoder) writeChecksum256(checksum Checksum256) error {
+	if len(checksum) == 0 {
+		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Checksum256))
+	}
+	return e.toWriter(checksum)
+}
+
+func (e *Encoder) writeChecksum512(checksum Checksum512) error {
+	if len(checksum) == 0 {
+		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Checksum512))
+	}
+	return e.toWriter(checksum)
 }
 
 func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {

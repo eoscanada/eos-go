@@ -16,17 +16,25 @@ import (
 
 	"io/ioutil"
 
+	"math"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
 var TypeSize = struct {
 	Byte           int
 	Int8           int
+	UInt8          int
 	UInt16         int
 	Int16          int
 	UInt32         int
 	UInt64         int
+	Float32        int
+	Float64        int
 	SHA256Bytes    int
+	Checksum160    int
+	Checksum256    int
+	Checksum512    int
 	PublicKey      int
 	Signature      int
 	Tstamp         int
@@ -36,11 +44,17 @@ var TypeSize = struct {
 }{
 	Byte:           1,
 	Int8:           1,
+	UInt8:          1,
 	UInt16:         2,
 	Int16:          2,
 	UInt32:         4,
 	UInt64:         8,
+	Float32:        4,
+	Float64:        8,
 	SHA256Bytes:    32,
+	Checksum160:    20,
+	Checksum256:    32,
+	Checksum512:    64,
 	PublicKey:      34,
 	Signature:      66,
 	Tstamp:         8,
@@ -125,7 +139,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	switch realV := v.(type) {
 	case *string:
-		s, e := d.readString()
+		s, e := d.ReadString()
 		if e != nil {
 			err = e
 			return
@@ -134,115 +148,115 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		return
 	case *Name, *AccountName, *PermissionName, *ActionName, *TableName, *ScopeName:
 		var n uint64
-		n, err = d.readUint64()
+		n, err = d.ReadUint64()
 		name := NameToString(n)
 		println(fmt.Sprintf("readName [%s]", name))
 		rv.SetString(name)
 		return
 	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode, *GoAwayReason:
 		var n byte
-		n, err = d.readByte()
+		n, err = d.ReadByte()
 		rv.SetUint(uint64(n))
 		return
 	case *int16:
 		var n int16
-		n, err = d.readInt16()
+		n, err = d.ReadInt16()
 		rv.SetInt(int64(n))
 		return
 	case *int64:
 		var n int64
-		n, err = d.readInt64()
+		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
 		return
 	case *JSONInt64:
 		var n int64
-		n, err = d.readInt64()
+		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
 		return
 	case *uint16:
 		var n uint16
-		n, err = d.readUint16()
+		n, err = d.ReadUint16()
 		rv.SetUint(uint64(n))
 		return
 	case *uint32:
 		var n uint32
-		n, err = d.readUint32()
+		n, err = d.ReadUint32()
 		rv.SetUint(uint64(n))
 		return
 	case *uint64:
 		var n uint64
-		n, err = d.readUint64()
+		n, err = d.ReadUint64()
 		rv.SetUint(n)
 		return
 	case *Varuint32:
 		var r uint64
-		r, err = d.readUvarint()
+		r, err = d.ReadUvarint()
 		rv.SetUint(r)
 		return
 	case *bool:
 		var r bool
-		r, err = d.readBool()
+		r, err = d.ReadBool()
 		rv.SetBool(r)
 		return
 	case *Bool:
 		var r bool
-		r, err = d.readBool()
+		r, err = d.ReadBool()
 		rv.SetBool(r)
 		return
 	case *HexBytes:
 		var data []byte
-		data, err = d.readByteArray()
+		data, err = d.ReadByteArray()
 		rv.SetBytes(data)
 		return
 	case *[]byte:
 		var data []byte
-		data, err = d.readByteArray()
+		data, err = d.ReadByteArray()
 		rv.SetBytes(data)
 		return
 	case *SHA256Bytes:
 		var s SHA256Bytes
-		s, err = d.readSHA256Bytes()
+		s, err = d.ReadSHA256Bytes()
 		rv.SetBytes(s)
 		return
 	case *ecc.PublicKey:
 		var p ecc.PublicKey
-		p, err = d.readPublicKey()
+		p, err = d.ReadPublicKey()
 		rv.Set(reflect.ValueOf(p))
 		return
 	case *ecc.Signature:
 		var s ecc.Signature
-		s, err = d.readSignature()
+		s, err = d.ReadSignature()
 		rv.Set(reflect.ValueOf(s))
 		return
 	case *Tstamp:
 		var ts Tstamp
-		ts, err = d.readTstamp()
+		ts, err = d.ReadTstamp()
 		rv.Set(reflect.ValueOf(ts))
 		return
 	case *BlockTimestamp:
 		var bt BlockTimestamp
-		bt, err = d.readBlockTimestamp()
+		bt, err = d.ReadBlockTimestamp()
 		rv.Set(reflect.ValueOf(bt))
 		return
 	case *JSONTime:
 		var jt JSONTime
-		jt, err = d.readJSONTime()
+		jt, err = d.ReadJSONTime()
 		rv.Set(reflect.ValueOf(jt))
 		return
 	case *CurrencyName:
 		var cur CurrencyName
-		cur, err = d.readCurrencyName()
+		cur, err = d.ReadCurrencyName()
 		rv.Set(reflect.ValueOf(cur))
 		return
 	case *Asset:
 		var asset Asset
-		asset, err = d.readAsset()
+		asset, err = d.ReadAsset()
 		rv.Set(reflect.ValueOf(asset))
 		return
 
 	case *TransactionWithID:
 
-		t, e := d.readByte()
+		t, e := d.ReadByte()
 		if err != nil {
 			err = fmt.Errorf("decode: TransactionWithID failed to read type byte: %s", e)
 			return
@@ -251,7 +265,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		println(fmt.Sprintf("Type byte value : %d", t))
 
 		if t == 0 {
-			id, e := d.readSHA256Bytes()
+			id, e := d.ReadSHA256Bytes()
 			if err != nil {
 				err = fmt.Errorf("decode: TransactionWithID failed to read id: %s", e)
 				return
@@ -270,7 +284,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case **OptionalProducerSchedule:
-		isPresent, e := d.readByte()
+		isPresent, e := d.ReadByte()
 		if e != nil {
 			err = fmt.Errorf("decode: OptionalProducerSchedule isPresent, %s", e)
 			return
@@ -290,7 +304,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		action := rv.Interface().(Action)
 
 		if d.decodeActions {
-			err = d.readActionData(&action)
+			err = d.ReadActionData(&action)
 		}
 
 		rv.Set(reflect.ValueOf(action))
@@ -298,7 +312,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	case *Packet:
 
-		envelope, e := d.readP2PMessageEnvelope()
+		envelope, e := d.ReadP2PMessageEnvelope()
 		if e != nil {
 			err = fmt.Errorf("decode, %s", e)
 			return
@@ -337,7 +351,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case reflect.Slice:
 		print("Reading Slice length ")
 		var l uint64
-		if l, err = d.readUvarint(); err != nil {
+		if l, err = d.ReadUvarint(); err != nil {
 			return
 		}
 		println(fmt.Sprintf("Slice [%T] of length: %d", v, l))
@@ -358,7 +372,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case reflect.Map:
 		//fmt.Println("Map")
 		var l uint64
-		if l, err = d.readUvarint(); err != nil {
+		if l, err = d.ReadUvarint(); err != nil {
 			return
 		}
 		kt := t.Key()
@@ -411,7 +425,7 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 
 var ErrVarIntBufferSize = errors.New("varint: invalid buffer size")
 
-func (d *Decoder) readUvarint() (uint64, error) {
+func (d *Decoder) ReadUvarint() (uint64, error) {
 
 	l, read := binary.Uvarint(d.data[d.pos:])
 	if read <= 0 {
@@ -423,10 +437,17 @@ func (d *Decoder) readUvarint() (uint64, error) {
 	println(fmt.Sprintf("readUvarint [%d]", l))
 	return l, nil
 }
+func (d *Decoder) ReadVarint() (out int64, err error) {
 
-func (d *Decoder) readByteArray() (out []byte, err error) {
+	n, err := d.ReadUvarint()
+	out = int64(n)
+	println(fmt.Sprintf("ReadVarint [%d]", out))
+	return
+}
 
-	l, err := d.readUvarint()
+func (d *Decoder) ReadByteArray() (out []byte, err error) {
+
+	l, err := d.ReadUvarint()
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +463,7 @@ func (d *Decoder) readByteArray() (out []byte, err error) {
 	return
 }
 
-func (d *Decoder) readByte() (out byte, err error) {
+func (d *Decoder) ReadByte() (out byte, err error) {
 
 	if d.remaining() < TypeSize.Byte {
 		err = fmt.Errorf("byte required [1] byte, remaining [%d]", d.remaining())
@@ -455,14 +476,14 @@ func (d *Decoder) readByte() (out byte, err error) {
 	return
 }
 
-func (d *Decoder) readBool() (out bool, err error) {
+func (d *Decoder) ReadBool() (out bool, err error) {
 
 	if d.remaining() < TypeSize.Bool {
 		err = fmt.Errorf("bool required [%d] byte, remaining [%d]", TypeSize.Bool, d.remaining())
 		return
 	}
 
-	b, err := d.readByte()
+	b, err := d.ReadByte()
 
 	if err != nil {
 		err = fmt.Errorf("readBool, %s", err)
@@ -472,7 +493,19 @@ func (d *Decoder) readBool() (out bool, err error) {
 
 }
 
-func (d *Decoder) readUint16() (out uint16, err error) {
+func (d *Decoder) ReadUInt8() (out uint8, err error) {
+	out, err = d.ReadByte()
+	println(fmt.Sprintf("readUint8 [%d]", out))
+	return
+}
+func (d *Decoder) ReadInt8() (out int8, err error) {
+	b, err := d.ReadByte()
+	out = int8(b)
+	println(fmt.Sprintf("readInt8 [%d]", out))
+	return
+}
+
+func (d *Decoder) ReadUint16() (out uint16, err error) {
 	if d.remaining() < TypeSize.UInt16 {
 		err = fmt.Errorf("uint16 required [%d] bytes, remaining [%d]", TypeSize.UInt16, d.remaining())
 		return
@@ -484,18 +517,18 @@ func (d *Decoder) readUint16() (out uint16, err error) {
 	return
 }
 
-func (d *Decoder) readInt16() (out int16, err error) {
-	n, err := d.readUint16()
+func (d *Decoder) ReadInt16() (out int16, err error) {
+	n, err := d.ReadUint16()
 	out = int16(n)
 	return
 }
-func (d *Decoder) readInt64() (out int64, err error) {
-	n, err := d.readUint64()
+func (d *Decoder) ReadInt64() (out int64, err error) {
+	n, err := d.ReadUint64()
 	out = int64(n)
 	return
 }
 
-func (d *Decoder) readUint32() (out uint32, err error) {
+func (d *Decoder) ReadUint32() (out uint32, err error) {
 	if d.remaining() < TypeSize.UInt32 {
 		err = fmt.Errorf("uint32 required [%d] bytes, remaining [%d]", TypeSize.UInt32, d.remaining())
 		return
@@ -506,8 +539,14 @@ func (d *Decoder) readUint32() (out uint32, err error) {
 	println(fmt.Sprintf("readUint32 [%d]", out))
 	return
 }
+func (d *Decoder) ReadInt32() (out int32, err error) {
+	n, err := d.ReadUint32()
+	out = int32(n)
+	println(fmt.Sprintf("readInt32 [%d]", out))
+	return
+}
 
-func (d *Decoder) readUint64() (out uint64, err error) {
+func (d *Decoder) ReadUint64() (out uint64, err error) {
 	if d.remaining() < TypeSize.UInt64 {
 		err = fmt.Errorf("uint64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
 		return
@@ -520,14 +559,40 @@ func (d *Decoder) readUint64() (out uint64, err error) {
 	return
 }
 
-func (d *Decoder) readString() (out string, err error) {
-	data, err := d.readByteArray()
+func (d *Decoder) ReadFloat32() (out float32, err error) {
+	if d.remaining() < TypeSize.Float32 {
+		err = fmt.Errorf("float32 required [%d] bytes, remaining [%d]", TypeSize.Float32, d.remaining())
+		return
+	}
+
+	n := binary.LittleEndian.Uint32(d.data[d.pos:])
+	out = math.Float32frombits(n)
+	d.pos += TypeSize.Float32
+	println(fmt.Sprintf("readFloat32 [%f]", out))
+	return
+}
+
+func (d *Decoder) ReadFloat64() (out float64, err error) {
+	if d.remaining() < TypeSize.Float64 {
+		err = fmt.Errorf("float64 required [%d] bytes, remaining [%d]", TypeSize.Float64, d.remaining())
+		return
+	}
+
+	n := binary.LittleEndian.Uint64(d.data[d.pos:])
+	out = math.Float64frombits(n)
+	d.pos += TypeSize.Float64
+	println(fmt.Sprintf("readFloat64 [%f]", out))
+	return
+}
+
+func (d *Decoder) ReadString() (out string, err error) {
+	data, err := d.ReadByteArray()
 	out = string(data)
 	println(fmt.Sprintf("readString [%s]", out))
 	return
 }
 
-func (d *Decoder) readSHA256Bytes() (out SHA256Bytes, err error) {
+func (d *Decoder) ReadSHA256Bytes() (out SHA256Bytes, err error) {
 
 	if d.remaining() < TypeSize.SHA256Bytes {
 		err = fmt.Errorf("sha256 required [%d] bytes, remaining [%d]", TypeSize.SHA256Bytes, d.remaining())
@@ -540,7 +605,46 @@ func (d *Decoder) readSHA256Bytes() (out SHA256Bytes, err error) {
 	return
 }
 
-func (d *Decoder) readPublicKey() (out ecc.PublicKey, err error) {
+func (d *Decoder) ReadChecksum160() (out Checksum160, err error) {
+
+	if d.remaining() < TypeSize.Checksum160 {
+		err = fmt.Errorf("checksum 160 required [%d] bytes, remaining [%d]", TypeSize.Checksum160, d.remaining())
+		return
+	}
+
+	out = d.data[d.pos : d.pos+TypeSize.Checksum160]
+	d.pos += TypeSize.Checksum160
+	println(fmt.Sprintf("ReadChecksum160Bytes [%s]", hex.EncodeToString(out)))
+	return
+}
+
+func (d *Decoder) ReadChecksum256() (out Checksum256, err error) {
+
+	if d.remaining() < TypeSize.Checksum256 {
+		err = fmt.Errorf("checksum 256 required [%d] bytes, remaining [%d]", TypeSize.Checksum256, d.remaining())
+		return
+	}
+
+	out = d.data[d.pos : d.pos+TypeSize.Checksum256]
+	d.pos += TypeSize.Checksum256
+	println(fmt.Sprintf("ReadChecksum256Bytes [%s]", hex.EncodeToString(out)))
+	return
+}
+
+func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
+
+	if d.remaining() < TypeSize.Checksum512 {
+		err = fmt.Errorf("checksum 512 required [%d] bytes, remaining [%d]", TypeSize.Checksum512, d.remaining())
+		return
+	}
+
+	out = d.data[d.pos : d.pos+TypeSize.Checksum512]
+	d.pos += TypeSize.Checksum512
+	println(fmt.Sprintf("ReadChecksum512Bytes [%s]", hex.EncodeToString(out)))
+	return
+}
+
+func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
 
 	if d.remaining() < TypeSize.PublicKey {
 		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
@@ -555,7 +659,7 @@ func (d *Decoder) readPublicKey() (out ecc.PublicKey, err error) {
 	return
 }
 
-func (d *Decoder) readSignature() (out ecc.Signature, err error) {
+func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 	if d.remaining() < TypeSize.Signature {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
@@ -569,37 +673,60 @@ func (d *Decoder) readSignature() (out ecc.Signature, err error) {
 	return
 }
 
-func (d *Decoder) readTstamp() (out Tstamp, err error) {
+func (d *Decoder) ReadTstamp() (out Tstamp, err error) {
 
 	if d.remaining() < TypeSize.Tstamp {
 		err = fmt.Errorf("tstamp required [%d] bytes, remaining [%d]", TypeSize.Tstamp, d.remaining())
 		return
 	}
 
-	unixNano, err := d.readUint64()
+	unixNano, err := d.ReadUint64()
 	out.Time = time.Unix(0, int64(unixNano))
 	println(fmt.Sprintf("readTstamp [%s]", out))
 	return
 }
 
-func (d *Decoder) readBlockTimestamp() (out BlockTimestamp, err error) {
+func (d *Decoder) ReadBlockTimestamp() (out BlockTimestamp, err error) {
 	if d.remaining() < TypeSize.BlockTimestamp {
 		err = fmt.Errorf("blockTimestamp required [%d] bytes, remaining [%d]", TypeSize.BlockTimestamp, d.remaining())
 		return
 	}
-	n, err := d.readUint32()
+	n, err := d.ReadUint32()
 	out.Time = time.Unix(int64(n)+946684800, 0)
 	return
 }
 
-func (d *Decoder) readJSONTime() (jsonTime JSONTime, err error) {
-	n, err := d.readUint32()
+func (d *Decoder) ReadTimePoint() (out TimePoint, err error) {
+	n, err := d.ReadUint64()
+	out = TimePoint(n)
+	println(fmt.Sprintf("ReadTimePointSec [%d]", out))
+	return
+
+}
+func (d *Decoder) ReadTimePointSec() (out TimePointSec, err error) {
+	n, err := d.ReadUint32()
+	out = TimePointSec(n)
+	println(fmt.Sprintf("ReadTimePointSec [%d]", out))
+	return
+
+}
+
+func (d *Decoder) ReadJSONTime() (jsonTime JSONTime, err error) {
+	n, err := d.ReadUint32()
 	jsonTime = JSONTime{time.Unix(int64(n), 0).UTC()}
 	println("readJSONTime: ", jsonTime)
 	return
 }
 
-func (d *Decoder) readCurrencyName() (out CurrencyName, err error) {
+func (d *Decoder) ReadName() (out Name, err error) {
+
+	n, err := d.ReadUint64()
+	out = Name(NameToString(n))
+	println(fmt.Sprintf("readName [%s]", out))
+	return
+}
+
+func (d *Decoder) ReadCurrencyName() (out CurrencyName, err error) {
 
 	data := d.data[d.pos : d.pos+TypeSize.CurrencyName]
 	d.pos += TypeSize.CurrencyName
@@ -608,10 +735,10 @@ func (d *Decoder) readCurrencyName() (out CurrencyName, err error) {
 	return
 }
 
-func (d *Decoder) readAsset() (out Asset, err error) {
+func (d *Decoder) ReadAsset() (out Asset, err error) {
 
-	amount, err := d.readInt64()
-	precision, err := d.readByte()
+	amount, err := d.ReadInt64()
+	precision, err := d.ReadByte()
 	if err != nil {
 		return out, fmt.Errorf("readSymbol precision, %s", err)
 	}
@@ -626,7 +753,54 @@ func (d *Decoder) readAsset() (out Asset, err error) {
 	return
 }
 
-func (d *Decoder) readActionData(action *Action) (err error) {
+func (d *Decoder) ReadExtendedAsset() (out ExtendedAsset, err error) {
+
+	asset, err := d.ReadAsset()
+	if err != nil {
+		return out, fmt.Errorf("read extended asset: read asset: %s", err)
+	}
+
+	contract, err := d.ReadName()
+	if err != nil {
+		return out, fmt.Errorf("read extended asset: read name: %s", err)
+	}
+
+	extendedAsset := ExtendedAsset{
+		Asset:    asset,
+		Contract: AccountName(contract),
+	}
+
+	return extendedAsset, err
+}
+
+func (d *Decoder) ReadSymbol() (out *Symbol, err error) {
+
+	precision, err := d.ReadUInt8()
+	if err != nil {
+		return out, fmt.Errorf("read symbol: read precision: %s", err)
+	}
+	symbol, err := d.ReadString()
+	if err != nil {
+		return out, fmt.Errorf("read symbol: read symbol: %s", err)
+	}
+
+	out = &Symbol{
+		Precision: precision,
+		Symbol:    symbol,
+	}
+	return
+}
+
+func (d *Decoder) ReadSymbolCode() (out SymbolCode, err error) {
+
+	n, err := d.ReadUint64()
+	out = SymbolCode(n)
+	println(fmt.Sprintf("ReadSymbolCode [%s]", out))
+
+	return
+}
+
+func (d *Decoder) ReadActionData(action *Action) (err error) {
 
 	actionMap := RegisteredActions[action.Account]
 
@@ -656,16 +830,16 @@ func (d *Decoder) readActionData(action *Action) (err error) {
 	return
 }
 
-func (d *Decoder) readP2PMessageEnvelope() (out *Packet, err error) {
+func (d *Decoder) ReadP2PMessageEnvelope() (out *Packet, err error) {
 
 	out = &Packet{}
-	l, err := d.readUint32()
+	l, err := d.ReadUint32()
 	if err != nil {
 		err = fmt.Errorf("p2p envelope length: %s", err)
 		return
 	}
 	out.Length = l
-	b, err := d.readByte()
+	b, err := d.ReadByte()
 	if err != nil {
 		err = fmt.Errorf("p2p envelope type: %s", err)
 		return

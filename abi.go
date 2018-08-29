@@ -13,6 +13,33 @@ type ABI struct {
 	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
 }
 
+func (a *ABI) ActionForName(name ActionName) *ActionDef {
+	for _, a := range a.Actions {
+		if a.Name == name {
+			return &a
+		}
+	}
+	return nil
+}
+
+func (a *ABI) StructForName(name string) *StructDef {
+	for _, s := range a.Structs {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (a *ABI) TypeNameForNewTypeName(typeName string) string {
+	for _, t := range a.Types {
+		if t.NewTypeName == typeName {
+			return t.Type
+		}
+	}
+	return typeName
+}
+
 type ABIType struct {
 	NewTypeName string `json:"new_type_name"`
 	Type        string `json:"type"`
