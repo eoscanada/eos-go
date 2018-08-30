@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 
 	"github.com/eoscanada/eos-go/ecc"
+	"github.com/palantir/stacktrace"
 )
 
 type TransactionHeader struct {
@@ -83,6 +84,18 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
 }
 
+func (tx *Transaction) Pack() HexBytes {
+	packedTrx, _ := MarshalBinary(tx)
+	return packedTrx
+}
+
+func (tx *Transaction) ID() SHA256Bytes {
+	h := sha256.New()
+	h.Write(tx.Pack())
+	return h.Sum(nil)
+}
+
+
 type SignedTransaction struct {
 	*Transaction
 
@@ -144,10 +157,6 @@ func (s *SignedTransaction) PackedTransactionAndCFD() ([]byte, []byte, error) {
 	return rawtrx, rawcfd, nil
 }
 
-func (tx *Transaction) ID() string {
-	return "ID here" //todo
-}
-
 func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransaction, error) {
 	rawtrx, rawcfd, err := s.PackedTransactionAndCFD()
 	if err != nil {
@@ -183,7 +192,7 @@ func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransactio
 		Signatures:            s.Signatures,
 		Compression:           compression,
 		PackedContextFreeData: rawcfd,
-		PackedTransaction:     rawtrx,
+		PackedTrx:     rawtrx,
 	}
 
 	return packed, nil
@@ -196,22 +205,51 @@ type PackedTransaction struct {
 	Signatures            []ecc.Signature `json:"signatures"`
 	Compression           CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
 	PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
-	PackedTransaction     HexBytes        `json:"packed_trx"`
+	PackedTrx             HexBytes        `json:"packed_trx"`
+	UnpackedTrx           HexBytes
 }
 
-func (p *PackedTransaction) ID() SHA256Bytes {
-	h := sha256.New()
 
-	switch p.Compression {
-	case CompressionZlib:
-		r, _ := zlib.NewReader(bytes.NewBuffer(p.PackedTransaction))
-		d, _ := ioutil.ReadAll(r)
-		_, _ = h.Write(d)
-	case CompressionNone:
-		_, _ = h.Write(p.PackedTransaction)
+func (pt *PackedTransaction) localUnpack() error {
+	if pt.UnpackedTrx == nil {
+		switch pt.Compression {
+		case CompressionNone:
+			pt.UnpackedTrx = pt.PackedTrx
+		case CompressionZlib:
+			zlibReader, err := zlib.NewReader(bytes.NewBuffer(pt.PackedTrx))
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to new reader for zlib")
+			}
+			uncompressedData, err := ioutil.ReadAll(zlibReader)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to read data from reader")
+			}
+			pt.UnpackedTrx = uncompressedData
+		default:
+			return stacktrace.NewError("Undefined compression: %v", pt.Compression)
+		}
 	}
+	return nil
+}
 
-	return h.Sum(nil)
+func (pt *PackedTransaction) getTransaction() (*Transaction, error) {
+	if err := pt.localUnpack(); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to run local unpack")
+	}
+	decoder := NewDecoder(pt.UnpackedTrx)
+	tx := &Transaction{}
+	if err := decoder.Decode(tx); err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to decode transaction")
+	}
+	return tx, nil
+}
+
+func (pt *PackedTransaction) ID() (SHA256Bytes, error) {
+	tx, err := pt.getTransaction()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get transaction")
+	}
+	return tx.ID(), nil
 }
 
 // Unpack decodes the bytestream of the transaction, and attempts to
@@ -228,7 +266,7 @@ func (p *PackedTransaction) UnpackBare() (signedTx *SignedTransaction, err error
 
 func (p *PackedTransaction) unpack(bare bool) (signedTx *SignedTransaction, err error) {
 	var txReader io.Reader
-	txReader = bytes.NewBuffer(p.PackedTransaction)
+	txReader = bytes.NewBuffer(p.PackedTrx)
 
 	var freeDataReader io.Reader
 	freeDataReader = bytes.NewBuffer(p.PackedContextFreeData)
