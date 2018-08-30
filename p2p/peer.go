@@ -3,6 +3,7 @@ package p2p
 import (
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"time"
 
@@ -17,16 +18,18 @@ import (
 )
 
 type Peer struct {
-	Address       string
-	chainID       eos.SHA256Bytes
-	agent         string
-	connection    net.Conn
-	reader        io.Reader
-	handshake     eos.HandshakeMessage
-	catchup       Catchup
-	listener      bool
-	mockHandshake bool
-	connectionTimeout time.Duration
+	Address                string
+	chainID                eos.SHA256Bytes
+	agent                  string
+	connection             net.Conn
+	reader                 io.Reader
+	handshake              eos.HandshakeMessage
+	catchup                Catchup
+	listener               bool
+	mockHandshake          bool
+	connectionTimeout      time.Duration
+	handshakeTimeout       time.Duration
+	cancelHandshakeTimeout chan bool
 }
 
 type HandshakeInfo struct {
@@ -37,6 +40,10 @@ type HandshakeInfo struct {
 	LastIrreversibleBlockID  eos.SHA256Bytes
 }
 
+func (p *Peer) SetHandshakeTimeout(timeout time.Duration) {
+	p.handshakeTimeout = timeout
+}
+
 func (p *Peer) SetConnectionTimeout(timeout time.Duration) {
 	p.connectionTimeout = timeout
 }
@@ -44,11 +51,12 @@ func (p *Peer) SetConnectionTimeout(timeout time.Duration) {
 func newPeer(address string, chainID eos.SHA256Bytes, agent string, listener bool, mockHandshake bool) *Peer {
 
 	return &Peer{
-		Address:       address,
-		chainID:       chainID,
-		agent:         agent,
-		listener:      listener,
-		mockHandshake: mockHandshake,
+		Address:                address,
+		chainID:                chainID,
+		agent:                  agent,
+		listener:               listener,
+		mockHandshake:          mockHandshake,
+		cancelHandshakeTimeout: make(chan bool),
 	}
 }
 
@@ -63,17 +71,18 @@ func NewOutgoingPeer(address string, chainID eos.SHA256Bytes, agent string, mock
 func (p *Peer) Read() (*eos.Packet, error) {
 	packet, err := eos.ReadPacket(p.reader)
 	if err != nil {
+		log.Println("Connection Read error:", p.Address, err)
 		return nil, fmt.Errorf("connection: read: %s", err)
 	}
+	p.cancelHandshakeTimeout <- true
 	return packet, nil
 }
 
 func (p *Peer) Init(errChan chan error) (ready chan bool) {
 
 	ready = make(chan bool, 1)
-	if p.listener {
-
-		go func() {
+	go func() {
+		if p.listener {
 			fmt.Println("Listening on:", p.Address)
 
 			ln, err := net.Listen("tcp", p.Address)
@@ -91,18 +100,32 @@ func (p *Peer) Init(errChan chan error) (ready chan bool) {
 			p.connection = conn
 			p.reader = bufio.NewReader(p.connection)
 			ready <- true
-		}()
 
-	} else {
-		fmt.Println("Dialing:", p.Address)
-		conn, err := net.DialTimeout("tcp", p.Address, p.connectionTimeout)
-		if err != nil {
-			errChan <- fmt.Errorf("peer init: dial %s: %s", p.Address, err)
+		} else {
+			if p.handshakeTimeout > 0 {
+				go func(p *Peer) {
+					select {
+					case <-time.After(p.handshakeTimeout):
+						log.Println("Handshake took too long:", p.Address)
+						errChan <- fmt.Errorf("handshake took too long: %s", p.Address)
+					case <-p.cancelHandshakeTimeout:
+						log.Println("cancelHandshakeTimeout canceled:", p.Address)
+					}
+				}(p)
+			}
+
+			log.Printf("Dialing: %s, timeout: %d\n", p.Address, p.connectionTimeout)
+			conn, err := net.DialTimeout("tcp", p.Address, p.connectionTimeout)
+			if err != nil {
+				errChan <- fmt.Errorf("peer init: dial %s: %s", p.Address, err)
+				return
+			}
+			log.Println("Connected to:", p.Address)
+			p.connection = conn
+			p.reader = bufio.NewReader(conn)
+			ready <- true
 		}
-		p.connection = conn
-		p.reader = bufio.NewReader(conn)
-		ready <- true
-	}
+	}()
 
 	return
 }
