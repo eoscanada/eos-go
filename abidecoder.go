@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 )
 
 var DEBUG = false
@@ -64,12 +65,26 @@ func (d *ABIDecoder) decode(structName string, result Result) error {
 	return d.decodeFields(structure.Fields, result)
 }
 
+func analyseFieldName(fieldName string) (name string, isOptional bool, isArray bool) {
+
+	if strings.HasSuffix(fieldName, "?") {
+		return fieldName[0 : len(fieldName)-1], true, false
+	}
+
+	if strings.HasSuffix(fieldName, "[]") {
+		return fieldName[0 : len(fieldName)-2], false, true
+	}
+
+	return fieldName, false, false
+}
+
 func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
 
 	for _, field := range fields {
 
 		fmt.Printf("Decoding field [%s] of type [%s]\n", field.Name, field.Type)
 
+		fieldName, isOptinal, isArray := analyseFieldName(field.Name)
 		typeName := d.abi.TypeNameForNewTypeName(field.Type)
 		if typeName != field.Type {
 			fmt.Printf("-- type [%s] is an alias of [%s]\n", field.Type, typeName)
@@ -83,7 +98,7 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
 				return err
 			}
 		} else {
-			err := d.read(field.Name, typeName, result)
+			err := d.read(fieldName, typeName, isOptinal, isArray, result)
 			if err != nil {
 				return fmt.Errorf("decode field [%s] of type[%s]: %s", field.Name, typeName, err)
 			}
@@ -94,14 +109,24 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
 	return nil
 }
 
-func (d *ABIDecoder) read(fieldName string, fieldType string, result Result) (err error) {
+func (d *ABIDecoder) read(fieldName string, fieldType string, isOptional bool, isArray bool, result Result) (err error) {
 
 	//todo: check for array flag "[]"
-	//todo: check for optional "?"
 
 	fmt.Printf("\tReading field [%s] of type [%s]\n", fieldName, fieldType)
 
-	//optional := false
+	if isOptional {
+		fmt.Printf("\tField [%s] is optional\n", fieldName)
+		b, err := d.eosDecoder.ReadByte()
+		if err != nil {
+			return fmt.Errorf("reading field [%s] optional flag: %s", fieldName, err)
+		}
+
+		if b == 0 {
+			fmt.Printf("\tField [%s] is not present\n", fieldName)
+			return nil
+		}
+	}
 
 	var value interface{}
 
