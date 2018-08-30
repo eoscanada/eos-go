@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 
 	"time"
 
@@ -26,6 +27,7 @@ var TypeSize = struct {
 	Int16          int
 	UInt32         int
 	UInt64         int
+	Float64        int
 	SHA256Bytes    int
 	PublicKey      int
 	Signature      int
@@ -40,6 +42,7 @@ var TypeSize = struct {
 	Int16:          2,
 	UInt32:         4,
 	UInt64:         8,
+	Float64:        8,
 	SHA256Bytes:    32,
 	PublicKey:      34,
 	Signature:      66,
@@ -158,6 +161,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		var n int64
 		n, err = d.readInt64()
 		rv.SetInt(int64(n))
+		return
+	case *JSONFloat64:
+		var n float64
+		n, err = d.readFloat64()
+		rv.SetFloat(n)
 		return
 	case *uint16:
 		var n uint16
@@ -296,7 +304,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		rv.Set(reflect.ValueOf(action))
 		return
 
-	case *P2PMessageEnvelope:
+	case *Packet:
 
 		envelope, e := d.readP2PMessageEnvelope()
 		if e != nil {
@@ -520,6 +528,19 @@ func (d *Decoder) readUint64() (out uint64, err error) {
 	return
 }
 
+func (d *Decoder) readFloat64() (out float64, err error) {
+	if d.remaining() < TypeSize.Float64 {
+		err = fmt.Errorf("uint64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
+		return
+	}
+
+	data := d.data[d.pos : d.pos+TypeSize.Float64]
+	out = math.Float64frombits(binary.LittleEndian.Uint64(data))
+	d.pos += TypeSize.Float64
+	println(fmt.Sprintf("readFloat64 [%f] [%s]", out, hex.EncodeToString(data)))
+	return
+}
+
 func (d *Decoder) readString() (out string, err error) {
 	data, err := d.readByteArray()
 	out = string(data)
@@ -656,9 +677,9 @@ func (d *Decoder) readActionData(action *Action) (err error) {
 	return
 }
 
-func (d *Decoder) readP2PMessageEnvelope() (out *P2PMessageEnvelope, err error) {
+func (d *Decoder) readP2PMessageEnvelope() (out *Packet, err error) {
 
-	out = &P2PMessageEnvelope{}
+	out = &Packet{}
 	l, err := d.readUint32()
 	if err != nil {
 		err = fmt.Errorf("p2p envelope length: %s", err)
