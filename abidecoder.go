@@ -98,9 +98,9 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
 				return err
 			}
 		} else {
-			err := d.read(fieldName, typeName, isOptinal, isArray, result)
+			err := d.decodeField(fieldName, typeName, isOptinal, isArray, result)
 			if err != nil {
-				return fmt.Errorf("decode field [%s] of type[%s]: %s", field.Name, typeName, err)
+				return fmt.Errorf("decoding fields: %s", err)
 			}
 		}
 
@@ -109,17 +109,15 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
 	return nil
 }
 
-func (d *ABIDecoder) read(fieldName string, fieldType string, isOptional bool, isArray bool, result Result) (err error) {
+func (d *ABIDecoder) decodeField(fieldName string, fieldType string, isOptional bool, isArray bool, result Result) (err error) {
 
-	//todo: check for array flag "[]"
-
-	fmt.Printf("\tReading field [%s] of type [%s]\n", fieldName, fieldType)
+	fmt.Printf("\tDecoding field [%s] of type [%s]\n", fieldName, fieldType)
 
 	if isOptional {
 		fmt.Printf("\tField [%s] is optional\n", fieldName)
 		b, err := d.eosDecoder.ReadByte()
 		if err != nil {
-			return fmt.Errorf("reading field [%s] optional flag: %s", fieldName, err)
+			return fmt.Errorf("decoding field [%s] optional flag: %s", fieldName, err)
 		}
 
 		if b == 0 {
@@ -128,7 +126,39 @@ func (d *ABIDecoder) read(fieldName string, fieldType string, isOptional bool, i
 		}
 	}
 
-	var value interface{}
+	if isArray {
+		length, err := d.eosDecoder.ReadUvarint()
+		if err != nil {
+			return fmt.Errorf("reading field [%s] array length: %s", fieldName, err)
+		}
+
+		var values []interface{}
+		for i := uint64(0); i < length; i++ {
+
+			value, err := d.read(fieldType)
+			if err != nil {
+				return fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
+			}
+			fmt.Printf("\tAdding value: [%s] for field: [%s] at index [%d]\n", value, fieldName, i)
+			values = append(values, value)
+		}
+
+		result[fieldName] = values
+
+		return nil
+	}
+
+	value, err := d.read(fieldType)
+	if err != nil {
+		return fmt.Errorf("decoding field [%s] of type [%s]: read value: %s", fieldName, fieldType, err)
+	}
+	fmt.Printf("\tSet value: [%s] for field: [%s]\n", value, fieldName)
+	result[fieldName] = value
+
+	return
+}
+
+func (d *ABIDecoder) read(fieldType string) (value interface{}, err error) {
 
 	switch fieldType {
 	case "int8":
@@ -194,19 +224,9 @@ func (d *ABIDecoder) read(fieldName string, fieldType string, isOptional bool, i
 	case "extended_asset":
 		value, err = d.eosDecoder.ReadExtendedAsset()
 	default:
-		return fmt.Errorf("read field [%s] of type [%s]: unknown type", fieldName, fieldType)
+		return nil, fmt.Errorf("read field of type [%s]: unknown type", fieldType)
 	}
-
-	if err != nil {
-		return err
-	}
-
-	//if value == nil && !optional {
-	//	return fmt.Errorf("read field [%s] of type [%s]: is not optional", fieldName, fieldType)
-	//}
-
-	fmt.Printf("\tSet value: [%s] for field: [%s]\n", value, fieldName)
-	result[fieldName] = value
 
 	return
+
 }

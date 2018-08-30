@@ -113,7 +113,7 @@ func TestABI_DecodeMissingData(t *testing.T) {
 	decoder := NewABIDecoder(b.Bytes(), abiReader)
 	result := map[string]interface{}{}
 	err = decoder.Decode(result, "action.name.1")
-	assert.Equal(t, fmt.Errorf("decode field [struct.3.field.1] of type[string]: varint: invalid buffer size"), err)
+	assert.Equal(t, fmt.Errorf("decoding fields: decoding field [struct.3.field.1] of type [string]: read value: varint: invalid buffer size"), err)
 
 }
 
@@ -312,7 +312,7 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 	result := make(Result)
 
 	err = decoder.decodeFields(fields, result)
-	assert.Equal(t, fmt.Errorf("decode field [field.with.bad.type.1] of type[bad.type.1]: read field [field.with.bad.type.1] of type [bad.type.1]: unknown type"), err)
+	assert.Equal(t, fmt.Errorf("decoding fields: decoding field [field.with.bad.type.1] of type [bad.type.1]: read value: read field of type [bad.type.1]: unknown type"), err)
 
 }
 
@@ -347,13 +347,13 @@ func TestABI_Read(t *testing.T) {
 		{"typeName": "uint32", "value": uint32(1), "encode": uint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "int64", "value": int64(1), "encode": int64(1), "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "uint64", "value": uint64(1), "encode": uint64(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "int128", "value": int64(1), "encode": int64(1), "expectedError": fmt.Errorf("read field: int128 support not implemented"), "isOptional": false, "isArray": false},
-		{"typeName": "uint128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("read field: uint128 support not implemented"), "isOptional": false, "isArray": false},
+		{"typeName": "int128", "value": int64(1), "encode": int64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [int128]: read value: read field: int128 support not implemented"), "isOptional": false, "isArray": false},
+		{"typeName": "uint128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [uint128]: read value: read field: uint128 support not implemented"), "isOptional": false, "isArray": false},
 		{"typeName": "varint32", "value": int64(1), "encode": Varuint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "varuint32", "value": uint64(1), "encode": Varuint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "float32", "value": float32(1), "encode": float32(1), "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "float64", "value": float64(1), "encode": float64(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "float128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("read field: float128 support not implemented"), "isOptional": false, "isArray": false},
+		{"typeName": "float128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [float128]: read value: read field: float128 support not implemented"), "isOptional": false, "isArray": false},
 		{"typeName": "bool", "value": true, "encode": true, "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "bool", "value": false, "encode": false, "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "time_point", "value": TimePoint(1), "encode": TimePoint(1), "expectedError": nil, "isOptional": false, "isArray": false},
@@ -371,11 +371,14 @@ func TestABI_Read(t *testing.T) {
 		{"typeName": "symbol_code", "value": SymbolCode(0), "encode": SymbolCode(0), "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "asset", "value": Asset{Amount: 10, Symbol: EOSSymbol}, "encode": Asset{Amount: 10, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false},
 		{"typeName": "extended_asset", "value": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("read field [testedField] of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false},
+		{"typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("decoding field [testedField] of type [bad.type.1]: read value: read field of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false},
 		{"typeName": "string", "value": "value.1", "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false},
 		{"typeName": "string", "value": nil, "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false},
 		{"typeName": "string", "value": nil, "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false},
-		{"typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("reading field [testedField] optional flag: byte required [1] byte, remaining [0]"), "isOptional": true, "isArray": false},
+		{"typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("decoding field [testedField] optional flag: byte required [1] byte, remaining [0]"), "isOptional": true, "isArray": false},
+		{"typeName": "string", "value": []interface{}{"value.1", "value.2"}, "encode": []string{"value.1", "value.2"}, "expectedError": nil, "isOptional": false, "isArray": true},
+		{"typeName": "string", "value": nil, "encode": nil, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true},
+		{"typeName": "invalid.field.type", "value": nil, "encode": []string{"value.1", "value.2"}, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true},
 	}
 
 	for _, c := range testCases {
@@ -388,9 +391,9 @@ func TestABI_Read(t *testing.T) {
 
 		decoder := NewABIDecoder(b.Bytes(), nil)
 		result := make(Result)
-		err = decoder.read("testedField", c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), result)
+		err = decoder.decodeField("testedField", c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), result)
 
-		assert.Equal(t, err, c["expectedError"])
+		assert.Equal(t, c["expectedError"], err)
 
 		if c["expectedError"] == nil {
 			assert.Equal(t, c["value"], result["testedField"])
