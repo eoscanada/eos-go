@@ -233,7 +233,7 @@ type SignedBlock struct {
 }
 
 func (m *SignedBlock) String() string {
-	return "SignedBlock"
+	return fmt.Sprintf("SignedBlock [%d] with %d txs", m.BlockNumber(), len(m.Transactions))
 }
 
 func (m *SignedBlock) GetType() P2PMessageType {
