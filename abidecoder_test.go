@@ -53,6 +53,15 @@ var abiString = `
    }]
 }
 `
+var abiData = map[string]interface{}{
+	"struct.2.field.1": "struct.2.field.1.value",
+	"struct.1.field.1": "struct.1.field.1.value",
+	"struct.1.field.2": map[string]interface{}{
+		"struct.3.field.1": "struct.3.field.1.value",
+	},
+	"struct.1.field.3": "struct.1.field.1.value",
+	"struct.1.field.4": "struct.1.field.1.value",
+}
 
 func TestABI_Decode(t *testing.T) {
 
@@ -339,65 +348,67 @@ func TestABI_Read(t *testing.T) {
 	}{}
 
 	testCases := []map[string]interface{}{
-		{"typeName": "int8", "value": int8(1), "encode": int8(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "uint8", "value": uint8(1), "encode": uint8(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "int16", "value": int16(1), "encode": int16(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "uint16", "value": uint16(1), "encode": uint16(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "int32", "value": int32(1), "encode": int32(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "uint32", "value": uint32(1), "encode": uint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "int64", "value": int64(1), "encode": int64(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "uint64", "value": uint64(1), "encode": uint64(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "int128", "value": int64(1), "encode": int64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [int128]: read value: read field: int128 support not implemented"), "isOptional": false, "isArray": false},
-		{"typeName": "uint128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [uint128]: read value: read field: uint128 support not implemented"), "isOptional": false, "isArray": false},
-		{"typeName": "varint32", "value": int64(1), "encode": Varuint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "varuint32", "value": uint64(1), "encode": Varuint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "float32", "value": float32(1), "encode": float32(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "float64", "value": float64(1), "encode": float64(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "float128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [float128]: read value: read field: float128 support not implemented"), "isOptional": false, "isArray": false},
-		{"typeName": "bool", "value": true, "encode": true, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "bool", "value": false, "encode": false, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "time_point", "value": TimePoint(1), "encode": TimePoint(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "time_point_sec", "value": TimePointSec(1), "encode": TimePointSec(1), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "block_timestamp_type", "value": bt, "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "name", "value": Name("eoscanadacom"), "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "bytes", "value": []byte("this.is.a.test"), "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "string", "value": "this.is.a.test", "encode": "this.is.a.test", "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "checksum160", "value": Checksum160(make([]byte, TypeSize.Checksum160)), "encode": Checksum160(make([]byte, TypeSize.Checksum160)), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "checksum256", "value": Checksum256(make([]byte, TypeSize.Checksum256)), "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "checksum512", "value": Checksum512(make([]byte, TypeSize.Checksum512)), "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "public_key", "value": ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, "encode": ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "signature", "value": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "encode": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "symbol", "value": &Symbol{Precision: 8, Symbol: "symbol.1"}, "encode": Symbol{Precision: 8, Symbol: "symbol.1"}, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "symbol_code", "value": SymbolCode(0), "encode": SymbolCode(0), "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "asset", "value": Asset{Amount: 10, Symbol: EOSSymbol}, "encode": Asset{Amount: 10, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "extended_asset", "value": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false},
-		{"typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("decoding field [testedField] of type [bad.type.1]: read value: read field of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false},
-		{"typeName": "string", "value": "value.1", "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false},
-		{"typeName": "string", "value": nil, "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false},
-		{"typeName": "string", "value": nil, "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false},
-		{"typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("decoding field [testedField] optional flag: byte required [1] byte, remaining [0]"), "isOptional": true, "isArray": false},
-		{"typeName": "string", "value": []interface{}{"value.1", "value.2"}, "encode": []string{"value.1", "value.2"}, "expectedError": nil, "isOptional": false, "isArray": true},
-		{"typeName": "string", "value": nil, "encode": nil, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true},
-		{"typeName": "invalid.field.type", "value": nil, "encode": []string{"value.1", "value.2"}, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true},
+		{"caseName": "case.1", "typeName": "int8", "value": int8(1), "encode": int8(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.2", "typeName": "uint8", "value": uint8(1), "encode": uint8(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.3", "typeName": "int16", "value": int16(1), "encode": int16(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.4", "typeName": "uint16", "value": uint16(1), "encode": uint16(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.5", "typeName": "int32", "value": int32(1), "encode": int32(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.6", "typeName": "uint32", "value": uint32(1), "encode": uint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.7", "typeName": "int64", "value": int64(1), "encode": int64(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.8", "typeName": "uint64", "value": uint64(1), "encode": uint64(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.9", "typeName": "int128", "value": int64(1), "encode": int64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [int128]: read value: read field: int128 support not implemented"), "isOptional": false, "isArray": false},
+		{"caseName": "case.10", "typeName": "uint128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [uint128]: read value: read field: uint128 support not implemented"), "isOptional": false, "isArray": false},
+		{"caseName": "case.11", "typeName": "varint32", "value": int64(1), "encode": Varuint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.12", "typeName": "varuint32", "value": uint64(1), "encode": Varuint32(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.13", "typeName": "float32", "value": float32(1), "encode": float32(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.14", "typeName": "float64", "value": float64(1), "encode": float64(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.15", "typeName": "float128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [float128]: read value: read field: float128 support not implemented"), "isOptional": false, "isArray": false},
+		{"caseName": "case.16", "typeName": "bool", "value": true, "encode": true, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.17", "typeName": "bool", "value": false, "encode": false, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.18", "typeName": "time_point", "value": TimePoint(1), "encode": TimePoint(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.19", "typeName": "time_point_sec", "value": TimePointSec(1), "encode": TimePointSec(1), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.20", "typeName": "block_timestamp_type", "value": bt, "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.21", "typeName": "name", "value": Name("eoscanadacom"), "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.22", "typeName": "bytes", "value": []byte("this.is.a.test"), "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.23", "typeName": "string", "value": "this.is.a.test", "encode": "this.is.a.test", "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.24", "typeName": "checksum160", "value": Checksum160(make([]byte, TypeSize.Checksum160)), "encode": Checksum160(make([]byte, TypeSize.Checksum160)), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.25", "typeName": "checksum256", "value": Checksum256(make([]byte, TypeSize.Checksum256)), "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.26", "typeName": "checksum512", "value": Checksum512(make([]byte, TypeSize.Checksum512)), "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.27", "typeName": "public_key", "value": ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, "encode": ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.28", "typeName": "signature", "value": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "encode": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.29", "typeName": "symbol", "value": &Symbol{Precision: 8, Symbol: "symbol.1"}, "encode": Symbol{Precision: 8, Symbol: "symbol.1"}, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.30", "typeName": "symbol_code", "value": SymbolCode(0), "encode": SymbolCode(0), "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.31", "typeName": "asset", "value": Asset{Amount: 10, Symbol: EOSSymbol}, "encode": Asset{Amount: 10, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.32", "typeName": "extended_asset", "value": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false},
+		{"caseName": "case.33", "typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("decoding field [testedField] of type [bad.type.1]: read value: read field of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false},
+		{"caseName": "case.34", "typeName": "string", "value": "value.1", "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false},
+		{"caseName": "case.35", "typeName": "string", "value": nil, "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false},
+		{"caseName": "case.36", "typeName": "string", "value": nil, "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false},
+		{"caseName": "case.37", "typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("decoding field [testedField] optional flag: byte required [1] byte, remaining [0]"), "isOptional": true, "isArray": false},
+		{"caseName": "case.38", "typeName": "string", "value": []interface{}{"value.1", "value.2"}, "encode": []string{"value.1", "value.2"}, "expectedError": nil, "isOptional": false, "isArray": true},
+		{"caseName": "case.39", "typeName": "string", "value": nil, "encode": nil, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true},
+		{"caseName": "case.40", "typeName": "invalid.field.type", "value": nil, "encode": []string{"value.1", "value.2"}, "expectedError": fmt.Errorf("reading field [testedField] index [0]: read field of type [invalid.field.type]: unknown type"), "isOptional": false, "isArray": true},
 	}
 
 	for _, c := range testCases {
 
-		var b bytes.Buffer
-		encoder := NewEncoder(&b)
-		err := encoder.Encode(c["encode"])
+		t.Run(c["caseName"].(string), func(t *testing.T) {
+			var b bytes.Buffer
+			encoder := NewEncoder(&b)
+			err := encoder.Encode(c["encode"])
 
-		assert.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]))
+			assert.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]), c["caseName"])
 
-		decoder := NewABIDecoder(b.Bytes(), nil)
-		result := make(Result)
-		err = decoder.decodeField("testedField", c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), result)
+			decoder := NewABIDecoder(b.Bytes(), nil)
+			result := make(Result)
+			err = decoder.decodeField("testedField", c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), result)
 
-		assert.Equal(t, c["expectedError"], err)
+			assert.Equal(t, c["expectedError"], err, c["caseName"])
 
-		if c["expectedError"] == nil {
-			assert.Equal(t, c["value"], result["testedField"])
-		}
+			if c["expectedError"] == nil {
+				assert.Equal(t, c["value"], result["testedField"], c["caseName"])
+			}
+		})
 	}
 }
 

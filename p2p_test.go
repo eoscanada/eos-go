@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -253,15 +252,8 @@ func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
 
 }
 
-type mockWriter struct {
-}
-
-func (w mockWriter) Write(p []byte) (n int, err error) {
-	return 0, errors.New("error.1")
-}
-
 func TestEncode_P2PMessageEnvelope_Error(t *testing.T) {
-	buf := mockWriter{}
+	buf := &mockWriter{0, fmt.Errorf("error.1")}
 	encoder := NewEncoder(buf)
 	assert.EqualError(t, encoder.writeBlockP2PMessageEnvelope(Packet{}), "error.1")
 }

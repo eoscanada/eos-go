@@ -1,7 +1,6 @@
 package eos
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -28,11 +27,9 @@ func NewABIDecoder(data []byte, abiReader io.Reader) *ABIDecoder {
 
 func (d *ABIDecoder) Decode(result Result, actionName ActionName) error {
 
-	abi := &ABI{}
-	abiDecoder := json.NewDecoder(d.abiReader)
-	err := abiDecoder.Decode(abi)
+	abi, err := NewABI(d.abiReader)
 	if err != nil {
-		return fmt.Errorf("read abi: %s", err)
+		return fmt.Errorf("decode: %s", err)
 	}
 	d.abi = abi
 
