@@ -42,13 +42,12 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 		proxy.RegisterHandlers(r.handlers)
 
-		err := proxy.Start("", errorChannel)
-		if err != nil {
-			fmt.Printf("Started proxy error between %s and %s : %s\n", remoteAddress, r.destinationPeerAddress, err)
-			destinationPeer.connection.Close()
-			remotePeer.connection.Close()
-			fmt.Printf("Closing connection between %s and %s\n", remoteAddress, r.destinationPeerAddress)
-		}
+		err := proxy.Start("")
+		fmt.Printf("Started proxy error between %s and %s : %s\n", remoteAddress, r.destinationPeerAddress, err)
+		destinationPeer.connection.Close()
+		remotePeer.connection.Close()
+		fmt.Printf("Closing connection between %s and %s\n", remoteAddress, r.destinationPeerAddress)
+		break
 	case err := <-errorChannel:
 		fmt.Printf("Proxy error between %s and %s : %s\n", conn.RemoteAddr(), r.destinationPeerAddress, err)
 		break

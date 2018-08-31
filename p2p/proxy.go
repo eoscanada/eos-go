@@ -108,18 +108,18 @@ func (p *Proxy) ConnectAndStart(chainID string) error {
 			return err
 		}
 		if peer1Ready && peer2Ready {
-			err := p.Start(chainID, errorChannel)
-			if err != nil {
-				return fmt.Errorf("connect: start: %s", err)
-			}
+			break
 		}
 	}
+
+	return p.Start(chainID)
+
 }
 
-func (p *Proxy) Start(chainID string, errorChannel chan error) error {
+func (p *Proxy) Start(chainID string) error {
 
 	log.Println("Starting readers")
-
+	errorChannel := make(chan error)
 	go p.read(p.Peer1, p.Peer2, errorChannel)
 	go p.read(p.Peer2, p.Peer1, errorChannel)
 
@@ -136,5 +136,5 @@ func (p *Proxy) Start(chainID string, errorChannel chan error) error {
 	}
 
 	log.Println("Started")
-	return nil
+	return <-errorChannel
 }
