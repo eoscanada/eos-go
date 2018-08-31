@@ -72,7 +72,9 @@ func (p *Peer) Read() (*eos.Packet, error) {
 		log.Println("Connection Read error:", p.Address, err)
 		return nil, fmt.Errorf("connection: read: %s", err)
 	}
-	p.cancelHandshakeTimeout <- true
+	if p.handshakeTimeout > 0 {
+		p.cancelHandshakeTimeout <- true
+	}
 	return packet, nil
 }
 

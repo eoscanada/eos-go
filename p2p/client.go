@@ -11,9 +11,9 @@ import (
 )
 
 type Client struct {
-	peer         *Peer
-	handlers     []Handler
-	readTimeout  time.Duration
+	peer        *Peer
+	handlers    []Handler
+	readTimeout time.Duration
 }
 
 func NewClient(peer *Peer) *Client {
@@ -70,6 +70,8 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 }
 
 func (c *Client) Start(chainID string) error {
+
+	fmt.Println("Starting client with chain id:", chainID)
 
 	errorChannel := make(chan error, 1)
 

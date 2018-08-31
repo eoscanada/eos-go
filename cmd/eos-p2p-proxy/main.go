@@ -9,7 +9,7 @@ import (
 
 var peer1 = flag.String("peer1", "localhost:9876", "peer 1")
 var peer2 = flag.String("peer2", "localhost:2222", "peer 2")
-var chainID = flag.String("chain-id", "9bf6c5d3610260507f3a37340c43ff186c1810c984e9ad0b99b6fb8d6a3c94a3", "peer 1")
+var chainID = flag.String("chain-id", "308cae83a690640be3726a725dde1fa72a845e28cfc63f28c3fa0a6ccdb6faf0", "peer 1")
 
 func main() {
 
@@ -29,8 +29,8 @@ func main() {
 	//)
 
 	//proxy := p2p.NewProxy(
-	//	p2p.NewIncommingPeer("localhost:2222", chainID, "eos-proxy"),
-	//	p2p.NewIncommingPeer("localhost:1111", chainID, "eos-proxy"),
+	//	p2p.NewIncommingPeer("localhost:2222", "eos-proxy"),
+	//	p2p.NewIncommingPeer("localhost:1111", "eos-proxy"),
 	//)
 
 	proxy.RegisterHandler(p2p.StringLoggerHandler)

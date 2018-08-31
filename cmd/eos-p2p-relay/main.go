@@ -3,13 +3,21 @@ package main
 import (
 	"fmt"
 
+	"flag"
+
 	"github.com/eoscanada/eos-go/p2p"
 )
 
+var peer = flag.String("peer", "", "peer")
+var listeningAddress = flag.String("listening-address", "", "address on with the relay will listen")
+
 func main() {
 
-	relay := p2p.NewRelay("0.0.0.0:6789", "localhost:9876")
-	//relay.RegisterHandler(p2p.StringLoggerHandler)
+	flag.Parse()
+
+	relay := p2p.NewRelay(*listeningAddress, *peer)
+
+	relay.RegisterHandler(p2p.StringLoggerHandler)
 
 	fmt.Println(relay.Start())
 }
