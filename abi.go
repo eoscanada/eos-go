@@ -1,5 +1,11 @@
 package eos
 
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+)
+
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
 // see: libraries/chain/include/eosio/chain/contracts/types.hpp:100
 type ABI struct {
@@ -13,6 +19,17 @@ type ABI struct {
 	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
 }
 
+func NewABI(r io.Reader) (*ABI, error) {
+	abi := &ABI{}
+	abiDecoder := json.NewDecoder(r)
+	err := abiDecoder.Decode(abi)
+	if err != nil {
+		return nil, fmt.Errorf("read abi: %s", err)
+	}
+
+	return abi, nil
+
+}
 func (a *ABI) ActionForName(name ActionName) *ActionDef {
 	for _, a := range a.Actions {
 		if a.Name == name {
