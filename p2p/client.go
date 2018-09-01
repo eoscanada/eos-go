@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/eoscanada/eos-go"
 )
@@ -12,12 +13,24 @@ type Client struct {
 	peer         *Peer
 	handlers     []Handler
 	handlersLock sync.Mutex
+	readTimeout  time.Duration
 }
 
 func NewClient(peer *Peer) *Client {
 	return &Client{
 		peer: peer,
 	}
+}
+
+func (c *Client) CloseConnection() error {
+	if c.peer.connection == nil {
+		return nil
+	}
+	return c.peer.connection.Close()
+}
+
+func (c *Client) SetReadTimeout(readTimeout time.Duration) {
+	c.readTimeout = readTimeout
 }
 
 func (c *Client) RegisterHandler(handler Handler) {
@@ -62,12 +75,11 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 
 func (c *Client) Start() error {
 
-	errorChannel := make(chan error)
+	errorChannel := make(chan error, 1)
 
 	readyChannel := c.peer.Init(errorChannel)
 
 	for {
-
 		select {
 		case <-readyChannel:
 			go c.read(c.peer, errorChannel)
@@ -78,6 +90,7 @@ func (c *Client) Start() error {
 				}
 			}
 		case err := <-errorChannel:
+			log.Println("Start got ERROR:", err)
 			return err
 		}
 	}
