@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"os"
 	"testing"
 
 	"fmt"
@@ -16,6 +17,8 @@ import (
 )
 
 func TestABI_Decode(t *testing.T) {
+
+	Logger.Decoder.SetOutput(os.Stdout)
 
 	abiReader := strings.NewReader(abiString)
 
@@ -278,7 +281,6 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 }
 
 func TestABI_Read(t *testing.T) {
-
 	bt := BlockTimestamp{
 		Time: time.Unix(time.Now().Unix(), 0),
 	}
