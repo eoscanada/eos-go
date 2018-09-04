@@ -15,54 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var abiString = `
-{
-	"version": "eosio::abi/1.0",
-	"types": [{
-		"new_type_name": "new.type.name.1",
-		"type": "name"
-	}],
-	"structs": [
-	{
-		"name": "struct.name.1",
-		"base": "struct.name.2",
-		"fields": [
-			{"name":"struct.1.field.1", "type":"new.type.name.1"},
-			{"name":"struct.1.field.2", "type":"struct.name.3"},
-			{"name":"struct.1.field.3?", "type":"string"},
-			{"name":"struct.1.field.4?", "type":"string"}
-		]
-    },{
-		"name": "struct.name.2",
-		"base": "",
-		"fields": [
-			{"name":"struct.2.field.1", "type":"string"}
-		]
-    },{
-		"name": "struct.name.3",
-		"base": "",
-		"fields": [
-			{"name":"struct.3.field.1", "type":"string"}
-		]
-    }
-	],
-   "actions": [{
-		"name": "action.name.1",
-		"type": "struct.name.1",
-		"ricardian_contract": ""
-   }]
-}
-`
-var abiData = map[string]interface{}{
-	"struct.2.field.1": "struct.2.field.1.value",
-	"struct.1.field.1": "struct.1.field.1.value",
-	"struct.1.field.2": map[string]interface{}{
-		"struct.3.field.1": "struct.3.field.1.value",
-	},
-	"struct.1.field.3": "struct.1.field.1.value",
-	"struct.1.field.4": "struct.1.field.1.value",
-}
-
 func TestABI_Decode(t *testing.T) {
 
 	abiReader := strings.NewReader(abiString)
@@ -196,7 +148,7 @@ func TestABI_decode(t *testing.T) {
 
 	decoder := NewABIDecoder(b.Bytes(), nil)
 	decoder.abi = abi
-	result := make(Result)
+	result := make(ABIMap)
 	err = decoder.decode("struct.1", result)
 	assert.NoError(t, err)
 
@@ -228,7 +180,7 @@ func TestABI_decodeStructNotFound(t *testing.T) {
 
 	decoder := NewABIDecoder(b.Bytes(), nil)
 	decoder.abi = abi
-	result := make(Result)
+	result := make(ABIMap)
 	err = decoder.decode("struct.1", result)
 	assert.Equal(t, fmt.Errorf("decode base [struct.1]: structure [struct.base.1] not found in abi"), err)
 }
@@ -248,7 +200,7 @@ func TestABI_decodeStructBaseNotFound(t *testing.T) {
 
 	decoder := NewABIDecoder(b.Bytes(), nil)
 	decoder.abi = abi
-	result := make(Result)
+	result := make(ABIMap)
 	err = decoder.decode("struct.1", result)
 	assert.Equal(t, fmt.Errorf("structure [struct.1] not found in abi"), err)
 }
@@ -284,7 +236,7 @@ func TestABI_decodeFields(t *testing.T) {
 
 	decoder := NewABIDecoder(b.Bytes(), nil)
 	decoder.abi = abi
-	result := make(Result)
+	result := make(ABIMap)
 	err = decoder.decodeFields(fields, result)
 	assert.NoError(t, err)
 
@@ -318,7 +270,7 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 
 	decoder := NewABIDecoder(b.Bytes(), nil)
 	decoder.abi = abi
-	result := make(Result)
+	result := make(ABIMap)
 
 	err = decoder.decodeFields(fields, result)
 	assert.Equal(t, fmt.Errorf("decoding fields: decoding field [field.with.bad.type.1] of type [bad.type.1]: read value: read field of type [bad.type.1]: unknown type"), err)
@@ -400,7 +352,7 @@ func TestABI_Read(t *testing.T) {
 			assert.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]), c["caseName"])
 
 			decoder := NewABIDecoder(b.Bytes(), nil)
-			result := make(Result)
+			result := make(ABIMap)
 			err = decoder.decodeField("testedField", c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), result)
 
 			assert.Equal(t, c["expectedError"], err, c["caseName"])

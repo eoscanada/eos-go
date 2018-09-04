@@ -8,7 +8,7 @@ import (
 
 var DEBUG = false
 
-type Result map[string]interface{}
+type ABIMap map[string]interface{}
 
 type ABIDecoder struct {
 	eosDecoder *Decoder
@@ -25,7 +25,7 @@ func NewABIDecoder(data []byte, abiReader io.Reader) *ABIDecoder {
 	}
 }
 
-func (d *ABIDecoder) Decode(result Result, actionName ActionName) error {
+func (d *ABIDecoder) Decode(result ABIMap, actionName ActionName) error {
 
 	abi, err := NewABI(d.abiReader)
 	if err != nil {
@@ -42,7 +42,7 @@ func (d *ABIDecoder) Decode(result Result, actionName ActionName) error {
 
 }
 
-func (d *ABIDecoder) decode(structName string, result Result) error {
+func (d *ABIDecoder) decode(structName string, result ABIMap) error {
 
 	fmt.Println("Decoding struct:", structName)
 
@@ -75,13 +75,11 @@ func analyseFieldName(fieldName string) (name string, isOptional bool, isArray b
 	return fieldName, false, false
 }
 
-func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
+func (d *ABIDecoder) decodeFields(fields []FieldDef, result ABIMap) error {
 
 	for _, field := range fields {
 
-		fmt.Printf("Decoding field [%s] of type [%s]\n", field.Name, field.Type)
-
-		fieldName, isOptinal, isArray := analyseFieldName(field.Name)
+		fieldName, isOptional, isArray := analyseFieldName(field.Name)
 		typeName := d.abi.TypeNameForNewTypeName(field.Type)
 		if typeName != field.Type {
 			fmt.Printf("-- type [%s] is an alias of [%s]\n", field.Type, typeName)
@@ -90,23 +88,24 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result Result) error {
 		structure := d.abi.StructForName(typeName)
 		if structure != nil {
 			fmt.Printf("Field [%s] is a structure\n", field.Name)
-			err := d.decodeFields(structure.Fields, result)
+			structResult := make(ABIMap)
+			err := d.decodeFields(structure.Fields, structResult)
 			if err != nil {
 				return err
 			}
+			result[fieldName] = structResult
+
 		} else {
-			err := d.decodeField(fieldName, typeName, isOptinal, isArray, result)
+			err := d.decodeField(fieldName, typeName, isOptional, isArray, result)
 			if err != nil {
 				return fmt.Errorf("decoding fields: %s", err)
 			}
 		}
-
 	}
-
 	return nil
 }
 
-func (d *ABIDecoder) decodeField(fieldName string, fieldType string, isOptional bool, isArray bool, result Result) (err error) {
+func (d *ABIDecoder) decodeField(fieldName string, fieldType string, isOptional bool, isArray bool, result ABIMap) (err error) {
 
 	fmt.Printf("\tDecoding field [%s] of type [%s]\n", fieldName, fieldType)
 

@@ -11,10 +11,60 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var abiString = `
+{
+	"version": "eosio::abi/1.0",
+	"types": [{
+		"new_type_name": "new.type.name.1",
+		"type": "name"
+	}],
+	"structs": [
+	{
+		"name": "struct.name.1",
+		"base": "struct.name.2",
+		"fields": [
+			{"name":"struct.1.field.1", "type":"new.type.name.1"},
+			{"name":"struct.1.field.2", "type":"struct.name.3"},
+			{"name":"struct.1.field.3?", "type":"string"},
+			{"name":"struct.1.field.4?", "type":"string"}
+		]
+    },{
+		"name": "struct.name.2",
+		"base": "",
+		"fields": [
+			{"name":"struct.2.field.1", "type":"string"}
+		]
+    },{
+		"name": "struct.name.3",
+		"base": "",
+		"fields": [
+			{"name":"struct.3.field.1", "type":"string"}
+		]
+    }
+	],
+   "actions": [{
+		"name": "action.name.1",
+		"type": "struct.name.1",
+		"ricardian_contract": ""
+   }]
+}
+`
+var abiData = ABIMap{
+	"struct.2.field.1": "struct.2.field.1.value",
+	"struct.1.field.1": Name("eoscanadacom"),
+	"struct.1.field.2": ABIMap{
+		"struct.3.field.1": "struct.3.field.1.value",
+	},
+	"struct.1.field.3": "struct.1.field.3.value",
+	//"struct.1.field.4": "struct.1.field.4.value",
+}
+
 func TestABIEncoder_Encode(t *testing.T) {
 
 	testCases := []map[string]interface{}{
-		{"caseName": "sunny path", "actionName": "action.name.1", "expectedError": nil, "writer": new(bytes.Buffer)},
+		{"caseName": "sunny path", "actionName": "action.name.1", "expectedError": nil, "writer": new(bytes.Buffer), "abi": abiString},
+		{"caseName": "missing action", "actionName": "action.name.missing", "expectedError": fmt.Errorf("action action.name.missing not found in abi"), "writer": new(bytes.Buffer), "abi": abiString},
+		{"caseName": "abi reader error", "actionName": "action.name.missing", "expectedError": fmt.Errorf("encode: read abi: unexpected EOF"), "writer": new(bytes.Buffer), "abi": "{"},
 	}
 
 	for _, c := range testCases {
@@ -22,17 +72,122 @@ func TestABIEncoder_Encode(t *testing.T) {
 		t.Run(caseName, func(t *testing.T) {
 
 			buf := c["writer"].(mockWriterable)
-			encoder := NewABIEncoder(strings.NewReader(abiString), buf)
+			encoder := NewABIEncoder(strings.NewReader(c["abi"].(string)), buf)
 			err := encoder.Encode(ActionName(c["actionName"].(string)), abiData)
 			assert.Equal(t, c["expectedError"], err)
 
+			if c["expectedError"] != nil {
+				return
+			}
+
 			decoder := NewABIDecoder(buf.Bytes(), strings.NewReader(abiString))
-			result := make(Result)
+			result := make(ABIMap)
 			err = decoder.Decode(result, ActionName(c["actionName"].(string)))
 			assert.NoError(t, err)
-			fmt.Println(result)
+
+			assert.Equal(t, abiData, result)
+			//fmt.Println(result)
 		})
 	}
+}
+func TestABIEncoder_encodeMissingActionStruct(t *testing.T) {
+
+	abiString := `
+{
+	"version": "eosio::abi/1.0",
+	"types": [{
+		"new_type_name": "new.type.name.1",
+		"type": "name"
+	}],
+	"structs": [
+	],
+   "actions": [{
+		"name": "action.name.1",
+		"type": "struct.name.1",
+		"ricardian_contract": ""
+   }]
+}
+`
+
+	buf := new(bytes.Buffer)
+	encoder := NewABIEncoder(strings.NewReader(abiString), buf)
+
+	err := encoder.Encode("action.name.1", map[string]interface{}{})
+	assert.Equal(t, fmt.Errorf("encode: structure [struct.name.1] not found in abi"), err)
+}
+
+func TestABIEncoder_encodeErrorInBase(t *testing.T) {
+
+	abiString := `
+{
+	"version": "eosio::abi/1.0",
+	"types": [{
+		"new_type_name": "new.type.name.1",
+		"type": "name"
+	}],
+	"structs": [
+	{
+		"name": "struct.name.1",
+		"base": "struct.name.2",
+		"fields": [
+			{"name":"struct.1.field.1", "type":"new.type.name.1"}
+		]
+    }
+	],
+   "actions": [{
+		"name": "action.name.1",
+		"type": "struct.name.1",
+		"ricardian_contract": ""
+   }]
+}
+`
+
+	buf := new(bytes.Buffer)
+	encoder := NewABIEncoder(strings.NewReader(abiString), buf)
+
+	err := encoder.Encode("action.name.1", map[string]interface{}{})
+	assert.Equal(t, fmt.Errorf("encode base [struct.name.1]: encode: structure [struct.name.2] not found in abi"), err)
+}
+
+func TestABI_EncodeEncodeName(t *testing.T) {
+
+	abiString := `
+{
+	"version": "eosio::abi/1.0",
+	"types": [{
+		"new_type_name": "new.type.name.1",
+		"type": "name"
+	}],
+	"structs": [
+	{
+		"name": "struct.name.1",
+		"base": "",
+		"fields": [
+			{"name":"struct.1.field.1", "type":"new.type.name.1"}
+		]
+    }
+	],
+   "actions": [{
+		"name": "action.name.1",
+		"type": "struct.name.1",
+		"ricardian_contract": ""
+   }]
+}
+`
+	abiData := map[string]interface{}{
+		"struct.1.field.1": Name("struct.1.field.1.value"),
+	}
+	buf := new(bytes.Buffer)
+	encoder := NewABIEncoder(strings.NewReader(abiString), buf)
+	err := encoder.Encode(ActionName("action.name.1"), abiData)
+	assert.Equal(t, nil, err)
+
+	decoder := NewABIDecoder(buf.Bytes(), strings.NewReader(abiString))
+	result := make(ABIMap)
+	err = decoder.Decode(result, ActionName("action.name.1"))
+	assert.NoError(t, err)
+	fmt.Println(result)
+
 }
 
 func TestABIEncoder_encodeFields(t *testing.T) {
@@ -46,13 +201,24 @@ func TestABIEncoder_encodeFields(t *testing.T) {
 			"type": "string"
 		}
 	],
-	"structs": [],
+	"structs": [
+		{
+			"name": "struct.name.1",
+			"base": "",
+			"fields": [
+				{"name":"struct.1.field.1", "type":"new.type.name.1"}
+			]
+    	}
+	],
    	"actions": []
 }
 	
 `
 	testCases := []map[string]interface{}{
 		{"caseName": "sunny path", "fields": []FieldDef{{Name: "field.name.1", Type: "new.type.1"}}, "actionMap": map[string]interface{}{"field.name.1": "field.1.value.1"}, "expectedError": nil, "writer": new(bytes.Buffer)},
+		{"caseName": "encodeField error", "fields": []FieldDef{{Name: "field.name.1", Type: "new.type.1"}}, "actionMap": map[string]interface{}{}, "expectedError": fmt.Errorf("encoding fields: encode field: none optional field [field.name.1] as a nil value"), "writer": new(bytes.Buffer)},
+		{"caseName": "embedded struct wrong type", "fields": []FieldDef{{Name: "field.name.1", Type: "struct.name.1"}}, "actionMap": map[string]interface{}{"field.name.1": map[string]interface{}{}}, "expectedError": fmt.Errorf("encode fields: structure field [field.name.1] expected to be of type ABIMap"), "writer": new(bytes.Buffer)},
+		{"caseName": "encodeField error embedded struct", "fields": []FieldDef{{Name: "field.name.1", Type: "struct.name.1"}}, "actionMap": map[string]interface{}{"field.name.1": make(ABIMap)}, "expectedError": fmt.Errorf("encoding fields: encode field: none optional field [struct.1.field.1] as a nil value"), "writer": new(bytes.Buffer)},
 	}
 
 	for _, c := range testCases {
@@ -102,7 +268,7 @@ func TestABIEncoder_encodeField(t *testing.T) {
 			}
 
 			decoder := NewABIDecoder(buf.Bytes(), nil)
-			result := make(Result)
+			result := make(ABIMap)
 			Debug = true
 			err = decoder.decodeField(fieldName, fieldType, isOptional, isArray, result)
 			assert.NoError(t, err, caseName)
