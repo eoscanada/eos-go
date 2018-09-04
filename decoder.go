@@ -816,7 +816,7 @@ func (d *Decoder) ReadSymbolCode() (out SymbolCode, err error) {
 
 	n, err := d.ReadUint64()
 	out = SymbolCode(n)
-	println(fmt.Sprintf("ReadSymbolCode [%s]", out))
+	println(fmt.Sprintf("ReadSymbolCode [%d]", out))
 
 	return
 }
