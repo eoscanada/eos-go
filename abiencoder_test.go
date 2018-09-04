@@ -2,6 +2,7 @@ package eos
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"bytes"
@@ -60,6 +61,10 @@ var abiData = ABIMap{
 }
 
 func TestABIEncoder_Encode(t *testing.T) {
+	Logger.Decoder.SetOutput(os.Stdout)
+	Logger.Encoder.SetOutput(os.Stdout)
+	Logger.ABIEncoder.SetOutput(os.Stdout)
+	Logger.ABIDecoder.SetOutput(os.Stdout)
 
 	testCases := []map[string]interface{}{
 		{"caseName": "sunny path", "actionName": "action.name.1", "expectedError": nil, "writer": new(bytes.Buffer), "abi": abiString},
@@ -269,7 +274,6 @@ func TestABIEncoder_encodeField(t *testing.T) {
 
 			decoder := NewABIDecoder(buf.Bytes(), nil)
 			result := make(ABIMap)
-			Debug = true
 			err = decoder.decodeField(fieldName, fieldType, isOptional, isArray, result)
 			assert.NoError(t, err, caseName)
 

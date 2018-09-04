@@ -44,7 +44,12 @@ func (d *ABIDecoder) Decode(result ABIMap, actionName ActionName) error {
 
 func (d *ABIDecoder) decode(structName string, result ABIMap) error {
 
-	fmt.Println("Decoding struct:", structName)
+	Logger.ABIDecoder.Println("Decoding struct:", structName)
+
+	defer Logger.ABIDecoder.SetPrefix(Logger.ABIDecoder.Prefix())
+	Logger.ABIDecoder.SetPrefix(Logger.ABIDecoder.Prefix() + "\t")
+	defer Logger.Decoder.SetPrefix(Logger.Decoder.Prefix())
+	Logger.Decoder.SetPrefix(Logger.Decoder.Prefix() + "\t")
 
 	structure := d.abi.StructForName(structName)
 	if structure == nil {
@@ -52,7 +57,7 @@ func (d *ABIDecoder) decode(structName string, result ABIMap) error {
 	}
 
 	if structure.Base != "" {
-		fmt.Printf("Structure: %s has base structure of type: %s\n", structName, structure.Base)
+		Logger.ABIDecoder.Printf("Structure %s has base structure of type: %s\n", structName, structure.Base)
 		err := d.decode(structure.Base, result)
 		if err != nil {
 			return fmt.Errorf("decode base [%s]: %s", structName, err)
@@ -82,12 +87,12 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result ABIMap) error {
 		fieldName, isOptional, isArray := analyseFieldName(field.Name)
 		typeName := d.abi.TypeNameForNewTypeName(field.Type)
 		if typeName != field.Type {
-			fmt.Printf("-- type [%s] is an alias of [%s]\n", field.Type, typeName)
+			Logger.ABIDecoder.Printf("[%s] is an alias of [%s]\n", field.Type, typeName)
 		}
 
 		structure := d.abi.StructForName(typeName)
 		if structure != nil {
-			fmt.Printf("Field [%s] is a structure\n", field.Name)
+			Logger.ABIDecoder.Printf("Field [%s] is a structure\n", field.Name)
 			structResult := make(ABIMap)
 			err := d.decodeFields(structure.Fields, structResult)
 			if err != nil {
@@ -107,17 +112,17 @@ func (d *ABIDecoder) decodeFields(fields []FieldDef, result ABIMap) error {
 
 func (d *ABIDecoder) decodeField(fieldName string, fieldType string, isOptional bool, isArray bool, result ABIMap) (err error) {
 
-	fmt.Printf("\tDecoding field [%s] of type [%s]\n", fieldName, fieldType)
+	Logger.ABIDecoder.Printf("Decoding field [%s] of type [%s]\n", fieldName, fieldType)
 
 	if isOptional {
-		fmt.Printf("\tField [%s] is optional\n", fieldName)
+		Logger.ABIDecoder.Printf("Field [%s] is optional\n", fieldName)
 		b, err := d.eosDecoder.ReadByte()
 		if err != nil {
 			return fmt.Errorf("decoding field [%s] optional flag: %s", fieldName, err)
 		}
 
 		if b == 0 {
-			fmt.Printf("\tField [%s] is not present\n", fieldName)
+			Logger.ABIDecoder.Printf("Field [%s] is not present\n", fieldName)
 			return nil
 		}
 	}
@@ -135,7 +140,7 @@ func (d *ABIDecoder) decodeField(fieldName string, fieldType string, isOptional 
 			if err != nil {
 				return fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
 			}
-			fmt.Printf("\tAdding value: [%s] for field: [%s] at index [%d]\n", value, fieldName, i)
+			Logger.ABIDecoder.Printf("\tAdding value: [%s] for field: [%s] at index [%d]\n", value, fieldName, i)
 			values = append(values, value)
 		}
 
@@ -148,7 +153,7 @@ func (d *ABIDecoder) decodeField(fieldName string, fieldType string, isOptional 
 	if err != nil {
 		return fmt.Errorf("decoding field [%s] of type [%s]: read value: %s", fieldName, fieldType, err)
 	}
-	fmt.Printf("\tSet value: [%s] for field: [%s]\n", value, fieldName)
+	Logger.ABIDecoder.Printf("Set value: [%s] for field: [%s]\n", value, fieldName)
 	result[fieldName] = value
 
 	return
