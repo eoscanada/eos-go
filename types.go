@@ -417,10 +417,55 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 
 // SHA256Bytes
 
-type Checksum160 []byte // should always be 32 bytes
-type Checksum256 []byte // should always be 32 bytes
-type Checksum512 []byte // should always be 32 bytes
-type SHA256Bytes []byte // should always be 32 bytes
+type Checksum160 []byte
+
+func (t Checksum160) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
+}
+func (t *Checksum160) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+type Checksum256 []byte
+
+func (t Checksum256) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
+}
+func (t *Checksum256) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+type Checksum512 []byte
+
+func (t Checksum512) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
+}
+func (t *Checksum512) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+type SHA256Bytes []byte
 
 func (t SHA256Bytes) MarshalJSON() ([]byte, error) {
 	return json.Marshal(hex.EncodeToString(t))

@@ -83,7 +83,7 @@ func (e *ABIEncoder) encodeFields(fields []FieldDef, actionData map[string]inter
 			Logger.ABIEncoder.Printf("Field [%s] is a structure\n", field.Name)
 
 			data := actionData[fieldName]
-			if d, ok := data.(ABIMap); ok {
+			if d, ok := data.(M); ok {
 				err := e.encodeFields(structure.Fields, d)
 				if err != nil {
 					return err
