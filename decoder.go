@@ -172,7 +172,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		return
 	case *Varuint32:
 		var r uint64
-		r, err = d.ReadUvarint()
+		r, err = d.ReadUvarint64()
 		rv.SetUint(r)
 		return
 	case *bool:
@@ -333,7 +333,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case reflect.Slice:
 		Logger.Decoder.Print("Reading Slice length ")
 		var l uint64
-		if l, err = d.ReadUvarint(); err != nil {
+		if l, err = d.ReadUvarint64(); err != nil {
 			return
 		}
 		Logger.Decoder.Print(fmt.Sprintf("Slice [%T] of length: %d", v, l))
@@ -354,7 +354,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	case reflect.Map:
 		//fmt.Logger.Decoder.Print("Map")
 		var l uint64
-		if l, err = d.ReadUvarint(); err != nil {
+		if l, err = d.ReadUvarint64(); err != nil {
 			return
 		}
 		kt := t.Key()
@@ -401,7 +401,7 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 
 var ErrVarIntBufferSize = errors.New("varint: invalid buffer size")
 
-func (d *Decoder) ReadUvarint() (uint64, error) {
+func (d *Decoder) ReadUvarint64() (uint64, error) {
 
 	l, read := binary.Uvarint(d.data[d.pos:])
 	if read <= 0 {
@@ -413,17 +413,43 @@ func (d *Decoder) ReadUvarint() (uint64, error) {
 	Logger.Decoder.Print(fmt.Sprintf("readUvarint [%d]", l))
 	return l, nil
 }
-func (d *Decoder) ReadVarint() (out int64, err error) {
+func (d *Decoder) ReadVarint64() (out int64, err error) {
 
-	n, err := d.ReadUvarint()
-	out = int64(n)
-	Logger.Decoder.Print(fmt.Sprintf("ReadVarint [%d]", out))
+	l, read := binary.Varint(d.data[d.pos:])
+	if read <= 0 {
+		Logger.Decoder.Print(fmt.Sprintf("readVarint [%d]", l))
+		return l, ErrVarIntBufferSize
+	}
+
+	d.pos += read
+	Logger.Decoder.Print(fmt.Sprintf("readVarint [%d]", l))
+	return l, nil
+}
+
+func (d *Decoder) ReadVarint32() (out int32, err error) {
+
+	n, err := d.ReadVarint64()
+	if err != nil {
+		return out, err
+	}
+	out = int32(n)
+	Logger.Decoder.Print(fmt.Sprintf("readVarint32 [%d]", out))
+	return
+}
+func (d *Decoder) ReadUvarint32() (out uint32, err error) {
+
+	n, err := d.ReadUvarint64()
+	if err != nil {
+		return out, err
+	}
+	out = uint32(n)
+	Logger.Decoder.Print(fmt.Sprintf("readUvarint32 [%d]", out))
 	return
 }
 
 func (d *Decoder) ReadByteArray() (out []byte, err error) {
 
-	l, err := d.ReadUvarint()
+	l, err := d.ReadUvarint64()
 	if err != nil {
 		return nil, err
 	}
