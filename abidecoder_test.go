@@ -3,7 +3,6 @@ package eos
 import (
 	"fmt"
 	"math"
-	"os"
 	"testing"
 	"time"
 
@@ -19,8 +18,6 @@ import (
 )
 
 func TestABI_Decode(t *testing.T) {
-
-	Logger.ABIDecoder.SetOutput(os.Stdout)
 
 	abiReader := strings.NewReader(abiString)
 
@@ -51,7 +48,6 @@ func TestABI_Decode(t *testing.T) {
 	assert.NoError(t, err)
 
 	json, err := abi.DecodeAction(buffer.Bytes(), "action_name_1")
-	fmt.Println("JSON:", string(json))
 	assert.NoError(t, err)
 
 	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "struct_1_field_1").String())
@@ -66,8 +62,6 @@ func TestABI_Decode(t *testing.T) {
 }
 
 func TestABI_DecodeMissingData(t *testing.T) {
-
-	Logger.ABIDecoder.SetOutput(os.Stdout)
 	abiReader := strings.NewReader(abiString)
 
 	mockData := struct {
@@ -362,7 +356,7 @@ func TestABI_Read(t *testing.T) {
 			abi := ABI{}
 			json, err := abi.decodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
 
-			fmt.Println("JSON:", string(json))
+			//fmt.Println("JSON:", string(json))
 			assert.Equal(t, c["expectedError"], err, c["caseName"])
 
 			if c["expectedError"] == nil {
