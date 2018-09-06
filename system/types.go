@@ -1,9 +1,5 @@
 package system
 
-import (
-	eos "github.com/eoscanada/eos-go"
-)
-
 // BlockchainParameters are all the params we can set through `setparams`.
 type BlockchainParameters struct {
 	MaxBlockNetUsage               uint64 `json:"max_block_net_usage"`
@@ -34,11 +30,6 @@ type EOSIOGlobalState struct {
 	TotalStorageBytesReserved uint64 `json:"total_storage_bytes_reserved"`
 	TotalStorageStake         uint64 `json:"total_storage_stake"`
 	PaymentPerBlock           uint64 `json:"payment_per_block"`
-}
-
-// UnregProxy represents the `eosio.system::unregproxy` action
-type UnregProxy struct {
-	Proxy eos.AccountName `json:"proxy"`
 }
 
 // Nonce represents the `eosio.system::nonce` action. It is used to

@@ -14,7 +14,6 @@ func init() {
 	eos.RegisterAction(AN("eosio"), ActN("regproducer"), RegProducer{})
 	eos.RegisterAction(AN("eosio"), ActN("unregprod"), UnregProducer{})
 	eos.RegisterAction(AN("eosio"), ActN("regproxy"), RegProxy{})
-	eos.RegisterAction(AN("eosio"), ActN("unregproxy"), UnregProxy{})
 	eos.RegisterAction(AN("eosio"), ActN("voteproducer"), VoteProducer{})
 	eos.RegisterAction(AN("eosio"), ActN("claimrewards"), ClaimRewards{})
 	eos.RegisterAction(AN("eosio"), ActN("buyram"), BuyRAM{})
