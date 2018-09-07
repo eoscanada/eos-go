@@ -55,7 +55,7 @@ type VoterInfo struct {
 	Staked            JSONInt64     `json:"staked"`
 	LastVoteWeight    JSONFloat64   `json:"last_vote_weight"`
 	ProxiedVoteWeight JSONFloat64   `json:"proxied_vote_weight"`
-	IsProxy           bool          `json:"is_proxy"`
+	IsProxy           byte          `json:"is_proxy"`
 }
 
 type RefundRequest struct {
