@@ -336,6 +336,11 @@ type GetCodeResp struct {
 	ABI         ABI         `json:"abi"`
 }
 
+type GetCodeHashResp struct {
+	AccountName AccountName `json:"account_name"`
+	CodeHash    string      `json:"code_hash"`
+}
+
 type GetABIResp struct {
 	AccountName AccountName `json:"account_name"`
 	ABI         ABI         `json:"abi"`

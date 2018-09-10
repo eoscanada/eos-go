@@ -135,6 +135,16 @@ func (api *API) GetCode(account AccountName) (out *GetCodeResp, err error) {
 	return
 }
 
+func (api *API) GetCodeHash(account AccountName) (out SHA256Bytes, err error) {
+	resp := GetCodeHashResp{}
+	if err = api.call("chain", "get_code_hash", M{"account_name": account}, &resp); err != nil {
+		return
+	}
+
+	buffer, err := hex.DecodeString(resp.CodeHash)
+	return SHA256Bytes(buffer), err
+}
+
 func (api *API) GetABI(account AccountName) (out *GetABIResp, err error) {
 	err = api.call("chain", "get_abi", M{"account_name": account}, &out)
 	return
