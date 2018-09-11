@@ -17,8 +17,6 @@ import (
 
 	"io/ioutil"
 
-	"math"
-
 	"github.com/eoscanada/eos-go/ecc"
 )
 
