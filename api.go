@@ -131,7 +131,7 @@ func (api *API) GetAccount(name AccountName) (out *AccountResp, err error) {
 }
 
 func (api *API) GetRawCodeAndABI(account AccountName) (out *GetRawCodeAndABIResp, err error) {
-	err = api.call("chain", "/get_raw_code_and_abi", M{"account_name": account}, &out)
+	err = api.call("chain", "get_raw_code_and_abi", M{"account_name": account}, &out)
 	return
 }
 
