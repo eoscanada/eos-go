@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -74,7 +73,6 @@ func TestABIEncoder_Encode(t *testing.T) {
 	testCases := []map[string]interface{}{
 		{"caseName": "sunny path", "actionName": "action_name_1", "expectedError": nil, "abi": abiString},
 		{"caseName": "missing action", "actionName": "bad_action_name", "expectedError": fmt.Errorf("encode action: action bad_action_name not found in abi"), "abi": abiString},
-		{"caseName": "missing action", "actionName": "action_name_1", "expectedError": fmt.Errorf("encode action: action bad_action_name not found in abi"), "abi": abiString},
 	}
 
 	for _, c := range testCases {
@@ -158,7 +156,7 @@ func TestABIEncoder_encodeErrorInBase(t *testing.T) {
 
 func TestABIEncoder_encodeField(t *testing.T) {
 
-	Logger.ABIEncoder.SetOutput(os.Stdout)
+	//Logger.ABIEncoder.SetOutput(os.Stdout)
 	testCases := []map[string]interface{}{
 		{"caseName": "sunny path", "fieldName": "field_name", "fieldType": "string", "expectedValue": "0f6669656c642e312e76616c75652e31", "json": "{\"field_name\": \"field.1.value.1\"}", "isOptional": false, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
 		{"caseName": "optional present", "fieldName": "field_name", "fieldType": "string", "expectedValue": "010f6669656c642e312e76616c75652e31", "json": "{\"field_name\": \"field.1.value.1\"}", "isOptional": true, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
@@ -198,7 +196,7 @@ func TestABIEncoder_encodeField(t *testing.T) {
 
 func TestABI_Write(t *testing.T) {
 
-	Logger.ABIEncoder.SetOutput(os.Stdout)
+	//Logger.ABIEncoder.SetOutput(os.Stdout)
 	testCases := []map[string]interface{}{
 		{"caseName": "string", "typeName": "string", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\":\"this.is.a.test\""},
 		{"caseName": "min int8", "typeName": "int8", "expectedValue": "80", "json": "{\"testField\":-128}"},

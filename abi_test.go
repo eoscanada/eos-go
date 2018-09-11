@@ -3,7 +3,6 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -987,10 +986,10 @@ func TestABISerialization(t *testing.T) {
   "abi_extensions": []
 }`)
 
-	Logger.Decoder.SetOutput(os.Stdout)
-	Logger.Encoder.SetOutput(os.Stdout)
-	Logger.ABIEncoder.SetOutput(os.Stdout)
-	Logger.ABIDecoder.SetOutput(os.Stdout)
+	//Logger.Decoder.SetOutput(os.Stdout)
+	//Logger.Encoder.SetOutput(os.Stdout)
+	//Logger.ABIEncoder.SetOutput(os.Stdout)
+	//Logger.ABIDecoder.SetOutput(os.Stdout)
 
 	var abiDef ABI
 	require.NoError(t, json.Unmarshal(systemABI, &abiDef))
