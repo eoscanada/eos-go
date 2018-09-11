@@ -3,7 +3,6 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,6 @@ import (
 )
 
 func TestActionUnmarshalBinary(t *testing.T) {
-	Logger.Decoder.SetOutput(os.Stdout)
 	tests := []struct {
 		in     string
 		jsonTx string
