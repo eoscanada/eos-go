@@ -344,14 +344,14 @@ const (
 )
 
 type OrderedTransactionIDs struct {
-	Unknown [3]byte       `json:"-"` ///// WWUUuuuuuuuuuuuutzthat ?
-	Mode    IDListMode    `json:"mode"`
+	//Unknown [3]byte       `json:"-"` ///// WWUUuuuuuuuuuuuutzthat ?
+	Mode    [4]byte       `json:"mode"`
 	Pending uint32        `json:"pending"`
 	IDs     []SHA256Bytes `json:"ids"`
 }
 type OrderedBlockIDs struct {
-	Unknown [3]byte       `json:"-"` ///// wuuttzthat?
-	Mode    IDListMode    `json:"mode"`
+	//Unknown [3]byte       `json:"-"` ///// wuuttzthat?
+	Mode    [4]byte       `json:"mode"`
 	Pending uint32        `json:"pending"`
 	IDs     []SHA256Bytes `json:"ids"`
 }

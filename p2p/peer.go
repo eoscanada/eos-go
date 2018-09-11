@@ -165,13 +165,13 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 	fmt.Printf("SendRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
 	request := &eos.RequestMessage{
 		ReqTrx: eos.OrderedBlockIDs{
-			Unknown: [3]byte{},
-			Mode:    0,
+			//Unknown: [3]byte{},
+			Mode:    [4]byte{0, 0, 0, 2},
 			Pending: startBlockNum,
 		},
 		ReqBlocks: eos.OrderedBlockIDs{
-			Unknown: [3]byte{},
-			Mode:    0,
+			//Unknown: [3]byte{},
+			Mode:    [4]byte{0, 0, 0, 2},
 			Pending: endBlockNumber,
 		},
 	}
@@ -179,16 +179,26 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 	return p.WriteP2PMessage(request)
 }
 
-func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32) (err error) {
-	fmt.Printf("Send Notice head [%d] lib [%d]\n", headBlockNum, libNum)
+func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err error) {
+	fmt.Printf("Send Notice head [%d] lib [%d] type[%d]\n", headBlockNum, libNum, mode)
 
 	notice := &eos.NoticeMessage{
 		KnownTrx: eos.OrderedBlockIDs{
-			Unknown: [3]byte{},
-			Mode:    0,
+			Mode:    [4]byte{mode, 0, 0, 0},
 			Pending: headBlockNum,
 		},
+		KnownBlocks: eos.OrderedBlockIDs{
+			Mode:    [4]byte{mode, 0, 0, 0},
+			Pending: libNum,
+		},
 	}
+	return p.WriteP2PMessage(notice)
+}
+
+func (p *Peer) SendTime() (err error) {
+	fmt.Printf("SendTime\n")
+
+	notice := &eos.TimeMessage{}
 	return p.WriteP2PMessage(notice)
 }
 
