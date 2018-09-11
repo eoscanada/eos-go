@@ -32,7 +32,7 @@ func (a *ABI) EncodeAction(actionName ActionName, json []byte) ([]byte, error) {
 	encoder := NewEncoder(&buffer)
 
 	err := a.encode(encoder, action.Type, json)
-	if ErrNotFound != nil {
+	if err != nil {
 		return nil, fmt.Errorf("encode action: %s", err)
 	}
 	return buffer.Bytes(), nil
@@ -83,6 +83,7 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 
 func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) (err error) {
 
+	Logger.ABIEncoder.Println("encodeField: json:", string(json))
 	value := gjson.GetBytes(json, fieldName)
 	if isOptional {
 		if value.Exists() {
@@ -110,21 +111,10 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 		binaryEncoder.writeUVarInt(len(results))
 
 		for _, r := range results {
-			a.encodeField(binaryEncoder, fieldName, fieldType, false, false, []byte(r.Raw))
+			a.writeField(binaryEncoder, fieldName, fieldType, r)
 		}
 
 		return nil
-	}
-
-	structure := a.StructForName(fieldType)
-	if structure != nil {
-		Logger.ABIEncoder.Printf("Field [%s] is a structure\n", fieldName)
-
-		structureJSON := gjson.GetBytes(json, fieldName)
-		err := a.encodeFields(binaryEncoder, structure.Fields, []byte(structureJSON.Raw))
-		if err != nil {
-			return err
-		}
 	}
 
 	return a.writeField(binaryEncoder, fieldName, fieldType, value)
@@ -133,6 +123,18 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType string, value gjson.Result) error {
 
 	Logger.ABIEncoder.Printf("Writing value [%s]\n", value.Raw)
+
+	structure := a.StructForName(fieldType)
+	if structure != nil {
+		Logger.ABIEncoder.Printf("Field [%s] is a structure\n", fieldName)
+
+		//structureJSON := gjson.GetBytes([]byte(value.Raw), fieldName)
+		err := a.encodeFields(binaryEncoder, structure.Fields, []byte(value.Raw))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 
 	var object interface{}
 	switch fieldType {

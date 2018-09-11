@@ -5,24 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/gjson"
 )
 
-//
-//import (
-//	"fmt"
-//	"testing"
-//
-//	"bytes"
-//
-//	"strings"
-//
-//	"github.com/stretchr/testify/assert"
-//)
-//
 var abiString = `
 {
 	"version": "eosio::abi/1.0",
@@ -69,237 +58,143 @@ var abiString = `
 }
 `
 
-//var abiData = M{
-//	"struct_2_field.1": "struct.2.field.1.value",
-//	"struct.1.field.1": Name("eoscanadacom"),
-//	"struct.1.field.2": M{
-//		"struct.3.field.1": "struct.3.field.1.value",
-//	},
-//	"struct.1.field.3": "struct.1.field.3.value",
-//	//"struct.1.field.4": "struct.1.field.4.value",
-//}
+var abiData = []byte(`{
+	"struct_2_field_1": "struct_2_field_1_value",
+	"struct_1_field_1": Name("eoscanadacom"),
+	"struct_1_field_2": M{
+		"struct_3_field_1": "struct_3_field_1_value",
+	},
+	"struct_1_field_3": "struct_1_field_3_value",
+	//"struct_1_field_4": "struct_1_field_4_value",
+	"struct_1_field_5": ["struct_1_field_5_value_1","struct_1_field_5_value_2"],
+}`)
 
-//
-//func TestABIEncoder_Encode(t *testing.T) {
-//
-//	testCases := []map[string]interface{}{
-//		{"caseName": "sunny path", "actionName": "action.name.1", "expectedError": nil, "writer": new(bytes.Buffer), "abi": abiString},
-//		{"caseName": "missing action", "actionName": "action.name.missing", "expectedError": fmt.Errorf("action action.name.missing not found in abi"), "writer": new(bytes.Buffer), "abi": abiString},
-//		{"caseName": "abi reader error", "actionName": "action.name.missing", "expectedError": fmt.Errorf("encode: read abi: unexpected EOF"), "writer": new(bytes.Buffer), "abi": "{"},
-//	}
-//
-//	for _, c := range testCases {
-//		caseName := c["caseName"].(string)
-//		t.Run(caseName, func(t *testing.T) {
-//
-//			buf := c["writer"].(mockWriterable)
-//			encoder := NewABIEncoder(strings.NewReader(c["abi"].(string)), buf)
-//			err := encoder.Encode(ActionName(c["actionName"].(string)), abiData)
-//			assert.Equal(t, c["expectedError"], err)
-//
-//			if c["expectedError"] != nil {
-//				return
-//			}
-//
-//			decoder := NewABIDecoder(buf.Bytes(), strings.NewReader(abiString))
-//			result := make(M)
-//			err = decoder.Decode(result, ActionName(c["actionName"].(string)))
-//			assert.NoError(t, err)
-//
-//			assert.Equal(t, abiData, result)
-//			//fmt.Println(result)
-//		})
-//	}
-//}
-//func TestABIEncoder_encodeMissingActionStruct(t *testing.T) {
-//
-//	abiString := `
-//{
-//	"version": "eosio::abi/1.0",
-//	"types": [{
-//		"new_type_name": "new.type.name.1",
-//		"type": "name"
-//	}],
-//	"structs": [
-//	],
-//   "actions": [{
-//		"name": "action.name.1",
-//		"type": "struct.name.1",
-//		"ricardian_contract": ""
-//   }]
-//}
-//`
-//
-//	buf := new(bytes.Buffer)
-//	encoder := NewABIEncoder(strings.NewReader(abiString), buf)
-//
-//	err := encoder.Encode("action.name.1", map[string]interface{}{})
-//	assert.Equal(t, fmt.Errorf("encode: structure [struct.name.1] not found in abi"), err)
-//}
-//
-//func TestABIEncoder_encodeErrorInBase(t *testing.T) {
-//
-//	abiString := `
-//{
-//	"version": "eosio::abi/1.0",
-//	"types": [{
-//		"new_type_name": "new.type.name.1",
-//		"type": "name"
-//	}],
-//	"structs": [
-//	{
-//		"name": "struct.name.1",
-//		"base": "struct.name.2",
-//		"fields": [
-//			{"name":"struct.1.field.1", "type":"new.type.name.1"}
-//		]
-//    }
-//	],
-//   "actions": [{
-//		"name": "action.name.1",
-//		"type": "struct.name.1",
-//		"ricardian_contract": ""
-//   }]
-//}
-//`
-//
-//	buf := new(bytes.Buffer)
-//	encoder := NewABIEncoder(strings.NewReader(abiString), buf)
-//
-//	err := encoder.Encode("action.name.1", map[string]interface{}{})
-//	assert.Equal(t, fmt.Errorf("encode base [struct.name.1]: encode: structure [struct.name.2] not found in abi"), err)
-//}
-//
-//func TestABI_EncodeEncodeName(t *testing.T) {
-//
-//	abiString := `
-//{
-//	"version": "eosio::abi/1.0",
-//	"types": [{
-//		"new_type_name": "new.type.name.1",
-//		"type": "name"
-//	}],
-//	"structs": [
-//	{
-//		"name": "struct.name.1",
-//		"base": "",
-//		"fields": [
-//			{"name":"struct.1.field.1", "type":"new.type.name.1"}
-//		]
-//    }
-//	],
-//   "actions": [{
-//		"name": "action.name.1",
-//		"type": "struct.name.1",
-//		"ricardian_contract": ""
-//   }]
-//}
-//`
-//	abiData := map[string]interface{}{
-//		"struct.1.field.1": Name("struct.1.field.1.value"),
-//	}
-//	buf := new(bytes.Buffer)
-//	encoder := NewABIEncoder(strings.NewReader(abiString), buf)
-//	err := encoder.Encode(ActionName("action.name.1"), abiData)
-//	assert.Equal(t, nil, err)
-//
-//	decoder := NewABIDecoder(buf.Bytes(), strings.NewReader(abiString))
-//	result := make(ABIMap)
-//	err = decoder.Decode(result, ActionName("action.name.1"))
-//	assert.NoError(t, err)
-//	fmt.Println(result)
-//
-//}
-//
-//func TestABIEncoder_encodeFields(t *testing.T) {
-//
-//	abiString = `
-//{
-//	"version": "eosio::abi/1.0",
-//	"types": [
-//		{
-//			"new_type_name": "new.type.1",
-//			"type": "string"
-//		}
-//	],
-//	"structs": [
-//		{
-//			"name": "struct.name.1",
-//			"base": "",
-//			"fields": [
-//				{"name":"struct.1.field.1", "type":"new.type.name.1"}
-//			]
-//    	}
-//	],
-//   	"actions": []
-//}
-//
-//`
-//	testCases := []map[string]interface{}{
-//		{"caseName": "sunny path", "fields": []FieldDef{{Name: "field.name.1", Type: "new.type.1"}}, "actionMap": map[string]interface{}{"field.name.1": "field.1.value.1"}, "expectedError": nil, "writer": new(bytes.Buffer)},
-//		{"caseName": "encodeField error", "fields": []FieldDef{{Name: "field.name.1", Type: "new.type.1"}}, "actionMap": map[string]interface{}{}, "expectedError": fmt.Errorf("encoding fields: encode field: none optional field [field.name.1] as a nil value"), "writer": new(bytes.Buffer)},
-//		{"caseName": "embedded struct wrong type", "fields": []FieldDef{{Name: "field.name.1", Type: "struct.name.1"}}, "actionMap": map[string]interface{}{"field.name.1": map[string]interface{}{}}, "expectedError": fmt.Errorf("encode fields: structure field [field.name.1] expected to be of type ABIMap"), "writer": new(bytes.Buffer)},
-//		{"caseName": "encodeField error embedded struct", "fields": []FieldDef{{Name: "field.name.1", Type: "struct.name.1"}}, "actionMap": map[string]interface{}{"field.name.1": make(ABIMap)}, "expectedError": fmt.Errorf("encoding fields: encode field: none optional field [struct.1.field.1] as a nil value"), "writer": new(bytes.Buffer)},
-//	}
-//
-//	for _, c := range testCases {
-//		caseName := c["caseName"].(string)
-//		t.Run(caseName, func(t *testing.T) {
-//
-//			buf := c["writer"].(mockWriterable)
-//			encoder := NewABIEncoder(nil, buf)
-//
-//			abi, err := NewABI(strings.NewReader(abiString))
-//			assert.NoError(t, err)
-//			encoder.abi = abi
-//
-//			err = encoder.encodeFields(c["fields"].([]FieldDef), c["actionMap"].(map[string]interface{}))
-//			assert.Equal(t, c["expectedError"], err)
-//		})
-//	}
-//}
-//
-//func TestABIEncoder_encodeField(t *testing.T) {
-//
-//	testCases := []map[string]interface{}{
-//		{"caseName": "sunny path", "fieldName": "field.name.1", "fieldType": "string", "actionMap": map[string]interface{}{"field.name.1": "field.1.value.1"}, "isOptional": false, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
-//		{"caseName": "optional with value", "fieldName": "field.name.1", "fieldType": "string", "actionMap": map[string]interface{}{"field.name.1": "field.1.value.1"}, "isOptional": true, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
-//		{"caseName": "optional with no value", "fieldName": "field.name.1", "fieldType": "string", "actionMap": map[string]interface{}{}, "isOptional": true, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
-//		{"caseName": "none optional with nil value", "fieldName": "field.name.2", "fieldType": "string", "actionMap": map[string]interface{}{"field.name.1": "field.1.value.1"}, "isOptional": false, "isArray": false, "expectedError": fmt.Errorf("encode field: none optional field [field.name.2] as a nil value"), "writer": new(bytes.Buffer)},
-//		{"caseName": "optional write flag err", "fieldName": "field.name.1", "fieldType": "string", "actionMap": map[string]interface{}{"field.name.1": "field.1.value.1"}, "isOptional": true, "isArray": false, "expectedError": fmt.Errorf("mocked error"), "writer": mockWriter{0, fmt.Errorf("mocked error")}},
-//	}
-//
-//	for _, c := range testCases {
-//		caseName := c["caseName"].(string)
-//		t.Run(caseName, func(t *testing.T) {
-//			buf := c["writer"].(mockWriterable)
-//			encoder := NewABIEncoder(nil, buf)
-//
-//			action := c["actionMap"].(map[string]interface{})
-//			fieldName := c["fieldName"].(string)
-//			fieldType := c["fieldType"].(string)
-//			isOptional := c["isOptional"].(bool)
-//			isArray := c["isArray"].(bool)
-//			expectedError := c["expectedError"]
-//
-//			err := encoder.encodeField(fieldName, isOptional, isArray, action)
-//			assert.Equal(t, expectedError, err, caseName)
-//			if expectedError != nil {
-//				return
-//			}
-//
-//			decoder := NewABIDecoder(buf.Bytes(), nil)
-//			result := make(ABIMap)
-//			err = decoder.decodeField(fieldName, fieldType, isOptional, isArray, result)
-//			assert.NoError(t, err, caseName)
-//
-//			assert.Equal(t, action[fieldName], result[fieldName], caseName)
-//
-//		})
-//
-//	}
-//}
-//
+func TestABIEncoder_Encode(t *testing.T) {
+
+	testCases := []map[string]interface{}{
+		{"caseName": "sunny path", "actionName": "action_name_1", "expectedError": nil, "abi": abiString},
+		{"caseName": "missing action", "actionName": "bad_action_name", "expectedError": fmt.Errorf("encode action: action bad_action_name not found in abi"), "abi": abiString},
+		{"caseName": "missing action", "actionName": "action_name_1", "expectedError": fmt.Errorf("encode action: action bad_action_name not found in abi"), "abi": abiString},
+	}
+
+	for _, c := range testCases {
+		caseName := c["caseName"].(string)
+		t.Run(caseName, func(t *testing.T) {
+
+			abi, err := NewABI(strings.NewReader(c["abi"].(string)))
+			assert.NoError(t, err)
+			_, err = abi.EncodeAction(ActionName(c["actionName"].(string)), abiData)
+			assert.Equal(t, c["expectedError"], err)
+
+			if c["expectedError"] != nil {
+				return
+			}
+
+			//decoder := NewABIDecoder(buf.Bytes(), strings.NewReader(abiString))
+			//result := make(M)
+			//err = decoder.Decode(result, ActionName(c["actionName"].(string)))
+			//assert.NoError(t, err)
+
+			//assert.Equal(t, abiData, result)
+			//fmt.Println(result)
+		})
+	}
+}
+
+func TestABIEncoder_encodeMissingActionStruct(t *testing.T) {
+
+	abiString := `
+{
+	"version": "eosio::abi/1.0",
+	"types": [{
+		"new_type_name": "new.type.name.1",
+		"type": "name"
+	}],
+	"structs": [
+	],
+  "actions": [{
+		"name": "action.name.1",
+		"type": "struct.name.1",
+		"ricardian_contract": ""
+  }]
+}
+`
+	abi, err := NewABI(strings.NewReader(abiString))
+	assert.NoError(t, err)
+	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
+	assert.Equal(t, fmt.Errorf("encode action: encode: structure [struct.name.1] not found in abi"), err)
+}
+
+func TestABIEncoder_encodeErrorInBase(t *testing.T) {
+
+	abiString := `
+{
+	"version": "eosio::abi/1.0",
+	"types": [{
+		"new_type_name": "new.type.name.1",
+		"type": "name"
+	}],
+	"structs": [
+	{
+		"name": "struct.name.1",
+		"base": "struct.name.2",
+		"fields": [
+			{"name":"struct.1.field.1", "type":"new.type.name.1"}
+		]
+   }
+	],
+  "actions": [{
+		"name": "action.name.1",
+		"type": "struct.name.1",
+		"ricardian_contract": ""
+  }]
+}
+`
+	abi, err := NewABI(strings.NewReader(abiString))
+	assert.NoError(t, err)
+	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
+	assert.Equal(t, fmt.Errorf("encode action: encode base [struct.name.1]: encode: structure [struct.name.2] not found in abi"), err)
+}
+
+func TestABIEncoder_encodeField(t *testing.T) {
+
+	Logger.ABIEncoder.SetOutput(os.Stdout)
+	testCases := []map[string]interface{}{
+		{"caseName": "sunny path", "fieldName": "field_name", "fieldType": "string", "expectedValue": "0f6669656c642e312e76616c75652e31", "json": "{\"field_name\": \"field.1.value.1\"}", "isOptional": false, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
+		{"caseName": "optional present", "fieldName": "field_name", "fieldType": "string", "expectedValue": "010f6669656c642e312e76616c75652e31", "json": "{\"field_name\": \"field.1.value.1\"}", "isOptional": true, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
+		{"caseName": "optional not present", "fieldName": "field_name", "fieldType": "string", "expectedValue": "00", "json": "{\"field_name_other\": \"field.1.value.2\"}", "isOptional": true, "isArray": false, "expectedError": nil, "writer": new(bytes.Buffer)},
+		{"caseName": "optional present write flag err", "fieldName": "field_name", "fieldType": "string", "expectedValue": "010f6669656c642e312e76616c75652e31", "json": "{\"field_name\": \"field.1.value.1\"}", "isOptional": true, "isArray": false, "expectedError": fmt.Errorf("error.1"), "writer": mockWriter{err: fmt.Errorf("error.1")}},
+		{"caseName": "not optional not present", "fieldName": "field_name", "fieldType": "string", "expectedValue": "00", "json": "{\"field_name_other\": \"field.1.value.2\"}", "isOptional": false, "isArray": false, "expectedError": fmt.Errorf("encode field: none optional field [field_name] as a nil value"), "writer": new(bytes.Buffer)},
+		{"caseName": "array", "fieldName": "field_name", "fieldType": "string", "expectedValue": "020f6669656c642e312e76616c75652e310f6669656c642e312e76616c75652e32", "json": "{\"field_name\": [\"field.1.value.1\",\"field.1.value.2\"]}", "isOptional": false, "isArray": true, "expectedError": nil, "writer": new(bytes.Buffer)},
+		{"caseName": "expected array got string", "fieldName": "field_name", "fieldType": "string", "expectedValue": "", "json": "{\"field_name\": \"field.1.value.1\"}", "isOptional": false, "isArray": true, "expectedError": fmt.Errorf("encode field: expected array for field [field_name] got [String]"), "writer": new(bytes.Buffer)},
+	}
+
+	for _, c := range testCases {
+		caseName := c["caseName"].(string)
+		t.Run(caseName, func(t *testing.T) {
+			buf := c["writer"].(mockWriterable)
+			encoder := NewEncoder(buf)
+
+			abi := ABI{}
+
+			json := c["json"].(string)
+			fieldName := c["fieldName"].(string)
+			fieldType := c["fieldType"].(string)
+			isOptional := c["isOptional"].(bool)
+			isArray := c["isArray"].(bool)
+			expectedError := c["expectedError"]
+
+			err := abi.encodeField(encoder, fieldName, fieldType, isOptional, isArray, []byte(json))
+			assert.Equal(t, expectedError, err, caseName)
+
+			if c["expectedError"] == nil {
+				assert.Equal(t, c["expectedValue"], hex.EncodeToString(buf.Bytes()), c["caseName"])
+			}
+
+		})
+
+	}
+}
 
 func TestABI_Write(t *testing.T) {
 
@@ -338,37 +233,51 @@ func TestABI_Write(t *testing.T) {
 		{"caseName": "max uint64", "typeName": "uint64", "expectedValue": "ffffffffffffffff", "json": "{\"testField\":18446744073709551615}", "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "out of range uint64", "typeName": "uint64", "expectedValue": "", "json": "{\"testField\":-1}", "expectedError": fmt.Errorf("writing field: [test_field_name] type uint64 : strconv.ParseUint: parsing \"-1\": invalid syntax")},
 		{"caseName": "out of range uint64", "typeName": "uint64", "expectedValue": "", "json": "{\"testField\":18446744073709551616}", "expectedError": fmt.Errorf("writing field: [test_field_name] type uint64 : strconv.ParseUint: parsing \"18446744073709551616\": value out of range")},
+		{"caseName": "int128 unsupported", "typeName": "int128", "expectedValue": "", "json": "{\"testField\":18446744073709551616}", "expectedError": fmt.Errorf("writing field: int128 support not implemented")},
 		{"caseName": "uint128 unsupported", "typeName": "uint128", "expectedValue": "", "json": "{\"testField\":18446744073709551616}", "expectedError": fmt.Errorf("writing field: uint128 support not implemented")},
 		{"caseName": "varint32", "typeName": "varint32", "expectedValue": "00000080", "json": "{\"testField\":-2147483648}", "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "varuint32", "typeName": "varuint32", "expectedValue": "ffffffff", "json": "{\"testField\":4294967295}", "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"}, //{"caseName": "min varuint32", "typeName": "varuint32", "expectedValue": "0", "json": Varuint32(0), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "min float32", "typeName": "float32", "expectedValue": "01000000", "json": "{\"testField\":0.000000000000000000000000000000000000000000001401298464324817}", "expectedError": nil},
 		{"caseName": "max float32", "typeName": "float32", "expectedValue": "ffff7f7f", "json": "{\"testField\":340282346638528860000000000000000000000}", "expectedError": nil},
+		{"caseName": "err float32", "typeName": "float32", "expectedValue": "ffff7f7f", "json": "{\"testField\":440282346638528860000000000000000000000}", "expectedError": fmt.Errorf("writing field: [test_field_name] type float32 : strconv.ParseFloat: parsing \"440282346638528860000000000000000000000\": value out of range")},
 		{"caseName": "min float64", "typeName": "float64", "expectedValue": "0100000000000000", "json": "{\"testField\":0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005}", "expectedError": nil},
 		{"caseName": "max float64", "typeName": "float64", "expectedValue": "ffffffffffffef7f", "json": "{\"testField\":179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}", "expectedError": nil},
+		{"caseName": "err float64", "typeName": "float64", "expectedValue": "ffffffffffffef7f", "json": "{\"testField\":279769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}", "expectedError": fmt.Errorf("writing field: [test_field_name] type float64 : strconv.ParseFloat: parsing \"279769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\": value out of range")},
 		{"caseName": "float128 unsupported", "typeName": "float128", "expectedValue": "", "json": "{\"testField\":0}", "expectedError": fmt.Errorf("writing field: float128 support not implemented")},
 		{"caseName": "bool true", "typeName": "bool", "expectedValue": "01", "json": "{\"testField\":true}", "expectedError": nil},
 		{"caseName": "bool false", "typeName": "bool", "expectedValue": "00", "json": "{\"testField\":false}", "expectedError": nil},
 		{"caseName": "time_point", "typeName": "time_point", "expectedValue": "ffffffffffffffff", "json": "{\"testField\":18446744073709551615}", "expectedError": nil},
 		{"caseName": "time_point_sec", "typeName": "time_point_sec", "expectedValue": "ffffffff", "json": "{\"testField\":4294967295", "expectedError": nil},
 		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "expectedValue": "76c52223", "json": "{\"testField\":\"2018-09-05T12:48:54-04:00\"}", "expectedError": nil},
+		{"caseName": "block_timestamp_type err", "typeName": "block_timestamp_type", "expectedValue": "76c52223", "json": "{\"testField\":\"this is not a date\"}", "expectedError": fmt.Errorf("writing field: block_timestamp_type: parsing time \"this is not a date\" as \"2006-01-02T15:04:05.999999-07:00\": cannot parse \"this is not a date\" as \"2006\"")},
 		{"caseName": "Name", "typeName": "name", "expectedValue": "0000000000ea3055", "json": "{\"testField\":\"eosio\"}", "expectedError": nil},
 		{"caseName": "Name", "typeName": "name", "expectedValue": "", "json": "{\"testField\":\"waytolongnametomakethetestcrash\"}", "expectedError": fmt.Errorf("writing field: name: waytolongnametomakethetestcrash is to long. expexted length of max 12 characters")},
 		{"caseName": "bytes", "typeName": "bytes", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\":\"746869732e69732e612e74657374\"}", "expectedError": nil},
+		{"caseName": "bytes err", "typeName": "bytes", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\":\"those are not bytes\"}", "expectedError": fmt.Errorf("writing field: bytes: encoding/hex: invalid byte: U+0074 't'")},
 		{"caseName": "checksum160", "typeName": "checksum160", "expectedValue": "0000000000000000000000000000000000000000", "json": "{\"testField\":\"0000000000000000000000000000000000000000\"}", "expectedError": nil},
 		{"caseName": "checksum256", "typeName": "checksum256", "expectedValue": "0000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"0000000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": nil},
 		{"caseName": "checksum512", "typeName": "checksum512", "expectedValue": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": nil},
 		{"caseName": "checksum160 to long", "typeName": "checksum160", "expectedValue": "", "json": "{\"testField\":\"10000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum160: expected length of 40 got 41 for value 10000000000000000000000000000000000000000")},
 		{"caseName": "checksum256 to long", "typeName": "checksum256", "expectedValue": "", "json": "{\"testField\":\"10000000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum256: expected length of 64 got 65 for value 10000000000000000000000000000000000000000000000000000000000000000")},
 		{"caseName": "checksum512 to long", "typeName": "checksum512", "expectedValue": "", "json": "{\"testField\":\"100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum512: expected length of 128 got 129 for value 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")},
+		{"caseName": "checksum160 hex err", "typeName": "checksum160", "expectedValue": "", "json": "{\"testField\":\"BADX000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum160: encoding/hex: invalid byte: U+0058 'X'")},
+		{"caseName": "checksum256 hex err", "typeName": "checksum256", "expectedValue": "", "json": "{\"testField\":\"BADX000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum256: encoding/hex: invalid byte: U+0058 'X'")},
+		{"caseName": "checksum512 hex err", "typeName": "checksum512", "expectedValue": "", "json": "{\"testField\":\"BADX0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum512: encoding/hex: invalid byte: U+0058 'X'")},
 		{"caseName": "public_key", "typeName": "public_key", "expectedValue": "00000000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"EOS1111111111111111111111111111111114T1Anm\"}", "expectedError": nil},
 		{"caseName": "public_key err", "typeName": "public_key", "expectedValue": "", "json": "{\"testField\":\"EOS1111111111111111111111114T1Anm\"}", "expectedError": fmt.Errorf("writing field: public_key: checkDecode: invalid checksum")},
 		{"caseName": "signature", "typeName": "signature", "expectedValue": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"SIG_K1_111111111111111111111111111111111111111111111111111111111111111116uk5ne\"}", "expectedError": nil},
+		{"caseName": "signature err", "typeName": "signature", "expectedValue": "", "json": "{\"testField\":\"SIG_K1_BADX11111111111111111111111111111111111111111111111111111111111116uk5ne\"}", "expectedError": fmt.Errorf("writing field: public_key: signature checksum failed, found 3aea1e96 expected e72f76ff")},
 		{"caseName": "symbol", "typeName": "symbol", "expectedValue": "0403454f53", "json": "{\"testField\":{\"Precision\":4,\"Symbol\":\"EOS\"}}", "expectedError": nil},
+		{"caseName": "symbol err", "typeName": "symbol", "expectedValue": "", "json": "{\"testField\":{\"Precision\":-1,\"Symbol\":\"EOS\"}}", "expectedError": fmt.Errorf("writing field: symbol: json: cannot unmarshal number -1 into Go struct field Symbol.Precision of type uint8")},
 		{"caseName": "symbol_code", "typeName": "symbol_code", "expectedValue": "ffffffffffffffff", "json": "{\"testField\":18446744073709551615}", "expectedError": nil},
 		{"caseName": "asset", "typeName": "asset", "expectedValue": "a08601000000000004454f5300000000", "json": "{\"testField\":\"10.0000 EOS\"}", "expectedError": nil},
+		{"caseName": "asset err", "typeName": "asset", "expectedValue": "", "json": "{\"testField\":\"AA.0000 EOS\"}", "expectedError": fmt.Errorf("writing field: asset: strconv.ParseInt: parsing \"AA0000\": invalid syntax")},
 		{"caseName": "extended_asset", "typeName": "extended_asset", "expectedValue": "0a0000000000000004454f5300000000202932c94c833055", "json": "{\"testField\":{\"asset\":\"0.0010 EOS\",\"Contract\":\"eoscanadacom\"}}", "expectedError": nil},
+		{"caseName": "extended_asset err", "typeName": "extended_asset", "expectedValue": "", "json": "{\"testField\":{\"asset\":\"abc.0010 EOS\",\"Contract\":\"eoscanadacom\"}}", "expectedError": fmt.Errorf("writing field: extended_asset: strconv.ParseInt: parsing \"abc0010\": invalid syntax")},
 		{"caseName": "bad type", "typeName": "bad.type.1", "expectedValue": nil, "json": "{\"testField\":0}", "expectedError": fmt.Errorf("writing field of type [bad.type.1]: unknown type")},
 		{"caseName": "optional present", "typeName": "string", "expectedValue": "0776616c75652e31", "json": "{\"testField\":\"value.1\"}", "expectedError": nil},
+		{"caseName": "struct", "typeName": "struct_name_1", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\": {\"field_name_1\":\"this.is.a.test\"}}", "expectedError": nil},
+		{"caseName": "struct err", "typeName": "struct_name_1", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\": {}", "expectedError": fmt.Errorf("encoding fields: encode field: none optional field [field_name_1] as a nil value")},
 	}
 
 	for _, c := range testCases {
@@ -377,7 +286,15 @@ func TestABI_Write(t *testing.T) {
 			var buffer bytes.Buffer
 			encoder := NewEncoder(&buffer)
 
-			abi := ABI{}
+			abi := ABI{
+				Structs: []StructDef{
+					{
+						Name:   "struct_name_1",
+						Base:   "",
+						Fields: []FieldDef{{Name: "field_name_1", Type: "string"}},
+					},
+				},
+			}
 			fieldName := "test_field_name"
 			result := gjson.Get(c["json"].(string), "testField")
 			err := abi.writeField(encoder, fieldName, c["typeName"].(string), result)
