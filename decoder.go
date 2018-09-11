@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 
 	"time"
 
@@ -154,6 +155,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		var n int64
 		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
+		return
+	case *JSONFloat64:
+		var n float64
+		n, err = d.readFloat64()
+		rv.SetFloat(n)
 		return
 	case *uint16:
 		var n uint16
@@ -584,6 +590,19 @@ func (d *Decoder) ReadFloat64() (out float64, err error) {
 	out = math.Float64frombits(n)
 	d.pos += TypeSize.Float64
 	Logger.Decoder.Print(fmt.Sprintf("readFloat64 [%f]", out))
+	return
+}
+
+func (d *Decoder) readFloat64() (out float64, err error) {
+	if d.remaining() < TypeSize.Float64 {
+		err = fmt.Errorf("uint64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
+		return
+	}
+
+	data := d.data[d.pos : d.pos+TypeSize.Float64]
+	out = math.Float64frombits(binary.LittleEndian.Uint64(data))
+	d.pos += TypeSize.Float64
+	println(fmt.Sprintf("readFloat64 [%f] [%s]", out, hex.EncodeToString(data)))
 	return
 }
 

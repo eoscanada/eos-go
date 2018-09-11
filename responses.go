@@ -352,3 +352,19 @@ type Producer struct {
 type ProducersResp struct {
 	Producers []Producer `json:"producers"`
 }
+type GetActionsRequest struct {
+	AccountName AccountName `json:"account_name"`
+	Pos         int64       `json:"pos"`
+	Offset      int64       `json:"offset"`
+}
+type ActionResp struct {
+	GlobalSeq  int64       `json:"global_action_seq"`
+	AccountSeq int64       `json:"account_action_seq"`
+	BlockNum   uint32      `json:"block_num"`
+	BlockTime  JSONTime    `json:"block_time"`
+	Trace      ActionTrace `json:"action_trace"`
+}
+type ActionsResp struct {
+	Actions               []ActionResp `json:"actions"`
+	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
+}

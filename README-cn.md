@@ -1,4 +1,4 @@
-EOS.IO API 库
+用 Go 语言与 EOS.IO 交互的 API 库
 =========================
 
 [![GoDoc](https://godoc.org/github.com/eoscanada/eos-go?status.svg)](https://godoc.org/github.com/eoscanada/eos-go)
