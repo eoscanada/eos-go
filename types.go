@@ -331,8 +331,8 @@ type WaitWeight struct {
 
 type GetRawCodeAndABIResp struct {
 	AccountName AccountName `json:"account_name"`
-	WASM        string      `json:"wasm"`
-	ABI         ABI         `json:"abi"`
+	WASMasHex   string      `json:"wasm"`
+	ABIasHex    string      `json:"abi"`
 }
 
 type GetCodeResp struct {
