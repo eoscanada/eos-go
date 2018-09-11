@@ -80,6 +80,10 @@ func (m *GoAwayMessage) GetType() P2PMessageType {
 	return GoAwayMessageType
 }
 
+func (m *GoAwayMessage) String() string {
+	return fmt.Sprintf("go away: reason [%d]", m.Reason)
+}
+
 type TimeMessage struct {
 	Origin      Tstamp `json:"org"`
 	Receive     Tstamp `json:"rec"`
