@@ -329,6 +329,12 @@ type WaitWeight struct {
 	Weight  uint16 `json:"weight"` // weight_type
 }
 
+type GetRawCodeAndABIResp struct {
+	AccountName AccountName `json:"account_name"`
+	WASMasHex   string      `json:"wasm"`
+	ABIasHex    string      `json:"abi"`
+}
+
 type GetCodeResp struct {
 	AccountName AccountName `json:"account_name"`
 	CodeHash    string      `json:"code_hash"`

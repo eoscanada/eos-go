@@ -354,8 +354,8 @@ type ProducersResp struct {
 }
 type GetActionsRequest struct {
 	AccountName AccountName `json:"account_name"`
-	Pos         int64       `json:"pos,omitempty"`
-	Offset      int64       `json:"offset,omitempty"`
+	Pos         int64       `json:"pos"`
+	Offset      int64       `json:"offset"`
 }
 type ActionResp struct {
 	GlobalSeq  int64       `json:"global_action_seq"`

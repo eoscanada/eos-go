@@ -130,6 +130,11 @@ func (api *API) GetAccount(name AccountName) (out *AccountResp, err error) {
 	return
 }
 
+func (api *API) GetRawCodeAndABI(account AccountName) (out *GetRawCodeAndABIResp, err error) {
+	err = api.call("chain", "get_raw_code_and_abi", M{"account_name": account}, &out)
+	return
+}
+
 func (api *API) GetCode(account AccountName) (out *GetCodeResp, err error) {
 	err = api.call("chain", "get_code", M{"account_name": account, "code_as_wasm": true}, &out)
 	return
