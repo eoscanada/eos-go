@@ -264,12 +264,11 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 }
 
 func TestABI_Read(t *testing.T) {
-	time, err := time.Parse("2006-01-02T15:04:05.999999-07:00", "2018-09-05T12:48:54-04:00")
+	someTime, err := time.Parse("2006-01-02T15:04:05", "2018-09-05T12:48:54")
 	assert.NoError(t, err)
 	bt := BlockTimestamp{
-		Time: time,
+		Time: someTime,
 	}
-
 	assert.NoError(t, err)
 
 	optional := struct {
@@ -319,20 +318,20 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "float128 unsupported", "typeName": "float128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [float128]: read: float128 support not implemented"), "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bool true", "typeName": "bool", "value": "true", "encode": true, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bool false", "typeName": "bool", "value": "false", "encode": false, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "time_point", "typeName": "time_point", "value": "18446744073709551615", "encode": TimePoint(math.MaxUint64), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": "4294967295", "encode": TimePointSec(math.MaxUint32), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "value": "\"2018-09-05T12:48:54-04:00\"", "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "time_point", "typeName": "time_point", "value": "\"1970-01-01T00:00:00.001\"", "encode": TimePoint(1 * time.Millisecond), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": "\"1970-01-01T00:00:01\"", "encode": TimePointSec(1 * time.Second), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "value": "\"2018-09-05T12:48:54\"", "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "Name", "typeName": "name", "value": "\"eoscanadacom\"", "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		/*check*/ {"caseName": "bytes", "typeName": "bytes", "value": "\"746869732e69732e612e74657374\"", "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "bytes", "typeName": "bytes", "value": "\"746869732e69732e612e74657374\"", "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "checksum160", "typeName": "checksum160", "value": "\"0000000000000000000000000000000000000000\"", "encode": Checksum160(make([]byte, TypeSize.Checksum160)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "checksum256", "typeName": "checksum256", "value": "\"0000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "checksum512", "typeName": "checksum512", "value": "\"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "public_key", "typeName": "public_key", "value": "\"EOS1111111111111111111111111111111114T1Anm\"", "encode": ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "signature", "typeName": "signature", "value": "\"SIG_K1_111111111111111111111111111111111111111111111111111111111111111116uk5ne\"", "encode": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		/*check*/ {"caseName": "symbol", "typeName": "symbol", "value": "{\"Precision\":4,\"Symbol\":\"EOS\"}", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "symbol", "typeName": "symbol", "value": "{\"Precision\":4,\"Symbol\":\"EOS\"}", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "symbol_code", "typeName": "symbol_code", "value": "18446744073709551615", "encode": SymbolCode(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		/*check*/ {"caseName": "asset", "typeName": "asset", "value": "\"10.0000 EOS\"", "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		/*check*/ {"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"asset\":\"0.0010 EOS\",\"Contract\":\"eoscanadacom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "asset", "typeName": "asset", "value": "\"10.0000 EOS\"", "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"asset\":\"0.0010 EOS\",\"Contract\":\"eoscanadacom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bad type", "typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("decoding field [testedField] of type [bad.type.1]: read field of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "optional present", "typeName": "string", "value": "\"value.1\"", "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "optional not present", "typeName": "string", "value": "", "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
