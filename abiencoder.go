@@ -168,7 +168,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 			return err
 		}
 		object = int32(i)
-	case "uint32", "varuint32", "time_point_sec":
+	case "uint32", "varuint32":
 		i, err := valueToUint(fieldName, value, 32)
 		if err != nil {
 			return err
@@ -180,7 +180,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 			return err
 		}
 		object = i
-	case "uint64", "time_point":
+	case "uint64":
 		i, err := valueToUint(fieldName, value, 64)
 		if err != nil {
 			return err
@@ -206,13 +206,25 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		return fmt.Errorf("writing field: float128 support not implemented")
 	case "bool":
 		object = value.Bool()
+	case "time_point_sec":
+		t, err := time.Parse("2006-01-02T15:04:05", value.Str)
+		if err != nil {
+			return fmt.Errorf("writing field: time_point_sec: %s", err)
+		}
+		object = TimePointSec(t.UTC().Second())
+	case "time_point":
+		t, err := time.Parse("2006-01-02T15:04:05.999", value.Str)
+		if err != nil {
+			return fmt.Errorf("writing field: time_point: %s", err)
+		}
+		object = TimePoint(t.UTC().Nanosecond() / int(time.Millisecond))
 	case "block_timestamp_type":
-		time, err := time.Parse("2006-01-02T15:04:05.999999-07:00", value.Str)
+		t, err := time.Parse("2006-01-02T15:04:05.999999-07:00", value.Str)
 		if err != nil {
 			return fmt.Errorf("writing field: block_timestamp_type: %s", err)
 		}
 		object = BlockTimestamp{
-			Time: time,
+			Time: t,
 		}
 	case "name":
 		if len(value.Str) > 12 {
