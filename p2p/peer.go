@@ -26,7 +26,7 @@ type Peer struct {
 	handshake              eos.HandshakeMessage
 	catchup                Catchup
 	listener               bool
-	mockHandshake          bool
+	handshakeInfo          *HandshakeInfo
 	connectionTimeout      time.Duration
 	handshakeTimeout       time.Duration
 	cancelHandshakeTimeout chan bool
@@ -40,6 +40,10 @@ type HandshakeInfo struct {
 	LastIrreversibleBlockID  eos.SHA256Bytes
 }
 
+func (h *HandshakeInfo) String() string {
+	return fmt.Sprintf("Handshake Info: HeadBlockNum [%d], LastIrreversibleBlockNum [%d]", h.HeadBlockNum, h.LastIrreversibleBlockNum)
+}
+
 func (p *Peer) SetHandshakeTimeout(timeout time.Duration) {
 	p.handshakeTimeout = timeout
 }
@@ -48,24 +52,24 @@ func (p *Peer) SetConnectionTimeout(timeout time.Duration) {
 	p.connectionTimeout = timeout
 }
 
-func newPeer(address string, chainID eos.SHA256Bytes, agent string, listener bool, mockHandshake bool) *Peer {
+func newPeer(address string, chainID eos.SHA256Bytes, agent string, listener bool, handshakeInfo *HandshakeInfo) *Peer {
 
 	return &Peer{
 		Address:                address,
 		chainID:                chainID,
 		agent:                  agent,
 		listener:               listener,
-		mockHandshake:          mockHandshake,
+		handshakeInfo:          handshakeInfo,
 		cancelHandshakeTimeout: make(chan bool),
 	}
 }
 
 func NewIncommingPeer(address string, chainID eos.SHA256Bytes, agent string) *Peer {
-	return newPeer(address, chainID, agent, true, false)
+	return newPeer(address, chainID, agent, true, nil)
 }
 
-func NewOutgoingPeer(address string, chainID eos.SHA256Bytes, agent string, mockHandshake bool) *Peer {
-	return newPeer(address, chainID, agent, false, mockHandshake)
+func NewOutgoingPeer(address string, chainID eos.SHA256Bytes, agent string, handshakeInfo *HandshakeInfo) *Peer {
+	return newPeer(address, chainID, agent, false, handshakeInfo)
 }
 
 func (p *Peer) Read() (*eos.Packet, error) {
@@ -74,7 +78,10 @@ func (p *Peer) Read() (*eos.Packet, error) {
 		log.Println("Connection Read error:", p.Address, err)
 		return nil, fmt.Errorf("connection: read: %s", err)
 	}
-	p.cancelHandshakeTimeout <- true
+	if p.handshakeTimeout > 0 {
+		p.cancelHandshakeTimeout <- true
+	}
+
 	return packet, nil
 }
 

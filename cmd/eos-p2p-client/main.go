@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"encoding/hex"
 
@@ -22,7 +23,7 @@ func main() {
 	}
 
 	client := p2p.NewClient(
-		p2p.NewOutgoingPeer("localhost:9876", chainID, "eos-proxy", true),
+		p2p.NewOutgoingPeer("localhost:9876", chainID, "eos-proxy", &p2p.HandshakeInfo{HeadBlockNum: 0, LastIrreversibleBlockNum: 0, HeadBlockTime: time.Now()}),
 	)
 
 	client.RegisterHandler(p2p.StringLoggerHandler)
