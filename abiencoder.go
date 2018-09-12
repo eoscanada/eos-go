@@ -87,12 +87,12 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 	value := gjson.GetBytes(json, fieldName)
 	if isOptional {
 		if value.Exists() {
-			Logger.ABIEncoder.Printf("Field [%s] of type [%s] is option and present\n", fieldName, fieldType)
+			Logger.ABIEncoder.Printf("Field [%s] of type [%s] is optional and present\n", fieldName, fieldType)
 			if e := binaryEncoder.writeByte(1); e != nil {
 				return e
 			}
 		} else {
-			Logger.ABIEncoder.Printf("Field [%s] of type [%s] is option and not present\n", fieldName, fieldType)
+			Logger.ABIEncoder.Printf("Field [%s] of type [%s] is optional and not present\n", fieldName, fieldType)
 			return binaryEncoder.writeByte(0)
 		}
 
@@ -128,7 +128,6 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 	if structure != nil {
 		Logger.ABIEncoder.Printf("Field [%s] is a structure\n", fieldName)
 
-		//structureJSON := gjson.GetBytes([]byte(value.Raw), fieldName)
 		err := a.encodeFields(binaryEncoder, structure.Fields, []byte(value.Raw))
 		if err != nil {
 			return err
