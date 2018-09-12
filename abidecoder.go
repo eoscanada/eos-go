@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/tidwall/sjson"
 )
@@ -167,13 +168,23 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "bool":
 		value, err = binaryDecoder.ReadBool()
 	case "time_point":
-		value, err = binaryDecoder.ReadTimePoint()
+		timePoint, e := binaryDecoder.ReadTimePoint()
+		if e == nil {
+			t := time.Unix(0, int64(timePoint))
+			value = t.UTC().Format("2006-01-02T15:04:05.999")
+			err = e
+		}
 	case "time_point_sec":
-		value, err = binaryDecoder.ReadTimePointSec()
+		timePointSec, e := binaryDecoder.ReadTimePoint()
+		if e == nil {
+			t := time.Unix(0, int64(timePointSec))
+			value = t.UTC().Format("2006-01-02T15:04:05")
+			err = e
+		}
 	case "block_timestamp_type":
 		value, err = binaryDecoder.ReadBlockTimestamp()
 		if err == nil {
-			value = value.(BlockTimestamp).Time
+			value = value.(BlockTimestamp).Time.UTC().Format("2006-01-02T15:04:05")
 		}
 	case "name":
 		value, err = binaryDecoder.ReadName()
