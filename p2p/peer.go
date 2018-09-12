@@ -165,13 +165,11 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 	fmt.Printf("SendRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
 	request := &eos.RequestMessage{
 		ReqTrx: eos.OrderedBlockIDs{
-			//Unknown: [3]byte{},
-			Mode:    [4]byte{0, 0, 0, 2},
+			Mode:    [4]byte{0, 0, 0, 0},
 			Pending: startBlockNum,
 		},
 		ReqBlocks: eos.OrderedBlockIDs{
-			//Unknown: [3]byte{},
-			Mode:    [4]byte{0, 0, 0, 2},
+			Mode:    [4]byte{0, 0, 0, 0},
 			Pending: endBlockNumber,
 		},
 	}
