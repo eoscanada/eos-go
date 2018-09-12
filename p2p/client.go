@@ -3,17 +3,17 @@ package p2p
 import (
 	"fmt"
 	"log"
-	"sync"
+
+	"encoding/hex"
 	"time"
 
 	"github.com/eoscanada/eos-go"
 )
 
 type Client struct {
-	peer         *Peer
-	handlers     []Handler
-	handlersLock sync.Mutex
-	readTimeout  time.Duration
+	peer        *Peer
+	handlers    []Handler
+	readTimeout time.Duration
 }
 
 func NewClient(peer *Peer) *Client {
@@ -34,8 +34,6 @@ func (c *Client) SetReadTimeout(readTimeout time.Duration) {
 }
 
 func (c *Client) RegisterHandler(handler Handler) {
-	c.handlersLock.Lock()
-	defer c.handlersLock.Unlock()
 
 	c.handlers = append(c.handlers, handler)
 }
@@ -49,11 +47,9 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 		}
 
 		envelope := NewEnvelope(peer, peer, packet)
-		c.handlersLock.Lock()
 		for _, handle := range c.handlers {
 			handle.Handle(envelope)
 		}
-		c.handlersLock.Unlock()
 
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
@@ -73,20 +69,27 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 	}
 }
 
-func (c *Client) Start() error {
+func (c *Client) Start(chainID string) error {
+
+	fmt.Println("Starting client with chain id:", chainID)
 
 	errorChannel := make(chan error, 1)
 
-	readyChannel := c.peer.Init(errorChannel)
+	readyChannel := c.peer.Connect(errorChannel)
 
 	for {
 		select {
 		case <-readyChannel:
 			go c.read(c.peer, errorChannel)
-			if c.peer.mockHandshake {
-				err := triggerHandshake(c.peer)
+			if chainID != "" {
+				cID, err := hex.DecodeString(chainID)
 				if err != nil {
-					return err
+					return fmt.Errorf("connect and start: parsing chain id: %s", err)
+				}
+
+				err = triggerHandshake(c.peer, cID)
+				if err != nil {
+					return fmt.Errorf("connect and start: trigger handshake: %s", err)
 				}
 			}
 		case err := <-errorChannel:

@@ -342,6 +342,11 @@ type GetCodeResp struct {
 	ABI         ABI         `json:"abi"`
 }
 
+type GetCodeHashResp struct {
+	AccountName AccountName `json:"account_name"`
+	CodeHash    string      `json:"code_hash"`
+}
+
 type GetABIResp struct {
 	AccountName AccountName `json:"account_name"`
 	ABI         ABI         `json:"abi"`
@@ -412,6 +417,9 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 
 	*t, err = hex.DecodeString(s)
 	return
+}
+func (t SHA256Bytes) String() string {
+	return hex.EncodeToString(t)
 }
 
 type Varuint32 uint32
