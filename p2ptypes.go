@@ -56,7 +56,7 @@ func (m *HandshakeMessage) String() string {
 type GoAwayReason uint8
 
 const (
-	GoAwayNoReason = uint8(iota)
+	GoAwayNoReason = GoAwayReason(iota)
 	GoAwaySelfConnect
 	GoAwayDuplicate
 	GoAwayWrongChain
@@ -70,6 +70,38 @@ const (
 	GoAwayBenignOther
 	GoAwayCrazy
 )
+
+func (r GoAwayReason) String() string {
+	switch r {
+	case GoAwayNoReason:
+		return "no reason"
+	case GoAwaySelfConnect:
+		return "self connect"
+	case GoAwayDuplicate:
+		return "duplicate"
+	case GoAwayWrongChain:
+		return "wrong chain"
+	case GoAwayWrongVersion:
+		return "wrong version"
+	case GoAwayForked:
+		return "forked"
+	case GoAwayUnlinkable:
+		return "unlinkable"
+	case GoAwayBadTransaction:
+		return "bad transaction"
+	case GoAwayValidation:
+		return "validation"
+	case GoAwayAuthentication:
+		return "authentication"
+	case GoAwayFatalOther:
+		return "fatal other"
+	case GoAwayBenignOther:
+		return "benign other"
+	case GoAwayCrazy:
+		return "crazy"
+	}
+	return "invalid go away code"
+}
 
 type GoAwayMessage struct {
 	Reason GoAwayReason `json:"reason"`

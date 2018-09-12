@@ -271,7 +271,9 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 		} else {
 			packedTrx := &PackedTransaction{}
-			d.Decode(packedTrx)
+			if err := d.Decode(packedTrx); err != nil {
+				return err
+			}
 			trx := TransactionWithID{Packed: packedTrx}
 			rv.Set(reflect.ValueOf(trx))
 			return nil

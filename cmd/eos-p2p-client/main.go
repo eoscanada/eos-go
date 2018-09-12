@@ -14,6 +14,7 @@ var chainID = flag.String("chain-id", "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3
 var networkVersion = flag.Int("network-version", 1206, "Network version")
 
 func main() {
+	flag.Parse()
 
 	chainID, err := hex.DecodeString("9bf6c5d3610260507f3a37340c43ff186c1810c984e9ad0b99b6fb8d6a3c94a3")
 	if err != nil {
@@ -26,5 +27,4 @@ func main() {
 
 	client.RegisterHandler(p2p.StringLoggerHandler)
 	client.Start()
-
 }
