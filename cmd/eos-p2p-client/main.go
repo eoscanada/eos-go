@@ -2,15 +2,13 @@ package main
 
 import (
 	"flag"
-	"log"
-
-	"encoding/hex"
+	"fmt"
+	"time"
 
 	"github.com/eoscanada/eos-go/p2p"
 )
 
 var peer = flag.String("peer", "localhost:9876", "peer to connect to")
-var chainID = flag.String("chain-id", "308cae83a690640be3726a725dde1fa72a845e28cfc63f28c3fa0a6ccdb6faf0", "chain id of the peer")
 
 func main() {
 	flag.Parse()
@@ -22,5 +20,5 @@ func main() {
 	)
 
 	client.RegisterHandler(p2p.StringLoggerHandler)
-	client.Start(*chainID)
+	client.Start()
 }

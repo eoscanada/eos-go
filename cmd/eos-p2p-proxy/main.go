@@ -19,8 +19,8 @@ func main() {
 	//chainID, err := hex.DecodeString("aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906")
 
 	proxy := p2p.NewProxy(
-		p2p.NewOutgoingPeer(*peer1, "eos-proxy"),
-		p2p.NewOutgoingPeer(*peer2, "eos-proxy"),
+		p2p.NewOutgoingPeer(*peer1, "eos-proxy", nil),
+		p2p.NewOutgoingPeer(*peer2, "eos-proxy", &p2p.HandshakeInfo{}),
 	)
 
 	//proxy := p2p.NewProxy(

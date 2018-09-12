@@ -29,14 +29,14 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 	fmt.Printf("Initiating proxy between %s and %s\n", remoteAddress, r.destinationPeerAddress)
 
-	destinationPeer := NewOutgoingPeer(r.destinationPeerAddress, "eos-relay")
+	destinationPeer := NewOutgoingPeer(r.destinationPeerAddress, "eos-relay", nil)
 
 	errorChannel := make(chan error)
 
 	destinationReadyChannel := destinationPeer.Connect(errorChannel)
 	select {
 	case <-destinationReadyChannel:
-		remotePeer := newPeer(remoteAddress, fmt.Sprintf("agent-%s", remoteAddress), false)
+		remotePeer := newPeer(remoteAddress, fmt.Sprintf("agent-%s", remoteAddress), false, nil)
 		remotePeer.SetConnection(conn)
 		proxy := NewProxy(remotePeer, destinationPeer)
 

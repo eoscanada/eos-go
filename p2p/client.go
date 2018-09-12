@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"encoding/hex"
 	"time"
 
 	"github.com/eoscanada/eos-go"
@@ -69,9 +68,9 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 	}
 }
 
-func (c *Client) Start(chainID string) error {
+func (c *Client) Start() error {
 
-	fmt.Println("Starting client with chain id:", chainID)
+	fmt.Println("Starting client")
 
 	errorChannel := make(chan error, 1)
 
@@ -81,13 +80,9 @@ func (c *Client) Start(chainID string) error {
 		select {
 		case <-readyChannel:
 			go c.read(c.peer, errorChannel)
-			if chainID != "" {
-				cID, err := hex.DecodeString(chainID)
-				if err != nil {
-					return fmt.Errorf("connect and start: parsing chain id: %s", err)
-				}
+			if c.peer.handshakeInfo != nil {
 
-				err = triggerHandshake(c.peer, cID)
+				err := triggerHandshake(c.peer)
 				if err != nil {
 					return fmt.Errorf("connect and start: trigger handshake: %s", err)
 				}

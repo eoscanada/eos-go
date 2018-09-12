@@ -63,8 +63,8 @@ func newPeer(address string, agent string, listener bool, handshakeInfo *Handsha
 	}
 }
 
-func NewIncommingPeer(address string, chainID eos.SHA256Bytes, agent string) *Peer {
-	return newPeer(address, chainID, agent, true, nil)
+func NewIncommingPeer(address string, agent string) *Peer {
+	return newPeer(address, agent, true, nil)
 }
 
 func NewOutgoingPeer(address string, agent string, handshakeInfo *HandshakeInfo) *Peer {

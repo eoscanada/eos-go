@@ -3,11 +3,7 @@ package p2p
 import (
 	"fmt"
 
-	"time"
-
 	"log"
-
-	"encoding/hex"
 
 	"github.com/eoscanada/eos-go"
 )
@@ -73,17 +69,9 @@ func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 	return nil
 }
 
-func triggerHandshake(peer *Peer, chainID eos.SHA256Bytes) error {
-	log.Println("Sending dummy handshake to: ", peer.Address)
-	dummyHandshakeInfo := &HandshakeInfo{
-		ChainID:       chainID,
-		HeadBlockID:   make([]byte, 32),
-		HeadBlockNum:  0,
-		HeadBlockTime: time.Now(),
-	}
-	// Process will resume in handle()
-
-	return peer.SendHandshake(dummyHandshakeInfo)
+func triggerHandshake(peer *Peer) error {
+	fmt.Printf("Sending handshake [%s] to: %s\n", peer.handshakeInfo, peer.Address)
+	return peer.SendHandshake(peer.handshakeInfo)
 }
 
 func (p *Proxy) ConnectAndStart(chainID string) error {
@@ -123,13 +111,9 @@ func (p *Proxy) Start(chainID string) error {
 	go p.read(p.Peer1, p.Peer2, errorChannel)
 	go p.read(p.Peer2, p.Peer1, errorChannel)
 
-	if chainID != "" {
-		cID, err := hex.DecodeString(chainID)
-		if err != nil {
-			return fmt.Errorf("connect and start: parsing chain id: %s", err)
-		}
+	if p.Peer2.handshakeInfo != nil {
 
-		err = triggerHandshake(p.Peer2, cID)
+		err := triggerHandshake(p.Peer2)
 		if err != nil {
 			return fmt.Errorf("connect and start: trigger handshake: %s", err)
 		}
