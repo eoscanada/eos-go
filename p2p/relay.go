@@ -42,7 +42,7 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 		proxy.RegisterHandlers(r.handlers)
 
-		err := proxy.Start("")
+		err := proxy.Start()
 		fmt.Printf("Started proxy error between %s and %s : %s\n", remoteAddress, r.destinationPeerAddress, err)
 		destinationPeer.connection.Close()
 		remotePeer.connection.Close()
