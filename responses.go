@@ -247,6 +247,8 @@ type PushTransactionFullResp struct {
 	StatusCode    string
 	TransactionID string               `json:"transaction_id"`
 	Processed     TransactionProcessed `json:"processed"` // WARN: is an `fc::variant` in server..
+	BlockID       string               `json:"block_id"`
+	BlockNum      uint32               `json:"block_num"`
 }
 
 type TransactionProcessed struct {
