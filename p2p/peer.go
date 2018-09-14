@@ -33,6 +33,7 @@ type Peer struct {
 
 type HandshakeInfo struct {
 	ChainID                  eos.SHA256Bytes
+	ConnectingPeerAddress    string
 	HeadBlockNum             uint32
 	HeadBlockID              eos.SHA256Bytes
 	HeadBlockTime            time.Time
@@ -229,7 +230,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 		Time:                     tstamp,
 		Token:                    make([]byte, 32, 32), // token[:]
 		Signature:                signature,
-		P2PAddress:               p.Address,
+		P2PAddress:               info.ConnectingPeerAddress,
 		LastIrreversibleBlockNum: info.LastIrreversibleBlockNum,
 		LastIrreversibleBlockID:  info.LastIrreversibleBlockID,
 		HeadNum:                  info.HeadBlockNum,

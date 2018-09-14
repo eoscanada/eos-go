@@ -104,7 +104,7 @@ func (p *Proxy) ConnectAndStart(chainID string) error {
 
 }
 
-func (p *Proxy) Start(chainID string) error {
+func (p *Proxy) Start() error {
 
 	log.Println("Starting readers")
 	errorChannel := make(chan error)
