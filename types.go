@@ -385,7 +385,7 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 func ParseJSONTime(date string) (JSONTime, error) {
 	var t JSONTime
 	var err error
-	t.Time, err = time.Parse(`"`+JSONTimeFormat+`"`, string(date))
+	t.Time, err = time.Parse(JSONTimeFormat, string(date))
 	return t, err
 }
 
