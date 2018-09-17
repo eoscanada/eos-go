@@ -3,6 +3,7 @@ package p2p
 import (
 	"fmt"
 	"log"
+	"math"
 
 	"time"
 
@@ -13,12 +14,19 @@ type Client struct {
 	peer        *Peer
 	handlers    []Handler
 	readTimeout time.Duration
+	catchup     *Catchup
 }
 
-func NewClient(peer *Peer) *Client {
-	return &Client{
+func NewClient(peer *Peer, catchup bool) *Client {
+	client := &Client{
 		peer: peer,
 	}
+	if catchup {
+		client.catchup = &Catchup{
+			headBlock: peer.handshakeInfo.HeadBlockNum,
+		}
+	}
+	return client
 }
 
 func (c *Client) CloseConnection() error {
@@ -54,15 +62,18 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 		case *eos.GoAwayMessage:
 			errChannel <- fmt.Errorf("GoAwayMessage reason [%s]: %s", m.Reason, err)
 
+		case *eos.SignedBlock:
+
 		case *eos.HandshakeMessage:
 			fmt.Println("Handshake resent!")
-			m.P2PAddress = "localhost:5555"
-			m.NodeID = make([]byte, 32)
-
-			err = peer.WriteP2PMessage(m)
-			if err != nil {
-				errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
-				break
+			if c.catchup == nil {
+				m.NodeID = peer.NodeID
+				m.P2PAddress = peer.Name
+				err = peer.WriteP2PMessage(m)
+				if err != nil {
+					errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
+					break
+				}
 			}
 		}
 	}
@@ -92,4 +103,32 @@ func (c *Client) Start() error {
 			return err
 		}
 	}
+}
+
+type Catchup struct {
+	IsCatchingUp        bool
+	requestedStartBlock uint32
+	requestedEndBlock   uint32
+	headBlock           uint32
+	originHeadBlock     uint32
+}
+
+func (c *Catchup) sendSyncRequest(peer *Peer) error {
+
+	c.IsCatchingUp = true
+
+	delta := c.originHeadBlock - c.headBlock
+
+	c.requestedStartBlock = c.headBlock + 1
+	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 250))
+
+	fmt.Printf("Sending sync request to origin: start block [%d] end block [%d]\n", c.requestedStartBlock, c.requestedEndBlock)
+	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
+
+	if err != nil {
+		return fmt.Errorf("send sync request: %s", err)
+	}
+
+	return nil
+
 }

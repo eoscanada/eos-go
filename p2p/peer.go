@@ -1,13 +1,13 @@
 package p2p
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"time"
-
-	"math"
 
 	"runtime"
 
@@ -19,11 +19,11 @@ import (
 
 type Peer struct {
 	Address                string
+	Name                   string
 	agent                  string
+	NodeID                 []byte
 	connection             net.Conn
 	reader                 io.Reader
-	handshake              eos.HandshakeMessage
-	catchup                Catchup
 	listener               bool
 	handshakeInfo          *HandshakeInfo
 	connectionTimeout      time.Duration
@@ -33,7 +33,6 @@ type Peer struct {
 
 type HandshakeInfo struct {
 	ChainID                  eos.SHA256Bytes
-	ConnectingPeerAddress    string
 	HeadBlockNum             uint32
 	HeadBlockID              eos.SHA256Bytes
 	HeadBlockTime            time.Time
@@ -42,7 +41,7 @@ type HandshakeInfo struct {
 }
 
 func (h *HandshakeInfo) String() string {
-	return fmt.Sprintf("Handshake Info: HeadBlockNum [%d], LastIrreversibleBlockNum [%d] ConnectingPeerAddress [%s]", h.HeadBlockNum, h.LastIrreversibleBlockNum, h.ConnectingPeerAddress)
+	return fmt.Sprintf("Handshake Info: HeadBlockNum [%d], LastIrreversibleBlockNum [%d] ConnectingPeerAddress [%s]", h.HeadBlockNum, h.LastIrreversibleBlockNum)
 }
 
 func (p *Peer) SetHandshakeTimeout(timeout time.Duration) {
@@ -90,6 +89,16 @@ func (p *Peer) SetConnection(conn net.Conn) {
 }
 
 func (p *Peer) Connect(errChan chan error) (ready chan bool) {
+
+	nodeID := make([]byte, 32)
+	_, err := rand.Read(nodeID)
+	if err != nil {
+		errChan <- fmt.Errorf("generating random node id: %s", err)
+	}
+
+	p.NodeID = nodeID
+	hexNodeID := hex.EncodeToString(p.NodeID)
+	p.Name = fmt.Sprintf("Client Peer - %s", hexNodeID[0:8])
 
 	ready = make(chan bool, 1)
 	go func() {
@@ -228,12 +237,12 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           1206,
 		ChainID:                  info.ChainID,
-		NodeID:                   make([]byte, 32),
+		NodeID:                   p.NodeID,
 		Key:                      publicKey,
 		Time:                     tstamp,
-		Token:                    make([]byte, 32, 32), // token[:]
+		Token:                    make([]byte, 32, 32),
 		Signature:                signature,
-		P2PAddress:               info.ConnectingPeerAddress,
+		P2PAddress:               p.Name,
 		LastIrreversibleBlockNum: info.LastIrreversibleBlockNum,
 		LastIrreversibleBlockID:  info.LastIrreversibleBlockID,
 		HeadNum:                  info.HeadBlockNum,
@@ -248,32 +257,4 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 		err = fmt.Errorf("sending handshake to %s: %s", p.Address, err)
 	}
 	return
-}
-
-type Catchup struct {
-	IsCatchingUp        bool
-	requestedStartBlock uint32
-	requestedEndBlock   uint32
-	headBlock           uint32
-	originHeadBlock     uint32
-}
-
-func (c *Catchup) sendSyncRequest(peer *Peer) error {
-
-	c.IsCatchingUp = true
-
-	delta := c.originHeadBlock - c.headBlock
-
-	c.requestedStartBlock = c.headBlock + 1
-	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 250))
-
-	fmt.Printf("Sending sync request to origin: start block [%d] end block [%d]\n", c.requestedStartBlock, c.requestedEndBlock)
-	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
-
-	if err != nil {
-		return fmt.Errorf("send sync request: %s", err)
-	}
-
-	return nil
-
 }
