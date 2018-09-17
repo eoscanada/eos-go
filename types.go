@@ -381,6 +381,14 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
+// ParseJSONTime will parse a string into a JSONTime object
+func ParseJSONTime(date string) (JSONTime, error) {
+	var t JSONTime
+	var err error
+	t.Time, err = time.Parse(`"`+JSONTimeFormat+`"`, string(date))
+	return t, err
+}
+
 // HexBytes
 
 type HexBytes []byte
