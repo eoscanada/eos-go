@@ -12,7 +12,7 @@ func NewUnVote(voter eos.AccountName, proposalName eos.Name) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: voter, Permission: eos.PermissionName("active")},
 		},
-		ActionData: eos.NewActionData(Vote{
+		ActionData: eos.NewActionData(UnVote{
 			Voter:        voter,
 			ProposalName: proposalName,
 		}),
