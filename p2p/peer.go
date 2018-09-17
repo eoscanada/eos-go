@@ -41,7 +41,7 @@ type HandshakeInfo struct {
 }
 
 func (h *HandshakeInfo) String() string {
-	return fmt.Sprintf("Handshake Info: HeadBlockNum [%d], LastIrreversibleBlockNum [%d] ConnectingPeerAddress [%s]", h.HeadBlockNum, h.LastIrreversibleBlockNum)
+	return fmt.Sprintf("Handshake Info: HeadBlockNum [%d], LastIrreversibleBlockNum [%d]", h.HeadBlockNum, h.LastIrreversibleBlockNum)
 }
 
 func (p *Peer) SetHandshakeTimeout(timeout time.Duration) {

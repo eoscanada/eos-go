@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"fmt"
+	"log"
 
 	"github.com/eoscanada/eos-go/p2p"
 )
@@ -16,11 +18,16 @@ func main() {
 	fmt.Println("P2P Proxy")
 
 	flag.Parse()
-	//chainID, err := hex.DecodeString("aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906")
+	cID, err := hex.DecodeString(*chainID)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	proxy := p2p.NewProxy(
 		p2p.NewOutgoingPeer(*peer1, "eos-proxy", nil),
-		p2p.NewOutgoingPeer(*peer2, "eos-proxy", &p2p.HandshakeInfo{}),
+		p2p.NewOutgoingPeer(*peer2, "eos-proxy", &p2p.HandshakeInfo{
+			ChainID: cID,
+		}),
 	)
 
 	//proxy := p2p.NewProxy(
@@ -34,6 +41,6 @@ func main() {
 	//)
 
 	proxy.RegisterHandler(p2p.StringLoggerHandler)
-	fmt.Println(proxy.ConnectAndStart(*chainID))
+	fmt.Println(proxy.ConnectAndStart())
 
 }
