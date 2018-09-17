@@ -52,7 +52,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
-			log.Fatalf("handling message: go away: %s", m.Reason)
+			errChannel <- fmt.Errorf("GoAwayMessage reason [%s]: %s", m.Reason, err)
 
 		case *eos.HandshakeMessage:
 			fmt.Println("Handshake resent!")
