@@ -3,11 +3,18 @@ package forum
 import eos "github.com/eoscanada/eos-go"
 
 func init() {
-	eos.RegisterAction(AN("eosforumtest"), ActN("post"), Post{})
-	eos.RegisterAction(AN("eosforumtest"), ActN("remove"), Remove{})
-	eos.RegisterAction(AN("eosforumtest"), ActN("vote"), Vote{})
+	eos.RegisterAction(ForumAN, ActN("clnproposal"), CleanProposal{})
+	eos.RegisterAction(ForumAN, ActN("expire"), Expire{})
+	eos.RegisterAction(ForumAN, ActN("post"), Post{})
+	eos.RegisterAction(ForumAN, ActN("propose"), Propose{})
+	eos.RegisterAction(ForumAN, ActN("status"), Status{})
+	eos.RegisterAction(ForumAN, ActN("unpost"), UnPost{})
+	eos.RegisterAction(ForumAN, ActN("unvote"), UnVote{})
+	eos.RegisterAction(ForumAN, ActN("vote"), Vote{})
 }
 
 var AN = eos.AN
 var PN = eos.PN
 var ActN = eos.ActN
+
+var ForumAN = AN("eosforumrcpp")

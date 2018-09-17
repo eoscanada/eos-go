@@ -4,9 +4,8 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
-// NewVote is an action representing a simple vote to be broadcast
-// through the chain network.
-func NewVote(voter eos.AccountName, proposalName eos.Name, voteValue uint8, voteJSON string) *eos.Action {
+// NewUnVote is an action representing the action to undoing a current vote
+func NewUnVote(voter eos.AccountName, proposalName eos.Name) *eos.Action {
 	a := &eos.Action{
 		Account: ForumAN,
 		Name:    ActN("vote"),
@@ -16,17 +15,13 @@ func NewVote(voter eos.AccountName, proposalName eos.Name, voteValue uint8, vote
 		ActionData: eos.NewActionData(Vote{
 			Voter:        voter,
 			ProposalName: proposalName,
-			Vote:         voteValue,
-			VoteJSON:     voteJSON,
 		}),
 	}
 	return a
 }
 
-// Vote represents the `eosio.forum::vote` action.
-type Vote struct {
+// UnVote represents the `eosio.forum::unvote` action.
+type UnVote struct {
 	Voter        eos.AccountName `json:"voter"`
 	ProposalName eos.Name        `json:"proposal_name"`
-	Vote         uint8           `json:"vote"`
-	VoteJSON     string          `json:"vote_json"`
 }
