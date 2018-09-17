@@ -5,10 +5,13 @@ import (
 )
 
 // CleanProposal is an action to flush proposal and allow RAM used by it.
-func NewCleanProposal(proposalName eos.Name, maxCount uint64) *eos.Action {
+func NewCleanProposal(cleaner eos.AccountName, proposalName eos.Name, maxCount uint64) *eos.Action {
 	a := &eos.Action{
 		Account: ForumAN,
 		Name:    ActN("clnproposal"),
+		Authorization: []eos.PermissionLevel{
+			{Actor: cleaner, Permission: eos.PermissionName("active")},
+		},
 		ActionData: eos.NewActionData(CleanProposal{
 			ProposalName: proposalName,
 			MaxCount:     maxCount,
