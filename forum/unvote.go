@@ -8,7 +8,7 @@ import (
 func NewUnVote(voter eos.AccountName, proposalName eos.Name) *eos.Action {
 	a := &eos.Action{
 		Account: ForumAN,
-		Name:    ActN("vote"),
+		Name:    ActN("unvote"),
 		Authorization: []eos.PermissionLevel{
 			{Actor: voter, Permission: eos.PermissionName("active")},
 		},
