@@ -206,7 +206,13 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "signature":
 		value, err = binaryDecoder.ReadSignature()
 	case "symbol":
-		value, err = binaryDecoder.ReadSymbol()
+
+		symbol, e := binaryDecoder.ReadSymbol()
+		err = e
+		if err == nil {
+			value = fmt.Sprintf("%d,%s", symbol.Precision, symbol.Symbol)
+		}
+
 	case "symbol_code":
 		value, err = binaryDecoder.ReadSymbolCode()
 	case "asset":

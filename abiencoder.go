@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -279,12 +280,20 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		object = signature
 	case "symbol":
-		var symbol Symbol
-		err := json.Unmarshal([]byte(value.Raw), &symbol)
+		parts := strings.Split(value.Str, ",")
+		if len(parts) != 2 {
+			return fmt.Errorf("writing field: symbol: symbol should be of format '4,EOS'")
+		}
+
+		i, err := strconv.ParseUint(parts[0], 10, 8)
 		if err != nil {
 			return fmt.Errorf("writing field: symbol: %s", err)
 		}
-		object = symbol
+		object = Symbol{
+			Precision: uint8(i),
+			Symbol:    parts[1],
+		}
+
 	case "symbol_code":
 		object = SymbolCode(value.Uint())
 	case "asset":
