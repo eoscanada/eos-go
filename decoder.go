@@ -263,7 +263,9 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 		} else {
 			packedTrx := &PackedTransaction{}
-			d.Decode(packedTrx)
+			if err := d.Decode(packedTrx); err != nil {
+				return err
+			}
 			trx := TransactionWithID{Packed: packedTrx}
 			rv.Set(reflect.ValueOf(trx))
 			return nil
@@ -601,6 +603,32 @@ func (d *Decoder) readFloat64() (out float64, err error) {
 	out = math.Float64frombits(binary.LittleEndian.Uint64(data))
 	d.pos += TypeSize.Float64
 	println(fmt.Sprintf("readFloat64 [%f] [%s]", out, hex.EncodeToString(data)))
+	return
+}
+
+func (d *Decoder) ReadFloat32() (out float32, err error) {
+	if d.remaining() < TypeSize.Float32 {
+		err = fmt.Errorf("float32 required [%d] bytes, remaining [%d]", TypeSize.Float32, d.remaining())
+		return
+	}
+
+	n := binary.LittleEndian.Uint32(d.data[d.pos:])
+	out = math.Float32frombits(n)
+	d.pos += TypeSize.Float32
+	Logger.Decoder.Print(fmt.Sprintf("readFloat32 [%f]", out))
+	return
+}
+
+func (d *Decoder) ReadFloat64() (out float64, err error) {
+	if d.remaining() < TypeSize.Float64 {
+		err = fmt.Errorf("float64 required [%d] bytes, remaining [%d]", TypeSize.Float64, d.remaining())
+		return
+	}
+
+	n := binary.LittleEndian.Uint64(d.data[d.pos:])
+	out = math.Float64frombits(n)
+	d.pos += TypeSize.Float64
+	Logger.Decoder.Print(fmt.Sprintf("readFloat64 [%f]", out))
 	return
 }
 

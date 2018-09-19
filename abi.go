@@ -48,6 +48,15 @@ func (a *ABI) StructForName(name string) *StructDef {
 	return nil
 }
 
+func (a *ABI) TableForName(name TableName) *TableDef {
+	for _, s := range a.Tables {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
 func (a *ABI) TypeNameForNewTypeName(typeName string) string {
 	for _, t := range a.Types {
 		if t.NewTypeName == typeName {

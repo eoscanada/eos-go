@@ -3,23 +3,30 @@ package p2p
 import (
 	"fmt"
 	"log"
-	"sync"
+	"math"
+
 	"time"
 
 	"github.com/eoscanada/eos-go"
 )
 
 type Client struct {
-	peer         *Peer
-	handlers     []Handler
-	handlersLock sync.Mutex
-	readTimeout  time.Duration
+	peer        *Peer
+	handlers    []Handler
+	readTimeout time.Duration
+	catchup     *Catchup
 }
 
-func NewClient(peer *Peer) *Client {
-	return &Client{
+func NewClient(peer *Peer, catchup bool) *Client {
+	client := &Client{
 		peer: peer,
 	}
+	if catchup {
+		client.catchup = &Catchup{
+			headBlock: peer.handshakeInfo.HeadBlockNum,
+		}
+	}
+	return client
 }
 
 func (c *Client) CloseConnection() error {
@@ -34,8 +41,6 @@ func (c *Client) SetReadTimeout(readTimeout time.Duration) {
 }
 
 func (c *Client) RegisterHandler(handler Handler) {
-	c.handlersLock.Lock()
-	defer c.handlersLock.Unlock()
 
 	c.handlers = append(c.handlers, handler)
 }
@@ -49,25 +54,71 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 		}
 
 		envelope := NewEnvelope(peer, peer, packet)
-		c.handlersLock.Lock()
 		for _, handle := range c.handlers {
 			handle.Handle(envelope)
 		}
-		c.handlersLock.Unlock()
 
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
-			log.Fatalf("handling message: go away: reason [%d]", m.Reason)
+			errChannel <- fmt.Errorf("GoAwayMessage reason [%s]: %s", m.Reason, err)
 
 		case *eos.HandshakeMessage:
-			fmt.Println("Handshake resent!")
-			m.P2PAddress = "localhost:5555"
-			m.NodeID = make([]byte, 32)
+			if c.catchup == nil {
+				m.NodeID = peer.NodeID
+				m.P2PAddress = peer.Name
+				err = peer.WriteP2PMessage(m)
+				if err != nil {
+					errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
+					break
+				}
+				fmt.Println("Handshake resent!")
 
-			err = peer.WriteP2PMessage(m)
-			if err != nil {
-				errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
-				break
+			} else {
+
+				c.catchup.originHeadBlock = m.HeadNum
+				err := c.catchup.sendSyncRequest(peer)
+				if err != nil {
+					errChannel <- fmt.Errorf("handshake: sending sync request: %s", err)
+				}
+				c.catchup.IsCatchingUp = true
+			}
+		case *eos.NoticeMessage:
+			if c.catchup != nil {
+				pendingNum := m.KnownBlocks.Pending
+				if pendingNum > 0 {
+					c.catchup.originHeadBlock = pendingNum
+					err = c.catchup.sendSyncRequest(peer)
+					if err != nil {
+						errChannel <- fmt.Errorf("noticeMessage: sending sync request: %s", err)
+					}
+				}
+			}
+		case *eos.SignedBlock:
+
+			if c.catchup != nil {
+
+				blockNum := m.BlockNumber()
+				c.catchup.headBlock = blockNum
+				if c.catchup.requestedEndBlock == blockNum {
+
+					if c.catchup.originHeadBlock <= blockNum {
+						fmt.Println("In sync with last handshake")
+						blockID, err := m.BlockID()
+						if err != nil {
+							errChannel <- fmt.Errorf("getting block id: %s", err)
+						}
+						peer.handshakeInfo.HeadBlockNum = blockNum
+						peer.handshakeInfo.HeadBlockID = blockID
+						peer.handshakeInfo.HeadBlockTime = m.SignedBlockHeader.Timestamp.Time
+						peer.SendHandshake(peer.handshakeInfo)
+						fmt.Println("Sent new handshake with info:", peer.handshakeInfo)
+					} else {
+						err = c.catchup.sendSyncRequest(peer)
+						if err != nil {
+							errChannel <- fmt.Errorf("signed block: sending sync request: %s", err)
+						}
+					}
+				}
 			}
 		}
 	}
@@ -75,18 +126,21 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 
 func (c *Client) Start() error {
 
+	fmt.Println("Starting client")
+
 	errorChannel := make(chan error, 1)
 
-	readyChannel := c.peer.Init(errorChannel)
+	readyChannel := c.peer.Connect(errorChannel)
 
 	for {
 		select {
 		case <-readyChannel:
 			go c.read(c.peer, errorChannel)
-			if c.peer.mockHandshake {
+			if c.peer.handshakeInfo != nil {
+
 				err := triggerHandshake(c.peer)
 				if err != nil {
-					return err
+					return fmt.Errorf("connect and start: trigger handshake: %s", err)
 				}
 			}
 		case err := <-errorChannel:
@@ -94,4 +148,32 @@ func (c *Client) Start() error {
 			return err
 		}
 	}
+}
+
+type Catchup struct {
+	IsCatchingUp        bool
+	requestedStartBlock uint32
+	requestedEndBlock   uint32
+	headBlock           uint32
+	originHeadBlock     uint32
+}
+
+func (c *Catchup) sendSyncRequest(peer *Peer) error {
+
+	c.IsCatchingUp = true
+
+	delta := c.originHeadBlock - c.headBlock
+
+	c.requestedStartBlock = c.headBlock
+	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 100))
+
+	fmt.Printf("Sending sync request to origin: start block [%d] end block [%d]\n", c.requestedStartBlock, c.requestedEndBlock)
+	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
+
+	if err != nil {
+		return fmt.Errorf("send sync request: %s", err)
+	}
+
+	return nil
+
 }

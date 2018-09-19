@@ -50,13 +50,13 @@ func (m *ChainSizeMessage) GetType() P2PMessageType {
 }
 
 func (m *HandshakeMessage) String() string {
-	return fmt.Sprintf("handshake: Head [%d] Last Irreversible [%d] Time [%s]", m.HeadNum, m.LastIrreversibleBlockNum, m.Time)
+	return fmt.Sprintf("handshake: Head [%d] 	Last Irreversible [%d] Time [%s]", m.HeadNum, m.LastIrreversibleBlockNum, m.Time)
 }
 
 type GoAwayReason uint8
 
 const (
-	GoAwayNoReason = uint8(iota)
+	GoAwayNoReason = GoAwayReason(iota)
 	GoAwaySelfConnect
 	GoAwayDuplicate
 	GoAwayWrongChain
@@ -71,6 +71,38 @@ const (
 	GoAwayCrazy
 )
 
+func (r GoAwayReason) String() string {
+	switch r {
+	case GoAwayNoReason:
+		return "no reason"
+	case GoAwaySelfConnect:
+		return "self connect"
+	case GoAwayDuplicate:
+		return "duplicate"
+	case GoAwayWrongChain:
+		return "wrong chain"
+	case GoAwayWrongVersion:
+		return "wrong version"
+	case GoAwayForked:
+		return "forked"
+	case GoAwayUnlinkable:
+		return "unlinkable"
+	case GoAwayBadTransaction:
+		return "bad transaction"
+	case GoAwayValidation:
+		return "validation"
+	case GoAwayAuthentication:
+		return "authentication"
+	case GoAwayFatalOther:
+		return "fatal other"
+	case GoAwayBenignOther:
+		return "benign other"
+	case GoAwayCrazy:
+		return "crazy"
+	}
+	return "invalid go away code"
+}
+
 type GoAwayMessage struct {
 	Reason GoAwayReason `json:"reason"`
 	NodeID SHA256Bytes  `json:"node_id"`
@@ -78,6 +110,10 @@ type GoAwayMessage struct {
 
 func (m *GoAwayMessage) GetType() P2PMessageType {
 	return GoAwayMessageType
+}
+
+func (m *GoAwayMessage) String() string {
+	return fmt.Sprintf("go away: reason [%d]", m.Reason)
 }
 
 type TimeMessage struct {
@@ -233,7 +269,7 @@ type SignedBlock struct {
 }
 
 func (m *SignedBlock) String() string {
-	return "SignedBlock"
+	return fmt.Sprintf("SignedBlock [%d] with %d txs", m.BlockNumber(), len(m.Transactions))
 }
 
 func (m *SignedBlock) GetType() P2PMessageType {
@@ -344,21 +380,32 @@ const (
 )
 
 type OrderedTransactionIDs struct {
-	Unknown [3]byte       `json:"-"` ///// WWUUuuuuuuuuuuuutzthat ?
-	Mode    IDListMode    `json:"mode"`
+	Mode    [4]byte       `json:"mode"`
 	Pending uint32        `json:"pending"`
 	IDs     []SHA256Bytes `json:"ids"`
 }
 type OrderedBlockIDs struct {
-	Unknown [3]byte       `json:"-"` ///// wuuttzthat?
-	Mode    IDListMode    `json:"mode"`
+	Mode    [4]byte       `json:"mode"`
 	Pending uint32        `json:"pending"`
 	IDs     []SHA256Bytes `json:"ids"`
+}
+
+func (o *OrderedBlockIDs) String() string {
+
+	ids := ""
+	for _, id := range o.IDs {
+		ids += fmt.Sprintf("%s,", id)
+	}
+	return fmt.Sprintf("Mode %d, Pending %d, ids [%s]", o.Mode, o.Pending, ids)
 }
 
 type NoticeMessage struct {
 	KnownTrx    OrderedBlockIDs `json:"known_trx"`
 	KnownBlocks OrderedBlockIDs `json:"known_blocks"`
+}
+
+func (n *NoticeMessage) String() string {
+	return fmt.Sprintf("KnownTrx %s :: KnownBlocks %s", n.KnownTrx.String(), n.KnownBlocks.String())
 }
 
 func (m *NoticeMessage) GetType() P2PMessageType {
@@ -380,6 +427,10 @@ func (m *SyncRequestMessage) String() string {
 type RequestMessage struct {
 	ReqTrx    OrderedBlockIDs `json:"req_trx"`
 	ReqBlocks OrderedBlockIDs `json:"req_blocks"`
+}
+
+func (r *RequestMessage) String() string {
+	return fmt.Sprintf("ReqTrx %s :: ReqBlocks %s", r.ReqTrx.String(), r.ReqBlocks.String())
 }
 
 func (m *RequestMessage) GetType() P2PMessageType {

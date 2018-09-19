@@ -149,7 +149,7 @@ func TestMessageType_Name(t *testing.T) {
 	}
 
 	cases := []Case{
-		{Type: HandshakeMessageType, ExpectedName: "handshake", OK: true},
+		{Type: HandshakeMessageType, ExpectedName: "Handshake", OK: true},
 		{Type: GoAwayMessageType, ExpectedName: "GoAway", OK: true},
 		{Type: TimeMessageType, ExpectedName: "Time", OK: true},
 		{Type: NoticeMessageType, ExpectedName: "Notice", OK: true},

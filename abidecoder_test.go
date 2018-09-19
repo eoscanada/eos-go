@@ -374,7 +374,7 @@ func TestABIDecoder_analyseFieldType(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		name, isOption, isArray := analyseFieldName(c["fieldName"].(string))
+		name, isOption, isArray := analyzeFieldType(c["fieldName"].(string))
 		assert.Equal(t, c["expectedName"], name)
 		assert.Equal(t, c["expectedOptional"], isOption)
 		assert.Equal(t, c["expectedArray"], isArray)

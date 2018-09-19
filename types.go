@@ -336,11 +336,22 @@ type WaitWeight struct {
 	Weight  uint16 `json:"weight"` // weight_type
 }
 
+type GetRawCodeAndABIResp struct {
+	AccountName  AccountName `json:"account_name"`
+	WASMasBase64 string      `json:"wasm"`
+	ABIasBase64  string      `json:"abi"`
+}
+
 type GetCodeResp struct {
 	AccountName AccountName `json:"account_name"`
 	CodeHash    string      `json:"code_hash"`
 	WASM        string      `json:"wasm"`
 	ABI         ABI         `json:"abi"`
+}
+
+type GetCodeHashResp struct {
+	AccountName AccountName `json:"account_name"`
+	CodeHash    string      `json:"code_hash"`
 }
 
 type GetABIResp struct {
@@ -375,6 +386,14 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 
 	t.Time, err = time.Parse(`"`+JSONTimeFormat+`"`, string(data))
 	return err
+}
+
+// ParseJSONTime will parse a string into a JSONTime object
+func ParseJSONTime(date string) (JSONTime, error) {
+	var t JSONTime
+	var err error
+	t.Time, err = time.Parse(JSONTimeFormat, string(date))
+	return t, err
 }
 
 // HexBytes
@@ -461,6 +480,9 @@ func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
 
 	*t, err = hex.DecodeString(s)
 	return
+}
+func (t SHA256Bytes) String() string {
+	return hex.EncodeToString(t)
 }
 
 type Varuint32 uint32

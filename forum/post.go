@@ -6,19 +6,18 @@ import (
 
 // NewPost is an action representing a simple message to be posted
 // through the chain network.
-func NewPost(account eos.AccountName, postUUID, title, content string, replyToAccount eos.AccountName, replyToPostUUID string, certify bool, jsonMetadata string) *eos.Action {
+func NewPost(poster eos.AccountName, postUUID, content string, replyToPoster eos.AccountName, replyToPostUUID string, certify bool, jsonMetadata string) *eos.Action {
 	a := &eos.Action{
-		Account: AN("eosforumtest"),
+		Account: ForumAN,
 		Name:    ActN("post"),
 		Authorization: []eos.PermissionLevel{
-			{Actor: account, Permission: eos.PermissionName("active")},
+			{Actor: poster, Permission: eos.PermissionName("active")},
 		},
 		ActionData: eos.NewActionData(Post{
-			Account:         account,
+			Poster:          poster,
 			PostUUID:        postUUID,
-			Title:           title,
 			Content:         content,
-			ReplyToAccount:  replyToAccount,
+			ReplyToPoster:   replyToPoster,
 			ReplyToPostUUID: replyToPostUUID,
 			Certify:         certify,
 			JSONMetadata:    jsonMetadata,
@@ -27,13 +26,12 @@ func NewPost(account eos.AccountName, postUUID, title, content string, replyToAc
 	return a
 }
 
-// Post represents the `eosforumtest::post` action.
+// Post represents the `eosio.forum::post` action.
 type Post struct {
-	Account         eos.AccountName `json:"account"`
+	Poster          eos.AccountName `json:"poster"`
 	PostUUID        string          `json:"post_uuid"`
-	Title           string          `json:"title"`
 	Content         string          `json:"content"`
-	ReplyToAccount  eos.AccountName `json:"reply_to_account"`
+	ReplyToPoster   eos.AccountName `json:"reply_to_poster"`
 	ReplyToPostUUID string          `json:"reply_to_post_uuid"`
 	Certify         bool            `json:"certify"`
 	JSONMetadata    string          `json:"json_metadata"`
