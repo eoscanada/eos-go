@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -25,9 +26,9 @@ var abiString = `
 		"fields": [
 			{"name":"struct_1_field_1", "type":"new_type_name_1"},
 			{"name":"struct_1_field_2", "type":"struct_name_3"},
-			{"name":"struct_1_field_3?", "type":"string"},
-			{"name":"struct_1_field_4?", "type":"string"},
-			{"name":"struct_1_field_5[]", "type":"struct_name_4"}
+			{"name":"struct_1_field_3", "type":"string?"},
+			{"name":"struct_1_field_4", "type":"string?"},
+			{"name":"struct_1_field_5", "type":"struct_name_4[]"}
 		]
    },{
 		"name": "struct_name_2",
@@ -53,7 +54,19 @@ var abiString = `
 		"name": "action_name_1",
 		"type": "struct_name_1",
 		"ricardian_contract": ""
-  }]
+  }],
+  "tables": [{
+      "name": "table_name_1",
+      "index_type": "i64",
+      "key_names": [
+        "key_name_1"
+      ],
+      "key_types": [
+        "string"
+      ],
+      "type": "struct_name_1"
+    }
+  ]
 }
 `
 
@@ -196,7 +209,7 @@ func TestABIEncoder_encodeField(t *testing.T) {
 
 func TestABI_Write(t *testing.T) {
 
-	//Logger.ABIEncoder.SetOutput(os.Stdout)
+	Logger.ABIEncoder.SetOutput(os.Stdout)
 	testCases := []map[string]interface{}{
 		{"caseName": "string", "typeName": "string", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\":\"this.is.a.test\""},
 		{"caseName": "min int8", "typeName": "int8", "expectedValue": "80", "json": "{\"testField\":-128}"},

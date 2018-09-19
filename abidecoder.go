@@ -63,14 +63,13 @@ func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byt
 	for _, field := range fields {
 
 		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
-		fieldName := field.Name
 		typeName := a.TypeNameForNewTypeName(fieldType)
 		if typeName != field.Type {
 			Logger.ABIDecoder.Printf("[%s] is an alias of [%s]\n", field.Type, typeName)
 		}
 
 		var err error
-		resultingJson, err = a.decodeField(binaryDecoder, fieldName, typeName, isOptional, isArray, resultingJson)
+		resultingJson, err = a.decodeField(binaryDecoder, field.Name, typeName, isOptional, isArray, resultingJson)
 		if err != nil {
 			return []byte{}, fmt.Errorf("decoding fields: %s", err)
 		}
@@ -242,7 +241,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 
 }
 
-func analyzeFieldType(fieldType string) (name string, isOptional bool, isArray bool) {
+func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArray bool) {
 	if strings.HasSuffix(fieldType, "?") {
 		return fieldType[0 : len(fieldType)-1], true, false
 	}

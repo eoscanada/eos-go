@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestABI_Decode(t *testing.T) {
+func TestABI_DecodeAction(t *testing.T) {
 
 	abiReader := strings.NewReader(abiString)
 
@@ -107,6 +107,74 @@ func TestABI_DecodeMissingAction(t *testing.T) {
 
 	_, err = abi.DecodeAction(buffer.Bytes(), "bad.action.name")
 	assert.Equal(t, fmt.Errorf("action bad.action.name not found in abi"), err)
+}
+
+func TestABI_DecodeTable(t *testing.T) {
+
+	abiReader := strings.NewReader(abiString)
+
+	mockData := struct {
+		BF1    string
+		F1     Name
+		F2     string
+		F3FLAG byte //this a hack until we have the abi encoder
+		F3     string
+		F4FLAG byte //this a hack until we have the abi encoder
+		F5     []string
+	}{
+		BF1:    "value_struct_2_field_1",
+		F1:     Name("eoscanadacom"),
+		F2:     "value_struct_3_field_1",
+		F3FLAG: 1,
+		F3:     "value_struct_1_field_3",
+		F4FLAG: 0,
+		F5:     []string{"value_struct_4_field_1_1", "value_struct_4_field_1_2", "value_struct_4_field_1_3"},
+	}
+
+	var buffer bytes.Buffer
+	encoder := NewEncoder(&buffer)
+	err := encoder.Encode(mockData)
+	assert.NoError(t, err)
+
+	abi, err := NewABI(abiReader)
+	assert.NoError(t, err)
+
+	json, err := abi.DecodeTableRow("table_name_1", buffer.Bytes())
+	assert.NoError(t, err)
+
+	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "struct_1_field_1").String())
+	assert.Equal(t, "value_struct_2_field_1", gjson.GetBytes(json, "struct_2_field_1").String())
+	assert.Equal(t, "value_struct_3_field_1", gjson.GetBytes(json, "struct_1_field_2.struct_3_field_1").String())
+	assert.Equal(t, "value_struct_1_field_3", gjson.GetBytes(json, "struct_1_field_3").String())
+	assert.Equal(t, "", gjson.GetBytes(json, "struct_1_field_4").String())
+	assert.Equal(t, "value_struct_4_field_1_1", gjson.GetBytes(json, "struct_1_field_5.0.struct_4_field_1").String())
+	assert.Equal(t, "value_struct_4_field_1_2", gjson.GetBytes(json, "struct_1_field_5.1.struct_4_field_1").String())
+	assert.Equal(t, "value_struct_4_field_1_3", gjson.GetBytes(json, "struct_1_field_5.2.struct_4_field_1").String())
+
+}
+
+func TestABI_DecodeTableRowMissingTable(t *testing.T) {
+
+	abiReader := strings.NewReader(abiString)
+
+	mockData := struct {
+		BF1 string
+		F1  Name
+	}{
+		BF1: "value.base.field.1",
+		F1:  Name("eoscanadacom"),
+	}
+
+	var buffer bytes.Buffer
+	encoder := NewEncoder(&buffer)
+	err := encoder.Encode(mockData)
+	assert.NoError(t, err)
+
+	abi, err := NewABI(abiReader)
+	assert.NoError(t, err)
+
+	_, err = abi.DecodeTableRow("bad.action.name", buffer.Bytes())
+	assert.Equal(t, fmt.Errorf("table name bad.action.name not found in abi"), err)
 }
 
 func TestABI_DecodeBadABI(t *testing.T) {
@@ -328,7 +396,7 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "checksum512", "typeName": "checksum512", "value": "\"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "public_key", "typeName": "public_key", "value": "\"EOS1111111111111111111111111111111114T1Anm\"", "encode": ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "signature", "typeName": "signature", "value": "\"SIG_K1_111111111111111111111111111111111111111111111111111111111111111116uk5ne\"", "encode": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "symbol", "typeName": "symbol", "value": "{\"4,EOS\"}", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "symbol", "typeName": "symbol", "value": "\"4,EOS\"", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "symbol_code", "typeName": "symbol_code", "value": "18446744073709551615", "encode": SymbolCode(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "asset", "typeName": "asset", "value": "\"10.0000 EOS\"", "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"asset\":\"0.0010 EOS\",\"Contract\":\"eoscanadacom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
@@ -368,13 +436,13 @@ func TestABI_Read(t *testing.T) {
 func TestABIDecoder_analyseFieldType(t *testing.T) {
 
 	testCases := []map[string]interface{}{
-		{"fieldName": "field.name.1", "expectedName": "field.name.1", "expectedOptional": false, "expectedArray": false},
-		{"fieldName": "field.name.1?", "expectedName": "field.name.1", "expectedOptional": true, "expectedArray": false},
-		{"fieldName": "field.name.1[]", "expectedName": "field.name.1", "expectedOptional": false, "expectedArray": true},
+		{"fieldType": "field.type.1", "expectedName": "field.type.1", "expectedOptional": false, "expectedArray": false},
+		{"fieldType": "field.type.1?", "expectedName": "field.type.1", "expectedOptional": true, "expectedArray": false},
+		{"fieldType": "field.type.1[]", "expectedName": "field.type.1", "expectedOptional": false, "expectedArray": true},
 	}
 
 	for _, c := range testCases {
-		name, isOption, isArray := analyzeFieldType(c["fieldName"].(string))
+		name, isOption, isArray := analyzeFieldType(c["fieldType"].(string))
 		assert.Equal(t, c["expectedName"], name)
 		assert.Equal(t, c["expectedOptional"], isOption)
 		assert.Equal(t, c["expectedArray"], isArray)

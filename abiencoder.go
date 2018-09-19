@@ -68,8 +68,9 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 
 		Logger.ABIEncoder.Printf("Encoding field [%s] of type [%s]\n", field.Name, field.Type)
 
-		fieldName, isOptional, isArray := analyzeFieldType(field.Name)
-		typeName := a.TypeNameForNewTypeName(field.Type)
+		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
+		typeName := a.TypeNameForNewTypeName(fieldType)
+		fieldName := field.Name
 		if typeName != field.Type {
 			Logger.ABIEncoder.Printf("[%s] is an alias of [%s]\n", field.Type, typeName)
 		}
@@ -123,7 +124,7 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 
 func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType string, value gjson.Result) error {
 
-	Logger.ABIEncoder.Printf("Writing value [%s]\n", value.Raw)
+	Logger.ABIEncoder.Printf("Writing value [%s] for field [%s] of type [%s]\n", value.Raw, fieldName, fieldType)
 
 	structure := a.StructForName(fieldType)
 	if structure != nil {
