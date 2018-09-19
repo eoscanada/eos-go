@@ -172,11 +172,18 @@ func (a Asset) String() string {
 	return fmt.Sprintf("%s %s", result, a.Symbol.Symbol)
 }
 
+type ExtendedAsset struct {
+	Asset    Asset `json:"asset"`
+	Contract AccountName
+}
+
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
 type Symbol struct {
 	Precision uint8
 	Symbol    string
 }
+
+type SymbolCode uint64
 
 // EOSSymbol represents the standard EOS symbol on the chain.  It's
 // here just to speed up things.
@@ -410,7 +417,55 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 
 // SHA256Bytes
 
-type SHA256Bytes []byte // should always be 32 bytes
+type Checksum160 []byte
+
+func (t Checksum160) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
+}
+func (t *Checksum160) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+type Checksum256 []byte
+
+func (t Checksum256) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
+}
+func (t *Checksum256) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+type Checksum512 []byte
+
+func (t Checksum512) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hex.EncodeToString(t))
+}
+func (t *Checksum512) UnmarshalJSON(data []byte) (err error) {
+	var s string
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return
+	}
+
+	*t, err = hex.DecodeString(s)
+	return
+}
+
+type SHA256Bytes []byte
 
 func (t SHA256Bytes) MarshalJSON() ([]byte, error) {
 	return json.Marshal(hex.EncodeToString(t))
@@ -431,6 +486,7 @@ func (t SHA256Bytes) String() string {
 }
 
 type Varuint32 uint32
+type Varint32 int32
 
 // Tstamp
 
@@ -500,6 +556,9 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 	}
 	return err
 }
+
+type TimePoint uint64
+type TimePointSec uint32
 
 type JSONFloat64 float64
 

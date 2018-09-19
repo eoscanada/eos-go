@@ -16,7 +16,7 @@ type SetCode struct {
 	Account   AccountName `json:"account"`
 	VMType    byte        `json:"vmtype"`
 	VMVersion byte        `json:"vmversion"`
-	Code      HexBytes    `json:"bytes"`
+	Code      HexBytes    `json:"code"`
 }
 
 // SetABI represents the hard-coded `setabi` action.

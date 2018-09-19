@@ -21,12 +21,12 @@ func TestDecoder_Remaining(t *testing.T) {
 
 	d := NewDecoder(b)
 
-	n, err := d.readUint16()
+	n, err := d.ReadUint16()
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(1), n)
 	assert.Equal(t, 2, d.remaining())
 
-	n, err = d.readUint16()
+	n, err = d.ReadUint16()
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(2), n)
 	assert.Equal(t, 0, d.remaining())
@@ -41,12 +41,12 @@ func TestDecoder_Byte(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	n, err := d.readByte()
+	n, err := d.ReadByte()
 	assert.NoError(t, err)
 	assert.Equal(t, byte(0), n)
 	assert.Equal(t, 1, d.remaining())
 
-	n, err = d.readByte()
+	n, err = d.ReadByte()
 	assert.NoError(t, err)
 	assert.Equal(t, byte(1), n)
 	assert.Equal(t, 0, d.remaining())
@@ -61,12 +61,12 @@ func TestDecoder_ByteArray(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	data, err := d.readByteArray()
+	data, err := d.ReadByteArray()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{1, 2, 3}, data)
 	assert.Equal(t, 4, d.remaining())
 
-	data, err = d.readByteArray()
+	data, err = d.ReadByteArray()
 	assert.Equal(t, []byte{4, 5, 6}, data)
 	assert.Equal(t, 0, d.remaining())
 
@@ -79,7 +79,7 @@ func TestDecoder_ByteArray_MissingData(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	_, err := d.readByteArray()
+	_, err := d.ReadByteArray()
 	assert.EqualError(t, err, "byte array: varlen=10, missing 10 bytes")
 
 }
@@ -90,7 +90,7 @@ func TestDecoder_ByteArrayDataTooSmall(t *testing.T) {
 
 	//to smalls
 	d := NewDecoder(buf.Bytes())
-	_, err := d.readByteArray()
+	_, err := d.ReadByteArray()
 	assert.Equal(t, ErrVarIntBufferSize, err)
 }
 
@@ -102,12 +102,12 @@ func TestDecoder_Uint16(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	n, err := d.readUint16()
+	n, err := d.ReadUint16()
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(99), n)
 	assert.Equal(t, 2, d.remaining())
 
-	n, err = d.readUint16()
+	n, err = d.ReadUint16()
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(100), n)
 	assert.Equal(t, 0, d.remaining())
@@ -122,12 +122,12 @@ func TestDecoder_int16(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	n, err := d.readInt16()
+	n, err := d.ReadInt16()
 	assert.NoError(t, err)
 	assert.Equal(t, int16(-99), n)
 	assert.Equal(t, 2, d.remaining())
 
-	n, err = d.readInt16()
+	n, err = d.ReadInt16()
 	assert.NoError(t, err)
 	assert.Equal(t, int16(100), n)
 	assert.Equal(t, 0, d.remaining())
@@ -142,12 +142,12 @@ func TestDecoder_Uint32(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	n, err := d.readUint32()
+	n, err := d.ReadUint32()
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(342), n)
 	assert.Equal(t, 4, d.remaining())
 
-	n, err = d.readUint32()
+	n, err = d.ReadUint32()
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(100), n)
 	assert.Equal(t, 0, d.remaining())
@@ -162,12 +162,12 @@ func TestDecoder_Uint64(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	n, err := d.readUint64()
+	n, err := d.ReadUint64()
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(99), n)
 	assert.Equal(t, 8, d.remaining())
 
-	n, err = d.readUint64()
+	n, err = d.ReadUint64()
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(100), n)
 	assert.Equal(t, 0, d.remaining())
@@ -183,17 +183,17 @@ func TestDecoder_string(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	s, err := d.readString()
+	s, err := d.ReadString()
 	assert.NoError(t, err)
 	assert.Equal(t, "123", s)
 	assert.Equal(t, 5, d.remaining())
 
-	s, err = d.readString()
+	s, err = d.ReadString()
 	assert.NoError(t, err)
 	assert.Equal(t, "", s)
 	assert.Equal(t, 4, d.remaining())
 
-	s, err = d.readString()
+	s, err = d.ReadString()
 	assert.NoError(t, err)
 	assert.Equal(t, "abc", s)
 	assert.Equal(t, 0, d.remaining())
@@ -209,7 +209,7 @@ func TestDecoder_SHA256Bytes(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	rs, err := d.readSHA256Bytes()
+	rs, err := d.ReadSHA256Bytes()
 	assert.NoError(t, err)
 
 	assert.Equal(t, s, rs)
@@ -226,7 +226,7 @@ func TestDecoder_Empty_SHA256Bytes(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	s, err := d.readSHA256Bytes()
+	s, err := d.ReadSHA256Bytes()
 	assert.NoError(t, err)
 	assert.Equal(t, s, SHA256Bytes(bytes.Repeat([]byte{0}, 32)))
 	assert.Equal(t, 0, d.remaining())
@@ -242,7 +242,7 @@ func TestDecoder_PublicKey(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	rpk, err := d.readPublicKey()
+	rpk, err := d.ReadPublicKey()
 	assert.NoError(t, err)
 
 	assert.Equal(t, pk, rpk)
@@ -268,7 +268,7 @@ func TestDecoder_Signature(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	rsig, err := d.readSignature()
+	rsig, err := d.ReadSignature()
 	assert.NoError(t, err)
 	assert.Equal(t, sig, rsig)
 	assert.Equal(t, 0, d.remaining())
@@ -295,7 +295,7 @@ func TestDecoder_Tstamp(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	rts, err := d.readTstamp()
+	rts, err := d.ReadTstamp()
 	assert.NoError(t, err)
 	assert.Equal(t, ts, rts)
 	assert.Equal(t, 0, d.remaining())
@@ -313,7 +313,7 @@ func TestDecoder_BlockTimestamp(t *testing.T) {
 
 	d := NewDecoder(buf.Bytes())
 
-	rbt, err := d.readBlockTimestamp()
+	rbt, err := d.ReadBlockTimestamp()
 	assert.NoError(t, err)
 	assert.Equal(t, ts, rbt)
 	assert.Equal(t, 0, d.remaining())
@@ -594,30 +594,30 @@ func TestEncoder_Encode_struct_tag(t *testing.T) {
 
 func TestDecoder_readUint16_missing_data(t *testing.T) {
 
-	_, err := NewDecoder([]byte{}).readByte()
+	_, err := NewDecoder([]byte{}).ReadByte()
 	assert.EqualError(t, err, "byte required [1] byte, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readUint16()
+	_, err = NewDecoder([]byte{}).ReadUint16()
 	assert.EqualError(t, err, "uint16 required [2] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readUint32()
+	_, err = NewDecoder([]byte{}).ReadUint32()
 	assert.EqualError(t, err, "uint32 required [4] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readUint64()
+	_, err = NewDecoder([]byte{}).ReadUint64()
 	assert.EqualError(t, err, "uint64 required [8] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readSHA256Bytes()
+	_, err = NewDecoder([]byte{}).ReadSHA256Bytes()
 	assert.EqualError(t, err, "sha256 required [32] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readPublicKey()
+	_, err = NewDecoder([]byte{}).ReadPublicKey()
 	assert.EqualError(t, err, "publicKey required [34] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readSignature()
+	_, err = NewDecoder([]byte{}).ReadSignature()
 	assert.EqualError(t, err, "signature required [66] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readTstamp()
+	_, err = NewDecoder([]byte{}).ReadTstamp()
 	assert.EqualError(t, err, "tstamp required [8] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).readBlockTimestamp()
+	_, err = NewDecoder([]byte{}).ReadBlockTimestamp()
 	assert.EqualError(t, err, "blockTimestamp required [4] bytes, remaining [0]")
 }

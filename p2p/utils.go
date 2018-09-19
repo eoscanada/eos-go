@@ -3,8 +3,6 @@ package p2p
 import (
 	"encoding/hex"
 	"fmt"
-
-	"github.com/eoscanada/eos-go"
 )
 
 func DecodeHex(hexString string) (data []byte) {
@@ -13,14 +11,4 @@ func DecodeHex(hexString string) (data []byte) {
 		fmt.Println("decodeHex error: ", err)
 	}
 	return data
-}
-
-var println = func(args ...interface{}) {
-	print(fmt.Sprintf("%s\n", args...))
-}
-
-var print = func(s string) {
-	if eos.Debug {
-		fmt.Print(s)
-	}
 }
