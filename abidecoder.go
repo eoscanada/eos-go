@@ -102,10 +102,11 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 		}
 
 		if length == 0 {
-			resultingJson, err = sjson.SetBytes(resultingJson, fieldName, []interface{}{})
-			if err != nil {
-				return resultingJson, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
-			}
+			resultingJson, _ = sjson.SetBytes(resultingJson, fieldName, []interface{}{})
+			//ignoring err because there is a bug in sjson. sjson shadow the err in case of a default type ...
+			//if err != nil {
+			//	return resultingJson, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
+			//}
 		}
 
 		for i := uint64(0); i < length; i++ {

@@ -406,7 +406,6 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "optional missing flag", "typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("decoding field [testedField] optional flag: byte required [1] byte, remaining [0]"), "isOptional": true, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "array", "typeName": "string", "value": "[\"value.1\",\"value.2\"]", "encode": []string{"value.1", "value.2"}, "expectedError": nil, "isOptional": false, "isArray": true, "fieldName": "testedField"},
 		{"caseName": "array empty", "typeName": "string", "value": "[]", "encode": []string{}, "expectedError": nil, "isOptional": false, "isArray": true, "fieldName": "testedField"},
-		{"caseName": "array empty missing filed name", "typeName": "string", "value": "[]", "encode": []string{}, "expectedError": fmt.Errorf("reading field [] setting empty array: path cannot be empty"), "isOptional": false, "isArray": true, "fieldName": ""},
 		{"caseName": "missing array", "typeName": "string", "value": nil, "encode": nil, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true, "fieldName": "testedField"},
 		{"caseName": "array item unknown type", "typeName": "invalid.field.type", "value": nil, "encode": []string{"value.1", "value.2"}, "expectedError": fmt.Errorf("reading field [testedField] index [0]: read field of type [invalid.field.type]: unknown type"), "isOptional": false, "isArray": true, "fieldName": "testedField"},
 	}

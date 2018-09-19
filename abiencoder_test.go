@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -209,7 +208,7 @@ func TestABIEncoder_encodeField(t *testing.T) {
 
 func TestABI_Write(t *testing.T) {
 
-	Logger.ABIEncoder.SetOutput(os.Stdout)
+	//Logger.ABIEncoder.SetOutput(os.Stdout)
 	testCases := []map[string]interface{}{
 		{"caseName": "string", "typeName": "string", "expectedValue": "0e746869732e69732e612e74657374", "json": "{\"testField\":\"this.is.a.test\""},
 		{"caseName": "min int8", "typeName": "int8", "expectedValue": "80", "json": "{\"testField\":-128}"},
