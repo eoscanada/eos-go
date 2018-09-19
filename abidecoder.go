@@ -10,7 +10,6 @@ import (
 )
 
 func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
-
 	binaryDecoder := NewDecoder(data)
 	action := a.ActionForName(actionName)
 	if action == nil {
@@ -18,6 +17,17 @@ func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
 	}
 
 	return a.decode(binaryDecoder, action.Type)
+
+}
+
+func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
+	binaryDecoder := NewDecoder(data)
+	tbl := a.TableForName(tableName)
+	if tbl == nil {
+		return []byte{}, fmt.Errorf("table name %s not found in abi", tableName)
+	}
+
+	return a.decode(binaryDecoder, tbl.Type)
 
 }
 
@@ -52,8 +62,9 @@ func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byt
 	resultingJson := json
 	for _, field := range fields {
 
-		fieldName, isOptional, isArray := analyseFieldName(field.Name)
-		typeName := a.TypeNameForNewTypeName(field.Type)
+		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
+		fieldName := field.Name
+		typeName := a.TypeNameForNewTypeName(fieldType)
 		if typeName != field.Type {
 			Logger.ABIDecoder.Printf("[%s] is an alias of [%s]\n", field.Type, typeName)
 		}
@@ -225,15 +236,14 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 
 }
 
-func analyseFieldName(fieldName string) (name string, isOptional bool, isArray bool) {
-
-	if strings.HasSuffix(fieldName, "?") {
-		return fieldName[0 : len(fieldName)-1], true, false
+func analyzeFieldType(fieldType string) (name string, isOptional bool, isArray bool) {
+	if strings.HasSuffix(fieldType, "?") {
+		return fieldType[0 : len(fieldType)-1], true, false
 	}
 
-	if strings.HasSuffix(fieldName, "[]") {
-		return fieldName[0 : len(fieldName)-2], false, true
+	if strings.HasSuffix(fieldType, "[]") {
+		return fieldType[0 : len(fieldType)-2], false, true
 	}
 
-	return fieldName, false, false
+	return fieldType, false, false
 }
