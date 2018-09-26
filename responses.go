@@ -53,7 +53,7 @@ type BlockResp struct {
 
 type ScheduledTransactionsResp struct {
 	Transactions []ScheduledTransaction `json:"transactions"`
-	More         bool                   `json:"more"`
+	More         string                 `json:"more"`
 }
 
 // type BlockTransaction struct {
