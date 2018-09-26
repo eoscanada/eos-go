@@ -277,6 +277,18 @@ type DeferredTransaction struct {
 	DelayUntil JSONTime    `json:"delay_until"`
 }
 
+type ScheduledTransaction struct {
+	TransactionID SHA256Bytes `json:"trx_id"`
+	Sender        AccountName `json:"sender"`
+	SenderID      string      `json:"sender_id"`
+	Payer         AccountName `json:"payer"`
+	DelayUntil    JSONTime    `json:"delay_until"`
+	Expiration    JSONTime    `json:"expiration"`
+	Published     JSONTime    `json:"published"`
+
+	Transaction *Transaction `json:"transaction"`
+}
+
 // TxOptions represents options you want to pass to the transaction
 // you're sending.
 type TxOptions struct {
