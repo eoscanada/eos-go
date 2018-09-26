@@ -420,17 +420,6 @@ func (api *API) GetBlockByID(id string) (out *BlockResp, err error) {
 	return
 }
 
-// GetScheduledTransactionsWithBounds returns scheduled transactions within specified bounds
-func (api *API) GetScheduledTransactionsWithBounds(lower_bound string, limit uint32) (out *ScheduledTransactionsResp, err error) {
-	err = api.call("chain", "get_scheduled_transactions", M{"json": true, "lower_bound": lower_bound, "limit": limit}, &out)
-	return
-}
-
-// GetScheduledTransactions returns the Top 100 scheduled transactions
-func (api *API) GetScheduledTransactions() (out *ScheduledTransactionsResp, err error) {
-	return api.GetScheduledTransactionsWithBounds("", 100)
-}
-
 func (api *API) GetProducers() (out *ProducersResp, err error) {
 	/*
 		+FC_REFLECT( eosio::chain_apis::read_only::get_producers_params, (json)(lower_bound)(limit) )
