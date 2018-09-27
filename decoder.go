@@ -144,6 +144,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		n, err = d.ReadInt16()
 		rv.SetInt(int64(n))
 		return
+	case *int32:
+		var n int32
+		n, err = d.ReadInt32()
+		rv.SetInt(int64(n))
+		return
 	case *int64:
 		var n int64
 		n, err = d.ReadInt64()
