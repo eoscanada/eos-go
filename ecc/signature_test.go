@@ -97,7 +97,7 @@ func FixmeTestSignaturePublicKeyExtraction(t *testing.T) {
 // FIXME: We need to fix that for this library to be able to sign
 // transactions and push them to the network without relying on an
 // external wallet, or eosjs-ecc or something..
-func FixmeTestSignaturePublicKeyExtractionSecond(t *testing.T) {
+func TestSignaturePublicKeyExtractionSecond(t *testing.T) {
 	// this was transaction be72ed8f391277c7792caec781b70f3e97766920c1f3844fdbb82b7db5f0381e
 	// was signed with EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
 	fromEOSIOC := "SIG_K1_KkwLhwDoRF8gpGFbcUKiaPdeeKo6U7eDuXQw9szMiNE4K4cFe17sffk6hmy3mWf1ogtzd5J5kvnvFD3Lq5cF6VyYb3KsGy"
@@ -111,7 +111,7 @@ func FixmeTestSignaturePublicKeyExtractionSecond(t *testing.T) {
 	require.NoError(t, err)
 
 	// Ok, we'd need to find values where we know the signature is valid, and comes from the given key.
-	assert.Equal(t, "PUB_K1_5DguRMaGh72NvbVX5LKHTb5cvbRmAxgrm9i2NNPKv5TC7FadXs", pubKey.String())
+	assert.Equal(t, "EOS5DguRMaGh72NvbVX5LKHTb5cvbRmAxgrm9i2NNPKv5TC7FadXs", pubKey.String())
 }
 
 func FixmeTestEOSIOCSigningComparison(t *testing.T) {
