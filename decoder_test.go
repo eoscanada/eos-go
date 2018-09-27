@@ -154,6 +154,26 @@ func TestDecoder_Uint32(t *testing.T) {
 	assert.Equal(t, 0, d.remaining())
 }
 
+func TestDecoder_Int32(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	enc.writeInt32(int32(342))
+	enc.writeInt32(int32(100))
+
+	d := NewDecoder(buf.Bytes())
+
+	n, err := d.ReadInt32()
+	assert.NoError(t, err)
+	assert.Equal(t, int32(342), n)
+	assert.Equal(t, 4, d.remaining())
+
+	n, err = d.ReadInt32()
+	assert.NoError(t, err)
+	assert.Equal(t, int32(100), n)
+	assert.Equal(t, 0, d.remaining())
+}
+
 func TestDecoder_Uint64(t *testing.T) {
 
 	buf := new(bytes.Buffer)
