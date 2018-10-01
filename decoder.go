@@ -751,6 +751,11 @@ func (d *Decoder) ReadAsset() (out Asset, err error) {
 		return out, fmt.Errorf("readSymbol precision, %s", err)
 	}
 
+	if d.remaining() < 7 {
+		err = fmt.Errorf("asset symbol required [%d] bytes, remaining [%d]", 7, d.remaining())
+		return
+	}
+
 	data := d.data[d.pos : d.pos+7]
 	d.pos += 7
 
