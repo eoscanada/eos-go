@@ -12,7 +12,7 @@ func NewExpire(proposer eos.AccountName, proposalName eos.Name) *eos.Action {
 		Authorization: []eos.PermissionLevel{
 			{Actor: proposer, Permission: eos.PermissionName("active")},
 		},
-		ActionData: eos.NewActionData(Propose{
+		ActionData: eos.NewActionData(Expire{
 			ProposalName: proposalName,
 		}),
 	}
