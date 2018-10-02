@@ -103,8 +103,6 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 			return nil, err
 		}
 
-		println("MarshalJSON data length : ", len(data)) /**/
-
 		return json.Marshal(&jsonActionToServer{
 			Account:       a.Account,
 			Name:          a.Name,
@@ -130,7 +128,6 @@ func (data *ActionData) EncodeActionData() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	encoder := NewEncoder(buf)
 
-	println("MarshalJSON, encoding action data to binary")
 	if err := encoder.Encode(data.Data); err != nil {
 		return nil, err
 	}
