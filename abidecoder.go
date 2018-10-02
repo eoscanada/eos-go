@@ -126,7 +126,6 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 	if err != nil {
 		return resultingJson, fmt.Errorf("decoding field [%s] of type [%s]: %s", fieldName, fieldType, err)
 	}
-	Logger.ABIDecoder.Printf("Set value: [%s] for field: [%s]\n", resultingJson, fieldName)
 	return resultingJson, nil
 }
 
@@ -237,6 +236,8 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	if err != nil {
 		return []byte{}, fmt.Errorf("read: %s", err)
 	}
+
+	Logger.ABIDecoder.Printf("Set value: [%s] for field: [%s]\n", value, fieldName)
 
 	return sjson.SetBytes(json, fieldName, value)
 
