@@ -144,9 +144,6 @@ func (s *SignedTransaction) PackedTransactionAndCFD() ([]byte, []byte, error) {
 	return rawtrx, rawcfd, nil
 }
 
-func (tx *Transaction) ID() string {
-	return "ID here" //todo
-}
 
 func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransaction, error) {
 	rawtrx, rawcfd, err := s.PackedTransactionAndCFD()
