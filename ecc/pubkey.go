@@ -119,10 +119,14 @@ func (p PublicKey) Key() (*btcec.PublicKey, error) {
 func (p PublicKey) String() string {
 	//hash := ripemd160checksum(append([]byte{byte(p.Curve)}, p.Content...))  does the checksum include the curve ID?!
 	hash := ripemd160checksum(p.Content, p.Curve)
-	rawkey := append(p.Content, hash[:4]...)
-	return PublicKeyPrefixCompat + base58.Encode(rawkey)
+
+	rawKey := make([]byte, 37)
+	copy(rawKey, p.Content[:33])
+	copy(rawKey[33:], hash[:4])
+
+	return PublicKeyPrefixCompat + base58.Encode(rawKey)
 	// FIXME: when we decide to go ahead with the new representation.
-	//return PublicKeyPrefix + p.Curve.StringPrefix() + base58.Encode(rawkey)
+	//return PublicKeyPrefix + p.Curve.StringPrefix() + base58.Encode(rawKey)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {

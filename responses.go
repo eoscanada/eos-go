@@ -51,6 +51,11 @@ type BlockResp struct {
 	BlockExtensions []*Extension `json:"block_extensions"`
 }
 
+type ScheduledTransactionsResp struct {
+	Transactions []ScheduledTransaction `json:"transactions"`
+	More         string                 `json:"more"`
+}
+
 // type BlockTransaction struct {
 // 	Status        string            `json:"status"`
 // 	CPUUsageUS    int               `json:"cpu_usage_us"`
