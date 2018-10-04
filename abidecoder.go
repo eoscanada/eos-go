@@ -31,6 +31,11 @@ func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
 
 }
 
+func (a *ABI) DecodeTableRowTyped(tableType string, data []byte) ([]byte, error) {
+	binaryDecoder := NewDecoder(data)
+	return a.decode(binaryDecoder, tableType)
+}
+
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
 
 	Logger.ABIDecoder.Println("Decoding struct:", structName)
@@ -185,7 +190,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 			err = e
 		}
 	case "time_point_sec":
-		timePointSec, e := binaryDecoder.ReadTimePoint()
+		timePointSec, e := binaryDecoder.ReadTimePointSec()
 		if e == nil {
 			t := time.Unix(0, int64(timePointSec))
 			value = t.UTC().Format("2006-01-02T15:04:05")

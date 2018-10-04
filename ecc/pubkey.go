@@ -117,11 +117,16 @@ func (p PublicKey) Key() (*btcec.PublicKey, error) {
 }
 
 func (p PublicKey) String() string {
-	//hash := ripemd160checksum(append([]byte{byte(p.Curve)}, p.Content...))  does the checksum include the curve ID?!
-	hash := ripemd160checksum(p.Content, p.Curve)
+
+	data := p.Content
+	if len(data) == 0 {
+		data = make([]byte, 33)
+	}
+
+	hash := ripemd160checksum(data, p.Curve)
 
 	rawKey := make([]byte, 37)
-	copy(rawKey, p.Content[:33])
+	copy(rawKey, data[:33])
 	copy(rawKey[33:], hash[:4])
 
 	return PublicKeyPrefixCompat + base58.Encode(rawKey)
