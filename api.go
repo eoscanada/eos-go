@@ -111,6 +111,19 @@ func (api *API) ProducerPause() error {
 	return api.call("producer", "pause", nil, nil)
 }
 
+// CreateSnapshot will write a snapshot file on a nodeos with
+// `producer_api` plugin loaded.
+func (api *API) CreateSnapshot() error {
+	return api.call("producer", "create_snapshot", nil, nil)
+}
+
+// GetIntegrityHash will produce a hash corresponding to current
+// state. Requires `producer_api` and useful when loading
+// from a snapshot
+func (api *API) GetIntegrityHash() error {
+	return api.call("producer", "get_integrity_hash", nil, nil)
+}
+
 // ProducerResume will resume block production on a nodeos with
 // `producer_api` plugin loaded. Obviously, this needs to be a
 // producing node on the producers schedule for it to do anything.
