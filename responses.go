@@ -239,6 +239,16 @@ func (resp *GetTableRowsResp) BinaryToStructs(v interface{}) error {
 	return nil
 }
 
+type CreateSnapshotResp struct {
+	SnapshotName string `json:"snapshot_name"`
+	HeadBlockID  string `json:"head_block_id"`
+}
+
+type GetIntegrityHashResp struct {
+	HeadBlockID  string `json:"head_block_id"`
+	SnapshotName string `json:"integrity_hash"`
+}
+
 type Currency struct {
 	Precision uint8
 	Name      CurrencyName
