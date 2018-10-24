@@ -1,6 +1,8 @@
 package eos
 
-import "strings"
+import (
+	"strings"
+)
 
 func StringToName(s string) (val uint64, err error) {
 	// ported from the eosio codebase, libraries/chain/include/eosio/chain/name.hpp
