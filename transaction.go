@@ -144,7 +144,6 @@ func (s *SignedTransaction) PackedTransactionAndCFD() ([]byte, []byte, error) {
 	return rawtrx, rawcfd, nil
 }
 
-
 func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransaction, error) {
 	rawtrx, rawcfd, err := s.PackedTransactionAndCFD()
 	if err != nil {
@@ -198,7 +197,18 @@ type PackedTransaction struct {
 
 func (p *PackedTransaction) ID() SHA256Bytes {
 	h := sha256.New()
-	_, _ = h.Write(p.PackedTransaction)
+
+	switch p.Compression {
+	case CompressionNone:
+		_, _ = h.Write(p.PackedTransaction)
+	case CompressionZlib:
+		var txReader io.Reader
+		txReader = bytes.NewBuffer(p.PackedTransaction)
+
+		txReader, _ = zlib.NewReader(txReader)
+		data, _ := ioutil.ReadAll(txReader)
+		_, _ = h.Write(data)
+	}
 	return h.Sum(nil)
 }
 
