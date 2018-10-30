@@ -152,7 +152,6 @@ func (s *TransactionStatus) UnmarshalJSON(data []byte) error {
 		*s = TransactionStatusExecuted
 	case "soft_fail":
 		*s = TransactionStatusSoftFail
-
 	case "hard_fail":
 		*s = TransactionStatusHardFail
 	case "delayed":
@@ -187,9 +186,9 @@ func (s TransactionStatus) String() string {
 	case TransactionStatusExecuted:
 		return "executed"
 	case TransactionStatusSoftFail:
-		return "soft fail"
+		return "soft_fail"
 	case TransactionStatusHardFail:
-		return "hard fail"
+		return "hard_fail"
 	case TransactionStatusDelayed:
 		return "delayed"
 	case TransactionStatusExpired:
