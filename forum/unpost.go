@@ -8,7 +8,7 @@ import (
 func NewUnPost(poster eos.AccountName, postUUID string) *eos.Action {
 	a := &eos.Action{
 		Account: ForumAN,
-		Name:    ActN("post"),
+		Name:    ActN("unpost"),
 		Authorization: []eos.PermissionLevel{
 			{Actor: poster, Permission: eos.PermissionName("active")},
 		},
