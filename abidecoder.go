@@ -186,7 +186,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		timePoint, e := binaryDecoder.ReadTimePoint() //todo double check
 		if e == nil {
 			t := time.Unix(0, int64(timePoint*1000))
-			value = t.UTC().Format("2006-01-02T15:04:05.999999")
+			value = t.UTC().Format("2006-01-02T15:04:05.999")
 		}
 		err = e
 	case "time_point_sec":
