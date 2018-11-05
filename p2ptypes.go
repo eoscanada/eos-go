@@ -202,7 +202,7 @@ func (s TransactionStatus) String() string {
 //type TransactionID SHA256Bytes
 
 type ProducerKey struct {
-	AccountName     AccountName   `json:"account_name"`
+	AccountName     AccountName   `json:"producer_name"`
 	BlockSigningKey ecc.PublicKey `json:"block_signing_key"`
 }
 
