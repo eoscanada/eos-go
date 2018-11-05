@@ -213,7 +213,7 @@ type RegionSummary struct {
 }
 
 type ProducerKey struct {
-	AccountName     AccountName   `json:"account_name"`
+	AccountName     AccountName   `json:"producer_name"`
 	BlockSigningKey ecc.PublicKey `json:"block_signing_key"`
 }
 
