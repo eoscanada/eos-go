@@ -26,6 +26,15 @@ func NewAPIError(httpCode int, msg string, e errorcodes.EOSError) *APIError {
 	newError.ErrorStruct.Code = e.Code
 	newError.ErrorStruct.Name = e.Name
 	newError.ErrorStruct.What = msg
+	newError.ErrorStruct.Details = []APIErrorDetail{
+		APIErrorDetail{
+			File:       "",
+			LineNumber: 0,
+			Message:    msg,
+			Method:     e.Name,
+		},
+	}
+
 	return newError
 }
 
