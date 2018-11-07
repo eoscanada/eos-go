@@ -54,6 +54,7 @@ func New(baseURL string) *API {
 		},
 		BaseURL:  baseURL,
 		Compress: CompressionZlib,
+		Header:   make(http.Header),
 	}
 
 	return api
