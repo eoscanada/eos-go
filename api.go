@@ -18,11 +18,13 @@ import (
 )
 
 type API struct {
-	HttpClient              *http.Client
-	BaseURL                 string
-	Signer                  Signer
-	Debug                   bool
-	Compress                CompressionType
+	HttpClient *http.Client
+	BaseURL    string
+	Signer     Signer
+	Debug      bool
+	Compress   CompressionType
+	// Header is one or more headers to be added to all outgoing calls
+	Header                  http.Header
 	DefaultMaxCPUUsageMS    uint8
 	DefaultMaxNetUsageWords uint32 // in 8-bytes words
 
@@ -531,6 +533,13 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 	req, err := http.NewRequest("POST", targetURL, jsonBody)
 	if err != nil {
 		return fmt.Errorf("NewRequest: %s", err)
+	}
+
+	for k, v := range api.Header {
+		if req.Header == nil {
+			req.Header = http.Header{}
+		}
+		req.Header[k] = append(req.Header[k], v...)
 	}
 
 	if api.Debug {
