@@ -1,22 +1,39 @@
 package eos
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/eoscanada/eos-go/errorcodes"
+)
 
 // APIError represents the errors as reported by the server
 type APIError struct {
-	Code        int
-	Message     string
+	Code        int    `json:"code"` // http code
+	Message     string `json:"message"`
 	ErrorStruct struct {
-		Code    int
-		Name    string
-		What    string
-		Details []struct {
-			Message    string
-			File       string
-			LineNumber int `json:"line_number"`
-			Method     string
-		}
+		Code    int              `json:"code"` // https://docs.google.com/spreadsheets/d/1uHeNDLnCVygqYK-V01CFANuxUwgRkNkrmeLm9MLqu9c/edit#gid=0
+		Name    string           `json:"name"`
+		What    string           `json:"what"`
+		Details []APIErrorDetail `json:"details"`
 	} `json:"error"`
+}
+
+func NewAPIError(httpCode int, msg string, e errorcodes.EOSError) *APIError {
+	newError := &APIError{
+		Code:    httpCode,
+		Message: msg,
+	}
+	newError.ErrorStruct.Code = e.Code
+	newError.ErrorStruct.Name = e.Name
+	newError.ErrorStruct.What = msg
+	return newError
+}
+
+type APIErrorDetail struct {
+	Message    string `json:"message"`
+	File       string `json:"file"`
+	LineNumber int    `json:"line_number"`
+	Method     string `json:"method"`
 }
 
 func (e APIError) Error() error {
