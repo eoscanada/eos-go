@@ -1,0 +1,5 @@
+.envrc
+eosc-vault.json
+boot/
+run.sh
+stop.sh
