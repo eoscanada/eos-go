@@ -3,7 +3,7 @@ package eos
 import (
 	"errors"
 
-	"github.com/eoscanada/eos-go/errorcodes"
+	"github.com/eoscanada/eos-go/eoserr"
 )
 
 // APIError represents the errors as reported by the server
@@ -18,7 +18,7 @@ type APIError struct {
 	} `json:"error"`
 }
 
-func NewAPIError(httpCode int, msg string, e errorcodes.EOSError) *APIError {
+func NewAPIError(httpCode int, msg string, e eoserr.Error) *APIError {
 	newError := &APIError{
 		Code:    httpCode,
 		Message: msg,
