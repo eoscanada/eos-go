@@ -1,10 +1,14 @@
 package eos
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/eoscanada/eos-go/ecc"
 
@@ -386,8 +390,8 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "float128 unsupported", "typeName": "float128", "value": uint64(1), "encode": uint64(1), "expectedError": fmt.Errorf("decoding field [testedField] of type [float128]: read: float128 support not implemented"), "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bool true", "typeName": "bool", "value": "true", "encode": true, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bool false", "typeName": "bool", "value": "false", "encode": false, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "time_point", "typeName": "time_point", "value": "\"1970-01-01T00:00:00.001\"", "encode": TimePoint(1 * time.Millisecond), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": "\"1970-01-01T00:00:01\"", "encode": TimePointSec(1 * time.Second), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "time_point", "typeName": "time_point", "value": "\"2018-11-01T15:13:07.001\"", "encode": TimePoint(1541085187001001), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": "\"2023-04-14T10:55:53\"", "encode": TimePointSec(1681469753), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "value": "\"2018-09-05T12:48:54\"", "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "Name", "typeName": "name", "value": "\"eoscanadacom\"", "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bytes", "typeName": "bytes", "value": "\"746869732e69732e612e74657374\"", "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
@@ -430,6 +434,19 @@ func TestABI_Read(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestABI_Read_TimePointSec(t *testing.T) {
+	Logger.Decoder.SetOutput(os.Stdout)
+	Logger.ABIDecoder.SetOutput(os.Stdout)
+	abi := ABI{}
+	data, err := hex.DecodeString("919dd85b")
+	require.NoError(t, err)
+	out, err := abi.decodeField(NewDecoder(data), "name", "time_point_sec", false, false, []byte("{}"))
+	//out, err := abi.decodeField(NewDecoder([]byte("c15dd35b")), "name", "time_point_sec", false, false, []byte("{}"))
+	//out, err := abi.decodeField(NewDecoder([]byte("919dd85b")), "name", "time_point_sec", false, false, []byte("{}"))
+	require.NoError(t, err)
+	assert.Equal(t, `{"name":"2018-10-30T18:06:09"}`, string(out))
 }
 
 func TestABIDecoder_analyseFieldType(t *testing.T) {

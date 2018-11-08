@@ -557,7 +557,10 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
+// TimePoint represents the number of microseconds since EPOCH (Jan 1st 1970)
 type TimePoint uint64
+
+// TimePointSec represents the number of seconds since EPOCH (Jan 1st 1970)
 type TimePointSec uint32
 
 type JSONFloat64 float64

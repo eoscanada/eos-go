@@ -18,11 +18,13 @@ import (
 )
 
 type API struct {
-	HttpClient              *http.Client
-	BaseURL                 string
-	Signer                  Signer
-	Debug                   bool
-	Compress                CompressionType
+	HttpClient *http.Client
+	BaseURL    string
+	Signer     Signer
+	Debug      bool
+	Compress   CompressionType
+	// Header is one or more headers to be added to all outgoing calls
+	Header                  http.Header
 	DefaultMaxCPUUsageMS    uint8
 	DefaultMaxNetUsageWords uint32 // in 8-bytes words
 
@@ -52,6 +54,7 @@ func New(baseURL string) *API {
 		},
 		BaseURL:  baseURL,
 		Compress: CompressionZlib,
+		Header:   make(http.Header),
 	}
 
 	return api
@@ -381,6 +384,11 @@ func (api *API) PushTransaction(tx *PackedTransaction) (out *PushTransactionFull
 	return
 }
 
+func (api *API) PushTransactionRaw(tx *PackedTransaction) (out json.RawMessage, err error) {
+	err = api.call("chain", "push_transaction", tx, &out)
+	return
+}
+
 func (api *API) GetInfo() (out *InfoResp, err error) {
 	err = api.call("chain", "get_info", nil, &out)
 	return
@@ -533,6 +541,13 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 		return fmt.Errorf("NewRequest: %s", err)
 	}
 
+	for k, v := range api.Header {
+		if req.Header == nil {
+			req.Header = http.Header{}
+		}
+		req.Header[k] = append(req.Header[k], v...)
+	}
+
 	if api.Debug {
 		// Useful when debugging API calls
 		requestDump, err := httputil.DumpRequest(req, true)
@@ -557,10 +572,18 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 	}
 
 	if resp.StatusCode == 404 {
-		return ErrNotFound
+		var apiErr APIError
+		if err := json.Unmarshal(cnt.Bytes(), &apiErr); err != nil {
+			return ErrNotFound
+		}
+		return apiErr
 	}
 	if resp.StatusCode > 299 {
-		return fmt.Errorf("%s: status code=%d, body=%s", req.URL.String(), resp.StatusCode, cnt.String())
+		var apiErr APIError
+		if err := json.Unmarshal(cnt.Bytes(), &apiErr); err != nil {
+			return fmt.Errorf("%s: status code=%d, body=%s", req.URL.String(), resp.StatusCode, cnt.String())
+		}
+		return apiErr
 	}
 
 	if api.Debug {

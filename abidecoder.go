@@ -183,19 +183,19 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "bool":
 		value, err = binaryDecoder.ReadBool()
 	case "time_point":
-		timePoint, e := binaryDecoder.ReadTimePoint()
+		timePoint, e := binaryDecoder.ReadTimePoint() //todo double check
 		if e == nil {
-			t := time.Unix(0, int64(timePoint))
+			t := time.Unix(0, int64(timePoint*1000))
 			value = t.UTC().Format("2006-01-02T15:04:05.999")
-			err = e
 		}
+		err = e
 	case "time_point_sec":
 		timePointSec, e := binaryDecoder.ReadTimePointSec()
 		if e == nil {
-			t := time.Unix(0, int64(timePointSec))
+			t := time.Unix(int64(timePointSec), 0)
 			value = t.UTC().Format("2006-01-02T15:04:05")
-			err = e
 		}
+		err = e
 	case "block_timestamp_type":
 		value, err = binaryDecoder.ReadBlockTimestamp()
 		if err == nil {
