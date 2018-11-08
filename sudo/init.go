@@ -3,7 +3,7 @@ package sudo
 import eos "github.com/eoscanada/eos-go"
 
 func init() {
-	eos.RegisterAction(AN("eosio.sudo"), ActN("exec"), Exec{})
+	eos.RegisterAction(AN("eosio.wrap"), ActN("exec"), Exec{})
 }
 
 var AN = eos.AN
