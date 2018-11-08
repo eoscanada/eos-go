@@ -572,10 +572,18 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 	}
 
 	if resp.StatusCode == 404 {
-		return ErrNotFound
+		var apiErr APIError
+		if err := json.Unmarshal(cnt.Bytes(), &apiErr); err != nil {
+			return ErrNotFound
+		}
+		return apiErr
 	}
 	if resp.StatusCode > 299 {
-		return fmt.Errorf("%s: status code=%d, body=%s", req.URL.String(), resp.StatusCode, cnt.String())
+		var apiErr APIError
+		if err := json.Unmarshal(cnt.Bytes(), &apiErr); err != nil {
+			return fmt.Errorf("%s: status code=%d, body=%s", req.URL.String(), resp.StatusCode, cnt.String())
+		}
+		return apiErr
 	}
 
 	if api.Debug {

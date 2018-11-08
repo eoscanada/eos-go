@@ -1,8 +1,6 @@
 package eos
 
 import (
-	"errors"
-
 	"github.com/eoscanada/eos-go/eoserr"
 )
 
@@ -45,10 +43,6 @@ type APIErrorDetail struct {
 	Method     string `json:"method"`
 }
 
-func (e APIError) Error() error {
-	return errors.New(e.String())
-}
-
-func (e APIError) String() string {
+func (e APIError) Error() string {
 	return e.Message
 }
