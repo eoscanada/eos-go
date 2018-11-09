@@ -88,6 +88,13 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeFloat64(cv)
 	case Varint32:
 		return e.writeVarInt(int(cv))
+	case Uint128:
+		return e.writeUint128(cv)
+	case Int128:
+		fmt.Println("CAMILON")
+		return e.writeUint128(Uint128(cv))
+	case Float128:
+		return e.writeUint128(Uint128(cv))
 	case Varuint32:
 		return e.writeUVarInt(int(cv))
 	case bool:
@@ -106,8 +113,6 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeChecksum512(cv)
 	case []byte:
 		return e.writeByteArray(cv)
-	case SHA256Bytes:
-		return e.writeSHA256Bytes(cv)
 	case ecc.PublicKey:
 		return e.writePublicKey(cv)
 	case ecc.Signature:
@@ -295,7 +300,6 @@ func (e *Encoder) writeUint32(i uint32) (err error) {
 	buf := make([]byte, TypeSize.UInt32)
 	binary.LittleEndian.PutUint32(buf, i)
 	return e.toWriter(buf)
-
 }
 
 func (e *Encoder) writeInt64(i int64) (err error) {
@@ -308,7 +312,14 @@ func (e *Encoder) writeUint64(i uint64) (err error) {
 	buf := make([]byte, TypeSize.UInt64)
 	binary.LittleEndian.PutUint64(buf, i)
 	return e.toWriter(buf)
+}
 
+func (e *Encoder) writeUint128(i Uint128) (err error) {
+	Logger.Encoder.Printf("Writing uint128 [%d]\n", i)
+	buf := make([]byte, TypeSize.UInt128)
+	binary.LittleEndian.PutUint64(buf, i.Lo)
+	binary.LittleEndian.PutUint64(buf[TypeSize.UInt64:], i.Hi)
+	return e.toWriter(buf)
 }
 
 func (e *Encoder) writeFloat32(f float32) (err error) {

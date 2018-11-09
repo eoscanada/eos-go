@@ -628,3 +628,117 @@ func (i *JSONInt64) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+type Uint128 struct {
+	Lo uint64
+	Hi uint64
+}
+
+type Int128 Uint128
+
+type Float128 Uint128
+
+// func (i Int128) BigInt() *big.Int {
+// 	// decode the Lo and Hi to handle the sign
+// 	return nil
+// }
+
+// func (i Uint128) BigInt() *big.Int {
+// 	// no sign to handle, all good..
+// 	return nil
+// }
+
+// func NewInt128(i *big.Int) (Int128, error) {
+// 	// if the big Int overflows the JSONInt128 limits..
+// 	return Int128{}, nil
+// }
+
+// func NewUint128(i *big.Int) (Uint128, error) {
+// 	// if the big Int overflows the JSONInt128 limits..
+// 	return Uint128{}, nil
+// }
+
+func (i Uint128) MarshalJSON() (data []byte, err error) {
+	return json.Marshal(i.String())
+}
+
+func (i Int128) MarshalJSON() (data []byte, err error) {
+	return json.Marshal(Uint128(i).String())
+}
+
+func (i Float128) MarshalJSON() (data []byte, err error) {
+	return json.Marshal(Uint128(i).String())
+}
+
+func (i Uint128) String() string {
+	// Same for Int128, Float128
+	number := make([]byte, 16)
+	binary.LittleEndian.PutUint64(number[:], i.Lo)
+	binary.LittleEndian.PutUint64(number[8:], i.Hi)
+	return fmt.Sprintf("0x%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:]))
+}
+
+func (i *Int128) UnmarshalJSON(data []byte) error {
+	var el Uint128
+	if err := json.Unmarshal(data, &el); err != nil {
+		return err
+	}
+
+	out := Int128(el)
+	*i = out
+
+	return nil
+}
+
+func (i *Float128) UnmarshalJSON(data []byte) error {
+	var el Uint128
+	if err := json.Unmarshal(data, &el); err != nil {
+		return err
+	}
+
+	out := Float128(el)
+	*i = out
+
+	return nil
+}
+
+func (i *Uint128) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	if !strings.HasPrefix(s, "0x") && !strings.HasPrefix(s, "0X") {
+		return fmt.Errorf("int128 expects 0x prefix")
+	}
+
+	truncatedVal := s[2:]
+	if len(truncatedVal) != 32 {
+		return fmt.Errorf("int128 expects 32 characters after 0x, had %d", len(truncatedVal))
+	}
+
+	loHex := truncatedVal[:16]
+	hiHex := truncatedVal[16:]
+
+	lo, err := hex.DecodeString(loHex)
+	if err != nil {
+		return err
+	}
+
+	hi, err := hex.DecodeString(hiHex)
+	if err != nil {
+		return err
+	}
+
+	loUint := binary.LittleEndian.Uint64(lo)
+	hiUint := binary.LittleEndian.Uint64(hi)
+
+	i.Lo = loUint
+	i.Hi = hiUint
+
+	return nil
+}

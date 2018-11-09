@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -12,6 +13,82 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestInt128JSONUnmarshal(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		expectedLo    uint64
+		expectedHi    uint64
+		expectedError string
+	}{
+		{
+			name:          "broken prefix",
+			input:         `"mama"`,
+			expectedError: "int128 expects 0x prefix",
+		},
+		{
+			name:          "broken length",
+			input:         `"0xmama"`,
+			expectedError: "int128 expects 32 characters after 0x, had 4",
+		},
+		{
+			name:          "broken hex",
+			input:         `"0xmamamamamamamamamamamamamamamama"`,
+			expectedError: "encoding/hex: invalid byte: U+006D 'm'",
+		},
+		{
+			name:       "zero",
+			input:      `"0x00000000000000000000000000000000"`,
+			expectedLo: 0,
+			expectedHi: 0,
+		},
+		{
+			name:       "one",
+			input:      `"0x01000000000000000000000000000000"`,
+			expectedLo: 1,
+			expectedHi: 0,
+		},
+		{
+			name:       "one more than uint64",
+			input:      `"0x00000000000000000100000000000000"`,
+			expectedLo: 0,
+			expectedHi: 1,
+		},
+		{
+			name:       "value from nodeos serialization",
+			input:      `"0x9d030000000000007d00000000000000"`,
+			expectedLo: 925,
+			expectedHi: 125,
+		},
+		{
+			name:       "largest ever",
+			input:      `"0xffffffffffffffffffffffffffffffff"`,
+			expectedLo: math.MaxUint64,
+			expectedHi: math.MaxUint64,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var i Int128
+			err := json.Unmarshal([]byte(test.input), &i)
+
+			if test.expectedError != "" {
+				require.Error(t, err)
+				assert.Equal(t, test.expectedError, err.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectedLo, i.Lo, "lo")
+				assert.Equal(t, test.expectedHi, i.Hi, "hi")
+
+				res, err := json.Marshal(i)
+				require.NoError(t, err)
+				assert.Equal(t, test.input, string(res))
+			}
+		})
+	}
+}
 
 func TestAssetMarshalUnmarshal(t *testing.T) {
 	tests := []struct {

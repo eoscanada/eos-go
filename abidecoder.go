@@ -163,13 +163,15 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "uint32":
 		value, err = binaryDecoder.ReadUint32()
 	case "int64":
+		// This should be a JSONInt64
 		value, err = binaryDecoder.ReadInt64()
 	case "uint64":
+		// This should be a JSONUint64
 		value, err = binaryDecoder.ReadUint64()
 	case "int128":
-		err = fmt.Errorf("int128 support not implemented")
+		value, err = binaryDecoder.ReadUint128("int128")
 	case "uint128":
-		err = fmt.Errorf("uint128 support not implemented")
+		value, err = binaryDecoder.ReadUint128("uint128")
 	case "varint32":
 		value, err = binaryDecoder.ReadVarint32()
 	case "varuint32":
@@ -179,7 +181,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "float64":
 		value, err = binaryDecoder.ReadFloat64()
 	case "float128":
-		err = fmt.Errorf("float128 support not implemented")
+		value, err = binaryDecoder.ReadUint128("float128")
 	case "bool":
 		value, err = binaryDecoder.ReadBool()
 	case "time_point":

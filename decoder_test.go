@@ -320,7 +320,6 @@ func TestDecoder_BlockTimestamp(t *testing.T) {
 }
 
 func TestDecoder_Time(t *testing.T) {
-
 	time := time.Now()
 
 	buf := new(bytes.Buffer)

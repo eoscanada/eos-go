@@ -188,9 +188,17 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		object = i
 	case "int128":
-		return fmt.Errorf("writing field: int128 support not implemented")
+		var in Int128
+		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
+			return err
+		}
+		object = in
 	case "uint128":
-		return fmt.Errorf("writing field: uint128 support not implemented")
+		var in Uint128
+		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
+			return err
+		}
+		object = in
 	case "float32":
 		f, err := valueToFloat(fieldName, value, 32)
 		if err != nil {
@@ -204,7 +212,11 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		object = f
 	case "float128":
-		return fmt.Errorf("writing field: float128 support not implemented")
+		var in Float128
+		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
+			return err
+		}
+		object = in
 	case "bool":
 		object = value.Bool()
 	case "time_point_sec":
@@ -316,7 +328,6 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 
 	Logger.ABIEncoder.Printf("Writing object [%s]\n", object)
 	return binaryEncoder.Encode(object)
-
 }
 
 func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error) {

@@ -28,6 +28,7 @@ var TypeSize = struct {
 	Int16          int
 	UInt32         int
 	UInt64         int
+	UInt128        int
 	Float32        int
 	Float64        int
 	SHA256Bytes    int
@@ -48,6 +49,7 @@ var TypeSize = struct {
 	Int16:          2,
 	UInt32:         4,
 	UInt64:         8,
+	UInt128:        16,
 	Float32:        4,
 	Float64:        8,
 	SHA256Bytes:    32,
@@ -158,6 +160,21 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		var n float64
 		n, err = d.ReadFloat64()
 		rv.SetFloat(n)
+		return
+	case *Uint128:
+		var n Uint128
+		n, err = d.ReadUint128("uint128")
+		rv.Set(reflect.ValueOf(n))
+		return
+	case *Int128:
+		var n Uint128
+		n, err = d.ReadUint128("int128")
+		rv.Set(reflect.ValueOf(Int128(n)))
+		return
+	case *Float128:
+		var n Uint128
+		n, err = d.ReadUint128("float128")
+		rv.Set(reflect.ValueOf(Float128(n)))
 		return
 	case *uint16:
 		var n uint16
@@ -564,6 +581,21 @@ func (d *Decoder) ReadUint64() (out uint64, err error) {
 	out = binary.LittleEndian.Uint64(data)
 	d.pos += TypeSize.UInt64
 	Logger.Decoder.Print(fmt.Sprintf("readUint64 [%d] [%s]", out, hex.EncodeToString(data)))
+	return
+}
+
+func (d *Decoder) ReadUint128(typeName string) (out Uint128, err error) {
+	if d.remaining() < TypeSize.UInt128 {
+		err = fmt.Errorf("%s required [%d] bytes, remaining [%d]", typeName, TypeSize.UInt128, d.remaining())
+		return
+	}
+
+	data := d.data[d.pos : d.pos+TypeSize.UInt128]
+	out.Lo = binary.LittleEndian.Uint64(data)
+	out.Hi = binary.LittleEndian.Uint64(data[8:])
+
+	d.pos += TypeSize.UInt128
+	Logger.Decoder.Print(fmt.Sprintf("readUint128 [%d] [%s]", out, hex.EncodeToString(data)))
 	return
 }
 
