@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestChecksum256String(t *testing.T) {
+	s := Checksum256{0x01, 0x02, 0x03, 0x04}
+	assert.Equal(t, "01020304", s.String())
+}
+
 func TestInt128JSONUnmarshal(t *testing.T) {
 	tests := []struct {
 		name          string

@@ -449,6 +449,10 @@ func (t *Checksum256) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (t Checksum256) String() string {
+	return hex.EncodeToString(t)
+}
+
 type Checksum512 []byte
 
 func (t Checksum512) MarshalJSON() ([]byte, error) {
