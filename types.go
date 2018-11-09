@@ -415,7 +415,7 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-// SHA256Bytes
+// Checksum256
 
 type Checksum160 []byte
 
@@ -465,25 +465,10 @@ func (t *Checksum512) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
-type SHA256Bytes []byte
-
-func (t SHA256Bytes) MarshalJSON() ([]byte, error) {
-	return json.Marshal(hex.EncodeToString(t))
-}
-
-func (t *SHA256Bytes) UnmarshalJSON(data []byte) (err error) {
-	var s string
-	err = json.Unmarshal(data, &s)
-	if err != nil {
-		return
-	}
-
-	*t, err = hex.DecodeString(s)
-	return
-}
-func (t SHA256Bytes) String() string {
-	return hex.EncodeToString(t)
-}
+// SHA256Bytes is deprecated and renamed to Checksum256 for
+// consistency. Please update your code as this type will eventually
+// be phased out.
+type SHA256Bytes = Checksum256
 
 type Varuint32 uint32
 type Varint32 int32

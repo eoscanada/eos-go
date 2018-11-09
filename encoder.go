@@ -91,7 +91,6 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case Uint128:
 		return e.writeUint128(cv)
 	case Int128:
-		fmt.Println("CAMILON")
 		return e.writeUint128(Uint128(cv))
 	case Float128:
 		return e.writeUint128(Uint128(cv))
@@ -344,13 +343,6 @@ func (e *Encoder) writeString(s string) (err error) {
 	return e.writeByteArray([]byte(s))
 }
 
-func (e *Encoder) writeSHA256Bytes(s SHA256Bytes) error {
-	Logger.Encoder.Printf("Writing SHA256 [%s]\n", hex.EncodeToString(s))
-	if len(s) == 0 {
-		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.SHA256Bytes))
-	}
-	return e.toWriter(s)
-}
 func (e *Encoder) writeChecksum160(checksum Checksum160) error {
 	Logger.Encoder.Printf("Writing checksum160 [%s]\n", hex.EncodeToString(checksum))
 	if len(checksum) == 0 {

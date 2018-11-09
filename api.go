@@ -158,14 +158,14 @@ func (api *API) GetCode(account AccountName) (out *GetCodeResp, err error) {
 	return
 }
 
-func (api *API) GetCodeHash(account AccountName) (out SHA256Bytes, err error) {
+func (api *API) GetCodeHash(account AccountName) (out Checksum256, err error) {
 	resp := GetCodeHashResp{}
 	if err = api.call("chain", "get_code_hash", M{"account_name": account}, &resp); err != nil {
 		return
 	}
 
 	buffer, err := hex.DecodeString(resp.CodeHash)
-	return SHA256Bytes(buffer), err
+	return Checksum256(buffer), err
 }
 
 func (api *API) GetABI(account AccountName) (out *GetABIResp, err error) {
@@ -323,7 +323,7 @@ func (api *API) SignPushActionsWithOpts(actions []*Action, opts *TxOptions) (out
 
 // SignPushTransaction will sign a transaction and submit it to the
 // chain.
-func (api *API) SignPushTransaction(tx *Transaction, chainID SHA256Bytes, compression CompressionType) (out *PushTransactionFullResp, err error) {
+func (api *API) SignPushTransaction(tx *Transaction, chainID Checksum256, compression CompressionType) (out *PushTransactionFullResp, err error) {
 	_, packed, err := api.SignTransaction(tx, chainID, compression)
 	if err != nil {
 		return nil, err
@@ -342,7 +342,7 @@ func (api *API) SignPushTransaction(tx *Transaction, chainID SHA256Bytes, compre
 //
 // To sign a transaction, you need a Signer defined on the `API`
 // object. See SetSigner.
-func (api *API) SignTransaction(tx *Transaction, chainID SHA256Bytes, compression CompressionType) (*SignedTransaction, *PackedTransaction, error) {
+func (api *API) SignTransaction(tx *Transaction, chainID Checksum256, compression CompressionType) (*SignedTransaction, *PackedTransaction, error) {
 	if api.Signer == nil {
 		return nil, nil, fmt.Errorf("no Signer configured")
 	}

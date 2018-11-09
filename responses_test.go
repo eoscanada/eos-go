@@ -32,9 +32,9 @@ func TestUnmarshalBlockResp(t *testing.T) {
 	assert.Equal(t, BlockTimestamp{timestamp}, resp.Timestamp)
 	assert.Equal(t, AccountName("bitfinexeos1"), resp.Producer)
 	assert.Equal(t, uint16(0), resp.Confirmed)
-	assert.Equal(t, hexToSHA256Bytes("0060c5c3527812daa61b8a93ac82329eb1995bbafd37fcba4e15b25cc94cea1a"), resp.Previous)
-	assert.Equal(t, hexToSHA256Bytes("f9590621c12ac92b4ab621a30468497918287fd0dd2535907bd85409947f1988"), resp.TransactionMRoot)
-	assert.Equal(t, hexToSHA256Bytes("5827604590c993e2489639b739af79ab12dd0442fee6551e9cd2932a36fa5026"), resp.ActionMRoot)
+	assert.Equal(t, hexToChecksum256("0060c5c3527812daa61b8a93ac82329eb1995bbafd37fcba4e15b25cc94cea1a"), resp.Previous)
+	assert.Equal(t, hexToChecksum256("f9590621c12ac92b4ab621a30468497918287fd0dd2535907bd85409947f1988"), resp.TransactionMRoot)
+	assert.Equal(t, hexToChecksum256("5827604590c993e2489639b739af79ab12dd0442fee6551e9cd2932a36fa5026"), resp.ActionMRoot)
 	assert.Equal(t, uint32(149), resp.ScheduleVersion)
 	assert.Nil(t, resp.NewProducers)
 	assert.Empty(t, resp.HeaderExtensions)
@@ -53,7 +53,7 @@ func TestUnmarshalBlockResp(t *testing.T) {
 	assert.Equal(t, TransactionStatusExecuted, receipt.Status)
 	assert.Equal(t, CompressionNone, receipt.Transaction.Packed.Compression)
 	assert.Equal(t, HexBytes{}, receipt.Transaction.Packed.PackedContextFreeData)
-	assert.Equal(t, hexToSHA256Bytes("7074b6caaac4dfe1d19903a41b88a53b595e963bab02139a508785eba6e11ba5"), receipt.Transaction.Packed.ID())
+	assert.Equal(t, hexToChecksum256("7074b6caaac4dfe1d19903a41b88a53b595e963bab02139a508785eba6e11ba5"), receipt.Transaction.Packed.ID())
 	assert.Len(t, receipt.Transaction.Packed.Signatures, 1)
 	assert.Equal(t, "SIG_K1_KXsd17mt6qf8JAHvRiVLRH93tMoQrkC69qhoS2suG8N3YYF54LTVkSwnh4t4wscDJXPnSAdbJZpSfHjJjSurDmwGCAxvTs", receipt.Transaction.Packed.Signatures[0].String())
 
@@ -206,8 +206,8 @@ func hexToHexBytes(data string) HexBytes {
 	return HexBytes(bytes)
 }
 
-func hexToSHA256Bytes(data string) SHA256Bytes {
-	return SHA256Bytes(hexToHexBytes(data))
+func hexToChecksum256(data string) Checksum256 {
+	return Checksum256(hexToHexBytes(data))
 }
 
 var blockResponseJSONData = `

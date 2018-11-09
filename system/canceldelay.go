@@ -9,7 +9,7 @@ import "github.com/eoscanada/eos-go"
 // previously sent to the chain with a `delay_sec` larger than 0.  You
 // need to sign with cancelingAuth, to cancel a transaction signed
 // with that same authority.
-func NewCancelDelay(cancelingAuth eos.PermissionLevel, transactionID eos.SHA256Bytes) *eos.Action {
+func NewCancelDelay(cancelingAuth eos.PermissionLevel, transactionID eos.Checksum256) *eos.Action {
 	a := &eos.Action{
 		Account: AN("eosio"),
 		Name:    ActN("canceldelay"),
@@ -29,5 +29,5 @@ func NewCancelDelay(cancelingAuth eos.PermissionLevel, transactionID eos.SHA256B
 // system contract.
 type CancelDelay struct {
 	CancelingAuth eos.PermissionLevel `json:"canceling_auth"`
-	TransactionID eos.SHA256Bytes     `json:"trx_id"`
+	TransactionID eos.Checksum256     `json:"trx_id"`
 }

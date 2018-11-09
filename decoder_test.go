@@ -199,36 +199,36 @@ func TestDecoder_string(t *testing.T) {
 	assert.Equal(t, 0, d.remaining())
 }
 
-func TestDecoder_SHA256Bytes(t *testing.T) {
+func TestDecoder_Checksum256(t *testing.T) {
 
-	s := SHA256Bytes(bytes.Repeat([]byte{1}, 32))
+	s := Checksum256(bytes.Repeat([]byte{1}, 32))
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.writeSHA256Bytes(s)
+	enc.writeChecksum256(s)
 
 	d := NewDecoder(buf.Bytes())
 
-	rs, err := d.ReadSHA256Bytes()
+	rs, err := d.ReadChecksum256()
 	assert.NoError(t, err)
 
 	assert.Equal(t, s, rs)
 	assert.Equal(t, 0, d.remaining())
 }
 
-func TestDecoder_Empty_SHA256Bytes(t *testing.T) {
+func TestDecoder_Empty_Checksum256(t *testing.T) {
 
-	s := SHA256Bytes([]byte{})
+	s := Checksum256([]byte{})
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.writeSHA256Bytes(s)
+	enc.writeChecksum256(s)
 
 	d := NewDecoder(buf.Bytes())
 
-	s, err := d.ReadSHA256Bytes()
+	s, err := d.ReadChecksum256()
 	assert.NoError(t, err)
-	assert.Equal(t, s, SHA256Bytes(bytes.Repeat([]byte{0}, 32)))
+	assert.Equal(t, s, Checksum256(bytes.Repeat([]byte{0}, 32)))
 	assert.Equal(t, 0, d.remaining())
 }
 
@@ -334,7 +334,7 @@ type EncodeTestStruct struct {
 	F2  int16
 	F3  uint16
 	F4  uint32
-	F5  SHA256Bytes
+	F5  Checksum256
 	F6  []string
 	F7  [2]string
 	F8  map[string]string
@@ -387,7 +387,7 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, int16(-75), s.F2)
 	assert.Equal(t, uint16(99), s.F3)
 	assert.Equal(t, uint32(999), s.F4)
-	assert.Equal(t, SHA256Bytes(bytes.Repeat([]byte{0}, 32)), s.F5)
+	assert.Equal(t, Checksum256(bytes.Repeat([]byte{0}, 32)), s.F5)
 	assert.Equal(t, []string{"def", "789"}, s.F6)
 	assert.Equal(t, [2]string{"foo", "bar"}, s.F7)
 	assert.Equal(t, map[string]string{"foo": "bar", "hello": "you"}, s.F8)
@@ -605,8 +605,8 @@ func TestDecoder_readUint16_missing_data(t *testing.T) {
 	_, err = NewDecoder([]byte{}).ReadUint64()
 	assert.EqualError(t, err, "uint64 required [8] bytes, remaining [0]")
 
-	_, err = NewDecoder([]byte{}).ReadSHA256Bytes()
-	assert.EqualError(t, err, "sha256 required [32] bytes, remaining [0]")
+	_, err = NewDecoder([]byte{}).ReadChecksum256()
+	assert.EqualError(t, err, "checksum 256 required [32] bytes, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadPublicKey()
 	assert.EqualError(t, err, "publicKey required [34] bytes, remaining [0]")

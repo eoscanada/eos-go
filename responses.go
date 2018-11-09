@@ -28,11 +28,11 @@ import (
 
 type InfoResp struct {
 	ServerVersion            string      `json:"server_version"` // "2cc40a4e"
-	ChainID                  SHA256Bytes `json:"chain_id"`
+	ChainID                  Checksum256 `json:"chain_id"`
 	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
 	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
-	LastIrreversibleBlockID  SHA256Bytes `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
-	HeadBlockID              SHA256Bytes `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	LastIrreversibleBlockID  Checksum256 `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
+	HeadBlockID              Checksum256 `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
 	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
 	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
 
@@ -45,7 +45,7 @@ type InfoResp struct {
 
 type BlockResp struct {
 	SignedBlock
-	ID              SHA256Bytes  `json:"id"`
+	ID              Checksum256  `json:"id"`
 	BlockNum        uint32       `json:"block_num"`
 	RefBlockPrefix  uint32       `json:"ref_block_prefix"`
 	BlockExtensions []*Extension `json:"block_extensions"`
@@ -74,7 +74,7 @@ type DBSizeResp struct {
 }
 
 type TransactionResp struct {
-	ID      SHA256Bytes `json:"id"`
+	ID      Checksum256 `json:"id"`
 	Receipt struct {
 		Status            TransactionStatus `json:"status"`
 		CPUUsageMicrosec  int               `json:"cpu_usage_us"`
@@ -107,7 +107,7 @@ type ActionTrace struct {
 	CPUUsage      int            `json:"cpu_usage"`
 	Console       string         `json:"console"`
 	TotalCPUUsage int            `json:"total_cpu_usage"`
-	TransactionID SHA256Bytes    `json:"trx_id"`
+	TransactionID Checksum256    `json:"trx_id"`
 	InlineTraces  []*ActionTrace `json:"inline_traces"`
 }
 
@@ -270,7 +270,7 @@ type PushTransactionFullResp struct {
 
 type TransactionProcessed struct {
 	Status               string      `json:"status"`
-	ID                   SHA256Bytes `json:"id"`
+	ID                   Checksum256 `json:"id"`
 	ActionTraces         []Trace     `json:"action_traces"`
 	DeferredTransactions []string    `json:"deferred_transactions"` // that's not right... dig to find what's there..
 }

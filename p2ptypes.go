@@ -18,17 +18,17 @@ type P2PMessage interface {
 type HandshakeMessage struct {
 	// net_plugin/protocol.hpp handshake_message
 	NetworkVersion           uint16        `json:"network_version"`
-	ChainID                  SHA256Bytes   `json:"chain_id"`
-	NodeID                   SHA256Bytes   `json:"node_id"` // sha256
+	ChainID                  Checksum256   `json:"chain_id"`
+	NodeID                   Checksum256   `json:"node_id"` // sha256
 	Key                      ecc.PublicKey `json:"key"`     // can be empty, producer key, or peer key
 	Time                     Tstamp        `json:"time"`    // time?!
-	Token                    SHA256Bytes   `json:"token"`   // digest of time to prove we own the private `key`
+	Token                    Checksum256   `json:"token"`   // digest of time to prove we own the private `key`
 	Signature                ecc.Signature `json:"sig"`     // can be empty if no key, signature of the digest above
 	P2PAddress               string        `json:"p2p_address"`
 	LastIrreversibleBlockNum uint32        `json:"last_irreversible_block_num"`
-	LastIrreversibleBlockID  SHA256Bytes   `json:"last_irreversible_block_id"`
+	LastIrreversibleBlockID  Checksum256   `json:"last_irreversible_block_id"`
 	HeadNum                  uint32        `json:"head_num"`
-	HeadID                   SHA256Bytes   `json:"head_id"`
+	HeadID                   Checksum256   `json:"head_id"`
 	OS                       string        `json:"os"`
 	Agent                    string        `json:"agent"`
 	Generation               int16         `json:"generation"`
@@ -40,9 +40,9 @@ func (m *HandshakeMessage) GetType() P2PMessageType {
 
 type ChainSizeMessage struct {
 	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"`
-	LastIrreversibleBlockID  SHA256Bytes `json:"last_irreversible_block_id"`
+	LastIrreversibleBlockID  Checksum256 `json:"last_irreversible_block_id"`
 	HeadNum                  uint32      `json:"head_num"`
-	HeadID                   SHA256Bytes `json:"head_id"`
+	HeadID                   Checksum256 `json:"head_id"`
 }
 
 func (m *ChainSizeMessage) GetType() P2PMessageType {
@@ -105,7 +105,7 @@ func (r GoAwayReason) String() string {
 
 type GoAwayMessage struct {
 	Reason GoAwayReason `json:"reason"`
-	NodeID SHA256Bytes  `json:"node_id"`
+	NodeID Checksum256  `json:"node_id"`
 }
 
 func (m *GoAwayMessage) GetType() P2PMessageType {
@@ -199,7 +199,7 @@ func (s TransactionStatus) String() string {
 
 }
 
-//type TransactionID SHA256Bytes
+//type TransactionID Checksum256
 
 type ProducerKey struct {
 	AccountName     AccountName   `json:"producer_name"`
@@ -215,9 +215,9 @@ type BlockHeader struct {
 	Timestamp        BlockTimestamp            `json:"timestamp"`
 	Producer         AccountName               `json:"producer"`
 	Confirmed        uint16                    `json:"confirmed"`
-	Previous         SHA256Bytes               `json:"previous"`
-	TransactionMRoot SHA256Bytes               `json:"transaction_mroot"`
-	ActionMRoot      SHA256Bytes               `json:"action_mroot"`
+	Previous         Checksum256               `json:"previous"`
+	TransactionMRoot Checksum256               `json:"transaction_mroot"`
+	ActionMRoot      Checksum256               `json:"action_mroot"`
 	ScheduleVersion  uint32                    `json:"schedule_version"`
 	NewProducers     *OptionalProducerSchedule `json:"new_producers" eos:"optional"`
 	HeaderExtensions []*Extension              `json:"header_extensions"`
@@ -227,7 +227,7 @@ func (b *BlockHeader) BlockNumber() uint32 {
 	return binary.BigEndian.Uint32(b.Previous[:4]) + 1
 }
 
-func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
+func (b *BlockHeader) BlockID() (Checksum256, error) {
 	cereal, err := MarshalBinary(b)
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ func (b *BlockHeader) BlockID() (SHA256Bytes, error) {
 
 	binary.BigEndian.PutUint32(hashed, b.BlockNumber())
 
-	return SHA256Bytes(hashed), nil
+	return Checksum256(hashed), nil
 }
 
 type OptionalProducerSchedule struct {
@@ -277,7 +277,7 @@ type TransactionReceipt struct {
 }
 
 type TransactionWithID struct {
-	ID     SHA256Bytes
+	ID     Checksum256
 	Packed *PackedTransaction
 }
 
@@ -313,7 +313,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 		}
 
 		*t = TransactionWithID{
-			ID: SHA256Bytes(shaID),
+			ID: Checksum256(shaID),
 		}
 
 		return nil
@@ -371,12 +371,12 @@ const (
 type OrderedTransactionIDs struct {
 	Mode    [4]byte       `json:"mode"`
 	Pending uint32        `json:"pending"`
-	IDs     []SHA256Bytes `json:"ids"`
+	IDs     []Checksum256 `json:"ids"`
 }
 type OrderedBlockIDs struct {
 	Mode    [4]byte       `json:"mode"`
 	Pending uint32        `json:"pending"`
-	IDs     []SHA256Bytes `json:"ids"`
+	IDs     []Checksum256 `json:"ids"`
 }
 
 func (o *OrderedBlockIDs) String() string {

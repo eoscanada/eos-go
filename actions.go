@@ -33,7 +33,7 @@ type Action struct {
 	ActionData
 }
 
-func (a Action) Digest() SHA256Bytes {
+func (a Action) Digest() Checksum256 {
 	toEat := jsonActionToServer{
 		Account:       a.Account,
 		Name:          a.Name,

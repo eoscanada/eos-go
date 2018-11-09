@@ -31,7 +31,6 @@ var TypeSize = struct {
 	UInt128        int
 	Float32        int
 	Float64        int
-	SHA256Bytes    int
 	Checksum160    int
 	Checksum256    int
 	Checksum512    int
@@ -52,7 +51,6 @@ var TypeSize = struct {
 	UInt128:        16,
 	Float32:        4,
 	Float64:        8,
-	SHA256Bytes:    32,
 	Checksum160:    20,
 	Checksum256:    32,
 	Checksum512:    64,
@@ -216,9 +214,9 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		data, err = d.ReadByteArray()
 		rv.SetBytes(data)
 		return
-	case *SHA256Bytes:
-		var s SHA256Bytes
-		s, err = d.ReadSHA256Bytes()
+	case *Checksum256:
+		var s Checksum256
+		s, err = d.ReadChecksum256()
 		rv.SetBytes(s)
 		return
 	case *ecc.PublicKey:
@@ -268,7 +266,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		Logger.Decoder.Print(fmt.Sprintf("Type byte value : %d", t))
 
 		if t == 0 {
-			id, e := d.ReadSHA256Bytes()
+			id, e := d.ReadChecksum256()
 			if err != nil {
 				err = fmt.Errorf("decode: TransactionWithID failed to read id: %s", e)
 				return
@@ -632,21 +630,7 @@ func (d *Decoder) ReadString() (out string, err error) {
 	return
 }
 
-func (d *Decoder) ReadSHA256Bytes() (out SHA256Bytes, err error) {
-
-	if d.remaining() < TypeSize.SHA256Bytes {
-		err = fmt.Errorf("sha256 required [%d] bytes, remaining [%d]", TypeSize.SHA256Bytes, d.remaining())
-		return
-	}
-
-	out = SHA256Bytes(d.data[d.pos : d.pos+TypeSize.SHA256Bytes])
-	d.pos += TypeSize.SHA256Bytes
-	Logger.Decoder.Print(fmt.Sprintf("readSHA256Bytes [%s]", hex.EncodeToString(out)))
-	return
-}
-
 func (d *Decoder) ReadChecksum160() (out Checksum160, err error) {
-
 	if d.remaining() < TypeSize.Checksum160 {
 		err = fmt.Errorf("checksum 160 required [%d] bytes, remaining [%d]", TypeSize.Checksum160, d.remaining())
 		return
@@ -659,7 +643,6 @@ func (d *Decoder) ReadChecksum160() (out Checksum160, err error) {
 }
 
 func (d *Decoder) ReadChecksum256() (out Checksum256, err error) {
-
 	if d.remaining() < TypeSize.Checksum256 {
 		err = fmt.Errorf("checksum 256 required [%d] bytes, remaining [%d]", TypeSize.Checksum256, d.remaining())
 		return
@@ -672,7 +655,6 @@ func (d *Decoder) ReadChecksum256() (out Checksum256, err error) {
 }
 
 func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
-
 	if d.remaining() < TypeSize.Checksum512 {
 		err = fmt.Errorf("checksum 512 required [%d] bytes, remaining [%d]", TypeSize.Checksum512, d.remaining())
 		return

@@ -32,12 +32,12 @@ type Peer struct {
 }
 
 type HandshakeInfo struct {
-	ChainID                  eos.SHA256Bytes
+	ChainID                  eos.Checksum256
 	HeadBlockNum             uint32
-	HeadBlockID              eos.SHA256Bytes
+	HeadBlockID              eos.Checksum256
 	HeadBlockTime            time.Time
 	LastIrreversibleBlockNum uint32
-	LastIrreversibleBlockID  eos.SHA256Bytes
+	LastIrreversibleBlockID  eos.Checksum256
 }
 
 func (h *HandshakeInfo) String() string {
