@@ -80,6 +80,10 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeUint32(cv)
 	case uint64:
 		return e.writeUint64(cv)
+	case Int64:
+		return e.writeUint64(uint64(cv))
+	case Uint64:
+		return e.writeUint64(uint64(cv))
 	case int64:
 		return e.writeInt64(cv)
 	case float32:

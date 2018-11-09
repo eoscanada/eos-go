@@ -176,17 +176,17 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		object = uint32(i)
 	case "int64":
-		i, err := valueToInt(fieldName, value, 64)
-		if err != nil {
-			return err
+		var in Int64
+		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
+			return fmt.Errorf("encoding int64: %s", err)
 		}
-		object = i
+		object = in
 	case "uint64":
-		i, err := valueToUint(fieldName, value, 64)
-		if err != nil {
-			return err
+		var in Uint64
+		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
+			return fmt.Errorf("encoding uint64: %s", err)
 		}
-		object = i
+		object = in
 	case "int128":
 		var in Int128
 		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {

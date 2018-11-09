@@ -149,7 +149,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
 		return
-	case *JSONInt64:
+	case *Int64:
 		var n int64
 		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))

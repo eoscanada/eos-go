@@ -163,11 +163,13 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "uint32":
 		value, err = binaryDecoder.ReadUint32()
 	case "int64":
-		// This should be a JSONInt64
-		value, err = binaryDecoder.ReadInt64()
+		var val int64
+		val, err = binaryDecoder.ReadInt64()
+		value = Int64(val)
 	case "uint64":
-		// This should be a JSONUint64
-		value, err = binaryDecoder.ReadUint64()
+		var val uint64
+		val, err = binaryDecoder.ReadUint64()
+		value = Uint64(val)
 	case "int128":
 		value, err = binaryDecoder.ReadUint128("int128")
 	case "uint128":

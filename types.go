@@ -29,9 +29,9 @@ func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
 type AccountResourceLimit struct {
-	Used      JSONInt64 `json:"used"`
-	Available JSONInt64 `json:"available"`
-	Max       JSONInt64 `json:"max"`
+	Used      Int64 `json:"used"`
+	Available Int64 `json:"available"`
+	Max       Int64 `json:"max"`
 }
 
 type DelegatedBandwidth struct {
@@ -45,14 +45,14 @@ type TotalResources struct {
 	Owner     AccountName `json:"owner"`
 	NetWeight Asset       `json:"net_weight"`
 	CPUWeight Asset       `json:"cpu_weight"`
-	RAMBytes  JSONInt64   `json:"ram_bytes"`
+	RAMBytes  Int64       `json:"ram_bytes"`
 }
 
 type VoterInfo struct {
 	Owner             AccountName   `json:"owner"`
 	Proxy             AccountName   `json:"proxy"`
 	Producers         []AccountName `json:"producers"`
-	Staked            JSONInt64     `json:"staked"`
+	Staked            Int64         `json:"staked"`
 	LastVoteWeight    JSONFloat64   `json:"last_vote_weight"`
 	ProxiedVoteWeight JSONFloat64   `json:"proxied_vote_weight"`
 	IsProxy           byte          `json:"is_proxy"`
@@ -581,9 +581,25 @@ func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type JSONInt64 int64
+// JSONInt64 is deprecated in favor of Int64.
+type JSONInt64 = Int64
 
-func (i *JSONInt64) UnmarshalJSON(data []byte) error {
+type Int64 int64
+
+func (i Int64) MarshalJSON() (data []byte, err error) {
+	if i > 0xffffffff || i < -0xffffffff {
+		encodedInt, err := json.Marshal(int64(i))
+		if err != nil {
+			return nil, err
+		}
+		data = append([]byte{'"'}, encodedInt...)
+		data = append(data, '"')
+		return data, nil
+	}
+	return json.Marshal(int64(i))
+}
+
+func (i *Int64) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 {
 		return errors.New("empty value")
 	}
@@ -599,7 +615,7 @@ func (i *JSONInt64) UnmarshalJSON(data []byte) error {
 			return err
 		}
 
-		*i = JSONInt64(val)
+		*i = Int64(val)
 
 		return nil
 	}
@@ -609,7 +625,53 @@ func (i *JSONInt64) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*i = JSONInt64(v)
+	*i = Int64(v)
+
+	return nil
+}
+
+type Uint64 int64
+
+func (i Uint64) MarshalJSON() (data []byte, err error) {
+	if i > 0xffffffff {
+		encodedInt, err := json.Marshal(uint64(i))
+		if err != nil {
+			return nil, err
+		}
+		data = append([]byte{'"'}, encodedInt...)
+		data = append(data, '"')
+		return data, nil
+	}
+	return json.Marshal(uint64(i))
+}
+
+func (i *Uint64) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		return errors.New("empty value")
+	}
+
+	if data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+
+		val, err := strconv.ParseUint(s, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		*i = Uint64(val)
+
+		return nil
+	}
+
+	var v uint64
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	*i = Uint64(v)
 
 	return nil
 }
