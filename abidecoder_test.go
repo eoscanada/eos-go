@@ -378,7 +378,7 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "mid int64", "typeName": "int64", "value": `4096`, "encode": int64(4096), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "stringified lower int64", "typeName": "int64", "value": `"-5000000000"`, "encode": int64(-5000000000), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "min uint64", "typeName": "uint64", "value": "0", "encode": uint64(0), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "max uint64", "typeName": "uint64", "value": "18446744073709551615", "encode": uint64(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "max uint64", "typeName": "uint64", "value": `"18446744073709551615"`, "encode": uint64(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "int128", "typeName": "int128", "value": `"0x01000000000000000200000000000000"`, "encode": Int128{Lo: 1, Hi: 2}, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "uint128", "typeName": "uint128", "value": `"0x01000000000000000200000000000000"`, "encode": Uint128{Lo: 1, Hi: 2}, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "min varint32", "typeName": "varint32", "value": "-2147483648", "encode": Varint32(-2147483648), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},

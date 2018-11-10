@@ -634,7 +634,7 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type Uint64 int64
+type Uint64 uint64
 
 func (i Uint64) MarshalJSON() (data []byte, err error) {
 	if i > 0xffffffff {
