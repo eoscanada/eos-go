@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eoscanada/eos-go/ecc"
+	"go.uber.org/zap"
 
 	"github.com/tidwall/gjson"
 )
@@ -40,15 +41,15 @@ func (a *ABI) EncodeAction(actionName ActionName, json []byte) ([]byte, error) {
 }
 
 func (a *ABI) encode(binaryEncoder *Encoder, structureName string, json []byte) error {
-	Logger.ABIEncoder.Printf("Encoding structure [%s]\n", structureName)
+	abiEncoderLog.Debug("abi encode struct", zap.String("name", structureName))
 
 	structure := a.StructForName(structureName)
 	if structure == nil {
-		return fmt.Errorf("encode: structure [%s] not found in abi", structureName)
+		return fmt.Errorf("encode struct [%s] not found in abi", structureName)
 	}
 
 	if structure.Base != "" {
-		Logger.ABIEncoder.Printf("Structure [%s] has base structure of type [%s]\n", structureName, structure.Base)
+		abiEncoderLog.Debug("struct has base struct", zap.String("struct", structureName), zap.String("base", structure.Base))
 		err := a.encode(binaryEncoder, structure.Base, json)
 		if err != nil {
 			return fmt.Errorf("encode base [%s]: %s", structureName, err)
@@ -59,20 +60,20 @@ func (a *ABI) encode(binaryEncoder *Encoder, structureName string, json []byte) 
 }
 func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byte) error {
 
-	defer Logger.ABIEncoder.SetPrefix(Logger.ABIEncoder.Prefix())
-	defer Logger.Encoder.SetPrefix(Logger.Encoder.Prefix())
-	Logger.ABIEncoder.SetPrefix(Logger.ABIEncoder.Prefix() + "\t")
-	Logger.Encoder.SetPrefix(Logger.Encoder.Prefix() + "\t")
+	defer func(prev *zap.Logger) { abiEncoderLog = prev }(abiEncoderLog)
+	abiEncoderLog = encoderLog.Named("fields")
+	defer func(prev *zap.Logger) { encoderLog = prev }(encoderLog)
+	encoderLog = encoderLog.Named("fields")
 
 	for _, field := range fields {
 
-		Logger.ABIEncoder.Printf("Encoding field [%s] of type [%s]\n", field.Name, field.Type)
+		abiEncoderLog.Debug("encode field", zap.String("name", field.Name), zap.String("type", field.Type))
 
 		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
 		typeName := a.TypeNameForNewTypeName(fieldType)
 		fieldName := field.Name
 		if typeName != field.Type {
-			Logger.ABIEncoder.Printf("[%s] is an alias of [%s]\n", field.Type, typeName)
+			abiEncoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
 		}
 
 		err := a.encodeField(binaryEncoder, fieldName, typeName, isOptional, isArray, json)
@@ -85,16 +86,17 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 
 func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) (err error) {
 
-	Logger.ABIEncoder.Println("encodeField: json:", string(json))
+	abiEncoderLog.Debug("encode field json", zap.ByteString("json", json))
+
 	value := gjson.GetBytes(json, fieldName)
 	if isOptional {
 		if value.Exists() {
-			Logger.ABIEncoder.Printf("Field [%s] of type [%s] is optional and present\n", fieldName, fieldType)
+			abiEncoderLog.Debug("field is optional and present", zap.String("name", fieldName), zap.String("type", fieldType))
 			if e := binaryEncoder.writeByte(1); e != nil {
 				return e
 			}
 		} else {
-			Logger.ABIEncoder.Printf("Field [%s] of type [%s] is optional and not present\n", fieldName, fieldType)
+			abiEncoderLog.Debug("field is optional and *not* present", zap.String("name", fieldName), zap.String("type", fieldType))
 			return binaryEncoder.writeByte(0)
 		}
 
@@ -104,7 +106,7 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 
 	if isArray {
 
-		Logger.ABIEncoder.Printf("Field [%s] of type [%s] is an array\n", fieldName, fieldType)
+		abiEncoderLog.Debug("field is an array", zap.String("name", fieldName), zap.String("type", fieldType))
 		if !value.IsArray() {
 			return fmt.Errorf("encode field: expected array for field [%s] got [%s]", fieldName, value.Type.String())
 		}
@@ -124,11 +126,11 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 
 func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType string, value gjson.Result) error {
 
-	Logger.ABIEncoder.Printf("Writing value [%s] for field [%s] of type [%s]\n", value.Raw, fieldName, fieldType)
+	abiEncoderLog.Debug("write field", zap.String("name", fieldName), zap.String("type", fieldType), zap.String("json", value.Raw))
 
 	structure := a.StructForName(fieldType)
 	if structure != nil {
-		Logger.ABIEncoder.Printf("Field [%s] is a structure\n", fieldName)
+		abiEncoderLog.Debug("field is a struct", zap.String("name", fieldName))
 
 		err := a.encodeFields(binaryEncoder, structure.Fields, []byte(value.Raw))
 		if err != nil {
@@ -241,7 +243,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 	case "name":
 		if len(value.Str) > 12 {
-			return fmt.Errorf("writing field: name: %s is to long. expexted length of max 12 characters", value.Str)
+			return fmt.Errorf("writing field: name: %s is to long. expected length of max 12 characters", value.Str)
 		}
 		object = Name(value.Str)
 	case "bytes":
@@ -326,7 +328,8 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		return fmt.Errorf("writing field of type [%s]: unknown type", fieldType)
 	}
 
-	Logger.ABIEncoder.Printf("Writing object [%s]\n", object)
+	abiEncoderLog.Debug("write object", zap.Reflect("value", object))
+
 	return binaryEncoder.Encode(object)
 }
 

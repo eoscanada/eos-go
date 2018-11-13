@@ -11,13 +11,12 @@ import (
 	"errors"
 	"reflect"
 
-	"encoding/hex"
-
 	"strings"
 
 	"io/ioutil"
 
 	"github.com/eoscanada/eos-go/ecc"
+	"go.uber.org/zap"
 )
 
 var TypeSize = struct {
@@ -106,7 +105,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	}
 	t := rv.Type()
 
-	Logger.Decoder.Print(fmt.Sprintf("Decode type [%T]", v))
+	decoderLog.Debug("decode type", typeField("type", v))
 	if !rv.CanAddr() {
 		return errors.New("binary: can only Decode to pointer type")
 	}
@@ -131,7 +130,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		var n uint64
 		n, err = d.ReadUint64()
 		name := NameToString(n)
-		Logger.Decoder.Print(fmt.Sprintf("readName [%s]", name))
+		decoderLog.Debug("read name", zap.String("name", name))
 		rv.SetString(name)
 		return
 	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode, *GoAwayReason:
@@ -263,7 +262,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			return
 		}
 
-		Logger.Decoder.Print(fmt.Sprintf("Type byte value : %d", t))
+		decoderLog.Debug("type byte value", zap.Uint8("val", t))
 
 		if t == 0 {
 			id, e := d.ReadChecksum256()
@@ -294,7 +293,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 		if isPresent == 0 {
-			Logger.Decoder.Print("Skipping optional OptionalProducerSchedule")
+			decoderLog.Debug("skipping optional OptionalProducerSchedule")
 			*realV = nil
 			return
 		}
@@ -342,7 +341,7 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 
 	switch t.Kind() {
 	case reflect.Array:
-		Logger.Decoder.Print("Array")
+		decoderLog.Debug("reading array")
 		len := t.Len()
 		for i := 0; i < int(len); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
@@ -352,12 +351,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		return
 
 	case reflect.Slice:
-		Logger.Decoder.Print("Reading Slice length ")
 		var l uint64
 		if l, err = d.ReadUvarint64(); err != nil {
 			return
 		}
-		Logger.Decoder.Print(fmt.Sprintf("Slice [%T] of length: %d", v, l))
+		decoderLog.Debug("reading slice", zap.Uint64("len", l), typeField("type", v))
 		rv.Set(reflect.MakeSlice(t, int(l), int(l)))
 		for i := 0; i < int(l); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
@@ -373,7 +371,6 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		}
 
 	case reflect.Map:
-		//fmt.Logger.Decoder.Print("Map")
 		var l uint64
 		if l, err = d.ReadUvarint64(); err != nil {
 			return
@@ -409,9 +406,10 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 			continue
 		}
 
-		if v := rv.Field(i); v.CanSet() && t.Field(i).Name != "_" {
+		typeField := t.Field(i)
+		if v := rv.Field(i); v.CanSet() && typeField.Name != "_" {
 			iface := v.Addr().Interface()
-			Logger.Decoder.Print(fmt.Sprintf("Field name: %s", t.Field(i).Name))
+			decoderLog.Debug("field", zap.String("name", typeField.Name))
 			if err = d.Decode(iface); err != nil {
 				return
 			}
@@ -423,38 +421,31 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 var ErrVarIntBufferSize = errors.New("varint: invalid buffer size")
 
 func (d *Decoder) ReadUvarint64() (uint64, error) {
-
 	l, read := binary.Uvarint(d.data[d.pos:])
 	if read <= 0 {
-		Logger.Decoder.Print(fmt.Sprintf("readUvarint [%d]", l))
 		return l, ErrVarIntBufferSize
 	}
-
+	decoderLog.Debug("read uvarint64", zap.Uint64("val", l))
 	d.pos += read
-	Logger.Decoder.Print(fmt.Sprintf("readUvarint [%d]", l))
 	return l, nil
 }
 func (d *Decoder) ReadVarint64() (out int64, err error) {
-
 	l, read := binary.Varint(d.data[d.pos:])
 	if read <= 0 {
-		Logger.Decoder.Print(fmt.Sprintf("readVarint [%d]", l))
 		return l, ErrVarIntBufferSize
 	}
-
+	decoderLog.Debug("read varint", zap.Int64("val", l))
 	d.pos += read
-	Logger.Decoder.Print(fmt.Sprintf("readVarint [%d]", l))
 	return l, nil
 }
 
 func (d *Decoder) ReadVarint32() (out int32, err error) {
-
 	n, err := d.ReadVarint64()
 	if err != nil {
 		return out, err
 	}
 	out = int32(n)
-	Logger.Decoder.Print(fmt.Sprintf("readVarint32 [%d]", out))
+	decoderLog.Debug("read varint32", zap.Int32("val", out))
 	return
 }
 func (d *Decoder) ReadUvarint32() (out uint32, err error) {
@@ -464,7 +455,7 @@ func (d *Decoder) ReadUvarint32() (out uint32, err error) {
 		return out, err
 	}
 	out = uint32(n)
-	Logger.Decoder.Print(fmt.Sprintf("readUvarint32 [%d]", out))
+	decoderLog.Debug("read uvarint32", zap.Uint32("val", out))
 	return
 }
 
@@ -481,13 +472,11 @@ func (d *Decoder) ReadByteArray() (out []byte, err error) {
 
 	out = d.data[d.pos : d.pos+int(l)]
 	d.pos += int(l)
-
-	Logger.Decoder.Print(fmt.Sprintf("readByteArray [%s]", hex.EncodeToString(out)))
+	decoderLog.Debug("read byte array", zap.Stringer("hex", HexBytes(out)))
 	return
 }
 
 func (d *Decoder) ReadByte() (out byte, err error) {
-
 	if d.remaining() < TypeSize.Byte {
 		err = fmt.Errorf("byte required [1] byte, remaining [%d]", d.remaining())
 		return
@@ -495,12 +484,11 @@ func (d *Decoder) ReadByte() (out byte, err error) {
 
 	out = d.data[d.pos]
 	d.pos++
-	Logger.Decoder.Print(fmt.Sprintf("readByte [%d]", out))
+	decoderLog.Debug("read byte", zap.Uint8("byte", out))
 	return
 }
 
 func (d *Decoder) ReadBool() (out bool, err error) {
-
 	if d.remaining() < TypeSize.Bool {
 		err = fmt.Errorf("bool required [%d] byte, remaining [%d]", TypeSize.Bool, d.remaining())
 		return
@@ -512,19 +500,19 @@ func (d *Decoder) ReadBool() (out bool, err error) {
 		err = fmt.Errorf("readBool, %s", err)
 	}
 	out = b != 0
+	decoderLog.Debug("read bool", zap.Bool("val", out))
 	return
 
 }
 
 func (d *Decoder) ReadUInt8() (out uint8, err error) {
 	out, err = d.ReadByte()
-	Logger.Decoder.Print(fmt.Sprintf("readUint8 [%d]", out))
 	return
 }
 func (d *Decoder) ReadInt8() (out int8, err error) {
 	b, err := d.ReadByte()
 	out = int8(b)
-	Logger.Decoder.Print(fmt.Sprintf("readInt8 [%d]", out))
+	decoderLog.Debug("read int8", zap.Int8("val", out))
 	return
 }
 
@@ -536,18 +524,20 @@ func (d *Decoder) ReadUint16() (out uint16, err error) {
 
 	out = binary.LittleEndian.Uint16(d.data[d.pos:])
 	d.pos += TypeSize.UInt16
-	Logger.Decoder.Print(fmt.Sprintf("readUint16 [%d]", out))
+	decoderLog.Debug("read uint16", zap.Uint16("val", out))
 	return
 }
 
 func (d *Decoder) ReadInt16() (out int16, err error) {
 	n, err := d.ReadUint16()
 	out = int16(n)
+	decoderLog.Debug("read int16", zap.Int16("val", out))
 	return
 }
 func (d *Decoder) ReadInt64() (out int64, err error) {
 	n, err := d.ReadUint64()
 	out = int64(n)
+	decoderLog.Debug("read int64", zap.Int64("val", out))
 	return
 }
 
@@ -559,13 +549,13 @@ func (d *Decoder) ReadUint32() (out uint32, err error) {
 
 	out = binary.LittleEndian.Uint32(d.data[d.pos:])
 	d.pos += TypeSize.UInt32
-	Logger.Decoder.Print(fmt.Sprintf("readUint32 [%d]", out))
+	decoderLog.Debug("read uint32", zap.Uint32("val", out))
 	return
 }
 func (d *Decoder) ReadInt32() (out int32, err error) {
 	n, err := d.ReadUint32()
 	out = int32(n)
-	Logger.Decoder.Print(fmt.Sprintf("readInt32 [%d]", out))
+	decoderLog.Debug("read int32", zap.Int32("val", out))
 	return
 }
 
@@ -578,7 +568,7 @@ func (d *Decoder) ReadUint64() (out uint64, err error) {
 	data := d.data[d.pos : d.pos+TypeSize.UInt64]
 	out = binary.LittleEndian.Uint64(data)
 	d.pos += TypeSize.UInt64
-	Logger.Decoder.Print(fmt.Sprintf("readUint64 [%d] [%s]", out, hex.EncodeToString(data)))
+	decoderLog.Debug("read uint64", zap.Uint64("val", out), zap.Stringer("hex", HexBytes(data)))
 	return
 }
 
@@ -593,7 +583,7 @@ func (d *Decoder) ReadUint128(typeName string) (out Uint128, err error) {
 	out.Hi = binary.LittleEndian.Uint64(data[8:])
 
 	d.pos += TypeSize.UInt128
-	Logger.Decoder.Print(fmt.Sprintf("readUint128 [%d] [%s]", out, hex.EncodeToString(data)))
+	decoderLog.Debug("read uint128", zap.Stringer("hex", out), zap.Uint64("lo", out.Lo), zap.Uint64("lo", out.Lo))
 	return
 }
 
@@ -606,7 +596,7 @@ func (d *Decoder) ReadFloat32() (out float32, err error) {
 	n := binary.LittleEndian.Uint32(d.data[d.pos:])
 	out = math.Float32frombits(n)
 	d.pos += TypeSize.Float32
-	Logger.Decoder.Print(fmt.Sprintf("readFloat32 [%f]", out))
+	decoderLog.Debug("read float32", zap.Float32("val", out))
 	return
 }
 
@@ -619,14 +609,14 @@ func (d *Decoder) ReadFloat64() (out float64, err error) {
 	n := binary.LittleEndian.Uint64(d.data[d.pos:])
 	out = math.Float64frombits(n)
 	d.pos += TypeSize.Float64
-	Logger.Decoder.Print(fmt.Sprintf("readFloat64 [%f]", out))
+	decoderLog.Debug("read Float64", zap.Float64("val", float64(out)))
 	return
 }
 
 func (d *Decoder) ReadString() (out string, err error) {
 	data, err := d.ReadByteArray()
 	out = string(data)
-	Logger.Decoder.Print(fmt.Sprintf("readString [%s]", out))
+	decoderLog.Debug("read string", zap.String("val", out))
 	return
 }
 
@@ -636,9 +626,10 @@ func (d *Decoder) ReadChecksum160() (out Checksum160, err error) {
 		return
 	}
 
-	out = d.data[d.pos : d.pos+TypeSize.Checksum160]
+	out = make(Checksum160, TypeSize.Checksum160)
+	copy(out, d.data[d.pos:d.pos+TypeSize.Checksum160])
 	d.pos += TypeSize.Checksum160
-	Logger.Decoder.Print(fmt.Sprintf("ReadChecksum160Bytes [%s]", hex.EncodeToString(out)))
+	decoderLog.Debug("read checksum160", zap.Stringer("hex", HexBytes(out)))
 	return
 }
 
@@ -648,9 +639,10 @@ func (d *Decoder) ReadChecksum256() (out Checksum256, err error) {
 		return
 	}
 
-	out = d.data[d.pos : d.pos+TypeSize.Checksum256]
+	out = make(Checksum256, TypeSize.Checksum256)
+	copy(out, d.data[d.pos:d.pos+TypeSize.Checksum256])
 	d.pos += TypeSize.Checksum256
-	Logger.Decoder.Print(fmt.Sprintf("ReadChecksum256Bytes [%s]", hex.EncodeToString(out)))
+	decoderLog.Debug("read checksum256", zap.Stringer("hex", HexBytes(out)))
 	return
 }
 
@@ -660,9 +652,10 @@ func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
 		return
 	}
 
-	out = d.data[d.pos : d.pos+TypeSize.Checksum512]
+	out = make(Checksum512, TypeSize.Checksum512)
+	copy(out, d.data[d.pos:d.pos+TypeSize.Checksum512])
 	d.pos += TypeSize.Checksum512
-	Logger.Decoder.Print(fmt.Sprintf("ReadChecksum512Bytes [%s]", hex.EncodeToString(out)))
+	decoderLog.Debug("read checksum512", zap.Stringer("hex", HexBytes(out)))
 	return
 }
 
@@ -672,12 +665,14 @@ func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
 		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
 		return
 	}
+	keyContent := make([]byte, 33)
+	copy(keyContent, d.data[d.pos+1:d.pos+TypeSize.PublicKey])
 	out = ecc.PublicKey{
-		Curve:   ecc.CurveID(d.data[d.pos]),                 // 1 byte
-		Content: d.data[d.pos+1 : d.pos+TypeSize.PublicKey], // 33 bytes
+		Curve:   ecc.CurveID(d.data[d.pos]), // 1 byte
+		Content: keyContent,                 // 33 bytes
 	}
 	d.pos += TypeSize.PublicKey
-	Logger.Decoder.Print(fmt.Sprintf("readPublicKey [curve=%d, content=%s]", out.Curve, hex.EncodeToString(out.Content)))
+	decoderLog.Debug("read public key", zap.Stringer("pubkey", out))
 	return
 }
 
@@ -686,17 +681,18 @@ func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
+	sigContent := make([]byte, 65)
+	copy(sigContent, d.data[d.pos+1:d.pos+TypeSize.Signature])
 	out = ecc.Signature{
-		Curve:   ecc.CurveID(d.data[d.pos]),                 // 1 byte
-		Content: d.data[d.pos+1 : d.pos+TypeSize.Signature], // 65 bytes
+		Curve:   ecc.CurveID(d.data[d.pos]), // 1 byte
+		Content: sigContent,                 // 65 bytes
 	}
 	d.pos += TypeSize.Signature
-	Logger.Decoder.Print(fmt.Sprintf("readSignature [curve=%d, content=%s]", out.Curve, hex.EncodeToString(out.Content)))
+	decoderLog.Debug("read signature", zap.Stringer("sig", out))
 	return
 }
 
 func (d *Decoder) ReadTstamp() (out Tstamp, err error) {
-
 	if d.remaining() < TypeSize.Tstamp {
 		err = fmt.Errorf("tstamp required [%d] bytes, remaining [%d]", TypeSize.Tstamp, d.remaining())
 		return
@@ -704,7 +700,7 @@ func (d *Decoder) ReadTstamp() (out Tstamp, err error) {
 
 	unixNano, err := d.ReadUint64()
 	out.Time = time.Unix(0, int64(unixNano))
-	Logger.Decoder.Print(fmt.Sprintf("readTstamp [%s]", out))
+	decoderLog.Debug("read tstamp", zap.Time("time", out.Time))
 	return
 }
 
@@ -715,20 +711,21 @@ func (d *Decoder) ReadBlockTimestamp() (out BlockTimestamp, err error) {
 	}
 	n, err := d.ReadUint32()
 	out.Time = time.Unix(int64(n)+946684800, 0)
+	decoderLog.Debug("read block timestamp", zap.Time("time", out.Time))
 	return
 }
 
 func (d *Decoder) ReadTimePoint() (out TimePoint, err error) {
 	n, err := d.ReadUint64()
 	out = TimePoint(n)
-	Logger.Decoder.Print(fmt.Sprintf("ReadTimePointSec [%d]", out))
+	decoderLog.Debug("read TimePoint", zap.Uint64("us", uint64(out)))
 	return
 
 }
 func (d *Decoder) ReadTimePointSec() (out TimePointSec, err error) {
 	n, err := d.ReadUint32()
 	out = TimePointSec(n)
-	Logger.Decoder.Print(fmt.Sprintf("ReadTimePointSec [%d]", out))
+	decoderLog.Debug("read TimePointSec", zap.Uint32("secs", uint32(out)))
 	return
 
 }
@@ -736,24 +733,22 @@ func (d *Decoder) ReadTimePointSec() (out TimePointSec, err error) {
 func (d *Decoder) ReadJSONTime() (jsonTime JSONTime, err error) {
 	n, err := d.ReadUint32()
 	jsonTime = JSONTime{time.Unix(int64(n), 0).UTC()}
-	Logger.Decoder.Print("readJSONTime: ", jsonTime)
+	decoderLog.Debug("read json time", zap.Time("time", jsonTime.Time))
 	return
 }
 
 func (d *Decoder) ReadName() (out Name, err error) {
-
 	n, err := d.ReadUint64()
 	out = Name(NameToString(n))
-	Logger.Decoder.Print(fmt.Sprintf("readName [%s]", out))
+	decoderLog.Debug("read name", zap.String("name", string(out)))
 	return
 }
 
 func (d *Decoder) ReadCurrencyName() (out CurrencyName, err error) {
-
 	data := d.data[d.pos : d.pos+TypeSize.CurrencyName]
 	d.pos += TypeSize.CurrencyName
-
 	out = CurrencyName(strings.TrimRight(string(data), "\x00"))
+	decoderLog.Debug("read currency name", zap.String("name", string(out)))
 	return
 }
 
@@ -777,11 +772,11 @@ func (d *Decoder) ReadAsset() (out Asset, err error) {
 	out.Amount = amount
 	out.Precision = precision
 	out.Symbol.Symbol = strings.TrimRight(string(data), "\x00")
+	decoderLog.Debug("read asset", zap.Stringer("value", out))
 	return
 }
 
 func (d *Decoder) ReadExtendedAsset() (out ExtendedAsset, err error) {
-
 	asset, err := d.ReadAsset()
 	if err != nil {
 		return out, fmt.Errorf("read extended asset: read asset: %s", err)
@@ -796,6 +791,8 @@ func (d *Decoder) ReadExtendedAsset() (out ExtendedAsset, err error) {
 		Asset:    asset,
 		Contract: AccountName(contract),
 	}
+
+	decoderLog.Debug("read extended asset")
 
 	return extendedAsset, err
 }
@@ -815,6 +812,7 @@ func (d *Decoder) ReadSymbol() (out *Symbol, err error) {
 		Precision: precision,
 		Symbol:    symbol,
 	}
+	decoderLog.Debug("read symbol", zap.String("symbol", symbol), zap.Uint8("precision", precision))
 	return
 }
 
@@ -822,19 +820,18 @@ func (d *Decoder) ReadSymbolCode() (out SymbolCode, err error) {
 
 	n, err := d.ReadUint64()
 	out = SymbolCode(n)
-	Logger.Decoder.Print(fmt.Sprintf("ReadSymbolCode [%d]", out))
 
+	decoderLog.Debug("read symbol code")
 	return
 }
 
 func (d *Decoder) ReadActionData(action *Action) (err error) {
-
 	actionMap := RegisteredActions[action.Account]
 
 	var decodeInto reflect.Type
 	if actionMap != nil {
 		objType := actionMap[action.Name]
-		Logger.Decoder.Print("object type :", objType)
+		decoderLog.Debug("read object", zap.String("type", objType.Name()))
 		if objType != nil {
 			decodeInto = objType
 		}
@@ -843,16 +840,16 @@ func (d *Decoder) ReadActionData(action *Action) (err error) {
 		return
 	}
 
-	Logger.Decoder.Print("Reflect type :", decodeInto)
+	decoderLog.Debug("reflect type", zap.String("type", decodeInto.Name()))
 	obj := reflect.New(decodeInto)
-	Logger.Decoder.Print("obj :", obj)
-	err = UnmarshalBinary(action.ActionData.HexData, obj.Interface())
+	iface := obj.Interface()
+	decoderLog.Debug("reflect object", typeField("type", iface), zap.Reflect("obj", obj))
+	err = UnmarshalBinary(action.ActionData.HexData, iface)
 	if err != nil {
 		return fmt.Errorf("decoding Action [%s], %s", obj.Type().Name(), err)
 	}
 
-	Logger.Decoder.Print("Object type :", obj.Interface())
-	action.ActionData.Data = obj.Interface()
+	action.ActionData.Data = iface
 
 	return
 }
@@ -878,10 +875,11 @@ func (d *Decoder) ReadP2PMessageEnvelope() (out *Packet, err error) {
 		err = fmt.Errorf("p2p envelope payload required [%d] bytes, remaining [%d]", l, d.remaining())
 		return
 	}
-	payload := d.data[d.pos : d.pos+int(payloadLength)]
-	d.pos += int(out.Length)
 
-	out.Payload = payload
+	out.Payload = make([]byte, int(payloadLength))
+	copy(out.Payload, d.data[d.pos:d.pos+int(payloadLength)])
+
+	d.pos += int(out.Length)
 	return
 }
 

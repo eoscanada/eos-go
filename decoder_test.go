@@ -2,6 +2,7 @@ package eos
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"testing"
 
 	"bytes"
@@ -351,9 +352,12 @@ type EncodeTestStruct struct {
 }
 
 func TestDecoder_Encode(t *testing.T) {
+	//EnableDecoderLogging()
+	//EnableEncoderLogging()
 
-	tstamp := Tstamp{Time: time.Unix(0, time.Now().UnixNano())}
-	blockts := BlockTimestamp{time.Unix(time.Now().Unix(), 0)}
+	now := time.Date(2018, time.September, 26, 1, 2, 3, 4, time.UTC)
+	tstamp := Tstamp{Time: time.Unix(0, now.UnixNano())}
+	blockts := BlockTimestamp{time.Unix(now.Unix(), 0)}
 	s := &EncodeTestStruct{
 		F1:  "abc",
 		F2:  -75,
@@ -377,11 +381,12 @@ func TestDecoder_Encode(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
-	enc.Encode(s)
+	assert.NoError(t, enc.Encode(s))
+
+	assert.Equal(t, "03616263b5ff6300e7030000000000000000000000000000000000000000000000000000000000000000000002036465660337383903666f6f036261720203666f6f036261720568656c6c6f03796f750000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001570000000000000005010203040504ae0f517acd57150b973d23e70701a08601000000000004454f5300000000", hex.EncodeToString(buf.Bytes()))
 
 	decoder := NewDecoder(buf.Bytes())
-	err := decoder.Decode(s)
-	assert.NoError(t, err)
+	assert.NoError(t, decoder.Decode(s))
 
 	assert.Equal(t, "abc", s.F1)
 	assert.Equal(t, int16(-75), s.F2)
@@ -394,7 +399,6 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, s.F9)
 	assert.Equal(t, ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, s.F10)
 	assert.Equal(t, byte(1), s.F11)
-	assert.Equal(t, uint64(87), s.F12)
 	assert.Equal(t, uint64(87), s.F12)
 	assert.Equal(t, []byte{1, 2, 3, 4, 5}, s.F13)
 	assert.Equal(t, tstamp, s.F14)

@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"os"
 	"testing"
 	"time"
 
@@ -439,8 +438,9 @@ func TestABI_Read(t *testing.T) {
 }
 
 func TestABI_Read_TimePointSec(t *testing.T) {
-	Logger.Decoder.SetOutput(os.Stdout)
-	Logger.ABIDecoder.SetOutput(os.Stdout)
+	// EnableDecoderLogging()
+	// EnableABIDecoderLogging()
+
 	abi := ABI{}
 	data, err := hex.DecodeString("919dd85b")
 	require.NoError(t, err)

@@ -1,20 +1,44 @@
 package eos
 
 import (
-	"io/ioutil"
-	"log"
+	"fmt"
+
+	"go.uber.org/zap"
 )
 
-type logger struct {
-	Decoder    *log.Logger
-	Encoder    *log.Logger
-	ABIDecoder *log.Logger
-	ABIEncoder *log.Logger
+var encoderLog = zap.NewNop()
+var decoderLog = zap.NewNop()
+var abiEncoderLog = zap.NewNop()
+var abiDecoderLog = zap.NewNop()
+
+func EnableEncoderLogging() {
+	encoderLog = newLogger(false)
+}
+func EnableDecoderLogging() {
+	decoderLog = newLogger(false)
+}
+func EnableABIEncoderLogging() {
+	abiEncoderLog = newLogger(false)
+}
+func EnableABIDecoderLogging() {
+	abiDecoderLog = newLogger(false)
 }
 
-var Logger = &logger{
-	Decoder: log.New(ioutil.Discard, "[Decoder]		", 0),
-	Encoder: log.New(ioutil.Discard, "[Encoder]		", 0),
-	ABIDecoder: log.New(ioutil.Discard, "[ABIDecoder]	", 0),
-	ABIEncoder: log.New(ioutil.Discard, "[ABIEncoder]	", 0),
+type logStringerFunc func() string
+
+func (f logStringerFunc) String() string { return f() }
+
+func typeField(field string, v interface{}) zap.Field {
+	return zap.Stringer(field, logStringerFunc(func() string {
+		return fmt.Sprintf("%T", v)
+	}))
+}
+
+func newLogger(production bool) (l *zap.Logger) {
+	if production {
+		l, _ = zap.NewProduction()
+	} else {
+		l, _ = zap.NewDevelopment()
+	}
+	return
 }
