@@ -216,25 +216,6 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 				}
 			}
 
-		case reflect.Map:
-			// FIXME: it doesn't make sense to encode a map.. it's an
-			// invalid format for the blockchain and cannot be
-			// reconstructed when serialized in binary.
-			l := rv.Len()
-			if err = e.writeUVarInt(l); err != nil {
-				return
-			}
-			encoderLog.Debug("map", zap.Int("length", l), typeField("type", v))
-
-			for _, key := range rv.MapKeys() {
-				value := rv.MapIndex(key)
-				if err = e.Encode(key.Interface()); err != nil {
-					return err
-				}
-				if err = e.Encode(value.Interface()); err != nil {
-					return err
-				}
-			}
 		default:
 			return errors.New("Encode: unsupported type " + t.String())
 		}

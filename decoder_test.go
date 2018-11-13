@@ -331,14 +331,14 @@ func TestDecoder_Time(t *testing.T) {
 }
 
 type EncodeTestStruct struct {
-	F1  string
-	F2  int16
-	F3  uint16
-	F4  uint32
-	F5  Checksum256
-	F6  []string
-	F7  [2]string
-	F8  map[string]string
+	F1 string
+	F2 int16
+	F3 uint16
+	F4 uint32
+	F5 Checksum256
+	F6 []string
+	F7 [2]string
+	//	F8  map[string]string
 	F9  ecc.PublicKey
 	F10 ecc.Signature
 	F11 byte
@@ -359,16 +359,17 @@ func TestDecoder_Encode(t *testing.T) {
 	tstamp := Tstamp{Time: time.Unix(0, now.UnixNano())}
 	blockts := BlockTimestamp{time.Unix(now.Unix(), 0)}
 	s := &EncodeTestStruct{
-		F1:  "abc",
-		F2:  -75,
-		F3:  99,
-		F4:  999,
-		F5:  bytes.Repeat([]byte{0}, 32),
-		F6:  []string{"def", "789"},
-		F7:  [2]string{"foo", "bar"},
-		F8:  map[string]string{"foo": "bar", "hello": "you"},
-		F9:  ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)},
-		F10: ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)},
+		F1: "abc",
+		F2: -75,
+		F3: 99,
+		F4: 999,
+		F5: bytes.Repeat([]byte{0}, 32),
+		F6: []string{"def", "789"},
+		F7: [2]string{"foo", "bar"},
+		// maps don't serialize deterministically.. we no want that.
+		//		F8:  map[string]string{"foo": "bar", "hello": "you"},
+		F9:  ecc.PublicKey{Curve: ecc.CurveK1, Content: make([]byte, 33)},
+		F10: ecc.Signature{Curve: ecc.CurveK1, Content: make([]byte, 65)},
 		F11: byte(1),
 		F12: uint64(87),
 		F13: []byte{1, 2, 3, 4, 5},
@@ -383,7 +384,7 @@ func TestDecoder_Encode(t *testing.T) {
 	enc := NewEncoder(buf)
 	assert.NoError(t, enc.Encode(s))
 
-	assert.Equal(t, "03616263b5ff6300e7030000000000000000000000000000000000000000000000000000000000000000000002036465660337383903666f6f036261720203666f6f036261720568656c6c6f03796f750000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001570000000000000005010203040504ae0f517acd57150b973d23e70701a08601000000000004454f5300000000", hex.EncodeToString(buf.Bytes()))
+	assert.Equal(t, "03616263b5ff6300e7030000000000000000000000000000000000000000000000000000000000000000000002036465660337383903666f6f036261720000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001570000000000000005010203040504ae0f517acd57150b973d23e70701a08601000000000004454f5300000000", hex.EncodeToString(buf.Bytes()))
 
 	decoder := NewDecoder(buf.Bytes())
 	assert.NoError(t, decoder.Decode(s))
@@ -395,7 +396,7 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, Checksum256(bytes.Repeat([]byte{0}, 32)), s.F5)
 	assert.Equal(t, []string{"def", "789"}, s.F6)
 	assert.Equal(t, [2]string{"foo", "bar"}, s.F7)
-	assert.Equal(t, map[string]string{"foo": "bar", "hello": "you"}, s.F8)
+	//	assert.Equal(t, map[string]string{"foo": "bar", "hello": "you"}, s.F8)
 	assert.Equal(t, ecc.PublicKey{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 33)}, s.F9)
 	assert.Equal(t, ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, s.F10)
 	assert.Equal(t, byte(1), s.F11)
@@ -473,37 +474,6 @@ func TestDecoder_Decode_Struct_Err(t *testing.T) {
 
 }
 
-func TestDecoder_Decode_Map_Err(t *testing.T) {
-
-	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
-
-	decoder := NewDecoder(buf.Bytes())
-	var m map[string]string
-	err := decoder.Decode(&m)
-	assert.Equal(t, err, ErrVarIntBufferSize)
-
-	enc.writeUVarInt(1)
-	decoder = NewDecoder(buf.Bytes())
-	err = decoder.Decode(&m)
-	assert.Equal(t, err, ErrVarIntBufferSize)
-}
-
-func TestDecoder_Decode_Bad_Map(t *testing.T) {
-
-	buf := new(bytes.Buffer)
-	var m map[string]time.Duration
-	enc := NewEncoder(buf)
-	enc.writeUVarInt(1)
-	enc.writeString("foo")
-	enc.writeString("bar")
-
-	decoder := NewDecoder(buf.Bytes())
-	err := decoder.Decode(&m)
-	assert.EqualError(t, err, "decode, unsupported type time.Duration")
-
-}
-
 func TestEncoder_Encode_array_error(t *testing.T) {
 
 	decoder := NewDecoder([]byte{1})
@@ -532,17 +502,6 @@ func TestEncoder_Encode_slide_error(t *testing.T) {
 	assert.EqualError(t, err, "Encode: unsupported type time.Duration")
 
 }
-func TestEncoder_Encode_map_error(t *testing.T) {
-
-	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
-	err := enc.Encode(map[string]time.Duration{"key": time.Duration(0)})
-	assert.EqualError(t, err, "Encode: unsupported type time.Duration")
-	err = enc.Encode(map[time.Duration]string{time.Duration(0): "key"})
-	assert.EqualError(t, err, "Encode: unsupported type time.Duration")
-
-}
-
 func TestEncoder_Encode_struct_error(t *testing.T) {
 
 	s := struct {

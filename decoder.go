@@ -370,26 +370,6 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			return
 		}
 
-	case reflect.Map:
-		var l uint64
-		if l, err = d.ReadUvarint64(); err != nil {
-			return
-		}
-		kt := t.Key()
-		vt := t.Elem()
-		rv.Set(reflect.MakeMap(t))
-		for i := 0; i < int(l); i++ {
-			kv := reflect.Indirect(reflect.New(kt))
-			if err = d.Decode(kv.Addr().Interface()); err != nil {
-				return
-			}
-			vv := reflect.Indirect(reflect.New(vt))
-			if err = d.Decode(vv.Addr().Interface()); err != nil {
-				return
-			}
-			rv.SetMapIndex(kv, vv)
-		}
-
 	default:
 		return errors.New("decode, unsupported type " + t.String())
 	}
