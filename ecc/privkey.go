@@ -84,12 +84,16 @@ func (p *PrivateKey) Sign(hash []byte) (out Signature, err error) {
 		return out, fmt.Errorf("hash should be 32 bytes")
 	}
 
-	if p.Curve != CurveK1 {
+	var compactSig []byte
+	switch p.Curve {
+	case CurveR1:
+		compactSig, err = p.privKey.SignCanonical(btcec.S256(), hash)
+	case CurveK1:
+		compactSig, err = p.privKey.SignCanonical(btcec.S256R1(), hash)
+	default:
 		return out, fmt.Errorf("curve R1 not supported for signature")
 	}
 
-	// TODO: implement the R1 curve..
-	compactSig, err := p.privKey.SignCanonical(btcec.S256(), hash)
 	if err != nil {
 		return out, fmt.Errorf("canonical, %s", err)
 	}
