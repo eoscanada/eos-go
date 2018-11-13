@@ -21,6 +21,7 @@ package btcec
 
 import (
 	"crypto/elliptic"
+	"fmt"
 	"math/big"
 	"sync"
 )
@@ -873,6 +874,7 @@ func (curve *KoblitzCurve) ScalarBaseMult(k []byte) (*big.Int, *big.Int) {
 	// Each "digit" in the 8-bit window can be looked up using bytePoints
 	// and added together.
 	for i, byteVal := range newK {
+		fmt.Printf("Grrrr: diff %d newK %d\n", diff, newK)
 		p := curve.bytePoints[diff+i][byteVal]
 		curve.addJacobian(qx, qy, qz, &p[0], &p[1], &p[2], qx, qy, qz)
 	}
@@ -973,9 +975,9 @@ func initS256R1() {
 	// Deserialize and set the pre-computed table used to accelerate scalar
 	// base multiplication.  This is hard-coded data, so any errors are
 	// panics because it means something is wrong in the source code.
-	// if err := loadS256BytePoints(); err != nil {
-	// 	panic(err)
-	// }
+	if err := loadS256BytePoints(); err != nil {
+		panic(err)
+	}
 
 	// Next 6 constants are from Hal Finney's bitcointalk.org post:
 	// https://bitcointalk.org/index.php?topic=3238.msg45565#msg45565

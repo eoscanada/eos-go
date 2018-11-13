@@ -19,10 +19,6 @@ type Signature struct {
 // Verify checks the signature against the pubKey. `hash` is a sha256
 // hash of the payload to verify.
 func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
-	if s.Curve != CurveK1 {
-		fmt.Println("WARN: github.com/eoscanada/eos-go/ecc library does not support the R1 curve yet")
-		return false
-	}
 
 	// TODO: choose the S256 curve, based on s.Curve
 	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s.Content, hash)
@@ -43,11 +39,19 @@ func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
 // payload.. that's the way to validate the signature. Use Verify() if
 // you only want to validate.
 func (s Signature) PublicKey(hash []byte) (out PublicKey, err error) {
-	if s.Curve != CurveK1 {
-		return out, fmt.Errorf("WARN: github.com/eoscanada/eos-go/ecc library does not support the R1 curve yet")
+
+	var recoveredKey *btcec.PublicKey
+	switch s.Curve {
+	case CurveK1:
+		recoveredKey, _, err = btcec.RecoverCompact(btcec.S256(), s.Content, hash)
+	case CurveR1:
+		curve := btcec.S256R1()
+
+		recoveredKey, _, err = btcec.RecoverCompact(curve, s.Content, hash)
+	default:
+		return PublicKey{}, fmt.Errorf("invalid curve: %s", s.Curve)
 	}
 
-	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), s.Content, hash)
 	if err != nil {
 		return out, err
 	}
