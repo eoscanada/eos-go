@@ -129,9 +129,7 @@ func (p PublicKey) String() string {
 	copy(rawKey, data[:33])
 	copy(rawKey[33:], hash[:4])
 
-	return PublicKeyPrefixCompat + base58.Encode(rawKey)
-	// FIXME: when we decide to go ahead with the new representation.
-	//return PublicKeyPrefix + p.Curve.StringPrefix() + base58.Encode(rawKey)
+	return PublicKeyPrefix + p.Curve.String() + "_" + base58.Encode(rawKey)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {

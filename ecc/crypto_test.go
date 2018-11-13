@@ -17,7 +17,7 @@ func TestPrivateToPublic(t *testing.T) {
 	pubKey := privKey.PublicKey()
 
 	pubKeyString := pubKey.String()
-	assert.Equal(t, "EOS859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", pubKeyString)
+	assert.Equal(t, "PUB_K1_859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", pubKeyString)
 }
 
 func TestNewPublicKeyAndSerializeCompress(t *testing.T) {
@@ -81,7 +81,7 @@ func TestSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	cnt := []byte("hi")
-	digest := sigDigest([]byte{}, cnt)
+	digest := sigDigest([]byte{}, cnt, nil)
 	signature, err := privKey.Sign(digest)
 	require.NoError(t, err)
 

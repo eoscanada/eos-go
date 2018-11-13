@@ -87,9 +87,9 @@ func (p *PrivateKey) Sign(hash []byte) (out Signature, err error) {
 	var compactSig []byte
 	switch p.Curve {
 	case CurveR1:
-		compactSig, err = p.privKey.SignCanonical(btcec.S256(), hash)
-	case CurveK1:
 		compactSig, err = p.privKey.SignCanonical(btcec.S256R1(), hash)
+	case CurveK1:
+		compactSig, err = p.privKey.SignCanonical(btcec.S256(), hash)
 	default:
 		return out, fmt.Errorf("curve R1 not supported for signature")
 	}
