@@ -6,10 +6,10 @@ import (
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 )
 
-type InnerK1PublicKey struct {
+type innerK1PublicKey struct {
 }
 
-func (p *InnerK1PublicKey) Key(content []byte) (*btcec.PublicKey, error) {
+func (p *innerK1PublicKey) key(content []byte) (*btcec.PublicKey, error) {
 	key, err := btcec.ParsePubKey(content, btcec.S256())
 	if err != nil {
 		return nil, fmt.Errorf("parsePubKey: %s", err)

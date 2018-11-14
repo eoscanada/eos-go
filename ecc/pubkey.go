@@ -14,15 +14,15 @@ import (
 const PublicKeyPrefix = "PUB_"
 const PublicKeyPrefixCompat = "EOS"
 
-type InnerPublicKey interface {
-	Key(content []byte) (*btcec.PublicKey, error)
+type innerPublicKey interface {
+	key(content []byte) (*btcec.PublicKey, error)
 }
 
 type PublicKey struct {
 	Curve   CurveID
 	Content []byte
 
-	inner InnerPublicKey
+	inner innerPublicKey
 }
 
 func NewPublicKey(pubKey string) (out PublicKey, err error) {
@@ -32,7 +32,7 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 
 	var pubKeyMaterial string
 	var curveID CurveID
-	var inner InnerPublicKey
+	var inner innerPublicKey
 	if strings.HasPrefix(pubKey, PublicKeyPrefix) {
 		pubKeyMaterial = pubKey[len(PublicKeyPrefix):] // strip "PUB_"
 
@@ -41,10 +41,10 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 		switch curvePrefix {
 		case "K1_":
 			curveID = CurveK1
-			inner = &InnerK1PublicKey{}
+			inner = &innerK1PublicKey{}
 		case "R1_":
 			curveID = CurveR1
-			inner = &InnerR1PublicKey{}
+			inner = &innerR1PublicKey{}
 		default:
 			return out, fmt.Errorf("unsupported curve prefix %q", curvePrefix)
 		}
@@ -53,7 +53,7 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
 		pubKeyMaterial = pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
 		curveID = CurveK1
-		inner = &InnerK1PublicKey{}
+		inner = &innerK1PublicKey{}
 	} else {
 		return out, fmt.Errorf("public key should start with %q (or the old %q)", PublicKeyPrefix, PublicKeyPrefixCompat)
 	}
@@ -117,7 +117,7 @@ func Ripemd160checksumHashCurve(in []byte, curve CurveID) []byte {
 }
 
 func (p PublicKey) Key() (*btcec.PublicKey, error) {
-	return p.inner.Key(p.Content)
+	return p.inner.key(p.Content)
 }
 
 func (p PublicKey) String() string {

@@ -33,7 +33,7 @@ func newRandomPrivateKey(randSource io.Reader) (*PrivateKey, error) {
 
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), rawPrivKey)
 
-	inner := &InnerK1PrivateKey{privKey: privKey}
+	inner := &innerK1PrivateKey{privKey: privKey}
 	return &PrivateKey{Curve: CurveK1, inner: inner}, nil
 }
 
@@ -53,11 +53,11 @@ func NewPrivateKey(wif string) (*PrivateKey, error) {
 			if err != nil {
 				return nil, err
 			}
-			inner := &InnerK1PrivateKey{privKey: wifObj.PrivKey}
+			inner := &innerK1PrivateKey{privKey: wifObj.PrivKey}
 			return &PrivateKey{Curve: CurveK1, inner: inner}, nil
 		case "R1_":
 
-			inner := &InnerR1PrivateKey{}
+			inner := &innerR1PrivateKey{}
 			return &PrivateKey{Curve: CurveR1, inner: inner}, nil
 
 		default:
@@ -70,34 +70,34 @@ func NewPrivateKey(wif string) (*PrivateKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		inner := &InnerK1PrivateKey{privKey: wifObj.PrivKey}
+		inner := &innerK1PrivateKey{privKey: wifObj.PrivKey}
 		return &PrivateKey{Curve: CurveK1, inner: inner}, nil
 	}
 }
 
-type InnerPrivateKey interface {
-	PublicKey() PublicKey
-	Sign(hash []byte) (out Signature, err error)
-	String() string
+type innerPrivateKey interface {
+	publicKey() PublicKey
+	sign(hash []byte) (out Signature, err error)
+	string() string
 }
 
 type PrivateKey struct {
 	Curve CurveID
 
-	inner InnerPrivateKey
+	inner innerPrivateKey
 }
 
 func (p *PrivateKey) PublicKey() PublicKey {
-	return p.inner.PublicKey()
+	return p.inner.publicKey()
 }
 
 // Sign signs a 32 bytes SHA256 hash..
 func (p *PrivateKey) Sign(hash []byte) (out Signature, err error) {
-	return p.inner.Sign(hash)
+	return p.inner.sign(hash)
 }
 
 func (p *PrivateKey) String() string {
-	return p.inner.String()
+	return p.inner.string()
 }
 
 func (p *PrivateKey) MarshalJSON() ([]byte, error) {

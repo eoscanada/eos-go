@@ -4,12 +4,12 @@ import (
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 )
 
-type InnerK1Signature struct {
+type innerK1Signature struct {
 }
 
-// Verify checks the signature against the pubKey. `hash` is a sha256
+// verify checks the signature against the pubKey. `hash` is a sha256
 // hash of the payload to verify.
-func (s *InnerK1Signature) Verify(content []byte, hash []byte, pubKey PublicKey) bool {
+func (s *innerK1Signature) verify(content []byte, hash []byte, pubKey PublicKey) bool {
 	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), content, hash)
 	if err != nil {
 		return false
@@ -24,7 +24,7 @@ func (s *InnerK1Signature) Verify(content []byte, hash []byte, pubKey PublicKey)
 	return false
 }
 
-func (s *InnerK1Signature) PublicKey(content []byte, hash []byte) (out PublicKey, err error) {
+func (s *innerK1Signature) publicKey(content []byte, hash []byte) (out PublicKey, err error) {
 
 	recoveredKey, _, err := btcec.RecoverCompact(btcec.S256(), content, hash)
 
@@ -35,6 +35,6 @@ func (s *InnerK1Signature) PublicKey(content []byte, hash []byte) (out PublicKey
 	return PublicKey{
 		Curve:   CurveK1,
 		Content: recoveredKey.SerializeCompressed(),
-		inner:   &InnerK1PublicKey{},
+		inner:   &innerK1PublicKey{},
 	}, nil
 }

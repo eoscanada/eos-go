@@ -9,9 +9,9 @@ import (
 	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 )
 
-type InnerSignature interface {
-	Verify(content []byte, hash []byte, pubKey PublicKey) bool
-	PublicKey(content []byte, hash []byte) (out PublicKey, err error)
+type innerSignature interface {
+	verify(content []byte, hash []byte, pubKey PublicKey) bool
+	publicKey(content []byte, hash []byte) (out PublicKey, err error)
 }
 
 // Signature represents a signature for some hash
@@ -19,15 +19,15 @@ type Signature struct {
 	Curve   CurveID
 	Content []byte // the Compact signature as bytes
 
-	innerSignature InnerSignature
+	innerSignature innerSignature
 }
 
 func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
-	return s.innerSignature.Verify(s.Content, hash, pubKey)
+	return s.innerSignature.verify(s.Content, hash, pubKey)
 }
 
 func (s Signature) PublicKey(hash []byte) (out PublicKey, err error) {
-	return s.innerSignature.PublicKey(s.Content, hash)
+	return s.innerSignature.publicKey(s.Content, hash)
 }
 
 func (s Signature) String() string {
@@ -61,13 +61,13 @@ func NewSignature(fromText string) (Signature, error) {
 			return Signature{}, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
 		}
 
-		return Signature{Curve: CurveK1, Content: content, innerSignature: &InnerK1Signature{}}, nil
+		return Signature{Curve: CurveK1, Content: content, innerSignature: &innerK1Signature{}}, nil
 
 	case "R1_":
 
 		// ICI!
 
-		return Signature{Curve: CurveK1, Content: nil, innerSignature: &InnerK1Signature{}}, fmt.Errorf("R1 not yet implemented")
+		return Signature{Curve: CurveK1, Content: nil, innerSignature: &innerK1Signature{}}, fmt.Errorf("R1 not yet implemented")
 	default:
 		return Signature{}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
 	}
