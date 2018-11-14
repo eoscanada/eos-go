@@ -21,7 +21,6 @@ package btcec
 
 import (
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"sync"
 )
@@ -874,7 +873,6 @@ func (curve *KoblitzCurve) ScalarBaseMult(k []byte) (*big.Int, *big.Int) {
 	// Each "digit" in the 8-bit window can be looked up using bytePoints
 	// and added together.
 	for i, byteVal := range newK {
-		fmt.Printf("Grrrr: diff %d newK %d\n", diff, newK)
 		p := curve.bytePoints[diff+i][byteVal]
 		curve.addJacobian(qx, qy, qz, &p[0], &p[1], &p[2], qx, qy, qz)
 	}
