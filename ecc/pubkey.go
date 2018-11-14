@@ -14,9 +14,15 @@ import (
 const PublicKeyPrefix = "PUB_"
 const PublicKeyPrefixCompat = "EOS"
 
+type InnerPublicKey interface {
+	Key(content []byte) (*btcec.PublicKey, error)
+}
+
 type PublicKey struct {
 	Curve   CurveID
 	Content []byte
+
+	inner InnerPublicKey
 }
 
 func NewPublicKey(pubKey string) (out PublicKey, err error) {
@@ -26,15 +32,19 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 
 	var pubKeyMaterial string
 	var curveID CurveID
+	var inner InnerPublicKey
 	if strings.HasPrefix(pubKey, PublicKeyPrefix) {
 		pubKeyMaterial = pubKey[len(PublicKeyPrefix):] // strip "PUB_"
 
 		curvePrefix := pubKeyMaterial[:3]
+
 		switch curvePrefix {
 		case "K1_":
 			curveID = CurveK1
+			inner = &InnerK1PublicKey{}
 		case "R1_":
 			curveID = CurveR1
+			inner = &InnerR1PublicKey{}
 		default:
 			return out, fmt.Errorf("unsupported curve prefix %q", curvePrefix)
 		}
@@ -43,7 +53,7 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
 		pubKeyMaterial = pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
 		curveID = CurveK1
-
+		inner = &InnerK1PublicKey{}
 	} else {
 		return out, fmt.Errorf("public key should start with %q (or the old %q)", PublicKeyPrefix, PublicKeyPrefixCompat)
 	}
@@ -53,7 +63,7 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 		return out, fmt.Errorf("checkDecode: %s", err)
 	}
 
-	return PublicKey{Curve: curveID, Content: pubDecoded}, nil
+	return PublicKey{Curve: curveID, Content: pubDecoded, inner: inner}, nil
 }
 
 func MustNewPublicKey(pubKey string) PublicKey {
@@ -107,13 +117,7 @@ func Ripemd160checksumHashCurve(in []byte, curve CurveID) []byte {
 }
 
 func (p PublicKey) Key() (*btcec.PublicKey, error) {
-	// TODO: implement the curve switch according to `p.Curve`
-	key, err := btcec.ParsePubKey(p.Content, btcec.S256())
-	if err != nil {
-		return nil, fmt.Errorf("parsePubKey: %s", err)
-	}
-
-	return key, nil
+	return p.inner.Key(p.Content)
 }
 
 func (p PublicKey) String() string {

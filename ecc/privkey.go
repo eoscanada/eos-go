@@ -74,8 +74,8 @@ type PrivateKey struct {
 	privKey *btcec.PrivateKey
 }
 
-func (p *PrivateKey) PublicKey() PublicKey {
-	return PublicKey{Curve: p.Curve, Content: p.privKey.PubKey().SerializeCompressed()}
+func (p *PrivateKey) PublicKey() PublicKey { //todo R1 specifique
+	return PublicKey{Curve: p.Curve, Content: p.privKey.PubKey().SerializeCompressed(), inner: &InnerK1PublicKey{}}
 }
 
 // Sign signs a 32 bytes SHA256 hash..

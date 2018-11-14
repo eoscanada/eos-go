@@ -41,5 +41,9 @@ func (s *InnerR1Signature) PublicKey(content []byte, hash []byte) (out PublicKey
 	//	Content: recoveredKey.SerializeCompressed(),
 	//}, nil
 
-	return PublicKey{}, nil
+	return PublicKey{
+		Curve:   CurveR1,
+		Content: nil,
+		inner:   nil,
+	}, nil
 }
