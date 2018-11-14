@@ -98,7 +98,7 @@ func (p *PrivateKey) Sign(hash []byte) (out Signature, err error) {
 		return out, fmt.Errorf("canonical, %s", err)
 	}
 
-	return Signature{Curve: p.Curve, Content: compactSig, innerSignature: &InnerR1Signature{}}, nil
+	return Signature{Curve: p.Curve, Content: compactSig, innerSignature: &InnerK1Signature{}}, nil
 }
 
 func (p *PrivateKey) String() string {

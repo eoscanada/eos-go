@@ -67,7 +67,7 @@ func NewSignature(fromText string) (Signature, error) {
 
 		// ICI!
 
-		return Signature{Curve: CurveK1, Content: nil, innerSignature: &InnerK1Signature{}}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
+		return Signature{Curve: CurveK1, Content: nil, innerSignature: &InnerK1Signature{}}, fmt.Errorf("R1 not yet implemented")
 	default:
 		return Signature{}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
 	}
