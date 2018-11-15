@@ -9,10 +9,11 @@ type innerR1PrivateKey struct {
 }
 
 func (k *innerR1PrivateKey) publicKey() PublicKey {
+	//TODO: Finish R1 support here - for now we  return bogus key
 	var pubKeyData []byte
 	pubKeyData = append(pubKeyData, byte(1))
 	pubKeyData = append(pubKeyData, bytes.Repeat([]byte{0}, 33)...)
-	return PublicKey{Curve: CurveK1, Content: pubKeyData, inner: &innerK1PublicKey{}}
+	return PublicKey{Curve: CurveR1, Content: pubKeyData, inner: &innerR1PublicKey{}}
 }
 
 func (k *innerR1PrivateKey) sign(hash []byte) (out Signature, err error) {

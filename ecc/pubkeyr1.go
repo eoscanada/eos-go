@@ -2,9 +2,6 @@ package ecc
 
 import (
 	"fmt"
-
-	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
-
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 )
 
@@ -21,5 +18,5 @@ func (p *innerR1PublicKey) key(content []byte) (*btcec.PublicKey, error) {
 }
 
 func (p *innerR1PublicKey) string(content []byte, curveID CurveID) string {
-	return PublicKeyR1Prefix + base58.Encode(content)
+	return PublicKeyR1Prefix + "0000000000000000000000000000000000000000000000"
 }

@@ -29,23 +29,23 @@ func TestSignatureCanonical(t *testing.T) {
 	privkey, err := NewPrivateKey("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3")
 	require.NoError(t, err)
 
-	fmt.Println("Start")
+	//fmt.Println("Start")
 	payload := []byte("payload1") // doesn't fail
 	sig, err := privkey.Sign(sigDigest(make([]byte, 32, 32), payload, nil))
-	fmt.Println("Signed")
+	//fmt.Println("Signed")
 	require.NoError(t, err)
-	fmt.Println("MAM", sig.String())
+	//fmt.Println("MAM", sig.String())
 	assert.True(t, isCanonical([]byte(sig.Content)))
-	fmt.Println("End")
+	//fmt.Println("End")
 
-	fmt.Println("Start")
+	//fmt.Println("Start")
 	payload = []byte("payload6") // fails
 	sig, err = privkey.Sign(sigDigest(make([]byte, 32, 32), payload, nil))
-	fmt.Println("Signed")
+	//fmt.Println("Signed")
 	require.NoError(t, err)
-	fmt.Println("MAM1", sig.String())
+	//fmt.Println("MAM1", sig.String())
 	assert.True(t, isCanonical([]byte(sig.Content)))
-	fmt.Println("End")
+	//fmt.Println("End")
 }
 
 func TestSignatureMarshalUnmarshal(t *testing.T) {
