@@ -12,6 +12,7 @@ import (
 type innerSignature interface {
 	verify(content []byte, hash []byte, pubKey PublicKey) bool
 	publicKey(content []byte, hash []byte) (out PublicKey, err error)
+	string(content []byte) string
 }
 
 // Signature represents a signature for some hash
@@ -31,9 +32,36 @@ func (s Signature) PublicKey(hash []byte) (out PublicKey, err error) {
 }
 
 func (s Signature) String() string {
-	checksum := Ripemd160checksumHashCurve(s.Content, s.Curve)
-	buf := append(s.Content[:], checksum...)
-	return "SIG_" + s.Curve.StringPrefix() + base58.Encode(buf)
+	return s.innerSignature.string(s.Content)
+}
+
+func NewSignatureFromData(data []byte) (Signature, error) {
+	if len(data) != 66 {
+		return Signature{}, fmt.Errorf("data length of a signature should be 66, reveived %d", len(data))
+	}
+
+	signature := Signature{
+		Curve:   CurveID(data[0]), // 1 byte
+		Content: data[1:],         // 65 bytes
+	}
+
+	switch signature.Curve {
+	case CurveK1:
+		signature.innerSignature = &innerK1Signature{}
+	case CurveR1:
+		signature.innerSignature = &innerR1Signature{}
+	default:
+		return Signature{}, fmt.Errorf("invalid curve  %q", signature.Curve)
+	}
+	return signature, nil
+}
+
+func MustNewSignatureFromData(data []byte) Signature {
+	sig, err := NewSignatureFromData(data)
+	if err != nil {
+		panic(err.Error())
+	}
+	return sig
 }
 
 func NewSignature(fromText string) (Signature, error) {
@@ -65,9 +93,12 @@ func NewSignature(fromText string) (Signature, error) {
 
 	case "R1_":
 
-		// ICI!
+		fromText = fromText[3:] // strip R1_
+		content := base58.Decode(fromText)
+		//todo: stuff here
 
-		return Signature{Curve: CurveK1, Content: nil, innerSignature: &innerK1Signature{}}, fmt.Errorf("R1 not yet implemented")
+		return Signature{Curve: CurveR1, Content: content, innerSignature: &innerR1Signature{}}, nil
+
 	default:
 		return Signature{}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
 	}

@@ -13,7 +13,7 @@ import (
 
 const PublicKeyPrefix = "PUB_"
 const PublicKeyK1Prefix = "PUB_K1_"
-const PublicKeyR1Prefix = "PUB_K1_"
+const PublicKeyR1Prefix = "PUB_R1_"
 const PublicKeyPrefixCompat = "EOS"
 
 type innerPublicKey interface {
@@ -63,32 +63,35 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 		return out, fmt.Errorf("invalid format")
 	}
 
-	var pubKeyMaterial string
+	var decodedPubKey []byte
 	var curveID CurveID
 	var inner innerPublicKey
 
 	if strings.HasPrefix(pubKey, PublicKeyR1Prefix) {
-		pubKeyMaterial = pubKey[len(PublicKeyR1Prefix):] // strip "PUB_R1_"
-		curveID = CurveR1
+		pubKeyMaterial := pubKey[len(PublicKeyR1Prefix):] // strip "PUB_R1_"
+		decodedPubKey = base58.Decode(pubKeyMaterial)
 		inner = &innerR1PublicKey{}
 	} else if strings.HasPrefix(pubKey, PublicKeyK1Prefix) {
-		pubKeyMaterial = pubKey[len(PublicKeyK1Prefix):] // strip "PUB_K1_"
+		pubKeyMaterial := pubKey[len(PublicKeyK1Prefix):] // strip "PUB_K1_"
 		curveID = CurveK1
+		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
+		if err != nil {
+			return out, fmt.Errorf("checkDecode: %s", err)
+		}
 		inner = &innerK1PublicKey{}
 	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
-		pubKeyMaterial = pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
+		pubKeyMaterial := pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
 		curveID = CurveK1
+		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
+		if err != nil {
+			return out, fmt.Errorf("checkDecode: %s", err)
+		}
 		inner = &innerK1PublicKey{}
 	} else {
 		return out, fmt.Errorf("public key should start with [%q | %q] (or the old %q)", PublicKeyK1Prefix, PublicKeyR1Prefix, PublicKeyPrefixCompat)
 	}
 
-	pubDecoded, err := checkDecode(pubKeyMaterial, curveID)
-	if err != nil {
-		return out, fmt.Errorf("checkDecode: %s", err)
-	}
-
-	return PublicKey{Curve: curveID, Content: pubDecoded, inner: inner}, nil
+	return PublicKey{Curve: curveID, Content: decodedPubKey, inner: inner}, nil
 }
 
 func MustNewPublicKey(pubKey string) PublicKey {

@@ -97,11 +97,13 @@ func TestSignaturePublicKeyExtraction(t *testing.T) {
 	//PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm
 
 	cases := []struct {
-		name           string
-		signature      string
-		payload        string
-		chainID        string
-		expectedPubKey string
+		name                   string
+		signature              string
+		payload                string
+		chainID                string
+		expectedPubKey         string
+		expectedSignatureError string
+		expectedPubKeyError    string
 	}{
 		{
 			name:           "K1",
@@ -110,30 +112,38 @@ func TestSignaturePublicKeyExtraction(t *testing.T) {
 			chainID:        "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
 			expectedPubKey: "EOS7KtnQUSGVf4vbFE2eQsWmDp4iV93jVcSmdQXtRdRRnWj2ubbFW",
 		},
-		//{
-		//	name:           "R1",
-		//	signature:      "SIG_R1_KE33Ucjr5N3GR4ZosFh8KtGMytHHNtnmdUaSoMLJVXpVXoC8B9zfoXYrLiQJZqroe3LKciaP2uJT7Myqqoo4PZH7iSnso8",
-		//	payload:        "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
-		//	chainID:        "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
-		//	expectedPubKey: "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
-		//},
+		{
+			name:                "R1",
+			signature:           "SIG_R1_KE33Ucjr5N3GR4ZosFh8KtGMytHHNtnmdUaSoMLJVXpVXoC8B9zfoXYrLiQJZqroe3LKciaP2uJT7Myqqoo4PZH7iSnso8",
+			payload:             "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
+			chainID:             "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+			expectedPubKeyError: "R1 not supported",
+		},
 	}
 
 	for _, c := range cases {
-		sig, err := NewSignature(c.signature)
-		require.NoError(t, err)
+		t.Run(c.name, func(t *testing.T) {
+			sig, err := NewSignature(c.signature)
+			if c.expectedSignatureError != "" {
+				require.Equal(t, fmt.Errorf(c.expectedSignatureError), err)
+				return
+			}
 
-		payload, err := hex.DecodeString(c.payload)
-		require.NoError(t, err)
+			require.NoError(t, err)
 
-		chainID, err := hex.DecodeString(c.chainID)
-		require.NoError(t, err)
+			payload, err := hex.DecodeString(c.payload)
+			require.NoError(t, err)
 
-		pubKey, err := sig.PublicKey(sigDigest(chainID, payload, nil))
-		require.NoError(t, err)
+			chainID, err := hex.DecodeString(c.chainID)
+			require.NoError(t, err)
 
-		assert.Equal(t, c.expectedPubKey, pubKey.String())
-
+			pubKey, err := sig.PublicKey(sigDigest(chainID, payload, nil))
+			if c.expectedPubKeyError != "" {
+				require.Equal(t, fmt.Errorf(c.expectedPubKeyError), err)
+				return
+			}
+			assert.Equal(t, c.expectedPubKey, pubKey.String())
+		})
 	}
 
 }

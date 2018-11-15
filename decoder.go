@@ -663,12 +663,13 @@ func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
-	sigContent := make([]byte, 65)
-	copy(sigContent, d.data[d.pos+1:d.pos+TypeSize.Signature])
-	out = ecc.Signature{
-		Curve:   ecc.CurveID(d.data[d.pos]), // 1 byte
-		Content: sigContent,                 // 65 bytes
+	sigContent := make([]byte, 66)
+
+	out, err = ecc.NewSignatureFromData(sigContent)
+	if err != nil {
+		return out, fmt.Errorf("new signature: %s", err)
 	}
+
 	d.pos += TypeSize.Signature
 	decoderLog.Debug("read signature", zap.Stringer("sig", out))
 	return

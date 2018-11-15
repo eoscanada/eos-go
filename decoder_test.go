@@ -261,7 +261,7 @@ func TestDecoder_Empty_PublicKey(t *testing.T) {
 
 func TestDecoder_Signature(t *testing.T) {
 
-	sig := ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{1}, 65)}
+	sig := ecc.MustNewSignatureFromData(bytes.Repeat([]byte{0}, 66))
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
@@ -398,7 +398,7 @@ func TestDecoder_Encode(t *testing.T) {
 	assert.Equal(t, [2]string{"foo", "bar"}, s.F7)
 	//	assert.Equal(t, map[string]string{"foo": "bar", "hello": "you"}, s.F8)
 	assert.Equal(t, ecc.MustNewPublicKeyFromData(bytes.Repeat([]byte{0}, 34)), s.F9)
-	assert.Equal(t, ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, s.F10)
+	assert.Equal(t, ecc.MustNewSignatureFromData(bytes.Repeat([]byte{0}, 66)), s.F10)
 	assert.Equal(t, byte(1), s.F11)
 	assert.Equal(t, uint64(87), s.F12)
 	assert.Equal(t, []byte{1, 2, 3, 4, 5}, s.F13)

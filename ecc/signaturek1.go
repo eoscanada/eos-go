@@ -2,6 +2,7 @@ package ecc
 
 import (
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
+	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 )
 
 type innerK1Signature struct {
@@ -37,4 +38,10 @@ func (s *innerK1Signature) publicKey(content []byte, hash []byte) (out PublicKey
 		Content: recoveredKey.SerializeCompressed(),
 		inner:   &innerK1PublicKey{},
 	}, nil
+}
+
+func (s innerK1Signature) string(content []byte) string {
+	checksum := Ripemd160checksumHashCurve(content, CurveK1)
+	buf := append(content[:], checksum...)
+	return "SIG_K1_" + base58.Encode(buf)
 }
