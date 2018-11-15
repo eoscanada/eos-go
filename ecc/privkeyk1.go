@@ -11,8 +11,8 @@ type innerK1PrivateKey struct {
 	privKey *btcec.PrivateKey
 }
 
-func (K *innerK1PrivateKey) publicKey() PublicKey {
-	return PublicKey{Curve: CurveK1, Content: K.privKey.PubKey().SerializeCompressed(), inner: &innerK1PublicKey{}}
+func (k *innerK1PrivateKey) publicKey() PublicKey {
+	return PublicKey{Curve: CurveK1, Content: k.privKey.PubKey().SerializeCompressed(), inner: &innerK1PublicKey{}}
 }
 
 func (k *innerK1PrivateKey) sign(hash []byte) (out Signature, err error) {

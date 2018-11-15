@@ -645,12 +645,14 @@ func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
 		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
 		return
 	}
-	keyContent := make([]byte, 33)
-	copy(keyContent, d.data[d.pos+1:d.pos+TypeSize.PublicKey])
-	out = ecc.PublicKey{
-		Curve:   ecc.CurveID(d.data[d.pos]), // 1 byte
-		Content: keyContent,                 // 33 bytes
+	keyContent := make([]byte, 34)
+	copy(keyContent, d.data[d.pos:d.pos+TypeSize.PublicKey])
+
+	out, err = ecc.NewPublicKeyFromData(keyContent)
+	if err != nil {
+		err = fmt.Errorf("publicKey: key from data: %s", err)
 	}
+
 	d.pos += TypeSize.PublicKey
 	decoderLog.Debug("read public key", zap.Stringer("pubkey", out))
 	return
