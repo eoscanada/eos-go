@@ -887,11 +887,9 @@ func (curve *KoblitzCurve) QPlus1Div4() *big.Int {
 
 var initonce sync.Once
 var secp256k1 KoblitzCurve
-var secp256r1 KoblitzCurve
 
 func initAll() {
 	initS256()
-	initS256R1()
 }
 
 // fromHex converts the passed hex string into a big integer pointer and will
@@ -953,52 +951,8 @@ func initS256() {
 	// secp256k1.b2 = fromHex("114CA50F7A8E2F3F657C1108D9D44CFD8")
 }
 
-func initS256R1() {
-	// Curve parameters taken from [SECG] section 2.4.1.
-	secp256r1.CurveParams = new(elliptic.CurveParams)
-	secp256r1.P = fromHex("ffffffff00000001000000000000000000000000ffffffffffffffffffffffff")
-	secp256r1.N = fromHex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551")
-	secp256r1.B = fromHex("5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b")
-	secp256r1.Gx = fromHex("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296")
-	secp256r1.Gy = fromHex("4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5")
-	secp256r1.BitSize = 256
-	secp256r1.q = new(big.Int).Div(new(big.Int).Add(secp256r1.P,
-		big.NewInt(1)), big.NewInt(4))
-	secp256r1.H = 1
-	secp256r1.halfOrder = new(big.Int).Rsh(secp256r1.N, 1)
-
-	// Provided for convenience since this gets computed repeatedly.
-	secp256r1.byteSize = secp256r1.BitSize / 8
-
-	// Deserialize and set the pre-computed table used to accelerate scalar
-	// base multiplication.  This is hard-coded data, so any errors are
-	// panics because it means something is wrong in the source code.
-	// if err := loadS256BytePoints(); err != nil {
-	// 	panic(err)
-	// }
-
-	// Next 6 constants are from Hal Finney's bitcointalk.org post:
-	// https://bitcointalk.org/index.php?topic=3238.msg45565#msg45565
-	// May he rest in peace.
-	//
-	// They have also been independently derived from the code in the
-	// EndomorphismVectors function in gensecp256r1.go.
-	secp256r1.lambda = fromHex("5363AD4CC05C30E0A5261C028812645A122E22EA20816678DF02967C1B23BD72")
-	secp256r1.beta = new(fieldVal).SetHex("7AE96A2B657C07106E64479EAC3434E99CF0497512F58995C1396C28719501EE")
-	secp256r1.a1 = fromHex("3086D221A7D46BCDE86C90E49284EB15")
-	secp256r1.b1 = fromHex("-E4437ED6010E88286F547FA90ABFE4C3")
-	secp256r1.a2 = fromHex("114CA50F7A8E2F3F657C1108D9D44CFD8")
-	secp256r1.b2 = fromHex("3086D221A7D46BCDE86C90E49284EB15")
-}
-
 // S256 returns a Curve which implements secp256k1.
 func S256() *KoblitzCurve {
 	initonce.Do(initAll)
 	return &secp256k1
-}
-
-// S256 returns a Curve which implements secp256r1.
-func S256R1() *KoblitzCurve {
-	initonce.Do(initAll)
-	return &secp256r1
 }

@@ -6,58 +6,75 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func FixmeTestSignatureSerialization(t *testing.T) {
-	privkey, err := NewPrivateKey("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3")
+func TestSignatureSerialization(t *testing.T) {
+	privkey, err := NewPrivateKey("5JFhynQnFBYNTPDA9TiKeE7TmujNYaExcbZi9bsRUjhVxwZF4Mt")
 	require.NoError(t, err)
 
-	payload := []byte("payload")
-	sig, err := privkey.Sign(sigDigest(make([]byte, 32, 32), payload))
+	payload, err := hex.DecodeString("89529cb031c69eccc92f3e8492393a8688bd3d071d7346677b6ff59d314d5121")
 	require.NoError(t, err)
-	assert.Equal(t, `SIG_K1_K2JjfxmYpoVwCKkohDiQPcepeyetSWMgQPjx3zqagzao5NeQhnW4JQ2qwxd4txU7dR5TdS6PnP75vmMs5qSXzjphqUZz6N`, sig.String()) // not checked after..
+	digest := sigDigest(make([]byte, 32, 32), payload, nil)
+	sig, err := privkey.Sign(digest)
+	require.NoError(t, err)
+	pubKey, err := sig.PublicKey(digest)
+	require.NoError(t, err)
+	assert.Equal(t, `EOS5jSQLpKBHLaMtuzkftnYE6bCMA5Jxso8f22uZyKj6cDEp32eSj`, pubKey.String()) // not checked after..
 	assert.True(t, isCanonical([]byte(sig.Content)))
 }
 
-func FixmeTestSignatureCanonical(t *testing.T) {
+func TestSignatureCanonical(t *testing.T) {
 	privkey, err := NewPrivateKey("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3")
 	require.NoError(t, err)
 
-	fmt.Println("Start")
+	//fmt.Println("Start")
 	payload := []byte("payload1") // doesn't fail
-	sig, err := privkey.Sign(sigDigest(make([]byte, 32, 32), payload))
-	fmt.Println("Signed")
+	sig, err := privkey.Sign(sigDigest(make([]byte, 32, 32), payload, nil))
+	//fmt.Println("Signed")
 	require.NoError(t, err)
-	fmt.Println("MAM", sig.String())
+	//fmt.Println("MAM", sig.String())
 	assert.True(t, isCanonical([]byte(sig.Content)))
-	fmt.Println("End")
+	//fmt.Println("End")
 
-	fmt.Println("Start")
+	//fmt.Println("Start")
 	payload = []byte("payload6") // fails
-	sig, err = privkey.Sign(sigDigest(make([]byte, 32, 32), payload))
-	fmt.Println("Signed")
+	sig, err = privkey.Sign(sigDigest(make([]byte, 32, 32), payload, nil))
+	//fmt.Println("Signed")
 	require.NoError(t, err)
-	fmt.Println("MAM1", sig.String())
+	//fmt.Println("MAM1", sig.String())
 	assert.True(t, isCanonical([]byte(sig.Content)))
-	fmt.Println("End")
+	//fmt.Println("End")
 }
 
-func FixmeTestSignatureMarshalUnmarshal(t *testing.T) {
-	fromEOSIOC := "SIG_K1_K5yY5ehsnDMc6xcRhsLYzFuZGUaKwb4hc8oLmP5HA1EhU42NRo3ygx3zvLRJ1nkw1NA5nCSegwcYkSfkZBQBzqMDsCGnNK"
-	sig, err := NewSignature(fromEOSIOC)
-	require.NoError(t, err)
-	assert.Equal(t, fromEOSIOC, sig.String())
-	assert.True(t, isCanonical([]byte(sig.Content)))
-}
-func FixmeTestSignatureMarshalUnmarshal_bilc(t *testing.T) {
-	fromEOSIOC := "SIG_K1_Jy9G6SgmGSjAbu7n82veUiqV8LFFL6wqr9G26H37dy1WExUj9kYwS17X3ffT5W9M51HkpKF4xQ6MoFCCMxBEHbk64dgbMg"
-	sig, err := NewSignature(fromEOSIOC)
-	require.NoError(t, err)
-	assert.Equal(t, fromEOSIOC, sig.String())
-	assert.True(t, isCanonical([]byte(sig.Content)))
+func TestSignatureMarshalUnmarshal(t *testing.T) {
+	cases := []struct {
+		name          string
+		signature     string
+		testCanonical bool
+	}{
+		{
+			name:          "K1",
+			signature:     "SIG_K1_KVp1bPmzswSvbcZCMENXbawKFVXPyYrUeJNZ9ChgWdhxLd5K8WtRmCtFY5cqVFgxjCZH8CwdNkxM3HBZ7EXeJmzcK78mHA",
+			testCanonical: true,
+		},
+		{
+			name:      "R1",
+			signature: "SIG_R1_KE33Ucjr5N3GR4ZosFh8KtGMytHHNtnmdUaSoMLJVXpVXoC8B9zfoXYrLiQJZqroe3LKciaP2uJT7Myqqoo4PZH7iSnso8",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			sig, err := NewSignature(c.signature)
+			require.NoError(t, err)
+			assert.Equal(t, c.signature, sig.String())
+			if c.testCanonical {
+				assert.True(t, isCanonical([]byte(sig.Content)))
+			}
+		})
+	}
 }
 
 func isCanonical(compactSig []byte) bool {
@@ -74,47 +91,64 @@ func isCanonical(compactSig []byte) bool {
 	return t1 && t2 && t3 && t4
 }
 
-func FixmeTestSignaturePublicKeyExtraction(t *testing.T) {
-	// was signed with EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
-	fromEOSIOC := "SIG_K1_K5yY5ehsnDMc6xcRhsLYzFuZGUaKwb4hc8oLmP5HA1EhU42NRo3ygx3zvLRJ1nkw1NA5nCSegwcYkSfkZBQBzqMDsCGnNK"
-	sig, err := NewSignature(fromEOSIOC)
-	require.NoError(t, err)
+func TestSignaturePublicKeyExtraction(t *testing.T) {
 
-	payload, err := hex.DecodeString("20d8af5a0000b32bcc0e37eb0000000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea305500001059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100")
-	require.NoError(t, err)
+	//SIG_R1_KE33Ucjr5N3GR4ZosFh8KtGMytHHNtnmdUaSoMLJVXpVXoC8B9zfoXYrLiQJZqroe3LKciaP2uJT7Myqqoo4PZH7iSnso8
+	//PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm
 
-	pubKey, err := sig.PublicKey(sigDigest(make([]byte, 32, 32), payload))
-	require.NoError(t, err)
+	cases := []struct {
+		name                   string
+		signature              string
+		payload                string
+		chainID                string
+		expectedPubKey         string
+		expectedSignatureError string
+		expectedPubKeyError    string
+	}{
+		{
+			name:           "K1",
+			signature:      "SIG_K1_KW4qcHDh6ziqWELRAsFx42sgPuP3VfCpTKX4D5A3uZhFb3fzojTeGohja19g4EJa9Zv7SrGZ47H8apo1sNa2bwPvGwW2ba",
+			payload:        "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
+			chainID:        "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+			expectedPubKey: "EOS7KtnQUSGVf4vbFE2eQsWmDp4iV93jVcSmdQXtRdRRnWj2ubbFW",
+		},
+		{
+			name:                "R1",
+			signature:           "SIG_R1_KE33Ucjr5N3GR4ZosFh8KtGMytHHNtnmdUaSoMLJVXpVXoC8B9zfoXYrLiQJZqroe3LKciaP2uJT7Myqqoo4PZH7iSnso8",
+			payload:             "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
+			chainID:             "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+			expectedPubKeyError: "R1 not supported",
+		},
+	}
 
-	// Ok, we'd need to find values where we know the signature is valid, and comes from the given key.
-	assert.Equal(t, "PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			sig, err := NewSignature(c.signature)
+			if c.expectedSignatureError != "" {
+				require.Equal(t, fmt.Errorf(c.expectedSignatureError), err)
+				return
+			}
+
+			require.NoError(t, err)
+
+			payload, err := hex.DecodeString(c.payload)
+			require.NoError(t, err)
+
+			chainID, err := hex.DecodeString(c.chainID)
+			require.NoError(t, err)
+
+			pubKey, err := sig.PublicKey(sigDigest(chainID, payload, nil))
+			if c.expectedPubKeyError != "" {
+				require.Equal(t, fmt.Errorf(c.expectedPubKeyError), err)
+				return
+			}
+			assert.Equal(t, c.expectedPubKey, pubKey.String())
+		})
+	}
+
 }
 
-// OKAY I THINK THERE's a problem with the internal representation of
-// a signature.. it works in an of itself, but it is not compatible
-// with the main `nodeos` software.
-//
-// FIXME: We need to fix that for this library to be able to sign
-// transactions and push them to the network without relying on an
-// external wallet, or eosjs-ecc or something..
-func FixmeTestSignaturePublicKeyExtractionSecond(t *testing.T) {
-	// this was transaction be72ed8f391277c7792caec781b70f3e97766920c1f3844fdbb82b7db5f0381e
-	// was signed with EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
-	fromEOSIOC := "SIG_K1_KkwLhwDoRF8gpGFbcUKiaPdeeKo6U7eDuXQw9szMiNE4K4cFe17sffk6hmy3mWf1ogtzd5J5kvnvFD3Lq5cF6VyYb3KsGy"
-	sig, err := NewSignature(fromEOSIOC)
-	require.NoError(t, err)
-
-	payload, err := hex.DecodeString("30d3b35a0000be0194c22fe70000000000010000000000ea305500409e9a2264b89a010000000000ea305500000000a8ed32327c0000000000ea305500000059b1abe93101000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf01000001000000010002c0ded2bc1f1305fb0faac5e6c03ee3a1924234985427b6167ca569d13df435cf0100000100000000010000000000ea305500000000a8ed32320100")
-	require.NoError(t, err)
-
-	pubKey, err := sig.PublicKey(sigDigest(make([]byte, 32, 32), payload))
-	require.NoError(t, err)
-
-	// Ok, we'd need to find values where we know the signature is valid, and comes from the given key.
-	assert.Equal(t, "PUB_K1_5DguRMaGh72NvbVX5LKHTb5cvbRmAxgrm9i2NNPKv5TC7FadXs", pubKey.String())
-}
-
-func FixmeTestEOSIOCSigningComparison(t *testing.T) {
+func TestEOSIOCSigningComparison(t *testing.T) {
 	// try with: ec sign -k 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3 '{"expiration":"2018-03-21T23:02:32","region":0,"ref_block_num":2156,"ref_block_prefix":1532582828,"packed_bandwidth_words":0,"context_free_cpu_bandwidth":0,"context_free_actions":[],"actions":[],"signatures":[],"context_free_data":[]}'
 	wif := "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3" // corresponds to: EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
 	privKey, err := NewPrivateKey(wif)
@@ -126,16 +160,18 @@ func FixmeTestEOSIOCSigningComparison(t *testing.T) {
 	payload, err := hex.DecodeString("88e4b25a00006c08ac5b595b000000000000") // without signed transaction bytes
 	require.NoError(t, err)
 
-	digest := sigDigest(chainID, payload)
+	digest := sigDigest(chainID, payload, nil)
 
 	sig, err := privKey.Sign(digest)
 	require.NoError(t, err)
 
-	fromEOSIOC := "SIG_K1_K2WBNtiTY8o4mqFSz7HPnjkiT9JhUYGFa81RrzaXr3aWRF1F8qwVfutJXroqiL35ZiHTcvn8gPWGYJDwnKZTCcbAGJy4i9"
-	assert.Equal(t, fromEOSIOC, sig.String())
+	pubKey, err := sig.PublicKey(digest)
+	require.NoError(t, err)
+
+	assert.Equal(t, "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
 }
 
-func FixmeTestNodeosSignatureComparison(t *testing.T) {
+func TestNodeosSignatureComparison(t *testing.T) {
 	wif := "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3" // corresponds to: EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
 	privKey, err := NewPrivateKey(wif)
 	require.NoError(t, err)
@@ -149,24 +185,33 @@ func FixmeTestNodeosSignatureComparison(t *testing.T) {
 	sig, err := privKey.Sign(digest)
 	require.NoError(t, err)
 
-	// from that tx:
-	fromEOSIOCTx := "SIG_K1_K9JDNpqcgUin9i2PtsV6QbLG8QGzYPN8kqVicJ63CgHBiwq9q27qykaerbNh8kD6baLFWcuKyTmVUwFRF6myjqFQcHvRXf"
-	assert.Equal(t, fromEOSIOCTx, sig.String())
+	pubKey, err := sig.PublicKey(digest)
 
-	// decode
-	fmt.Println("From EOSIO sig:", hex.EncodeToString(base58.Decode(fromEOSIOCTx[3:])))
-	fmt.Println("From GO sig:", hex.EncodeToString(base58.Decode(sig.String()[3:])))
+	assert.Equal(t, "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
 }
 
-func FixmeTestSignatureUnmarshalChecksum(t *testing.T) {
-	fromEOSIOC := "SIG_K1_K5yY5ehsnDMc6xcRhsLYzFuZGUaKwb4hc8oLmP5HA1EhU42NRo3ygx3zvLRJ1nkw1NA5nCSegwcYkSfkZBQBzqMDsCGnZZ" // simply checked the last 2 bytes
+func TestSignatureUnmarshalChecksum(t *testing.T) {
+	fromEOSIOC := "SIG_K1_KW4qcHDh6ziqWELRAsFx42sgPuP3VfCpTKX4D5A3uZhFb3fzojTeGohja19g4EJa9Zv7SrGZ47H8apo1sNa2bwPvGwW2bb" // simply checked the last 2 bytes
 	_, err := NewSignature(fromEOSIOC)
-	require.Equal(t, "signature checksum failed, found 02c9bc70 expected 02c9befc", err.Error())
+	require.Equal(t, "signature checksum failed, found a9c72981 expected a9c72982", err.Error())
 }
 
-func sigDigest(chainID, payload []byte) []byte {
+//to do this here because of a import cycle when use eos.SigDigest
+func sigDigest(chainID, payload, contextFreeData []byte) []byte {
 	h := sha256.New()
-	_, _ = h.Write(chainID)
+	if len(chainID) == 0 {
+		_, _ = h.Write(make([]byte, 32, 32))
+	} else {
+		_, _ = h.Write(chainID)
+	}
 	_, _ = h.Write(payload)
+
+	if len(contextFreeData) > 0 {
+		h2 := sha256.New()
+		_, _ = h2.Write(contextFreeData)
+		_, _ = h.Write(h2.Sum(nil)) // add the hash of CFD to the payload
+	} else {
+		_, _ = h.Write(make([]byte, 32, 32))
+	}
 	return h.Sum(nil)
 }

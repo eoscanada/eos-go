@@ -12,11 +12,50 @@ import (
 )
 
 const PublicKeyPrefix = "PUB_"
+const PublicKeyK1Prefix = "PUB_K1_"
+const PublicKeyR1Prefix = "PUB_R1_"
 const PublicKeyPrefixCompat = "EOS"
+
+type innerPublicKey interface {
+	key(content []byte) (*btcec.PublicKey, error)
+	string(content []byte, curveID CurveID) string
+}
 
 type PublicKey struct {
 	Curve   CurveID
 	Content []byte
+
+	inner innerPublicKey
+}
+
+func NewPublicKeyFromData(data []byte) (out PublicKey, err error) {
+	if len(data) != 34 {
+		return out, fmt.Errorf("public key data must have a length of 33 ")
+	}
+
+	out = PublicKey{
+		Curve:   CurveID(data[0]), // 1 byte
+		Content: data[1:],         // 33 bytes
+	}
+
+	switch out.Curve {
+	case CurveK1:
+		out.inner = &innerK1PublicKey{}
+	case CurveR1:
+		out.inner = &innerR1PublicKey{}
+	default:
+		return out, fmt.Errorf("unsupported curve prefix %q", out.Curve)
+	}
+
+	return out, nil
+}
+
+func MustNewPublicKeyFromData(data []byte) PublicKey {
+	key, err := NewPublicKeyFromData(data)
+	if err != nil {
+		panic(err.Error())
+	}
+	return key
 }
 
 func NewPublicKey(pubKey string) (out PublicKey, err error) {
@@ -24,36 +63,35 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 		return out, fmt.Errorf("invalid format")
 	}
 
-	var pubKeyMaterial string
+	var decodedPubKey []byte
 	var curveID CurveID
-	if strings.HasPrefix(pubKey, PublicKeyPrefix) {
-		pubKeyMaterial = pubKey[len(PublicKeyPrefix):] // strip "PUB_"
+	var inner innerPublicKey
 
-		curvePrefix := pubKeyMaterial[:3]
-		switch curvePrefix {
-		case "K1_":
-			curveID = CurveK1
-		case "R1_":
-			curveID = CurveR1
-		default:
-			return out, fmt.Errorf("unsupported curve prefix %q", curvePrefix)
-		}
-		pubKeyMaterial = pubKeyMaterial[3:] // strip "K1_"
-
-	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
-		pubKeyMaterial = pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
+	if strings.HasPrefix(pubKey, PublicKeyR1Prefix) {
+		pubKeyMaterial := pubKey[len(PublicKeyR1Prefix):] // strip "PUB_R1_"
+		decodedPubKey = base58.Decode(pubKeyMaterial)
+		inner = &innerR1PublicKey{}
+	} else if strings.HasPrefix(pubKey, PublicKeyK1Prefix) {
+		pubKeyMaterial := pubKey[len(PublicKeyK1Prefix):] // strip "PUB_K1_"
 		curveID = CurveK1
-
+		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
+		if err != nil {
+			return out, fmt.Errorf("checkDecode: %s", err)
+		}
+		inner = &innerK1PublicKey{}
+	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
+		pubKeyMaterial := pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
+		curveID = CurveK1
+		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
+		if err != nil {
+			return out, fmt.Errorf("checkDecode: %s", err)
+		}
+		inner = &innerK1PublicKey{}
 	} else {
-		return out, fmt.Errorf("public key should start with %q (or the old %q)", PublicKeyPrefix, PublicKeyPrefixCompat)
+		return out, fmt.Errorf("public key should start with [%q | %q] (or the old %q)", PublicKeyK1Prefix, PublicKeyR1Prefix, PublicKeyPrefixCompat)
 	}
 
-	pubDecoded, err := checkDecode(pubKeyMaterial, curveID)
-	if err != nil {
-		return out, fmt.Errorf("checkDecode: %s", err)
-	}
-
-	return PublicKey{Curve: curveID, Content: pubDecoded}, nil
+	return PublicKey{Curve: curveID, Content: decodedPubKey, inner: inner}, nil
 }
 
 func MustNewPublicKey(pubKey string) PublicKey {
@@ -107,31 +145,11 @@ func Ripemd160checksumHashCurve(in []byte, curve CurveID) []byte {
 }
 
 func (p PublicKey) Key() (*btcec.PublicKey, error) {
-	// TODO: implement the curve switch according to `p.Curve`
-	key, err := btcec.ParsePubKey(p.Content, btcec.S256())
-	if err != nil {
-		return nil, fmt.Errorf("parsePubKey: %s", err)
-	}
-
-	return key, nil
+	return p.inner.key(p.Content)
 }
 
 func (p PublicKey) String() string {
-
-	data := p.Content
-	if len(data) == 0 {
-		data = make([]byte, 33)
-	}
-
-	hash := ripemd160checksum(data, p.Curve)
-
-	rawKey := make([]byte, 37)
-	copy(rawKey, data[:33])
-	copy(rawKey[33:], hash[:4])
-
-	return PublicKeyPrefixCompat + base58.Encode(rawKey)
-	// FIXME: when we decide to go ahead with the new representation.
-	//return PublicKeyPrefix + p.Curve.StringPrefix() + base58.Encode(rawKey)
+	return p.inner.string(p.Content, p.Curve)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {

@@ -15,7 +15,7 @@ import (
 // TODO: Move this test to the `system` contract.. and take out
 // `NewAccount` from this package.
 func TestActionNewAccount(t *testing.T) {
-	pubKey, err := ecc.NewPublicKey("PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+	pubKey, err := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
 	require.NoError(t, err)
 	a := &eos.Action{
 		Account: eos.AccountName("eosio"),
