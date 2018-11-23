@@ -593,7 +593,9 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 			fmt.Println(err)
 		}
 		fmt.Println("-------------------------------")
-		fmt.Println(string(responseDump))
+		fmt.Println(cnt.String())
+		fmt.Println("-------------------------------")
+		fmt.Printf("%q\n", responseDump)
 		fmt.Println("")
 	}
 
