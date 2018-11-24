@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"fmt"
-	"log"
 	"math"
 
 	"time"
@@ -71,7 +70,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 					errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
 					break
 				}
-				fmt.Println("Handshake resent!")
+				logger.Debug("Handshake resent!")
 
 			} else {
 
@@ -102,7 +101,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				if c.catchup.requestedEndBlock == blockNum {
 
 					if c.catchup.originHeadBlock <= blockNum {
-						fmt.Println("In sync with last handshake")
+						logger.Debug("In sync with last handshake")
 						blockID, err := m.BlockID()
 						if err != nil {
 							errChannel <- fmt.Errorf("getting block id: %s", err)
@@ -111,7 +110,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 						peer.handshakeInfo.HeadBlockID = blockID
 						peer.handshakeInfo.HeadBlockTime = m.SignedBlockHeader.Timestamp.Time
 						peer.SendHandshake(peer.handshakeInfo)
-						fmt.Println("Sent new handshake with info:", peer.handshakeInfo)
+						logger.Debug("Sent new handshake with info:", peer.handshakeInfo)
 					} else {
 						err = c.catchup.sendSyncRequest(peer)
 						if err != nil {
@@ -126,7 +125,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 
 func (c *Client) Start() error {
 
-	fmt.Println("Starting client")
+	logger.Info("Starting client")
 
 	errorChannel := make(chan error, 1)
 
@@ -144,7 +143,7 @@ func (c *Client) Start() error {
 				}
 			}
 		case err := <-errorChannel:
-			log.Println("Start got ERROR:", err)
+			logger.Error("Start got ERROR:", err)
 			return err
 		}
 	}
@@ -167,7 +166,9 @@ func (c *Catchup) sendSyncRequest(peer *Peer) error {
 	c.requestedStartBlock = c.headBlock
 	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 100))
 
-	fmt.Printf("Sending sync request to origin: start block [%d] end block [%d]\n", c.requestedStartBlock, c.requestedEndBlock)
+	logger.Debugf("Sending sync request to origin: start block [%d] end block [%d]",
+		c.requestedStartBlock, c.requestedEndBlock)
+
 	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
 
 	if err != nil {
