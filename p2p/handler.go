@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type Handler interface {
@@ -19,18 +18,18 @@ func (f HandlerFunc) Handle(envelope *Envelope) {
 var LoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	data, err := json.Marshal(envelope)
 	if err != nil {
-		fmt.Println("logger plugin err: ", err)
+		logger.Error("logger plugin err: ", err)
 		return
 	}
 
-	fmt.Println("logger - message : ", string(data))
+	logger.Info("logger - message : ", string(data))
 })
 
 // StringLoggerHandler simply prints the messages as they go through the client.
 var StringLoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	name, _ := envelope.Packet.Type.Name()
-	fmt.Printf(
-		"type %s from %s to %s: %s\n",
+	logger.Infof(
+		"type %s from %s to %s: %s",
 		name,
 		envelope.Sender.Address,
 		envelope.Receiver.Address,
