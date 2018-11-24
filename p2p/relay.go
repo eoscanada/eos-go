@@ -27,7 +27,8 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 	remoteAddress := conn.RemoteAddr().String()
 
-	fmt.Printf("Initiating proxy between %s and %s\n", remoteAddress, r.destinationPeerAddress)
+	logger.Infof("Initiating proxy between %s and %s",
+		remoteAddress, r.destinationPeerAddress)
 
 	destinationPeer := NewOutgoingPeer(r.destinationPeerAddress, "eos-relay", nil)
 
@@ -43,13 +44,18 @@ func (r *Relay) startProxy(conn net.Conn) {
 		proxy.RegisterHandlers(r.handlers)
 
 		err := proxy.Start()
-		fmt.Printf("Started proxy error between %s and %s : %s\n", remoteAddress, r.destinationPeerAddress, err)
+		logger.Errorf("Started proxy error between %s and %s : %s",
+			remoteAddress, r.destinationPeerAddress, err)
+
 		destinationPeer.connection.Close()
 		remotePeer.connection.Close()
-		fmt.Printf("Closing connection between %s and %s\n", remoteAddress, r.destinationPeerAddress)
+
+		logger.Warnf("Closing connection between %s and %s",
+			remoteAddress, r.destinationPeerAddress)
 		break
 	case err := <-errorChannel:
-		fmt.Printf("Proxy error between %s and %s : %s\n", conn.RemoteAddr(), r.destinationPeerAddress, err)
+		logger.Errorf("Proxy error between %s and %s : %s",
+			conn.RemoteAddr(), r.destinationPeerAddress, err)
 		break
 	}
 }
@@ -62,15 +68,15 @@ func (r *Relay) Start() error {
 			return fmt.Errorf("peer init: listening %s: %s", r.listeningAddress, err)
 		}
 
-		fmt.Println("Accepting connection on:\n", r.listeningAddress)
+		logger.Infof("Accepting connection on:", r.listeningAddress)
 
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				fmt.Printf("lost listening connection with: %s\n", err)
+				logger.Errorf("lost listening connection with: %s", err)
 				break
 			}
-			fmt.Println("Connected to:", conn.RemoteAddr())
+			logger.Info("Connected to:", conn.RemoteAddr())
 			go r.startProxy(conn)
 		}
 	}
