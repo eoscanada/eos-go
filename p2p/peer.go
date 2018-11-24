@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
 
@@ -77,7 +76,7 @@ func (p *Peer) Read() (*eos.Packet, error) {
 		p.cancelHandshakeTimeout <- true
 	}
 	if err != nil {
-		log.Println("Connection Read error:", p.Address, err)
+		logger.Error("Connection Read error:", p.Address, err)
 		return nil, fmt.Errorf("connection: read: %s", err)
 	}
 	return packet, nil
@@ -103,19 +102,19 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 	ready = make(chan bool, 1)
 	go func() {
 		if p.listener {
-			fmt.Println("Listening on:", p.Address)
+			logger.Debug("Listening on:", p.Address)
 
 			ln, err := net.Listen("tcp", p.Address)
 			if err != nil {
 				errChan <- fmt.Errorf("peer init: listening %s: %s", p.Address, err)
 			}
 
-			fmt.Println("Accepting connection on:\n", p.Address)
+			logger.Debug("Accepting connection on:", p.Address)
 			conn, err := ln.Accept()
 			if err != nil {
 				errChan <- fmt.Errorf("peer init: accepting connection on %s: %s", p.Address, err)
 			}
-			fmt.Println("Connected on:", p.Address)
+			logger.Debug("Connected on:", p.Address)
 
 			p.SetConnection(conn)
 			ready <- true
@@ -125,15 +124,15 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				go func(p *Peer) {
 					select {
 					case <-time.After(p.handshakeTimeout):
-						log.Println("Handshake took too long:", p.Address)
+						logger.Warn("Handshake took too long:", p.Address)
 						errChan <- fmt.Errorf("handshake took too long: %s", p.Address)
 					case <-p.cancelHandshakeTimeout:
-						log.Println("cancelHandshakeTimeout canceled:", p.Address)
+						logger.Warn("cancelHandshakeTimeout canceled:", p.Address)
 					}
 				}(p)
 			}
 
-			log.Printf("Dialing: %s, timeout: %d\n", p.Address, p.connectionTimeout)
+			logger.Infof("Dialing: %s, timeout: %d", p.Address, p.connectionTimeout)
 			conn, err := net.DialTimeout("tcp", p.Address, p.connectionTimeout)
 			if err != nil {
 				if p.handshakeTimeout > 0 {
@@ -142,7 +141,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				errChan <- fmt.Errorf("peer init: dial %s: %s", p.Address, err)
 				return
 			}
-			log.Println("Connected to:", p.Address)
+			logger.Info("Connected to:", p.Address)
 			p.connection = conn
 			p.reader = bufio.NewReader(conn)
 			ready <- true
@@ -171,7 +170,7 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 }
 
 func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	println("SendSyncRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
+	logger.Debugf("SendSyncRequest start [%d] end [%d]", startBlockNum, endBlockNumber)
 	syncRequest := &eos.SyncRequestMessage{
 		StartBlock: startBlockNum,
 		EndBlock:   endBlockNumber,
@@ -180,7 +179,7 @@ func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err
 	return p.WriteP2PMessage(syncRequest)
 }
 func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	fmt.Printf("SendRequest start [%d] end [%d]\n", startBlockNum, endBlockNumber)
+	logger.Debugf("SendRequest start [%d] end [%d]", startBlockNum, endBlockNumber)
 	request := &eos.RequestMessage{
 		ReqTrx: eos.OrderedBlockIDs{
 			Mode:    [4]byte{0, 0, 0, 0},
@@ -196,7 +195,7 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 }
 
 func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err error) {
-	fmt.Printf("Send Notice head [%d] lib [%d] type[%d]\n", headBlockNum, libNum, mode)
+	logger.Debugf("Send Notice head [%d] lib [%d] type[%d]", headBlockNum, libNum, mode)
 
 	notice := &eos.NoticeMessage{
 		KnownTrx: eos.OrderedBlockIDs{
@@ -212,7 +211,7 @@ func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err er
 }
 
 func (p *Peer) SendTime() (err error) {
-	fmt.Printf("SendTime\n")
+	logger.Debug("SendTime")
 
 	notice := &eos.TimeMessage{}
 	return p.WriteP2PMessage(notice)
@@ -222,7 +221,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
-		fmt.Println("publicKey : ", err)
+		logger.Error("publicKey err by : ", err)
 		err = fmt.Errorf("sending handshake to %s: create public key: %s", p.Address, err)
 		return
 	}
