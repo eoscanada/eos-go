@@ -12,6 +12,7 @@ import (
 )
 
 type P2PMessage interface {
+	fmt.Stringer
 	GetType() P2PMessageType
 }
 

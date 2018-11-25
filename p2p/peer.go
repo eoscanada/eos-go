@@ -8,6 +8,10 @@ import (
 	"net"
 	"time"
 
+	"go.uber.org/zap"
+
+	"go.uber.org/zap/zapcore"
+
 	"runtime"
 
 	"bufio"
@@ -30,6 +34,14 @@ type Peer struct {
 	cancelHandshakeTimeout chan bool
 }
 
+// MarshalLogObject calls the underlying function from zap.
+func (p Peer) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("name", p.Name)
+	enc.AddString("address", p.Address)
+	enc.AddString("agent", p.agent)
+	return enc.AddObject("handshakeInfo", p.handshakeInfo)
+}
+
 type HandshakeInfo struct {
 	ChainID                  eos.Checksum256
 	HeadBlockNum             uint32
@@ -41,6 +53,17 @@ type HandshakeInfo struct {
 
 func (h *HandshakeInfo) String() string {
 	return fmt.Sprintf("Handshake Info: HeadBlockNum [%d], LastIrreversibleBlockNum [%d]", h.HeadBlockNum, h.LastIrreversibleBlockNum)
+}
+
+// MarshalLogObject calls the underlying function from zap.
+func (h HandshakeInfo) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("chainID", h.ChainID.String())
+	enc.AddUint32("headBlockNum", h.HeadBlockNum)
+	enc.AddString("headBlockID", h.HeadBlockID.String())
+	enc.AddTime("headBlockTime", h.HeadBlockTime)
+	enc.AddUint32("lastIrreversibleBlockNum", h.LastIrreversibleBlockNum)
+	enc.AddString("lastIrreversibleBlockID", h.LastIrreversibleBlockID.String())
+	return nil
 }
 
 func (p *Peer) SetHandshakeTimeout(timeout time.Duration) {
@@ -76,7 +99,7 @@ func (p *Peer) Read() (*eos.Packet, error) {
 		p.cancelHandshakeTimeout <- true
 	}
 	if err != nil {
-		logger.Error("Connection Read error:", p.Address, err)
+		p2pLog.Error("Connection Read Err", zap.String("address", p.Address), zap.Error(err))
 		return nil, fmt.Errorf("connection: read: %s", err)
 	}
 	return packet, nil
@@ -101,20 +124,22 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 
 	ready = make(chan bool, 1)
 	go func() {
+		address2log := zap.String("address", p.Address)
+
 		if p.listener {
-			logger.Debug("Listening on:", p.Address)
+			p2pLog.Debug("Listening on", address2log)
 
 			ln, err := net.Listen("tcp", p.Address)
 			if err != nil {
 				errChan <- fmt.Errorf("peer init: listening %s: %s", p.Address, err)
 			}
 
-			logger.Debug("Accepting connection on:", p.Address)
+			p2pLog.Debug("Accepting connection on", address2log)
 			conn, err := ln.Accept()
 			if err != nil {
 				errChan <- fmt.Errorf("peer init: accepting connection on %s: %s", p.Address, err)
 			}
-			logger.Debug("Connected on:", p.Address)
+			p2pLog.Debug("Connected on", address2log)
 
 			p.SetConnection(conn)
 			ready <- true
@@ -124,15 +149,15 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				go func(p *Peer) {
 					select {
 					case <-time.After(p.handshakeTimeout):
-						logger.Warn("Handshake took too long:", p.Address)
+						p2pLog.Warn("handshake took too long", address2log)
 						errChan <- fmt.Errorf("handshake took too long: %s", p.Address)
 					case <-p.cancelHandshakeTimeout:
-						logger.Warn("cancelHandshakeTimeout canceled:", p.Address)
+						p2pLog.Warn("cancelHandshakeTimeout canceled", address2log)
 					}
 				}(p)
 			}
 
-			logger.Infof("Dialing: %s, timeout: %d", p.Address, p.connectionTimeout)
+			p2pLog.Info("Dialing", address2log, zap.Duration("timeout", p.connectionTimeout))
 			conn, err := net.DialTimeout("tcp", p.Address, p.connectionTimeout)
 			if err != nil {
 				if p.handshakeTimeout > 0 {
@@ -141,7 +166,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				errChan <- fmt.Errorf("peer init: dial %s: %s", p.Address, err)
 				return
 			}
-			logger.Info("Connected to:", p.Address)
+			p2pLog.Info("Connected to", address2log)
 			p.connection = conn
 			p.reader = bufio.NewReader(conn)
 			ready <- true
@@ -170,7 +195,11 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 }
 
 func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	logger.Debugf("SendSyncRequest start [%d] end [%d]", startBlockNum, endBlockNumber)
+	p2pLog.Debug("SendSyncRequest",
+		zap.String("peer", p.Address),
+		zap.Uint32("start", startBlockNum),
+		zap.Uint32("end", endBlockNumber))
+
 	syncRequest := &eos.SyncRequestMessage{
 		StartBlock: startBlockNum,
 		EndBlock:   endBlockNumber,
@@ -179,7 +208,11 @@ func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err
 	return p.WriteP2PMessage(syncRequest)
 }
 func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	logger.Debugf("SendRequest start [%d] end [%d]", startBlockNum, endBlockNumber)
+	p2pLog.Debug("SendRequest",
+		zap.String("peer", p.Address),
+		zap.Uint32("start", startBlockNum),
+		zap.Uint32("end", endBlockNumber))
+
 	request := &eos.RequestMessage{
 		ReqTrx: eos.OrderedBlockIDs{
 			Mode:    [4]byte{0, 0, 0, 0},
@@ -195,7 +228,11 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 }
 
 func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err error) {
-	logger.Debugf("Send Notice head [%d] lib [%d] type[%d]", headBlockNum, libNum, mode)
+	p2pLog.Debug("Send Notice",
+		zap.String("peer", p.Address),
+		zap.Uint32("head", headBlockNum),
+		zap.Uint32("lib", libNum),
+		zap.Uint8("type", mode))
 
 	notice := &eos.NoticeMessage{
 		KnownTrx: eos.OrderedBlockIDs{
@@ -211,7 +248,7 @@ func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err er
 }
 
 func (p *Peer) SendTime() (err error) {
-	logger.Debug("SendTime")
+	p2pLog.Debug("SendTime", zap.String("peer", p.Address))
 
 	notice := &eos.TimeMessage{}
 	return p.WriteP2PMessage(notice)
@@ -221,10 +258,12 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
-		logger.Error("publicKey err by : ", err)
+		logErr("publicKey err", err)
 		err = fmt.Errorf("sending handshake to %s: create public key: %s", p.Address, err)
 		return
 	}
+
+	p2pLog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 

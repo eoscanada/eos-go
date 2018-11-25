@@ -3,6 +3,8 @@ package p2p
 import (
 	"fmt"
 	"net"
+
+	"go.uber.org/zap"
 )
 
 type Relay struct {
@@ -27,8 +29,9 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 	remoteAddress := conn.RemoteAddr().String()
 
-	logger.Infof("Initiating proxy between %s and %s",
-		remoteAddress, r.destinationPeerAddress)
+	p2pLog.Info("Initiating proxy",
+		zap.String("peer1", remoteAddress),
+		zap.String("peer2", r.destinationPeerAddress))
 
 	destinationPeer := NewOutgoingPeer(r.destinationPeerAddress, "eos-relay", nil)
 
@@ -44,18 +47,23 @@ func (r *Relay) startProxy(conn net.Conn) {
 		proxy.RegisterHandlers(r.handlers)
 
 		err := proxy.Start()
-		logger.Errorf("Started proxy error between %s and %s : %s",
-			remoteAddress, r.destinationPeerAddress, err)
+		p2pLog.Error("Started proxy error",
+			zap.String("peer1", remoteAddress),
+			zap.String("peer2", r.destinationPeerAddress),
+			zap.Error(err))
 
 		destinationPeer.connection.Close()
 		remotePeer.connection.Close()
 
-		logger.Warnf("Closing connection between %s and %s",
-			remoteAddress, r.destinationPeerAddress)
+		p2pLog.Warn("Closing connection",
+			zap.String("peer1", remoteAddress),
+			zap.String("peer2", r.destinationPeerAddress))
 		break
 	case err := <-errorChannel:
-		logger.Errorf("Proxy error between %s and %s : %s",
-			conn.RemoteAddr(), r.destinationPeerAddress, err)
+		p2pLog.Error("Proxy error between %s and %s : %s",
+			zap.Stringer("peer1", conn.RemoteAddr()),
+			zap.String("peer2", r.destinationPeerAddress),
+			zap.Error(err))
 		break
 	}
 }
@@ -68,15 +76,15 @@ func (r *Relay) Start() error {
 			return fmt.Errorf("peer init: listening %s: %s", r.listeningAddress, err)
 		}
 
-		logger.Infof("Accepting connection on:", r.listeningAddress)
+		p2pLog.Info("Accepting connection", zap.String("listen", r.listeningAddress))
 
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				logger.Errorf("lost listening connection with: %s", err)
+				logErr("lost listening connection", err)
 				break
 			}
-			logger.Info("Connected to:", conn.RemoteAddr())
+			p2pLog.Info("Connected to", zap.Stringer("remote", conn.RemoteAddr()))
 			go r.startProxy(conn)
 		}
 	}

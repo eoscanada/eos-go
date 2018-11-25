@@ -7,7 +7,7 @@ import (
 func DecodeHex(hexString string) (data []byte) {
 	data, err := hex.DecodeString(hexString)
 	if err != nil {
-		logger.Error("decodeHex error: ", err)
+		logErr("decodeHexErr", err)
 	}
 	return data
 }
