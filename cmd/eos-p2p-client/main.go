@@ -10,19 +10,20 @@ import (
 )
 
 var peer = flag.String("peer", "localhost:9876", "peer to connect to")
+var chainID = flag.String("chain-id", "cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f", "net chainID to connect to")
 
 func main() {
 	flag.Parse()
 
-	cID, err := hex.DecodeString("cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f")
+	cID, err := hex.DecodeString(*chainID)
 	if err != nil {
 
 		log.Fatal(err)
 	}
 
-	fmt.Println("P2P Client", *peer)
+	fmt.Println("P2P Client ", *peer, " With Chain ID :", *chainID)
 	client := p2p.NewClient(
-		p2p.NewOutgoingPeer("localhost:9876", "eos-proxy", &p2p.HandshakeInfo{
+		p2p.NewOutgoingPeer(*peer, "eos-proxy", &p2p.HandshakeInfo{
 			ChainID:      cID,
 			HeadBlockNum: 1,
 		}),
