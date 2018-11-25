@@ -3,6 +3,8 @@ package p2p
 import (
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/eoscanada/eos-go"
 )
 
@@ -32,9 +34,9 @@ func (p *Proxy) RegisterHandlers(handlers []Handler) {
 func (p *Proxy) read(sender *Peer, receiver *Peer, errChannel chan error) {
 	for {
 
-		logger.Debug("Waiting for packet")
+		//p2pLog.Debug("Waiting for packet")
 		packet, err := sender.Read()
-		logger.Debug("Received for packet")
+		//p2pLog.Debug("Received for packet")
 		if err != nil {
 			errChannel <- fmt.Errorf("read message from %s: %s", sender.Address, err)
 			return
@@ -68,13 +70,12 @@ func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 }
 
 func triggerHandshake(peer *Peer) error {
-	logger.Debugf("Sending handshake [%s] to: %s", peer.handshakeInfo, peer.Address)
 	return peer.SendHandshake(peer.handshakeInfo)
 }
 
 func (p *Proxy) ConnectAndStart() error {
 
-	logger.Info("Connecting and starting proxy")
+	p2pLog.Info("Connecting and starting proxy")
 
 	errorChannel := make(chan error)
 
@@ -103,8 +104,9 @@ func (p *Proxy) ConnectAndStart() error {
 }
 
 func (p *Proxy) Start() error {
-
-	logger.Info("Starting readers")
+	p2pLog.Info("Starting readers",
+		zap.String("peer1", p.Peer1.Address),
+		zap.String("peer1", p.Peer2.Address))
 	errorChannel := make(chan error)
 	go p.read(p.Peer1, p.Peer2, errorChannel)
 	go p.read(p.Peer2, p.Peer1, errorChannel)
@@ -117,6 +119,6 @@ func (p *Proxy) Start() error {
 		}
 	}
 
-	logger.Info("Started")
+	//p2pLog.Info("Started")
 	return <-errorChannel
 }
