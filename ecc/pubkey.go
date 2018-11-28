@@ -29,13 +29,19 @@ type PublicKey struct {
 }
 
 func NewPublicKeyFromData(data []byte) (out PublicKey, err error) {
-	if len(data) != 34 {
-		return out, fmt.Errorf("public key data must have a length of 33 ")
+	byteCount := len(data)
+	if byteCount < 34 {
+		return out, fmt.Errorf("public key data must have a length of at least 34 bytes")
+	}
+
+	curve := CurveID(data[0])
+	if curve == CurveR1 && byteCount != 38 {
+		return out, fmt.Errorf("public key R1 data must have a length of 38 bytes")
 	}
 
 	out = PublicKey{
-		Curve:   CurveID(data[0]), // 1 byte
-		Content: data[1:],         // 33 bytes
+		Curve:   curve,
+		Content: data[1:],
 	}
 
 	switch out.Curve {
@@ -69,6 +75,7 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 
 	if strings.HasPrefix(pubKey, PublicKeyR1Prefix) {
 		pubKeyMaterial := pubKey[len(PublicKeyR1Prefix):] // strip "PUB_R1_"
+		curveID = CurveR1
 		decodedPubKey = base58.Decode(pubKeyMaterial)
 		inner = &innerR1PublicKey{}
 	} else if strings.HasPrefix(pubKey, PublicKeyK1Prefix) {
