@@ -270,6 +270,39 @@ func TestDecoder_PublicKey(t *testing.T) {
 	assert.Equal(t, 0, d.remaining())
 }
 
+func TestDecoder_PublicKey_K1(t *testing.T) {
+	pk := ecc.MustNewPublicKey("PUB_K1_1111111111111111111111111111111114T1Anm")
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	assert.NoError(t, enc.writePublicKey(pk))
+
+	d := NewDecoder(buf.Bytes())
+
+	rpk, err := d.ReadPublicKey()
+	assert.NoError(t, err)
+
+	assert.Equal(t, pk, rpk)
+	assert.Equal(t, 0, d.remaining())
+}
+
+func TestDecoder_PublicKey_R1(t *testing.T) {
+	pk := ecc.MustNewPublicKey("PUB_R1_81x8BXgDQGTWmcAaavfCDcVTTyzz1BeBYbje9yJomVMCJZbz86")
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	assert.NoError(t, enc.writePublicKey(pk))
+
+	d := NewDecoder(buf.Bytes())
+
+	rpk, err := d.ReadPublicKey()
+	fmt.Printf("Key %s\n", rpk.String())
+	assert.NoError(t, err)
+
+	assert.Equal(t, pk, rpk)
+	assert.Equal(t, 0, d.remaining())
+}
+
 func TestDecoder_Empty_PublicKey(t *testing.T) {
 
 	pk := ecc.PublicKey{Curve: ecc.CurveK1, Content: []byte{}}
