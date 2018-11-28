@@ -33,8 +33,7 @@ var TypeSize = struct {
 	Checksum160    int
 	Checksum256    int
 	Checksum512    int
-	PublicKeyK1    int
-	PublicKeyR1    int
+	PublicKey      int
 	Signature      int
 	Tstamp         int
 	BlockTimestamp int
@@ -54,8 +53,7 @@ var TypeSize = struct {
 	Checksum160:    20,
 	Checksum256:    32,
 	Checksum512:    64,
-	PublicKeyK1:    34,
-	PublicKeyR1:    38,
+	PublicKey:      34,
 	Signature:      66,
 	Tstamp:         8,
 	BlockTimestamp: 4,
@@ -647,38 +645,21 @@ func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
 }
 
 func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
-	if d.remaining() < 1 {
-		err = fmt.Errorf("publicKey required [1] byte to read curve ID, remaining [%d]", d.remaining())
+
+	if d.remaining() < TypeSize.PublicKey {
+		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
 		return
 	}
-
-	curve := ecc.CurveID(d.data[d.pos])
-	switch curve {
-	case ecc.CurveK1:
-		return d.readPublicKey("K1", TypeSize.PublicKeyK1)
-	case ecc.CurveR1:
-		return d.readPublicKey("R1", TypeSize.PublicKeyR1)
-	default:
-		return out, fmt.Errorf("publicKey unsupported curve prefix %q", curve)
-	}
-}
-
-func (d *Decoder) readPublicKey(curveName string, keyTypeSize int) (out ecc.PublicKey, err error) {
-	if d.remaining() < keyTypeSize {
-		err = fmt.Errorf("publicKey %s required [%d] bytes, remaining [%d]", curveName, keyTypeSize, d.remaining())
-		return
-	}
-
-	keyContent := make([]byte, keyTypeSize)
-	copy(keyContent, d.data[d.pos:d.pos+keyTypeSize])
+	keyContent := make([]byte, 34)
+	copy(keyContent, d.data[d.pos:d.pos+TypeSize.PublicKey])
 
 	out, err = ecc.NewPublicKeyFromData(keyContent)
 	if err != nil {
-		err = fmt.Errorf("publicKey %s: key from data: %s", curveName, err)
+		err = fmt.Errorf("publicKey: key from data: %s", err)
 	}
 
-	d.pos += keyTypeSize
-	decoderLog.Debug("read public key", zap.String("curveName", curveName), zap.Stringer("pubkey", out))
+	d.pos += TypeSize.PublicKey
+	decoderLog.Debug("read public key", zap.Stringer("pubkey", out))
 	return
 }
 
