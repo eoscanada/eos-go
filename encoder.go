@@ -363,8 +363,12 @@ func (e *Encoder) writeChecksum512(checksum Checksum512) error {
 
 func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
 	encoderLog.Debug("write public key", zap.Stringer("pubkey", pk))
-	if len(pk.Content) != 33 {
-		return fmt.Errorf("public key %q should be 33 bytes, was %d", hex.EncodeToString(pk.Content), len(pk.Content))
+	if pk.Curve == ecc.CurveK1 && len(pk.Content) != 33 {
+		return fmt.Errorf("public key K1 %q should be 33, was %d", hex.EncodeToString(pk.Content), len(pk.Content))
+	}
+
+	if pk.Curve == ecc.CurveR1 && len(pk.Content) != 37 {
+		return fmt.Errorf("public key R1 %q should be 37, was %d", hex.EncodeToString(pk.Content), len(pk.Content))
 	}
 
 	if err = e.writeByte(byte(pk.Curve)); err != nil {
