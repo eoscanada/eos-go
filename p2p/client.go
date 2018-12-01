@@ -148,8 +148,7 @@ func (c *Client) Start() error {
 				}
 			}
 		case err := <-errorChannel:
-			logErr("Start Err", err)
-			return err
+			return errors.Wrap(err, "start client")
 		}
 	}
 }

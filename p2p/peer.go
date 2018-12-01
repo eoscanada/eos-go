@@ -102,7 +102,7 @@ func (p *Peer) Read() (*eos.Packet, error) {
 	}
 	if err != nil {
 		p2pLog.Error("Connection Read Err", zap.String("address", p.Address), zap.Error(err))
-		return nil, errors.Wrap(err, "connection: read")
+		return nil, errors.Wrapf(err, "connection: read %s err", p.Address)
 	}
 	return packet, nil
 }
@@ -260,7 +260,6 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
-		logErr("publicKey err", err)
 		err = errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
 		return
 	}
