@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/pkg/errors"
+
 	"go.uber.org/zap"
 )
 
@@ -72,7 +74,7 @@ func (r *Relay) Start() error {
 	for {
 		ln, err := net.Listen("tcp", r.listeningAddress)
 		if err != nil {
-			return fmt.Errorf("peer init: listening %s: %s", r.listeningAddress, err)
+			return errors.Wrapf(err, "peer init: listening %s", r.listeningAddress)
 		}
 
 		p2pLog.Info("Accepting connection", zap.String("listen", r.listeningAddress))
