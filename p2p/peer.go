@@ -200,6 +200,7 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 	}
 	_, err = p.Write(buff.Bytes())
 
+	err = errors.Wrapf(err, "write msg to %s err when send : %s", p.Address, message)
 	return
 }
 
@@ -214,7 +215,7 @@ func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err
 		EndBlock:   endBlockNumber,
 	}
 
-	return p.WriteP2PMessage(syncRequest)
+	return errors.WithStack(p.WriteP2PMessage(syncRequest))
 }
 func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
 	p2pLog.Debug("SendRequest",
@@ -233,10 +234,10 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 		},
 	}
 
-	return p.WriteP2PMessage(request)
+	return errors.WithStack(p.WriteP2PMessage(request))
 }
 
-func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err error) {
+func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
 	p2pLog.Debug("Send Notice",
 		zap.String("peer", p.Address),
 		zap.Uint32("head", headBlockNum),
@@ -253,22 +254,21 @@ func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err er
 			Pending: libNum,
 		},
 	}
-	return p.WriteP2PMessage(notice)
+	return errors.WithStack(p.WriteP2PMessage(notice))
 }
 
-func (p *Peer) SendTime() (err error) {
+func (p *Peer) SendTime() error {
 	p2pLog.Debug("SendTime", zap.String("peer", p.Address))
 
 	notice := &eos.TimeMessage{}
-	return p.WriteP2PMessage(notice)
+	return errors.WithStack(p.WriteP2PMessage(notice))
 }
 
-func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
+func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
-		err = errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
-		return
+		return errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
 	}
 
 	p2pLog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
@@ -298,9 +298,5 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 		Generation:               int16(1),
 	}
 
-	err = p.WriteP2PMessage(handshake)
-	if err != nil {
-		err = errors.Wrapf(err, "sending handshake to %s", p.Address)
-	}
-	return
+	return errors.WithStack(p.WriteP2PMessage(handshake))
 }

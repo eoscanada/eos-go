@@ -112,11 +112,8 @@ func (p *Proxy) Start() error {
 	go p.read(p.Peer2, p.Peer1, errorChannel)
 
 	if p.Peer2.handshakeInfo != nil {
-
-		err := triggerHandshake(p.Peer2)
-		if err != nil {
-			return errors.Wrap(err, "connect and start: trigger handshake")
-		}
+		return errors.Wrap(triggerHandshake(p.Peer2),
+			"connect and start: trigger handshake")
 	}
 
 	//p2pLog.Info("Started")
