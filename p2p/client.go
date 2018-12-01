@@ -1,8 +1,9 @@
 package p2p
 
 import (
-	"fmt"
 	"math"
+
+	"github.com/pkg/errors"
 
 	"go.uber.org/zap"
 
@@ -50,7 +51,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 	for {
 		packet, err := peer.Read()
 		if err != nil {
-			errChannel <- fmt.Errorf("read message from %s: %s", peer.Address, err)
+			errChannel <- errors.Wrapf(err, "read message from %s", peer.Address)
 			break
 		}
 
@@ -61,7 +62,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
-			errChannel <- fmt.Errorf("GoAwayMessage reason [%s]: %s", m.Reason, err)
+			errChannel <- errors.Wrapf(err, "GoAwayMessage reason %s", m.Reason)
 
 		case *eos.HandshakeMessage:
 			if c.catchup == nil {
@@ -69,7 +70,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				m.P2PAddress = peer.Name
 				err = peer.WriteP2PMessage(m)
 				if err != nil {
-					errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
+					errChannel <- errors.Wrap(err, "HandshakeMessage")
 					break
 				}
 				p2pLog.Debug("Handshake resent", zap.String("other", m.P2PAddress))
@@ -77,9 +78,9 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 			} else {
 
 				c.catchup.originHeadBlock = m.HeadNum
-				err := c.catchup.sendSyncRequest(peer)
+				err = c.catchup.sendSyncRequest(peer)
 				if err != nil {
-					errChannel <- fmt.Errorf("handshake: sending sync request: %s", err)
+					errChannel <- errors.Wrap(err, "handshake: sending sync request")
 				}
 				c.catchup.IsCatchingUp = true
 			}
@@ -90,7 +91,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 					c.catchup.originHeadBlock = pendingNum
 					err = c.catchup.sendSyncRequest(peer)
 					if err != nil {
-						errChannel <- fmt.Errorf("noticeMessage: sending sync request: %s", err)
+						errChannel <- errors.Wrap(err, "noticeMessage: sending sync request")
 					}
 				}
 			}
@@ -106,18 +107,21 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 						p2pLog.Debug("In sync with last handshake")
 						blockID, err := m.BlockID()
 						if err != nil {
-							errChannel <- fmt.Errorf("getting block id: %s", err)
+							errChannel <- errors.Wrap(err, "getting block id")
 						}
 						peer.handshakeInfo.HeadBlockNum = blockNum
 						peer.handshakeInfo.HeadBlockID = blockID
 						peer.handshakeInfo.HeadBlockTime = m.SignedBlockHeader.Timestamp.Time
-						peer.SendHandshake(peer.handshakeInfo)
+						err = peer.SendHandshake(peer.handshakeInfo)
+						if err != nil {
+							errChannel <- errors.Wrap(err, "send handshake")
+						}
 						p2pLog.Debug("Send new handshake",
 							zap.Object("handshakeInfo", peer.handshakeInfo))
 					} else {
 						err = c.catchup.sendSyncRequest(peer)
 						if err != nil {
-							errChannel <- fmt.Errorf("signed block: sending sync request: %s", err)
+							errChannel <- errors.Wrap(err, "signed block: sending sync request")
 						}
 					}
 				}
@@ -140,7 +144,7 @@ func (c *Client) Start() error {
 
 				err := triggerHandshake(c.peer)
 				if err != nil {
-					return fmt.Errorf("connect and start: trigger handshake: %s", err)
+					return errors.Wrap(err, "connect and start: trigger handshake")
 				}
 			}
 		case err := <-errorChannel:
@@ -174,7 +178,7 @@ func (c *Catchup) sendSyncRequest(peer *Peer) error {
 	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
 
 	if err != nil {
-		return fmt.Errorf("send sync request: %s", err)
+		return errors.Wrap(err, "send sync request")
 	}
 
 	return nil
