@@ -196,25 +196,25 @@ type PackedTransaction struct {
 }
 
 func (p *PackedTransaction) ID() (Checksum256, error) {
-	var txReader io.Reader
-	txReader = bytes.NewBuffer(p.PackedTransaction)
+	h := sha256.New()
 
-	switch p.Compression {
-	case CompressionZlib:
+	if p.Compression == CompressionZlib {
 		var err error
-		txReader, err = zlib.NewReader(txReader)
+		zReader, err := zlib.NewReader(bytes.NewBuffer(p.PackedTransaction))
 		if err != nil {
 			return nil, fmt.Errorf("getting zlib reader, %v", err)
 		}
+
+		data, err := ioutil.ReadAll(zReader)
+		if err != nil {
+			return nil, fmt.Errorf("reading all data from zlib, %v", err)
+		}
+
+		_, _ = h.Write(data)
+		return h.Sum(nil), nil
 	}
 
-	data, err := ioutil.ReadAll(txReader)
-	if err != nil {
-		return nil, fmt.Errorf("unpack read all, %s", err)
-	}
-
-	h := sha256.New()
-	_, _ = h.Write(data)
+	_, _ = h.Write(p.PackedTransaction)
 	return h.Sum(nil), nil
 }
 
