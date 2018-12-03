@@ -144,7 +144,6 @@ func (s *SignedTransaction) PackedTransactionAndCFD() ([]byte, []byte, error) {
 	return rawtrx, rawcfd, nil
 }
 
-
 func (s *SignedTransaction) Pack(compression CompressionType) (*PackedTransaction, error) {
 	rawtrx, rawcfd, err := s.PackedTransactionAndCFD()
 	if err != nil {
@@ -196,10 +195,27 @@ type PackedTransaction struct {
 	PackedTransaction     HexBytes        `json:"packed_trx"`
 }
 
-func (p *PackedTransaction) ID() Checksum256 {
+func (p *PackedTransaction) ID() (Checksum256, error) {
+	var txReader io.Reader
+	txReader = bytes.NewBuffer(p.PackedTransaction)
+
+	switch p.Compression {
+	case CompressionZlib:
+		var err error
+		txReader, err = zlib.NewReader(txReader)
+		if err != nil {
+			return nil, fmt.Errorf("getting zlib reader, %v", err)
+		}
+	}
+
+	data, err := ioutil.ReadAll(txReader)
+	if err != nil {
+		return nil, fmt.Errorf("unpack read all, %s", err)
+	}
+
 	h := sha256.New()
-	_, _ = h.Write(p.PackedTransaction)
-	return h.Sum(nil)
+	_, _ = h.Write(data)
+	return h.Sum(nil), nil
 }
 
 // Unpack decodes the bytestream of the transaction, and attempts to

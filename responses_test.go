@@ -53,7 +53,11 @@ func TestUnmarshalBlockResp(t *testing.T) {
 	assert.Equal(t, TransactionStatusExecuted, receipt.Status)
 	assert.Equal(t, CompressionNone, receipt.Transaction.Packed.Compression)
 	assert.Equal(t, HexBytes{}, receipt.Transaction.Packed.PackedContextFreeData)
-	assert.Equal(t, hexToChecksum256("7074b6caaac4dfe1d19903a41b88a53b595e963bab02139a508785eba6e11ba5"), receipt.Transaction.Packed.ID())
+
+	id, err := receipt.Transaction.Packed.ID()
+	assert.NoError(t, err)
+
+	assert.Equal(t, hexToChecksum256("7074b6caaac4dfe1d19903a41b88a53b595e963bab02139a508785eba6e11ba5"), id)
 	assert.Len(t, receipt.Transaction.Packed.Signatures, 1)
 	assert.Equal(t, "SIG_K1_KXsd17mt6qf8JAHvRiVLRH93tMoQrkC69qhoS2suG8N3YYF54LTVkSwnh4t4wscDJXPnSAdbJZpSfHjJjSurDmwGCAxvTs", receipt.Transaction.Packed.Signatures[0].String())
 

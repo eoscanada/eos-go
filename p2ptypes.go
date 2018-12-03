@@ -294,8 +294,14 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &packed); err != nil {
 			return err
 		}
+
+		id, err := packed.ID()
+		if err != nil {
+			return fmt.Errorf("get id: %s", err)
+		}
+
 		*t = TransactionWithID{
-			ID:     packed.ID(),
+			ID:     id,
 			Packed: &packed,
 		}
 
@@ -349,8 +355,13 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 			return err
 		}
 
+		id, err := packed.ID()
+		if err != nil {
+			return fmt.Errorf("get id: %s", err)
+		}
+
 		*t = TransactionWithID{
-			ID:     packed.ID(),
+			ID:     id,
 			Packed: &packed,
 		}
 	default:
