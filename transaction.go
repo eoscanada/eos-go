@@ -201,6 +201,8 @@ func (p *PackedTransaction) ID() (Checksum256, error) {
 	if p.Compression == CompressionZlib {
 		var err error
 		zReader, err := zlib.NewReader(bytes.NewBuffer(p.PackedTransaction))
+		defer zReader.Close()
+
 		if err != nil {
 			return nil, fmt.Errorf("getting zlib reader, %v", err)
 		}
