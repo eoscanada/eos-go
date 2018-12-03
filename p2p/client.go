@@ -2,8 +2,9 @@ package p2p
 
 import (
 	"fmt"
-	"log"
 	"math"
+
+	"go.uber.org/zap"
 
 	"time"
 
@@ -71,7 +72,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 					errChannel <- fmt.Errorf("HandshakeMessage: %s", err)
 					break
 				}
-				fmt.Println("Handshake resent!")
+				p2pLog.Debug("Handshake resent", zap.String("other", m.P2PAddress))
 
 			} else {
 
@@ -102,7 +103,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				if c.catchup.requestedEndBlock == blockNum {
 
 					if c.catchup.originHeadBlock <= blockNum {
-						fmt.Println("In sync with last handshake")
+						p2pLog.Debug("In sync with last handshake")
 						blockID, err := m.BlockID()
 						if err != nil {
 							errChannel <- fmt.Errorf("getting block id: %s", err)
@@ -111,7 +112,8 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 						peer.handshakeInfo.HeadBlockID = blockID
 						peer.handshakeInfo.HeadBlockTime = m.SignedBlockHeader.Timestamp.Time
 						peer.SendHandshake(peer.handshakeInfo)
-						fmt.Println("Sent new handshake with info:", peer.handshakeInfo)
+						p2pLog.Debug("Send new handshake",
+							zap.Object("handshakeInfo", peer.handshakeInfo))
 					} else {
 						err = c.catchup.sendSyncRequest(peer)
 						if err != nil {
@@ -125,11 +127,9 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 }
 
 func (c *Client) Start() error {
-
-	fmt.Println("Starting client")
+	p2pLog.Info("Starting client")
 
 	errorChannel := make(chan error, 1)
-
 	readyChannel := c.peer.Connect(errorChannel)
 
 	for {
@@ -144,7 +144,7 @@ func (c *Client) Start() error {
 				}
 			}
 		case err := <-errorChannel:
-			log.Println("Start got ERROR:", err)
+			logErr("Start Err", err)
 			return err
 		}
 	}
@@ -167,7 +167,10 @@ func (c *Catchup) sendSyncRequest(peer *Peer) error {
 	c.requestedStartBlock = c.headBlock
 	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 100))
 
-	fmt.Printf("Sending sync request to origin: start block [%d] end block [%d]\n", c.requestedStartBlock, c.requestedEndBlock)
+	p2pLog.Debug("Sending sync request",
+		zap.Uint32("startBlock", c.requestedStartBlock),
+		zap.Uint32("endBlock", c.requestedEndBlock))
+
 	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
 
 	if err != nil {

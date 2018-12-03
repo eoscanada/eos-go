@@ -12,6 +12,7 @@ import (
 )
 
 type P2PMessage interface {
+	fmt.Stringer
 	GetType() P2PMessageType
 }
 
@@ -448,4 +449,12 @@ type PackedTransactionMessage struct {
 
 func (m *PackedTransactionMessage) GetType() P2PMessageType {
 	return PackedTransactionMessageType
+}
+
+func (m PackedTransactionMessage) String() string {
+	signTrx, err := m.Unpack()
+	if err != nil {
+		return fmt.Sprintf("err trx msg unpack by %s", err.Error())
+	}
+	return signTrx.String()
 }

@@ -2,7 +2,8 @@ package p2p
 
 import (
 	"encoding/json"
-	"fmt"
+
+	"go.uber.org/zap"
 )
 
 type Handler interface {
@@ -19,21 +20,21 @@ func (f HandlerFunc) Handle(envelope *Envelope) {
 var LoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	data, err := json.Marshal(envelope)
 	if err != nil {
-		fmt.Println("logger plugin err: ", err)
+		logErr("Marshal err", err)
 		return
 	}
 
-	fmt.Println("logger - message : ", string(data))
+	p2pLog.Info("handler", zap.String("message", string(data)))
 })
 
 // StringLoggerHandler simply prints the messages as they go through the client.
 var StringLoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	name, _ := envelope.Packet.Type.Name()
-	fmt.Printf(
-		"type %s from %s to %s: %s\n",
-		name,
-		envelope.Sender.Address,
-		envelope.Receiver.Address,
-		envelope.Packet.P2PMessage,
+	p2pLog.Info(
+		"handler Packet",
+		zap.String("name", name),
+		zap.String("sender", envelope.Sender.Address),
+		zap.String("receiver", envelope.Receiver.Address),
+		zap.Stringer("msg", envelope.Packet.P2PMessage), // this will use by String()
 	)
 })

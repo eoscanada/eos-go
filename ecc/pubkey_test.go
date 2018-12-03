@@ -26,7 +26,7 @@ func Test_PublicKeyMarshalUnmarshal(t *testing.T) {
 		{
 			name:        "R1",
 			key:         "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
-			expectedKey: "PUB_R1_0000000000000000000000000000000000000000000000",
+			expectedKey: "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
 		},
 	}
 
@@ -58,7 +58,7 @@ func TestPublicKey_MarshalJSON(t *testing.T) {
 		{
 			name:         "R1",
 			key:          "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
-			expectedJSON: `"PUB_R1_0000000000000000000000000000000000000000000000"`,
+			expectedJSON: `"PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm"`,
 		},
 	}
 

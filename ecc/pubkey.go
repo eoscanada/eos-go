@@ -18,7 +18,7 @@ const PublicKeyPrefixCompat = "EOS"
 
 type innerPublicKey interface {
 	key(content []byte) (*btcec.PublicKey, error)
-	string(content []byte, curveID CurveID) string
+	prefix() string
 }
 
 type PublicKey struct {
@@ -69,7 +69,11 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 
 	if strings.HasPrefix(pubKey, PublicKeyR1Prefix) {
 		pubKeyMaterial := pubKey[len(PublicKeyR1Prefix):] // strip "PUB_R1_"
-		decodedPubKey = base58.Decode(pubKeyMaterial)
+		curveID = CurveR1
+		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
+		if err != nil {
+			return out, fmt.Errorf("checkDecode: %s", err)
+		}
 		inner = &innerR1PublicKey{}
 	} else if strings.HasPrefix(pubKey, PublicKeyK1Prefix) {
 		pubKeyMaterial := pubKey[len(PublicKeyK1Prefix):] // strip "PUB_K1_"
@@ -126,9 +130,10 @@ func ripemd160checksum(in []byte, curve CurveID) []byte {
 	h := ripemd160.New()
 	_, _ = h.Write(in) // this implementation has no error path
 
-	// if curve != CurveK1 {
-	// 	_, _ = h.Write([]byte(curve.String())) // conditionally ?
-	// }
+	if curve != CurveK1 {
+		_, _ = h.Write([]byte(curve.String()))
+	}
+
 	sum := h.Sum(nil)
 	return sum[:4]
 }
@@ -149,7 +154,18 @@ func (p PublicKey) Key() (*btcec.PublicKey, error) {
 }
 
 func (p PublicKey) String() string {
-	return p.inner.string(p.Content, p.Curve)
+	data := p.Content
+	if len(data) == 0 {
+		data = make([]byte, 33)
+	}
+
+	hash := ripemd160checksum(data, p.Curve)
+
+	rawKey := make([]byte, 37)
+	copy(rawKey, data[:33])
+	copy(rawKey[33:], hash[:4])
+
+	return p.inner.prefix() + base58.Encode(rawKey)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {

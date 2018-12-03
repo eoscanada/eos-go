@@ -588,7 +588,14 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 
 	if api.Debug {
 		fmt.Println("RESPONSE:")
+		responseDump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("-------------------------------")
 		fmt.Println(cnt.String())
+		fmt.Println("-------------------------------")
+		fmt.Printf("%q\n", responseDump)
 		fmt.Println("")
 	}
 

@@ -12,12 +12,18 @@ import (
 var peer1 = flag.String("peer1", "localhost:9876", "peer 1")
 var peer2 = flag.String("peer2", "localhost:2222", "peer 2")
 var chainID = flag.String("chain-id", "308cae83a690640be3726a725dde1fa72a845e28cfc63f28c3fa0a6ccdb6faf0", "peer 1")
+var showLog = flag.Bool("v", false, "show detail log")
 
 func main() {
+	flag.Parse()
 
 	fmt.Println("P2P Proxy")
 
-	flag.Parse()
+	if *showLog {
+		p2p.EnableP2PLogging()
+	}
+	defer p2p.SyncLogger()
+
 	cID, err := hex.DecodeString(*chainID)
 	if err != nil {
 		log.Fatal(err)

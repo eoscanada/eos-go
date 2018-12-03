@@ -42,3 +42,8 @@ func newLogger(production bool) (l *zap.Logger) {
 	}
 	return
 }
+
+// NewLogger a wrap to newLogger
+func NewLogger(production bool) *zap.Logger {
+	return newLogger(production)
+}

@@ -38,7 +38,6 @@ func (a *ABI) DecodeTableRowTyped(tableType string, data []byte) ([]byte, error)
 }
 
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
-
 	abiDecoderLog.Debug("decode struct", zap.String("name", structName))
 
 	structure := a.StructForName(structName)
@@ -61,11 +60,6 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 }
 
 func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
-	defer func(prev *zap.Logger) { abiDecoderLog = prev }(abiDecoderLog)
-	abiDecoderLog = abiDecoderLog.Named("fields")
-	defer func(prev *zap.Logger) { decoderLog = prev }(decoderLog)
-	decoderLog = decoderLog.Named("fields")
-
 	resultingJson := json
 	for _, field := range fields {
 
