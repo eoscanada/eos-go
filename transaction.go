@@ -195,6 +195,12 @@ type PackedTransaction struct {
 	PackedTransaction     HexBytes        `json:"packed_trx"`
 }
 
+// ID returns the hash of a transaction. WARNING: when you READ a
+// PackedTransaction from a JSON source as a PackedTransaction, you
+// NEED to unpack it, and then repack it before computing its
+// transaction ID.  Some transactions have padding in the
+// PackedTransaction field that musn't be part of the signature to get
+// the right transaction ID.
 func (p *PackedTransaction) ID() (Checksum256, error) {
 	h := sha256.New()
 
