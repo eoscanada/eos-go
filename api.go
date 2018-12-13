@@ -580,7 +580,7 @@ func (api *API) call(baseAPI string, endpoint string, body interface{}, out inte
 	}
 	if resp.StatusCode > 299 {
 		var apiErr APIError
-		if err := json.Unmarshal(cnt.Bytes(), &apiErr); err == nil {
+		if err := json.Unmarshal(cnt.Bytes(), &apiErr); err != nil {
 			return fmt.Errorf("%s: status code=%d, body=%s", req.URL.String(), resp.StatusCode, cnt.String())
 		}
 		return apiErr
