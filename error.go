@@ -47,10 +47,10 @@ type APIErrorDetail struct {
 
 func (e APIError) Error() string {
 	msg := e.Message
-	msg = fmt.Sprintf("%s, %s", msg, e.ErrorStruct.What)
+	msg = fmt.Sprintf("%s: %s", msg, e.ErrorStruct.What)
 
 	for _, detail := range e.ErrorStruct.Details {
-		msg = fmt.Sprintf("%s, %s", msg, detail.Message)
+		msg = fmt.Sprintf("%s: %s", msg, detail.Message)
 	}
 
 	return msg
