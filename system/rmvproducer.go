@@ -1,7 +1,7 @@
 package system
 
 import (
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/jackami/eos-go"
 )
 
 // NewRemoveProducer returns a `rmvproducer` action that lives on the

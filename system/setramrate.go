@@ -1,7 +1,7 @@
 package system
 
 import (
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/jackami/eos-go"
 )
 
 func NewSetRAMRate(bytesPerBlock uint16) *eos.Action {

@@ -1,7 +1,7 @@
 package system
 
 import (
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/jackami/eos-go"
 )
 
 // NewBuyRAMBytes will buy at current market price a given number of

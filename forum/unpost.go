@@ -1,7 +1,7 @@
 package forum
 
 import (
-	eos "github.com/eoscanada/eos-go"
+	eos "github.com/jackami/eos-go"
 )
 
 // NewUnPost is an action undoing a post that is active

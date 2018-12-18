@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ecc"
+	eos "github.com/jackami/eos-go"
+	"github.com/jackami/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/eoscanada/eos-go/ecc"
+	"github.com/jackami/eos-go/ecc"
 
 	"github.com/tidwall/gjson"
 
@@ -34,7 +34,7 @@ func TestABI_DecodeAction(t *testing.T) {
 		F5     []string
 	}{
 		BF1:    "value_struct_2_field_1",
-		F1:     Name("eoscanadacom"),
+		F1:     Name("jackamicom"),
 		F2:     "value_struct_3_field_1",
 		F3FLAG: 1,
 		F3:     "value_struct_1_field_3",
@@ -53,7 +53,7 @@ func TestABI_DecodeAction(t *testing.T) {
 	json, err := abi.DecodeAction(buffer.Bytes(), "action_name_1")
 	assert.NoError(t, err)
 
-	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "struct_1_field_1").String())
+	assert.Equal(t, "jackamicom", gjson.GetBytes(json, "struct_1_field_1").String())
 	assert.Equal(t, "value_struct_2_field_1", gjson.GetBytes(json, "struct_2_field_1").String())
 	assert.Equal(t, "value_struct_3_field_1", gjson.GetBytes(json, "struct_1_field_2.struct_3_field_1").String())
 	assert.Equal(t, "value_struct_1_field_3", gjson.GetBytes(json, "struct_1_field_3").String())
@@ -72,7 +72,7 @@ func TestABI_DecodeMissingData(t *testing.T) {
 		F1  Name
 	}{
 		BF1: "value_struct_2_field_1",
-		F1:  Name("eoscanadacom"),
+		F1:  Name("jackamicom"),
 	}
 
 	var buffer bytes.Buffer
@@ -97,7 +97,7 @@ func TestABI_DecodeMissingAction(t *testing.T) {
 		F1  Name
 	}{
 		BF1: "value.base.field.1",
-		F1:  Name("eoscanadacom"),
+		F1:  Name("jackamicom"),
 	}
 
 	var buffer bytes.Buffer
@@ -126,7 +126,7 @@ func TestABI_DecodeTable(t *testing.T) {
 		F5     []string
 	}{
 		BF1:    "value_struct_2_field_1",
-		F1:     Name("eoscanadacom"),
+		F1:     Name("jackamicom"),
 		F2:     "value_struct_3_field_1",
 		F3FLAG: 1,
 		F3:     "value_struct_1_field_3",
@@ -145,7 +145,7 @@ func TestABI_DecodeTable(t *testing.T) {
 	json, err := abi.DecodeTableRow("table_name_1", buffer.Bytes())
 	assert.NoError(t, err)
 
-	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "struct_1_field_1").String())
+	assert.Equal(t, "jackamicom", gjson.GetBytes(json, "struct_1_field_1").String())
 	assert.Equal(t, "value_struct_2_field_1", gjson.GetBytes(json, "struct_2_field_1").String())
 	assert.Equal(t, "value_struct_3_field_1", gjson.GetBytes(json, "struct_1_field_2.struct_3_field_1").String())
 	assert.Equal(t, "value_struct_1_field_3", gjson.GetBytes(json, "struct_1_field_3").String())
@@ -165,7 +165,7 @@ func TestABI_DecodeTableRowMissingTable(t *testing.T) {
 		F1  Name
 	}{
 		BF1: "value.base.field.1",
-		F1:  Name("eoscanadacom"),
+		F1:  Name("jackamicom"),
 	}
 
 	var buffer bytes.Buffer
@@ -291,7 +291,7 @@ func TestABI_decodeFields(t *testing.T) {
 		F2 Name
 	}{
 		F1: uint64(18446744073709551615),
-		F2: Name("eoscanadacom"),
+		F2: Name("jackamicom"),
 	}
 
 	var buffer bytes.Buffer
@@ -302,7 +302,7 @@ func TestABI_decodeFields(t *testing.T) {
 	json, err := abi.decodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(18446744073709551615), gjson.GetBytes(json, "F1").Uint())
-	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "F2").String())
+	assert.Equal(t, "jackamicom", gjson.GetBytes(json, "F2").String())
 }
 
 func TestABI_decodeFieldsErr(t *testing.T) {
@@ -394,7 +394,7 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "time_point", "typeName": "time_point", "value": "\"2018-11-01T15:13:07.001\"", "encode": TimePoint(1541085187001001), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": "\"2023-04-14T10:55:53\"", "encode": TimePointSec(1681469753), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "value": "\"2018-09-05T12:48:54\"", "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "Name", "typeName": "name", "value": "\"eoscanadacom\"", "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "Name", "typeName": "name", "value": "\"jackamicom\"", "encode": Name("jackamicom"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bytes", "typeName": "bytes", "value": "\"746869732e69732e612e74657374\"", "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "checksum160", "typeName": "checksum160", "value": "\"0000000000000000000000000000000000000000\"", "encode": Checksum160(make([]byte, TypeSize.Checksum160)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "checksum256", "typeName": "checksum256", "value": "\"0000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
@@ -404,7 +404,7 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "symbol", "typeName": "symbol", "value": "\"4,EOS\"", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "symbol_code", "typeName": "symbol_code", "value": "18446744073709551615", "encode": SymbolCode(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "asset", "typeName": "asset", "value": "\"10.0000 EOS\"", "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"asset\":\"0.0010 EOS\",\"Contract\":\"eoscanadacom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"asset\":\"0.0010 EOS\",\"Contract\":\"jackamicom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "jackamicom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bad type", "typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("decoding field [testedField] of type [bad.type.1]: read field of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "optional present", "typeName": "string", "value": "\"value.1\"", "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "optional not present", "typeName": "string", "value": "", "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},

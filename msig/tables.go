@@ -1,6 +1,6 @@
 package msig
 
-import eos "github.com/eoscanada/eos-go"
+import eos "github.com/jackami/eos-go"
 
 type ProposalRow struct {
 	ProposalName       eos.Name              `json:"proposal_name"`
