@@ -503,6 +503,11 @@ func (api *API) GetTransactions(name AccountName) (out *TransactionsResp, err er
 	return
 }
 
+func (api *API) GetTableByScope(params GetTableByScopeRequest) (out *GetTableByScopeResp, err error) {
+	err = api.call("chain", "get_table_by_scope", params, &out)
+	return
+}
+
 func (api *API) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp, err error) {
 	err = api.call("chain", "get_table_rows", params, &out)
 	return
