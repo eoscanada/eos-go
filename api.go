@@ -508,6 +508,11 @@ func (api *API) GetTableRows(params GetTableRowsRequest) (out *GetTableRowsResp,
 	return
 }
 
+func (api *API) GetRawABI(params GetRawABIRequest) (out *GetRawABIResp, err error) {
+	err = api.call("chain", "get_raw_abi", params, &out)
+	return
+}
+
 func (api *API) GetRequiredKeys(tx *Transaction) (out *GetRequiredKeysResp, err error) {
 	keys, err := api.Signer.AvailableKeys()
 	if err != nil {

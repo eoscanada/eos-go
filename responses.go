@@ -36,11 +36,11 @@ type InfoResp struct {
 	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
 	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
 
-	VirtualBlockCPULimit Int64 `json:"virtual_block_cpu_limit"`
-	VirtualBlockNetLimit Int64 `json:"virtual_block_net_limit"`
-	BlockCPULimit        Int64 `json:"block_cpu_limit"`
-	BlockNetLimit        Int64 `json:"block_net_limit"`
-	ServerVersionString  string    `json:"server_version_string"`
+	VirtualBlockCPULimit Int64  `json:"virtual_block_cpu_limit"`
+	VirtualBlockNetLimit Int64  `json:"virtual_block_net_limit"`
+	BlockCPULimit        Int64  `json:"block_cpu_limit"`
+	BlockNetLimit        Int64  `json:"block_net_limit"`
+	ServerVersionString  string `json:"server_version_string"`
 }
 
 type BlockResp struct {
@@ -68,8 +68,8 @@ type DBSizeResp struct {
 	UsedBytes Int64 `json:"used_bytes"`
 	Size      Int64 `json:"size"`
 	Indices   []struct {
-		Index    string    `json:"index"`
-		RowCount Int64 `json:"row_count"`
+		Index    string `json:"index"`
+		RowCount Int64  `json:"row_count"`
 	} `json:"indices"`
 }
 
@@ -166,8 +166,8 @@ type AccountResp struct {
 	CoreLiquidBalance      Asset                `json:"core_liquid_balance"`
 	RAMQuota               int64                `json:"ram_quota"`
 	RAMUsage               int64                `json:"ram_usage"`
-	NetWeight              Int64            `json:"net_weight"`
-	CPUWeight              Int64            `json:"cpu_weight"`
+	NetWeight              Int64                `json:"net_weight"`
+	CPUWeight              Int64                `json:"cpu_weight"`
 	NetLimit               AccountResourceLimit `json:"net_limit"`
 	CPULimit               AccountResourceLimit `json:"cpu_limit"`
 	Permissions            []Permission         `json:"permissions"`
@@ -254,6 +254,18 @@ type Currency struct {
 	Name      CurrencyName
 }
 
+type GetRawABIRequest struct {
+	AccountName string      `json:"account_name"`
+	ABIHash     Checksum256 `json:"abi_hash,omitempty"`
+}
+
+type GetRawABIResp struct {
+	AccountName string      `json:"account_name"`
+	CodeHash    Checksum256 `json:"code_hash"`
+	ABIHash     Checksum256 `json:"abi_hash"`
+	ABI         Blob        `json:"abi"`
+}
+
 type GetRequiredKeysResp struct {
 	RequiredKeys []ecc.PublicKey `json:"required_keys"`
 }
@@ -326,36 +338,36 @@ type NetConnectResp string
 type NetDisconnectResp string
 
 type Global struct {
-	MaxBlockNetUsage               int       `json:"max_block_net_usage"`
-	TargetBlockNetUsagePct         int       `json:"target_block_net_usage_pct"`
-	MaxTransactionNetUsage         int       `json:"max_transaction_net_usage"`
-	BasePerTransactionNetUsage     int       `json:"base_per_transaction_net_usage"`
-	NetUsageLeeway                 int       `json:"net_usage_leeway"`
-	ContextFreeDiscountNetUsageNum int       `json:"context_free_discount_net_usage_num"`
-	ContextFreeDiscountNetUsageDen int       `json:"context_free_discount_net_usage_den"`
-	MaxBlockCPUUsage               int       `json:"max_block_cpu_usage"`
-	TargetBlockCPUUsagePct         int       `json:"target_block_cpu_usage_pct"`
-	MaxTransactionCPUUsage         int       `json:"max_transaction_cpu_usage"`
-	MinTransactionCPUUsage         int       `json:"min_transaction_cpu_usage"`
-	MaxTransactionLifetime         int       `json:"max_transaction_lifetime"`
-	DeferredTrxExpirationWindow    int       `json:"deferred_trx_expiration_window"`
-	MaxTransactionDelay            int       `json:"max_transaction_delay"`
-	MaxInlineActionSize            int       `json:"max_inline_action_size"`
-	MaxInlineActionDepth           int       `json:"max_inline_action_depth"`
-	MaxAuthorityDepth              int       `json:"max_authority_depth"`
-	MaxRAMSize                     string    `json:"max_ram_size"`
-	TotalRAMBytesReserved          Int64 `json:"total_ram_bytes_reserved"`
-	TotalRAMStake                  Int64 `json:"total_ram_stake"`
-	LastProducerScheduleUpdate     string    `json:"last_producer_schedule_update"`
-	LastPervoteBucketFill          int64     `json:"last_pervote_bucket_fill,string"`
-	PervoteBucket                  int       `json:"pervote_bucket"`
-	PerblockBucket                 int       `json:"perblock_bucket"`
-	TotalUnpaidBlocks              int       `json:"total_unpaid_blocks"`
-	TotalActivatedStake            float64   `json:"total_activated_stake,string"`
-	ThreshActivatedStakeTime       int64     `json:"thresh_activated_stake_time,string"`
-	LastProducerScheduleSize       int       `json:"last_producer_schedule_size"`
-	TotalProducerVoteWeight        float64   `json:"total_producer_vote_weight,string"`
-	LastNameClose                  string    `json:"last_name_close"`
+	MaxBlockNetUsage               int     `json:"max_block_net_usage"`
+	TargetBlockNetUsagePct         int     `json:"target_block_net_usage_pct"`
+	MaxTransactionNetUsage         int     `json:"max_transaction_net_usage"`
+	BasePerTransactionNetUsage     int     `json:"base_per_transaction_net_usage"`
+	NetUsageLeeway                 int     `json:"net_usage_leeway"`
+	ContextFreeDiscountNetUsageNum int     `json:"context_free_discount_net_usage_num"`
+	ContextFreeDiscountNetUsageDen int     `json:"context_free_discount_net_usage_den"`
+	MaxBlockCPUUsage               int     `json:"max_block_cpu_usage"`
+	TargetBlockCPUUsagePct         int     `json:"target_block_cpu_usage_pct"`
+	MaxTransactionCPUUsage         int     `json:"max_transaction_cpu_usage"`
+	MinTransactionCPUUsage         int     `json:"min_transaction_cpu_usage"`
+	MaxTransactionLifetime         int     `json:"max_transaction_lifetime"`
+	DeferredTrxExpirationWindow    int     `json:"deferred_trx_expiration_window"`
+	MaxTransactionDelay            int     `json:"max_transaction_delay"`
+	MaxInlineActionSize            int     `json:"max_inline_action_size"`
+	MaxInlineActionDepth           int     `json:"max_inline_action_depth"`
+	MaxAuthorityDepth              int     `json:"max_authority_depth"`
+	MaxRAMSize                     string  `json:"max_ram_size"`
+	TotalRAMBytesReserved          Int64   `json:"total_ram_bytes_reserved"`
+	TotalRAMStake                  Int64   `json:"total_ram_stake"`
+	LastProducerScheduleUpdate     string  `json:"last_producer_schedule_update"`
+	LastPervoteBucketFill          int64   `json:"last_pervote_bucket_fill,string"`
+	PervoteBucket                  int     `json:"pervote_bucket"`
+	PerblockBucket                 int     `json:"perblock_bucket"`
+	TotalUnpaidBlocks              int     `json:"total_unpaid_blocks"`
+	TotalActivatedStake            float64 `json:"total_activated_stake,string"`
+	ThreshActivatedStakeTime       int64   `json:"thresh_activated_stake_time,string"`
+	LastProducerScheduleSize       int     `json:"last_producer_schedule_size"`
+	TotalProducerVoteWeight        float64 `json:"total_producer_vote_weight,string"`
+	LastNameClose                  string  `json:"last_name_close"`
 }
 
 type Producer struct {
