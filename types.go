@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -796,4 +797,20 @@ func (i *Uint128) UnmarshalJSON(data []byte) error {
 	i.Hi = hiUint
 
 	return nil
+}
+
+// Blob
+
+// Blob is base64 encoded data
+// https://github.com/EOSIO/fc/blob/0e74738e938c2fe0f36c5238dbc549665ddaef82/include/fc/variant.hpp#L47
+type Blob string
+
+// Data returns decoded base64 data
+func (b Blob) Data() ([]byte, error) {
+	return base64.StdEncoding.DecodeString(string(b))
+}
+
+// String returns the blob as a string
+func (b Blob) String() string {
+	return string(b)
 }
