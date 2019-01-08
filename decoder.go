@@ -818,6 +818,7 @@ func (d *Decoder) ReadActionData(action *Action) (err error) {
 
 	var decodeInto reflect.Type
 	if actionMap != nil {
+
 		objType := actionMap[action.Name]
 		if objType != nil {
 			decoderLog.Debug("read object", zap.String("type", objType.Name()))
