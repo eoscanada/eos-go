@@ -267,6 +267,18 @@ type Currency struct {
 	Name      CurrencyName
 }
 
+type GetRawABIRequest struct {
+	AccountName string      `json:"account_name"`
+	ABIHash     Checksum256 `json:"abi_hash,omitempty"`
+}
+
+type GetRawABIResp struct {
+	AccountName string      `json:"account_name"`
+	CodeHash    Checksum256 `json:"code_hash"`
+	ABIHash     Checksum256 `json:"abi_hash"`
+	ABI         Blob        `json:"abi"`
+}
+
 type GetRequiredKeysResp struct {
 	RequiredKeys []ecc.PublicKey `json:"required_keys"`
 }
@@ -399,4 +411,10 @@ type ActionResp struct {
 type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
 	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
+}
+
+type GetCurrencyStatsResp struct {
+	Supply    Asset       `json:"supply"`
+	MaxSupply Asset       `json:"max_supply"`
+	Issuer    AccountName `json:"issuer"`
 }
