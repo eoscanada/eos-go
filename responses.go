@@ -400,3 +400,9 @@ type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
 	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
 }
+
+type GetCurrencyStatsResp struct {
+	Supply    Asset       `json:"supply"`
+	MaxSupply Asset       `json:"max_supply"`
+	Issuer    AccountName `json:"issuer"`
+}
