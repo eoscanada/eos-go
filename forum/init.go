@@ -17,4 +17,4 @@ var AN = eos.AN
 var PN = eos.PN
 var ActN = eos.ActN
 
-var ForumAN = AN("eosforumrcpp")
+var ForumAN = AN("eosio.forum")
