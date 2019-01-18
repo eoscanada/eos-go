@@ -668,7 +668,9 @@ func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
 		return
 	}
+
 	sigContent := make([]byte, 66)
+	copy(sigContent, d.data[d.pos:d.pos+TypeSize.Signature])
 
 	out, err = ecc.NewSignatureFromData(sigContent)
 	if err != nil {

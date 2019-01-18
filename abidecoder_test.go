@@ -336,11 +336,14 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 
 func TestABI_Read(t *testing.T) {
 	someTime, err := time.Parse("2006-01-02T15:04:05", "2018-09-05T12:48:54")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	bt := BlockTimestamp{
 		Time: someTime,
 	}
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
+	signatureBuffer, err := hex.DecodeString("001f69c3e7b2789bccd5c4be1030129f35e93de2e8e18468dca94c65600cac25b4636e5d75342499e5519a0df74c714fd5ad682662204068eff4ca9fac86254ae416")
+	require.NoError(t, err)
 
 	optional := struct {
 		B byte
@@ -400,7 +403,7 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "checksum256", "typeName": "checksum256", "value": "\"0000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "checksum512", "typeName": "checksum512", "value": "\"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "public_key", "typeName": "public_key", "value": "\"EOS1111111111111111111111111111111114T1Anm\"", "encode": ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "signature", "typeName": "signature", "value": "\"SIG_K1_111111111111111111111111111111111111111111111111111111111111111116uk5ne\"", "encode": ecc.Signature{Curve: ecc.CurveK1, Content: bytes.Repeat([]byte{0}, 65)}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "signature", "typeName": "signature", "value": "\"SIG_K1_K96L1au4xFJg5edn6qBK6UDbSsC2RKsMs4cXCA2LoCPZxBDMXehdZFWPh1GeRhzGoQjBwNK2eBmUXf4L8SBApL69pGdUJm\"", "encode": ecc.Signature{Curve: ecc.CurveK1, Content: signatureBuffer[1:]}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "symbol", "typeName": "symbol", "value": "\"4,EOS\"", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "symbol_code", "typeName": "symbol_code", "value": "18446744073709551615", "encode": SymbolCode(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "asset", "typeName": "asset", "value": "\"10.0000 EOS\"", "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
@@ -422,7 +425,7 @@ func TestABI_Read(t *testing.T) {
 			encoder := NewEncoder(&buffer)
 			err := encoder.Encode(c["encode"])
 
-			assert.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]), c["caseName"])
+			require.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]), c["caseName"])
 
 			abi := ABI{}
 			json, err := abi.decodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
