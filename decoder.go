@@ -759,7 +759,7 @@ func (d *Decoder) ReadAsset() (out Asset, err error) {
 	d.pos += 7
 
 	out = Asset{}
-	out.Amount = amount
+	out.Amount = Int64(amount)
 	out.Precision = precision
 	out.Symbol.Symbol = strings.TrimRight(string(data), "\x00")
 	decoderLog.Debug("read asset", zap.Stringer("value", out))

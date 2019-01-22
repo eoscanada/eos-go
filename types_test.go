@@ -420,7 +420,7 @@ func TestNewAsset(t *testing.T) {
 	for _, test := range tests {
 		asset, err := NewAsset(test.in)
 		require.NoError(t, err)
-		assert.Equal(t, asset.Amount, int64(test.amount))
+		assert.Equal(t, asset.Amount, Int64(test.amount))
 		assert.Equal(t, asset.Symbol.Symbol, test.symbol)
 		assert.Equal(t, asset.Symbol.Precision, uint8(test.precision))
 	}
@@ -473,7 +473,7 @@ func TestNewEOSAssetFromString(t *testing.T) {
 	for _, test := range tests {
 		asset, err := NewEOSAssetFromString(test.in)
 		require.NoError(t, err)
-		assert.Equal(t, asset.Amount, int64(test.amount))
+		assert.Equal(t, asset.Amount, Int64(test.amount))
 		assert.Equal(t, asset.Symbol.Symbol, "EOS")
 		assert.Equal(t, asset.Symbol.Precision, uint8(4))
 	}

@@ -131,7 +131,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 
 // NOTE: there's also ExtendedAsset which is a quantity with the attached contract (AccountName)
 type Asset struct {
-	Amount int64
+	Amount Int64
 	Symbol
 }
 
@@ -223,7 +223,7 @@ func NewEOSAssetFromString(amount string) (out Asset, err error) {
 }
 
 func NewEOSAsset(amount int64) Asset {
-	return Asset{Amount: amount, Symbol: EOSSymbol}
+	return Asset{Amount: Int64(amount), Symbol: EOSSymbol}
 }
 
 // NewAsset parses a string like `1000.0000 EOS` into a properly setup Asset
@@ -250,7 +250,7 @@ func NewAsset(in string) (out Asset, err error) {
 		return out, err
 	}
 
-	out.Amount = val
+	out.Amount = Int64(val)
 
 	return
 }

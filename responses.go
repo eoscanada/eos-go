@@ -164,10 +164,10 @@ type AccountResp struct {
 	LastCodeUpdate         JSONTime             `json:"last_code_update"`
 	Created                JSONTime             `json:"created"`
 	CoreLiquidBalance      Asset                `json:"core_liquid_balance"`
-	RAMQuota               JSONInt64            `json:"ram_quota"`
-	RAMUsage               JSONInt64            `json:"ram_usage"`
-	NetWeight              JSONInt64            `json:"net_weight"`
-	CPUWeight              JSONInt64            `json:"cpu_weight"`
+	RAMQuota               Int64                `json:"ram_quota"`
+	RAMUsage               Int64                `json:"ram_usage"`
+	NetWeight              Int64                `json:"net_weight"`
+	CPUWeight              Int64                `json:"cpu_weight"`
 	NetLimit               AccountResourceLimit `json:"net_limit"`
 	CPULimit               AccountResourceLimit `json:"cpu_limit"`
 	Permissions            []Permission         `json:"permissions"`
