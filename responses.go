@@ -402,8 +402,8 @@ type GetActionsRequest struct {
 	Offset      int64       `json:"offset"`
 }
 type ActionResp struct {
-	GlobalSeq  int64       `json:"global_action_seq"`
-	AccountSeq int64       `json:"account_action_seq"`
+	GlobalSeq  JSONInt64   `json:"global_action_seq"`
+	AccountSeq JSONInt64   `json:"account_action_seq"`
 	BlockNum   uint32      `json:"block_num"`
 	BlockTime  JSONTime    `json:"block_time"`
 	Trace      ActionTrace `json:"action_trace"`
