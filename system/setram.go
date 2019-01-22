@@ -12,7 +12,7 @@ func NewSetRAM(maxRAMSize uint64) *eos.Action {
 			{AN("eosio"), eos.PermissionName("active")},
 		},
 		ActionData: eos.NewActionData(SetRAM{
-			MaxRAMSize: maxRAMSize,
+			MaxRAMSize: eos.Uint64(maxRAMSize),
 		}),
 	}
 	return a
@@ -20,5 +20,5 @@ func NewSetRAM(maxRAMSize uint64) *eos.Action {
 
 // SetRAM represents the hard-coded `setram` action.
 type SetRAM struct {
-	MaxRAMSize uint64 `json:"max_ram_size"`
+	MaxRAMSize eos.Uint64 `json:"max_ram_size"`
 }

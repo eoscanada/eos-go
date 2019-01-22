@@ -104,6 +104,6 @@ type ClausePair struct {
 }
 
 type ABIErrorMessage struct {
-	Code    uint64 `json:"error_code"`
+	Code    Uint64 `json:"error_code"`
 	Message string `json:"error_msg"`
 }
