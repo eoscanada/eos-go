@@ -113,7 +113,7 @@ type ActionTrace struct {
 
 type TransactionTraceAuthSequence struct {
 	Account  AccountName
-	Sequence int64
+	Sequence Int64
 }
 
 // [ ["account", 123123], ["account2", 345] ]
@@ -137,7 +137,7 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expected 2nd item to be a sequence number (float64)")
 	}
 
-	*auth = TransactionTraceAuthSequence{AccountName(account), int64(seq)}
+	*auth = TransactionTraceAuthSequence{AccountName(account), Int64(seq)}
 
 	return nil
 }
