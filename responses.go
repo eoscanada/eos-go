@@ -96,11 +96,11 @@ type ActionTrace struct {
 	Receipt struct {
 		Receiver        AccountName                    `json:"receiver"`
 		ActionDigest    string                         `json:"act_digest"`
-		GlobalSequence  Int64                          `json:"global_sequence"`
-		ReceiveSequence Int64                          `json:"recv_sequence"`
+		GlobalSequence  Uint64                         `json:"global_sequence"`
+		ReceiveSequence Uint64                         `json:"recv_sequence"`
 		AuthSequence    []TransactionTraceAuthSequence `json:"auth_sequence"` // [["account", sequence], ["account", sequence]]
-		CodeSequence    Int64                          `json:"code_sequence"`
-		ABISequence     Int64                          `json:"abi_sequence"`
+		CodeSequence    Uint64                         `json:"code_sequence"`
+		ABISequence     Uint64                         `json:"abi_sequence"`
 	} `json:"receipt"`
 	Action        *Action        `json:"act"`
 	Elapsed       int            `json:"elapsed"`
@@ -113,7 +113,7 @@ type ActionTrace struct {
 
 type TransactionTraceAuthSequence struct {
 	Account  AccountName
-	Sequence Int64
+	Sequence Uint64
 }
 
 // [ ["account", 123123], ["account2", 345] ]
@@ -137,7 +137,7 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expected 2nd item to be a sequence number (float64)")
 	}
 
-	*auth = TransactionTraceAuthSequence{AccountName(account), Int64(seq)}
+	*auth = TransactionTraceAuthSequence{AccountName(account), Uint64(seq)}
 
 	return nil
 }
