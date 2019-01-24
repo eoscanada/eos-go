@@ -390,11 +390,11 @@ type Producer struct {
 	IsActive      int         `json:"is_active"`
 	URL           string      `json:"url"`
 	UnpaidBlocks  int         `json:"unpaid_blocks"`
-	LastClaimTime JSONFloat64 `json:"last_claim_time"`
+	LastClaimTime JSONTime    `json:"last_claim_time"`
 	Location      int         `json:"location"`
 }
 type ProducersResp struct {
-	Producers []Producer `json:"producers"`
+	Producers []Producer `json:"rows"`
 }
 type GetActionsRequest struct {
 	AccountName AccountName `json:"account_name"`
