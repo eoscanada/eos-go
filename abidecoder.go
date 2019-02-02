@@ -37,7 +37,7 @@ func (a *ABI) DecodeTableRowTyped(tableType string, data []byte) ([]byte, error)
 	return a.decode(binaryDecoder, tableType)
 }
 
-func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
+func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
 	abiDecoderLog.Debug("decode struct", zap.String("name", structName))
 
 	structure := a.StructForName(structName)
@@ -59,7 +59,7 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 	return a.decodeFields(binaryDecoder, structure.Fields, resultingJson)
 }
 
-func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
+func (a *ABI) DecodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
 	resultingJson := json
 	for _, field := range fields {
 
@@ -79,7 +79,7 @@ func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byt
 	return resultingJson, nil
 }
 
-func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) ([]byte, error) {
+func (a *ABI) DecodeField(binaryDecoder *Decoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) ([]byte, error) {
 
 	abiEncoderLog.Debug("encode field", zap.String("name", fieldName), zap.String("type", fieldType))
 
@@ -131,7 +131,7 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 	return resultingJson, nil
 }
 
-func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
+func (a *ABI) Read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
 	structure := a.StructForName(fieldType)
 
 	if structure != nil {
