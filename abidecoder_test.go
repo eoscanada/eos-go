@@ -220,7 +220,7 @@ func TestABI_decode(t *testing.T) {
 	err := encoder.Encode(s)
 	assert.NoError(t, err)
 
-	json, err := abi.decode(NewDecoder(buffer.Bytes()), "struct.1")
+	json, err := abi.Decode(NewDecoder(buffer.Bytes()), "struct.1")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "value.field.1", gjson.GetBytes(json, "field.1").String())
@@ -249,7 +249,7 @@ func TestABI_decodeStructNotFound(t *testing.T) {
 	err := encoder.Encode(s)
 	assert.NoError(t, err)
 
-	_, err = abi.decode(NewDecoder(buffer.Bytes()), "struct.1")
+	_, err = abi.Decode(NewDecoder(buffer.Bytes()), "struct.1")
 	assert.Equal(t, fmt.Errorf("decode base [struct.1]: structure [struct.base.1] not found in abi"), err)
 }
 
@@ -266,7 +266,7 @@ func TestABI_decodeStructBaseNotFound(t *testing.T) {
 	err := encoder.Encode(s)
 	assert.NoError(t, err)
 
-	_, err = abi.decode(NewDecoder(b.Bytes()), "struct.1")
+	_, err = abi.Decode(NewDecoder(b.Bytes()), "struct.1")
 	assert.Equal(t, fmt.Errorf("structure [struct.1] not found in abi"), err)
 }
 
@@ -448,8 +448,8 @@ func TestABI_Read_TimePointSec(t *testing.T) {
 	data, err := hex.DecodeString("919dd85b")
 	require.NoError(t, err)
 	out, err := abi.DecodeField(NewDecoder(data), "name", "time_point_sec", false, false, []byte("{}"))
-	//out, err := abi.decodeField(NewDecoder([]byte("c15dd35b")), "name", "time_point_sec", false, false, []byte("{}"))
-	//out, err := abi.decodeField(NewDecoder([]byte("919dd85b")), "name", "time_point_sec", false, false, []byte("{}"))
+	//out, err := abi.DecodeField(NewDecoder([]byte("c15dd35b")), "name", "time_point_sec", false, false, []byte("{}"))
+	//out, err := abi.DecodeField(NewDecoder([]byte("919dd85b")), "name", "time_point_sec", false, false, []byte("{}"))
 	require.NoError(t, err)
 	assert.Equal(t, `{"name":"2018-10-30T18:06:09"}`, string(out))
 }
