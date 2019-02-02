@@ -33,14 +33,14 @@ func (a *ABI) EncodeAction(actionName ActionName, json []byte) ([]byte, error) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 
-	err := a.encode(encoder, action.Type, json)
+	err := a.Encode(encoder, action.Type, json)
 	if err != nil {
 		return nil, fmt.Errorf("encode action: %s", err)
 	}
 	return buffer.Bytes(), nil
 }
 
-func (a *ABI) encode(binaryEncoder *Encoder, structureName string, json []byte) error {
+func (a *ABI) Encode(binaryEncoder *Encoder, structureName string, json []byte) error {
 	abiEncoderLog.Debug("abi encode struct", zap.String("name", structureName))
 
 	structure := a.StructForName(structureName)
@@ -50,15 +50,15 @@ func (a *ABI) encode(binaryEncoder *Encoder, structureName string, json []byte) 
 
 	if structure.Base != "" {
 		abiEncoderLog.Debug("struct has base struct", zap.String("struct", structureName), zap.String("base", structure.Base))
-		err := a.encode(binaryEncoder, structure.Base, json)
+		err := a.Encode(binaryEncoder, structure.Base, json)
 		if err != nil {
 			return fmt.Errorf("encode base [%s]: %s", structureName, err)
 		}
 	}
-	err := a.encodeFields(binaryEncoder, structure.Fields, json)
+	err := a.EncodeFields(binaryEncoder, structure.Fields, json)
 	return err
 }
-func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byte) error {
+func (a *ABI) EncodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byte) error {
 
 	defer func(prev *zap.Logger) { abiEncoderLog = prev }(abiEncoderLog)
 	abiEncoderLog = encoderLog.Named("fields")
@@ -76,7 +76,7 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 			abiEncoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
 		}
 
-		err := a.encodeField(binaryEncoder, fieldName, typeName, isOptional, isArray, json)
+		err := a.EncodeField(binaryEncoder, fieldName, typeName, isOptional, isArray, json)
 		if err != nil {
 			return fmt.Errorf("encoding fields: %s", err)
 		}
@@ -84,7 +84,7 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 	return nil
 }
 
-func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) (err error) {
+func (a *ABI) EncodeField(binaryEncoder *Encoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) (err error) {
 
 	abiEncoderLog.Debug("encode field json", zap.ByteString("json", json))
 
@@ -115,16 +115,16 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 		binaryEncoder.writeUVarInt(len(results))
 
 		for _, r := range results {
-			a.writeField(binaryEncoder, fieldName, fieldType, r)
+			a.WriteField(binaryEncoder, fieldName, fieldType, r)
 		}
 
 		return nil
 	}
 
-	return a.writeField(binaryEncoder, fieldName, fieldType, value)
+	return a.WriteField(binaryEncoder, fieldName, fieldType, value)
 }
 
-func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType string, value gjson.Result) error {
+func (a *ABI) WriteField(binaryEncoder *Encoder, fieldName string, fieldType string, value gjson.Result) error {
 
 	abiEncoderLog.Debug("write field", zap.String("name", fieldName), zap.String("type", fieldType), zap.String("json", value.Raw))
 
@@ -132,7 +132,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 	if structure != nil {
 		abiEncoderLog.Debug("field is a struct", zap.String("name", fieldName))
 
-		err := a.encodeFields(binaryEncoder, structure.Fields, []byte(value.Raw))
+		err := a.EncodeFields(binaryEncoder, structure.Fields, []byte(value.Raw))
 		if err != nil {
 			return err
 		}

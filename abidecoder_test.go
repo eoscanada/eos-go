@@ -299,7 +299,7 @@ func TestABI_decodeFields(t *testing.T) {
 	err := encoder.Encode(s)
 	assert.NoError(t, err)
 
-	json, err := abi.decodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
+	json, err := abi.DecodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(18446744073709551615), gjson.GetBytes(json, "F1").Uint())
 	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "F2").String())
@@ -329,7 +329,7 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 	err := encoder.Encode(s)
 	assert.NoError(t, err)
 
-	_, err = abi.decodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
+	_, err = abi.DecodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
 	assert.Equal(t, fmt.Errorf("decoding fields: decoding field [field.with.bad.type.1] of type [bad.type.1]: read field of type [bad.type.1]: unknown type"), err)
 
 }
@@ -428,7 +428,7 @@ func TestABI_Read(t *testing.T) {
 			require.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]), c["caseName"])
 
 			abi := ABI{}
-			json, err := abi.decodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
+			json, err := abi.DecodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
 
 			//fmt.Println("JSON:", string(json))
 			assert.Equal(t, c["expectedError"], err, c["caseName"])
@@ -447,7 +447,7 @@ func TestABI_Read_TimePointSec(t *testing.T) {
 	abi := ABI{}
 	data, err := hex.DecodeString("919dd85b")
 	require.NoError(t, err)
-	out, err := abi.decodeField(NewDecoder(data), "name", "time_point_sec", false, false, []byte("{}"))
+	out, err := abi.DecodeField(NewDecoder(data), "name", "time_point_sec", false, false, []byte("{}"))
 	//out, err := abi.decodeField(NewDecoder([]byte("c15dd35b")), "name", "time_point_sec", false, false, []byte("{}"))
 	//out, err := abi.decodeField(NewDecoder([]byte("919dd85b")), "name", "time_point_sec", false, false, []byte("{}"))
 	require.NoError(t, err)

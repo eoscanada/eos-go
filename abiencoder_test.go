@@ -193,7 +193,7 @@ func TestABIEncoder_encodeField(t *testing.T) {
 			isArray := c["isArray"].(bool)
 			expectedError := c["expectedError"]
 
-			err := abi.encodeField(encoder, fieldName, fieldType, isOptional, isArray, []byte(json))
+			err := abi.EncodeField(encoder, fieldName, fieldType, isOptional, isArray, []byte(json))
 			assert.Equal(t, expectedError, err, caseName)
 
 			if c["expectedError"] == nil {
@@ -309,7 +309,7 @@ func TestABI_Write(t *testing.T) {
 			}
 			fieldName := "test_field_name"
 			result := gjson.Get(c["json"].(string), "testField")
-			err := abi.writeField(encoder, fieldName, c["typeName"].(string), result)
+			err := abi.WriteField(encoder, fieldName, c["typeName"].(string), result)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
