@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -188,8 +189,14 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 		P2PMessage: message,
 	}
 
-	encoder := eos.NewEncoder(p.connection)
+	buff := bytes.NewBuffer(make([]byte, 0, 512))
+
+	encoder := eos.NewEncoder(buff)
 	err = encoder.Encode(packet)
+	if err != nil {
+		return err
+	}
+	_, err = p.Write(buff.Bytes())
 
 	return
 }
