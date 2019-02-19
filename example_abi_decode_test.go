@@ -1,4 +1,4 @@
-package main
+package eos_test
 
 import (
 	"encoding/hex"
@@ -8,7 +8,7 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
-func main() {
+func ExampleABI_DecodeTableRowTyped() {
 	abi, err := eos.NewABI(strings.NewReader(abiJSON()))
 	if err != nil {
 		panic(fmt.Errorf("get ABI: %s", err))

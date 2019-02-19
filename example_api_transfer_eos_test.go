@@ -1,4 +1,4 @@
-package main
+package eos_test
 
 import (
 	"encoding/hex"
@@ -10,8 +10,8 @@ import (
 	"github.com/eoscanada/eos-go/token"
 )
 
-func main() {
-	api := eos.New("https://mainnet.eoscanada.com")
+func ExampleAPI_Transfer_EOS() {
+	api := eos.New(getAPIURL())
 
 	keyBag := &eos.KeyBag{}
 	err := keyBag.ImportPrivateKey(readPrivateKey())
@@ -59,7 +59,7 @@ func main() {
 func readPrivateKey() string {
 	// Right now, the key is read from an environment variable, it's an example after all.
 	// In a real-world scenario, would you probably integrate with a real wallet or something similar
-	envName := "PRIVATE_KEY"
+	envName := "EOS_GO_PRIVATE_KEY"
 	privateKey := os.Getenv(envName)
 	if privateKey == "" {
 		panic(fmt.Errorf("private key environment variable %q must be set", envName))

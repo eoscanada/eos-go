@@ -1,4 +1,4 @@
-package main
+package eos_test
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
-func main() {
-	api := eos.New("https://mainnet.eoscanada.com")
+func ExampleAPI_GetInfo() {
+	api := eos.New(getAPIURL())
 
 	info, err := api.GetInfo()
 	if err != nil {
