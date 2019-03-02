@@ -424,11 +424,6 @@ type ProducersResp struct {
 	TotalProducerVoteWeight string     `json:"total_producer_vote_weight"`
 }
 
-type ProducersResp struct {
-	Producers               []Producer `json:"rows"`
-	More                    string     `json:"more"`
-	TotalProducerVoteWeight string     `json:"total_producer_vote_weight"`
-}
 type GetActionsRequest struct {
 	AccountName AccountName `json:"account_name"`
 	Pos         int64       `json:"pos"`
