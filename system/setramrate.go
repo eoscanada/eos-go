@@ -9,7 +9,10 @@ func NewSetRAMRate(bytesPerBlock uint16) *eos.Action {
 		Account: AN("eosio"),
 		Name:    ActN("setram"),
 		Authorization: []eos.PermissionLevel{
-			{AN("eosio"), eos.PermissionName("active")},
+			{
+				Actor:      AN("eosio"),
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(SetRAMRate{
 			BytesPerBlock: bytesPerBlock,

@@ -69,7 +69,6 @@ func (r *Relay) startProxy(conn net.Conn) {
 }
 
 func (r *Relay) Start() error {
-
 	for {
 		ln, err := net.Listen("tcp", r.listeningAddress)
 		if err != nil {
@@ -88,6 +87,4 @@ func (r *Relay) Start() error {
 			go r.startProxy(conn)
 		}
 	}
-
-	return nil
 }

@@ -12,7 +12,10 @@ func NewUnlinkAuth(account, code eos.AccountName, actionName eos.ActionName) *eo
 		Account: AN("eosio"),
 		Name:    ActN("unlinkauth"),
 		Authorization: []eos.PermissionLevel{
-			{account, eos.PermissionName("active")},
+			{
+				Actor:      account,
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(UnlinkAuth{
 			Account: account,

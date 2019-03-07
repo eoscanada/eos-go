@@ -7,7 +7,7 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
-func ExampleTrx_Unpack() {
+func ExamplePackedTransaction_Unpack() {
 	var packedTrx *eos.PackedTransaction
 	err := json.Unmarshal(packedTrxData(), &packedTrx)
 	if err != nil {
