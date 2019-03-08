@@ -9,53 +9,17 @@ import (
 )
 
 func NewSetContract(account eos.AccountName, wasmPath, abiPath string) (out []*eos.Action, err error) {
-	codeContent, err := ioutil.ReadFile(wasmPath)
+	codeAction, err := NewSetCode(account, wasmPath)
 	if err != nil {
 		return nil, err
 	}
 
-	abiContent, err := ioutil.ReadFile(abiPath)
+	abiAction, err := NewSetABI(account, abiPath)
 	if err != nil {
 		return nil, err
 	}
 
-	var abiDef eos.ABI
-	if err := json.Unmarshal(abiContent, &abiDef); err != nil {
-		return nil, fmt.Errorf("unmarshal ABI file: %s", err)
-	}
-
-	abiPacked, err := eos.MarshalBinary(abiDef)
-	if err != nil {
-		return nil, fmt.Errorf("packing ABI: %s", err)
-	}
-
-	actions := []*eos.Action{
-		{
-			Account: AN("eosio"),
-			Name:    ActN("setcode"),
-			Authorization: []eos.PermissionLevel{
-				{account, eos.PermissionName("active")},
-			},
-			ActionData: eos.NewActionData(SetCode{
-				Account:   account,
-				VMType:    0,
-				VMVersion: 0,
-				Code:      eos.HexBytes(codeContent),
-			}),
-		},
-		{
-			Account: AN("eosio"),
-			Name:    ActN("setabi"),
-			Authorization: []eos.PermissionLevel{
-				{account, eos.PermissionName("active")},
-			},
-			ActionData: eos.NewActionData(SetABI{
-				Account: account,
-				ABI:     eos.HexBytes(abiPacked),
-			}),
-		},
-	}
-	return actions, nil
+	return []*eos.Action{codeAction, abiAction}, nil
 }
 
 func NewSetCode(account eos.AccountName, wasmPath string) (out *eos.Action, err error) {
@@ -85,14 +49,17 @@ func NewSetABI(account eos.AccountName, abiPath string) (out *eos.Action, err er
 		return nil, err
 	}
 
-	var abiDef eos.ABI
-	if err := json.Unmarshal(abiContent, &abiDef); err != nil {
-		return nil, fmt.Errorf("unmarshal ABI file: %s", err)
-	}
+	var abiPacked []byte
+	if len(abiContent) > 0 {
+		var abiDef eos.ABI
+		if err := json.Unmarshal(abiContent, &abiDef); err != nil {
+			return nil, fmt.Errorf("unmarshal ABI file: %s", err)
+		}
 
-	abiPacked, err := eos.MarshalBinary(abiDef)
-	if err != nil {
-		return nil, fmt.Errorf("packing ABI: %s", err)
+		abiPacked, err = eos.MarshalBinary(abiDef)
+		if err != nil {
+			return nil, fmt.Errorf("packing ABI: %s", err)
+		}
 	}
 
 	return &eos.Action{
