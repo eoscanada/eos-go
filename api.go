@@ -498,6 +498,16 @@ func (api *API) GetActions(params GetActionsRequest) (out *ActionsResp, err erro
 	return
 }
 
+func (api *API) GetKeyAccounts(publicKey string) (out *KeyAccountsResp, err error) {
+	err = api.call("history", "get_key_accounts", M{"public_key": publicKey}, &out)
+	return
+}
+
+func (api *API) GetControlledAccounts(controllingAccount string) (out *ControlledAccountsResp, err error) {
+	err = api.call("history", "get_controlled_accounts", M{"controlling_account": controllingAccount}, &out)
+	return
+}
+
 func (api *API) GetTransactions(name AccountName) (out *TransactionsResp, err error) {
 	err = api.call("account_history", "get_transactions", M{"account_name": name}, &out)
 	return
