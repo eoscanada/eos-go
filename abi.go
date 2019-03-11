@@ -57,13 +57,13 @@ func (a *ABI) TableForName(name TableName) *TableDef {
 	return nil
 }
 
-func (a *ABI) TypeNameForNewTypeName(typeName string) string {
+func (a *ABI) TypeNameForNewTypeName(typeName string) (resolvedTypeName string, isAlias bool) {
 	for _, t := range a.Types {
 		if t.NewTypeName == typeName {
-			return t.Type
+			return t.Type, true
 		}
 	}
-	return typeName
+	return typeName, false
 }
 
 type ABIType struct {

@@ -45,13 +45,13 @@ func TestABI_DecodeAction(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(mockData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	abi, err := NewABI(abiReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	json, err := abi.DecodeAction(buffer.Bytes(), "action_name_1")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "struct_1_field_1").String())
 	assert.Equal(t, "value_struct_2_field_1", gjson.GetBytes(json, "struct_2_field_1").String())
@@ -78,10 +78,10 @@ func TestABI_DecodeMissingData(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(mockData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	abi, err := NewABI(abiReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = abi.DecodeAction(buffer.Bytes(), "action_name_1")
 	assert.Equal(t, fmt.Errorf("decoding fields: decoding field [struct_1_field_2] of type [struct_name_3]: decoding fields: decoding field [struct_3_field_1] of type [string]: read: varint: invalid buffer size"), err)
@@ -103,10 +103,10 @@ func TestABI_DecodeMissingAction(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(mockData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	abi, err := NewABI(abiReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = abi.DecodeAction(buffer.Bytes(), "bad.action.name")
 	assert.Equal(t, fmt.Errorf("action bad.action.name not found in abi"), err)
@@ -137,13 +137,13 @@ func TestABI_DecodeTable(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(mockData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	abi, err := NewABI(abiReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	json, err := abi.DecodeTableRow("table_name_1", buffer.Bytes())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "struct_1_field_1").String())
 	assert.Equal(t, "value_struct_2_field_1", gjson.GetBytes(json, "struct_2_field_1").String())
@@ -171,10 +171,10 @@ func TestABI_DecodeTableRowMissingTable(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(mockData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	abi, err := NewABI(abiReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = abi.DecodeTableRow("bad.action.name", buffer.Bytes())
 	assert.Equal(t, fmt.Errorf("table name bad.action.name not found in abi"), err)
@@ -218,60 +218,246 @@ func TestABI_decode(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(s)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	json, err := abi.decode(NewDecoder(buffer.Bytes()), "struct.1")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "value.field.1", gjson.GetBytes(json, "field.1").String())
 	assert.Equal(t, "value.base.field.1", gjson.GetBytes(json, "base.field.1").String())
-
 }
 
-func TestABI_decodeStructNotFound(t *testing.T) {
+func TestABI_decode_StructFieldTypeHasBase(t *testing.T) {
 
+	abi := &ABI{
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "item", Type: "item"},
+				},
+			},
+			{
+				Name: "base",
+				Fields: []FieldDef{
+					{Name: "data", Type: "uint8[]"},
+				},
+			},
+			{
+				Name: "item",
+				Base: "base",
+				Fields: []FieldDef{
+					{Name: "name", Type: "name"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("02010a000000000010aa91")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"item":{"name":"map1","data":[1,10]}}`, string(json))
+}
+
+func TestABI_decode_StructHasAliasedBase(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "base", NewTypeName: "aliasbase"},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Base: "aliasbase",
+			},
+			{
+				Name: "base",
+				Fields: []FieldDef{
+					{Name: "data", Type: "uint8[]"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("02010a")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"data":[1,10]}`, string(json))
+}
+
+func TestABI_decode_StructFieldTypeHasAliasedBase(t *testing.T) {
+
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "base", NewTypeName: "aliasbase"},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "item", Type: "item"},
+				},
+			},
+			{
+				Name: "base",
+				Fields: []FieldDef{
+					{Name: "data", Type: "uint8[]"},
+				},
+			},
+			{
+				Name: "item",
+				Base: "aliasbase",
+				Fields: []FieldDef{
+					{Name: "name", Type: "name"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("02010a000000000010aa91")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"item":{"name":"map1","data":[1,10]}}`, string(json))
+}
+
+func TestABI_decode_StructFieldArrayTypeHasAlias(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "uint8", NewTypeName: "alias"},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "item", Type: "alias[]"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("02010a")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"item":[1,10]}`, string(json))
+}
+
+func TestABI_decode_StructFieldHasAlias(t *testing.T) {
+
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "name", NewTypeName: "alias"},
+		},
+		Structs: []StructDef{
+			{
+				Name: "struct_with_alias",
+				Fields: []FieldDef{
+					{Name: "item", Type: "alias"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("000000000010aa91")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "struct_with_alias")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"item":"map1"}`, string(json))
+}
+
+func TestABI_decode_StructFieldTypeArray_ResetsOuterFields(t *testing.T) {
+	abi := &ABI{
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "name"},
+					{Name: "items", Type: "item[]"},
+				},
+			},
+			{
+				Name: "item",
+				Fields: []FieldDef{
+					{Name: "data", Type: "uint8[]"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("000000000010aa910102010a")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"items":[{"data":[1,10]}],"name":"map1"}`, string(json))
+}
+
+func TestABI_decode_StructNotFound(t *testing.T) {
+	abi := &ABI{
+		Structs: []StructDef{},
+	}
+
+	_, err := abi.decode(NewDecoder(nil), "struct.1")
+	assert.Equal(t, fmt.Errorf("structure [struct.1] not found in abi"), err)
+}
+
+func TestABI_decode_StructBaseNotFound(t *testing.T) {
 	abi := &ABI{
 		Structs: []StructDef{
 			{
 				Name: "struct.1",
 				Base: "struct.base.1",
 				Fields: []FieldDef{
-					{Name: "field.1", Type: "string"},
+					{Name: "field.1", Type: "name"},
 				},
 			},
 		},
 	}
 
-	s := struct{}{}
+	buffer, err := hex.DecodeString("202932c94c833055")
+	require.NoError(t, err)
 
-	var buffer bytes.Buffer
-	encoder := NewEncoder(&buffer)
-	err := encoder.Encode(s)
-	assert.NoError(t, err)
-
-	_, err = abi.decode(NewDecoder(buffer.Bytes()), "struct.1")
+	_, err = abi.decode(NewDecoder(buffer), "struct.1")
 	assert.Equal(t, fmt.Errorf("decode base [struct.1]: structure [struct.base.1] not found in abi"), err)
 }
 
-func TestABI_decodeStructBaseNotFound(t *testing.T) {
+func TestABI_decode_StructFieldArrayType_HasSjsonPathLikeName(t *testing.T) {
+	t.Skipf("This test exhibits the problem where the field name has sjson array like path, the output is completely wrong.")
 
 	abi := &ABI{
-		Structs: []StructDef{},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "item.1", Type: "uint8[]"},
+				},
+			},
+		},
 	}
 
-	s := struct{}{}
+	buffer, err := hex.DecodeString("02010a")
+	require.NoError(t, err)
 
-	var b bytes.Buffer
-	encoder := NewEncoder(&b)
-	err := encoder.Encode(s)
-	assert.NoError(t, err)
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
 
-	_, err = abi.decode(NewDecoder(b.Bytes()), "struct.1")
-	assert.Equal(t, fmt.Errorf("structure [struct.1] not found in abi"), err)
+	assert.JSONEq(t, `{"item.1":[1,10]}`, string(json))
 }
 
 func TestABI_decodeFields(t *testing.T) {
-
 	types := []ABIType{
 		{NewTypeName: "action.type.1", Type: "name"},
 	}
@@ -286,23 +472,13 @@ func TestABI_decodeFields(t *testing.T) {
 		},
 	}
 
-	s := struct {
-		F1 uint64
-		F2 Name
-	}{
-		F1: uint64(18446744073709551615),
-		F2: Name("eoscanadacom"),
-	}
+	buffer, err := hex.DecodeString("ffffffffffffffff202932c94c833055")
+	require.NoError(t, err)
 
-	var buffer bytes.Buffer
-	encoder := NewEncoder(&buffer)
-	err := encoder.Encode(s)
-	assert.NoError(t, err)
+	json, err := abi.decodeFields(NewDecoder(buffer), fields, []byte{})
+	require.NoError(t, err)
 
-	json, err := abi.decodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
-	assert.NoError(t, err)
-	assert.Equal(t, uint64(18446744073709551615), gjson.GetBytes(json, "F1").Uint())
-	assert.Equal(t, "eoscanadacom", gjson.GetBytes(json, "F2").String())
+	assert.JSONEq(t, `{"F1":"18446744073709551615", "F2":"eoscanadacom"}`, string(json))
 }
 
 func TestABI_decodeFieldsErr(t *testing.T) {
@@ -327,7 +503,7 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 	var buffer bytes.Buffer
 	encoder := NewEncoder(&buffer)
 	err := encoder.Encode(s)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = abi.decodeFields(NewDecoder(buffer.Bytes()), fields, []byte{})
 	assert.Equal(t, fmt.Errorf("decoding fields: decoding field [field.with.bad.type.1] of type [bad.type.1]: read field of type [bad.type.1]: unknown type"), err)
@@ -430,8 +606,7 @@ func TestABI_Read(t *testing.T) {
 			abi := ABI{}
 			json, err := abi.decodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
 
-			//fmt.Println("JSON:", string(json))
-			assert.Equal(t, c["expectedError"], err, c["caseName"])
+			require.Equal(t, c["expectedError"], err, c["caseName"])
 
 			if c["expectedError"] == nil {
 				assert.Equal(t, c["value"], gjson.GetBytes(json, c["fieldName"].(string)).Raw, c["caseName"])

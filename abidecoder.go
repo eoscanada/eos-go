@@ -14,7 +14,7 @@ func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
 	binaryDecoder := NewDecoder(data)
 	action := a.ActionForName(actionName)
 	if action == nil {
-		return []byte{}, fmt.Errorf("action %s not found in abi", actionName)
+		return nil, fmt.Errorf("action %s not found in abi", actionName)
 	}
 
 	return a.decode(binaryDecoder, action.Type)
@@ -25,7 +25,7 @@ func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
 	binaryDecoder := NewDecoder(data)
 	tbl := a.TableForName(tableName)
 	if tbl == nil {
-		return []byte{}, fmt.Errorf("table name %s not found in abi", tableName)
+		return nil, fmt.Errorf("table name %s not found in abi", tableName)
 	}
 
 	return a.decode(binaryDecoder, tbl.Type)
@@ -42,106 +42,133 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 
 	structure := a.StructForName(structName)
 	if structure == nil {
-		return []byte{}, fmt.Errorf("structure [%s] not found in abi", structName)
+		return nil, fmt.Errorf("structure [%s] not found in abi", structName)
 	}
 
-	resultingJson := make([]byte, 0)
+	resultingJSON := make([]byte, 0)
 	if structure.Base != "" {
-
 		abiDecoderLog.Debug("struct has base struct", zap.String("name", structName), zap.String("base", structure.Base))
+
+		baseName, isAlias := a.TypeNameForNewTypeName(structure.Base)
+		if isAlias {
+			abiDecoderLog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
+		}
+
 		var err error
-		resultingJson, err = a.decode(binaryDecoder, structure.Base)
+		resultingJSON, err = a.decode(binaryDecoder, baseName)
 		if err != nil {
-			return resultingJson, fmt.Errorf("decode base [%s]: %s", structName, err)
+			return nil, fmt.Errorf("decode base [%s]: %s", structName, err)
 		}
 	}
 
-	return a.decodeFields(binaryDecoder, structure.Fields, resultingJson)
+	return a.decodeFields(binaryDecoder, structure.Fields, resultingJSON)
 }
 
 func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
-	resultingJson := json
+	resultingJSON := json
 	for _, field := range fields {
-
 		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
-		typeName := a.TypeNameForNewTypeName(fieldType)
-		if typeName != field.Type {
+		typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
+		if isAlias {
 			abiDecoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
 		}
 
 		var err error
-		resultingJson, err = a.decodeField(binaryDecoder, field.Name, typeName, isOptional, isArray, resultingJson)
+		resultingJSON, err = a.decodeField(binaryDecoder, field.Name, typeName, isOptional, isArray, resultingJSON)
 		if err != nil {
-			return []byte{}, fmt.Errorf("decoding fields: %s", err)
+			return nil, fmt.Errorf("decoding fields: %s", err)
 		}
 	}
 
-	return resultingJson, nil
+	return resultingJSON, nil
 }
 
 func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) ([]byte, error) {
+	abiDecoderLog.Debug("decoding field", zap.String("name", fieldName), zap.String("type", fieldType), zap.Bool("is_optional", isOptional), zap.Bool("is_array", isArray))
 
-	abiEncoderLog.Debug("encode field", zap.String("name", fieldName), zap.String("type", fieldType))
-
-	resultingJson := json
+	resultingJSON := json
 	if isOptional {
-		abiEncoderLog.Debug("field is optional", zap.String("name", fieldName))
+		abiDecoderLog.Debug("field is optional", zap.String("name", fieldName))
 		b, err := binaryDecoder.ReadByte()
 		if err != nil {
-			return resultingJson, fmt.Errorf("decoding field [%s] optional flag: %s", fieldName, err)
+			return nil, fmt.Errorf("decoding field [%s] optional flag: %s", fieldName, err)
 		}
 
 		if b == 0 {
-			abiEncoderLog.Debug("field is not present", zap.String("name", fieldName))
-			return resultingJson, nil
+			abiDecoderLog.Debug("field is not present", zap.String("name", fieldName))
+			return resultingJSON, nil
 		}
 	}
 
 	if isArray {
 		length, err := binaryDecoder.ReadUvarint64()
 		if err != nil {
-			return resultingJson, fmt.Errorf("reading field [%s] array length: %s", fieldName, err)
+			return nil, fmt.Errorf("reading field [%s] array length: %s", fieldName, err)
 		}
 
 		if length == 0 {
-			resultingJson, _ = sjson.SetBytes(resultingJson, fieldName, []interface{}{})
+			resultingJSON, _ = sjson.SetBytes(resultingJSON, fieldName, []interface{}{})
 			//ignoring err because there is a bug in sjson. sjson shadow the err in case of a default type ...
 			//if err != nil {
-			//	return resultingJson, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
+			//	return nil, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
 			//}
 		}
 
 		for i := uint64(0); i < length; i++ {
-			abiEncoderLog.Debug("adding value for field", zap.String("name", fieldName), zap.Uint64("index", i))
+			abiDecoderLog.Debug("adding value for field", zap.String("name", fieldName), zap.Uint64("index", i))
 			indexedFieldName := fmt.Sprintf("%s.%d", fieldName, i)
-			resultingJson, err = a.read(binaryDecoder, indexedFieldName, fieldType, resultingJson)
+			resultingJSON, err = a.read(binaryDecoder, indexedFieldName, fieldType, resultingJSON)
 			if err != nil {
-				return resultingJson, fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
+				return nil, fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
 			}
 		}
 
-		return resultingJson, nil
-
+		return resultingJSON, nil
 	}
 
-	resultingJson, err := a.read(binaryDecoder, fieldName, fieldType, resultingJson)
+	resultingJSON, err := a.read(binaryDecoder, fieldName, fieldType, resultingJSON)
 	if err != nil {
-		return resultingJson, fmt.Errorf("decoding field [%s] of type [%s]: %s", fieldName, fieldType, err)
+		return nil, fmt.Errorf("decoding field [%s] of type [%s]: %s", fieldName, fieldType, err)
 	}
-	return resultingJson, nil
+
+	return resultingJSON, nil
 }
 
 func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
 	structure := a.StructForName(fieldType)
 
 	if structure != nil {
-		abiEncoderLog.Debug("field is a struct", zap.String("name", fieldName))
-		structureJson, err := a.decodeFields(binaryDecoder, structure.Fields, []byte{})
-		if err != nil {
-			return []byte{}, err
+		abiDecoderLog.Debug("field is a struct", zap.String("name", fieldName))
+
+		structureJSON := []byte{}
+		if structure.Base != "" {
+			abiDecoderLog.Debug("field's struct has base struct", zap.String("name", fieldName), zap.String("struct", structure.Name), zap.String("base", structure.Base))
+
+			baseName, isAlias := a.TypeNameForNewTypeName(structure.Base)
+			if isAlias {
+				abiDecoderLog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
+			}
+
+			baseStructure := a.StructForName(baseName)
+			if baseStructure == nil {
+				return nil, fmt.Errorf("base structure [%s] not found in abi", baseName)
+			}
+
+			var err error
+			structureJSON, err = a.decodeFields(binaryDecoder, baseStructure.Fields, structureJSON)
+			if err != nil {
+				return nil, fmt.Errorf("decoding field [%s] struct [%s] base [%s]: %s", fieldName, structure.Name, baseName, err)
+			}
 		}
-		abiEncoderLog.Debug("set field value", zap.String("name", fieldName), zap.ByteString("json", structureJson))
-		return sjson.SetRawBytes(json, fieldName, structureJson)
+
+		var err error
+		structureJSON, err = a.decodeFields(binaryDecoder, structure.Fields, structureJSON)
+		if err != nil {
+			return nil, err
+		}
+
+		abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.ByteString("json", structureJSON))
+		return sjson.SetRawBytes(json, fieldName, structureJSON)
 	}
 
 	var value interface{}
@@ -240,10 +267,10 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	}
 
 	if err != nil {
-		return []byte{}, fmt.Errorf("read: %s", err)
+		return nil, fmt.Errorf("read: %s", err)
 	}
 
-	abiEncoderLog.Debug("set field value", zap.String("name", fieldName), zap.Reflect("value", value))
+	abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.Reflect("value", value))
 
 	return sjson.SetBytes(json, fieldName, value)
 
