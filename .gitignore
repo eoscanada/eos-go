@@ -1,2 +1,5 @@
 .envrc
 .idea
+
+# Added temporarly until we actually use go.mod in this lib, so it's possible to easily hack the lib as needed
+go.mod

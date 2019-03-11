@@ -70,9 +70,9 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 		abiEncoderLog.Debug("encode field", zap.String("name", field.Name), zap.String("type", field.Type))
 
 		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
-		typeName := a.TypeNameForNewTypeName(fieldType)
+		typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
 		fieldName := field.Name
-		if typeName != field.Type {
+		if isAlias {
 			abiEncoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
 		}
 

@@ -411,6 +411,13 @@ type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
 	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
 }
+type KeyAccountsResp struct {
+	AccountNames []string `json:"account_names"`
+}
+
+type ControlledAccountsResp struct {
+	ControlledAccounts []string `json:"controlled_accounts"`
+}
 
 type GetCurrencyStatsResp struct {
 	Supply    Asset       `json:"supply"`
