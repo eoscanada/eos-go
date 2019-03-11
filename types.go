@@ -855,3 +855,31 @@ func (b Blob) Data() ([]byte, error) {
 func (b Blob) String() string {
 	return string(b)
 }
+
+// GenesisState
+
+type GenesisState struct {
+	InitialTimestamp Tstamp        `json:"initial_timestamp"`
+	InitialKey       ecc.PublicKey `json:"initial_key"`
+	ChainConfig      *ChainConfig  `json:"initial_configuration"`
+}
+
+type ChainConfig struct {
+	MaxBlockNetUsage               uint64
+	TargetBlockNetUsagePct         uint32
+	MaxTransactionNetUsage         uint32
+	BasePerTransactionNetUsage     uint32
+	NetUsageLeeway                 uint32
+	ContextFreeDiscountNetUsageNum uint32
+	ContextFreeDiscountNetUsageDen uint32
+	MaxBlockCpuUsage               uint32
+	TargetBlockCpuUsagePct         uint32
+	MaxTransactionCpuUsage         uint32
+	MinTransactionCpuUsage         uint32
+	MaxTransactionLifetime         uint32
+	DeferredTrxExpirationWindow    uint32
+	MaxTransactionDelay            uint32
+	MaxInlineActionSize            uint32
+	MaxInlineActionDepth           uint16
+	MaxAuthorityDepth              uint16
+}
