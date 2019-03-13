@@ -9,10 +9,9 @@ import (
 
 	"time"
 
-	"fmt"
-
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecoder_Remaining(t *testing.T) {
@@ -296,8 +295,8 @@ func TestDecoder_PublicKey_R1(t *testing.T) {
 	d := NewDecoder(buf.Bytes())
 
 	rpk, err := d.ReadPublicKey()
-	fmt.Printf("Key %s\n", rpk.String())
-	assert.NoError(t, err)
+
+	require.NoError(t, err)
 
 	assert.Equal(t, pk, rpk)
 	assert.Equal(t, 0, d.remaining())
@@ -371,16 +370,6 @@ func TestDecoder_BlockTimestamp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ts, rbt)
 	assert.Equal(t, 0, d.remaining())
-}
-
-func TestDecoder_Time(t *testing.T) {
-	time := time.Now()
-
-	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
-	enc.Encode(&time)
-
-	fmt.Println(buf.Bytes())
 }
 
 type EncodeTestStruct struct {

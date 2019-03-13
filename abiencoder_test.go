@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
 
@@ -92,7 +93,8 @@ func TestABIEncoder_Encode(t *testing.T) {
 		t.Run(caseName, func(t *testing.T) {
 
 			abi, err := NewABI(strings.NewReader(c["abi"].(string)))
-			assert.NoError(t, err)
+			require.NoError(t, err)
+
 			_, err = abi.EncodeAction(ActionName(c["actionName"].(string)), abiData)
 			assert.Equal(t, c["expectedError"], err)
 
@@ -103,7 +105,7 @@ func TestABIEncoder_Encode(t *testing.T) {
 			//decoder := NewABIDecoder(buf.Bytes(), strings.NewReader(abiString))
 			//result := make(M)
 			//err = decoder.Decode(result, ActionName(c["actionName"].(string)))
-			//assert.NoError(t, err)
+			//require.NoError(t, err)
 
 			//assert.Equal(t, abiData, result)
 			//fmt.Println(result)
@@ -129,8 +131,10 @@ func TestABIEncoder_encodeMissingActionStruct(t *testing.T) {
   }]
 }
 `
+
 	abi, err := NewABI(strings.NewReader(abiString))
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
 	assert.Equal(t, fmt.Errorf("encode action: encode struct [struct.name.1] not found in abi"), err)
 }
@@ -160,8 +164,10 @@ func TestABIEncoder_encodeErrorInBase(t *testing.T) {
   }]
 }
 `
+
 	abi, err := NewABI(strings.NewReader(abiString))
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
 	assert.Equal(t, fmt.Errorf("encode action: encode base [struct.name.1]: encode struct [struct.name.2] not found in abi"), err)
 }
@@ -310,10 +316,8 @@ func TestABI_Write(t *testing.T) {
 			fieldName := "test_field_name"
 			result := gjson.Get(c["json"].(string), "testField")
 			err := abi.writeField(encoder, fieldName, c["typeName"].(string), result)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			assert.Equal(t, c["expectedError"], err, c["caseName"])
+
+			require.Equal(t, c["expectedError"], err, c["caseName"])
 
 			if c["expectedError"] == nil {
 				assert.Equal(t, c["expectedValue"], hex.EncodeToString(buffer.Bytes()), c["caseName"])

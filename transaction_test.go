@@ -3,6 +3,8 @@ package eos
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,5 +34,35 @@ func TestTransactionID(t *testing.T) {
 
 		trxID := hex.EncodeToString(id)
 		assert.Equal(t, test.expectID, trxID)
+	}
+}
+
+func TestTransaction_UnmarshalPacked_Compression(t *testing.T) {
+	tests := []struct {
+		name        string
+		in          string
+		expected    CompressionType
+		expectedErr error
+	}{
+		{"string/none", `{"compression": "none"}`, CompressionNone, nil},
+		{"string/zlib", `{"compression": "zlib"}`, CompressionZlib, nil},
+		{"string/unknown", `{"compression": "random"}`, 0, errors.New("unknown compression type random")},
+
+		{"int/none", `{"compression": 0}`, CompressionNone, nil},
+		{"int/zlib", `{"compression": 1}`, CompressionZlib, nil},
+		{"int/unknown", `{"compression": 3}`, 0, errors.New("unknown compression type 3")},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var tx *PackedTransaction
+			err := json.Unmarshal([]byte(test.in), &tx)
+			if test.expectedErr == nil {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, tx.Compression)
+			} else {
+				assert.Equal(t, test.expectedErr, err)
+			}
+		})
 	}
 }
