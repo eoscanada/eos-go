@@ -227,6 +227,26 @@ type Symbol struct {
 
 type SymbolCode uint64
 
+func StringToSymbolCode(str string) (SymbolCode, error) {
+	var (
+		symbolCode uint64
+		leng       = len(str)
+	)
+
+	if leng > 7 {
+		return 0, fmt.Errorf("string is too long to be a valid symbol_code")
+	}
+	for i := leng - 1; i >= 0; i-- {
+		if str[i] < 'A' || str[i] > 'Z' {
+			return 0, fmt.Errorf("only uppercase letters allowed in symbol_code string")
+		}
+
+		symbolCode <<= 8
+		symbolCode = symbolCode | uint64(str[i])
+	}
+	return SymbolCode(symbolCode), nil
+}
+
 // EOSSymbol represents the standard EOS symbol on the chain.  It's
 // here just to speed up things.
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
