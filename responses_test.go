@@ -278,3 +278,178 @@ var blockResponseJSONData = `
 	]
   }
 `
+var blockResponsePushTransactionJSONData = `{
+    "transaction_id": "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000",
+    "processed": {
+        "id": "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000",
+        "block_num": 176239,
+        "block_time": "2019-03-06T13:11:40.000",
+        "producer_block_id": null,
+        "receipt": {
+            "status": "executed",
+            "cpu_usage_us": 1289,
+            "net_usage_words": 17
+        },
+        "elapsed": 1289,
+        "net_usage": 1136,
+        "scheduled": false,
+        "action_traces": [
+            {
+                "receipt": {
+                    "receiver": "eosio.token",
+                    "act_digest": "cd9e3f72031ebcc31b6fe67dadd03651232e0000b400fcab2801004381e70024",
+                    "global_sequence": 227002914,
+                    "recv_sequence": 41100400,
+                    "auth_sequence": [
+                        [
+                            "ariontestusr",
+                            7
+                        ]
+                    ],
+                    "code_sequence": 3,
+                    "abi_sequence": 2
+                },
+                "act": {
+                    "account": "eosio.token",
+                    "name": "transfer",
+                    "authorization": [
+                        {
+                            "actor": "ariontestusr",
+                            "permission": "active"
+                        }
+                    ],
+                    "data": {
+                        "from": "ariontestusr",
+                        "to": "arionusertst",
+                        "quantity": "1.0000 EOS",
+                        "memo": "memeTest"
+                    },
+                    "hex_data": "4004b90aeb000035400400009049dd00102700000000000004450053000000000700323600313138"
+                },
+                "context_free": false,
+                "elapsed": 1136,
+                "console": "",
+                "trx_id": "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000",
+                "block_num": 176239,
+                "block_time": "2019-03-06T13:11:40.000",
+                "producer_block_id": null,
+                "account_ram_deltas": [],
+                "except": null,
+                "inline_traces": [
+                    {
+                        "receipt": {
+                            "receiver": "ariontestusr",
+                            "act_digest": "cd9e3f72031ebcc31b6fe67dadd03651232e0000b400fcab2801004381e70024",
+                            "global_sequence": 227662915,
+                            "recv_sequence": 5,
+                            "auth_sequence": [
+                                [
+                                    "ariontestusr",
+                                    8
+                                ]
+                            ],
+                            "code_sequence": 3,
+                            "abi_sequence": 2
+                        },
+                        "act": {
+                            "account": "eosio.token",
+                            "name": "transfer",
+                            "authorization": [
+                                {
+                                    "actor": "ariontestusr",
+                                    "permission": "active"
+                                }
+                            ],
+                            "data": {
+                                "from": "ariontestusr",
+                                "to": "arionusertst",
+                                "quantity": "1.0000 EOS",
+                                "memo": "memeTest"
+                            },
+                            "hex_data": "4004b90aeb000035400400009049dd00102700000000000004450053000000000700323600313138"
+                        },
+                        "context_free": false,
+                        "elapsed": 4,
+                        "console": "",
+                        "trx_id": "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000",
+                        "block_num": 176239,
+                        "block_time": "2019-03-06T13:11:40.000",
+                        "producer_block_id": null,
+                        "account_ram_deltas": [],
+                        "except": null,
+                        "inline_traces": []
+                    },
+                    {
+                        "receipt": {
+                            "receiver": "arionusertst",
+                            "act_digest": "cd9e3f72031ebcc31b6fe67dadd03651232e0000b400fcab2801004381e70024",
+                            "global_sequence": 227662916,
+                            "recv_sequence": 18,
+                            "auth_sequence": [
+                                [
+                                    "ariontestusr",
+                                    9
+                                ]
+                            ],
+                            "code_sequence": 3,
+                            "abi_sequence": 2
+                        },
+                        "act": {
+                            "account": "eosio.token",
+                            "name": "transfer",
+                            "authorization": [
+                                {
+                                    "actor": "ariontestusr",
+                                    "permission": "active"
+                                }
+                            ],
+                            "data": {
+                                "from": "ariontestusr",
+                                "to": "arionusertst",
+                                "quantity": "1.0000 EOS",
+                                "memo": "memeTest"
+                            },
+                            "hex_data": "4004b90aeb000035400400009049dd00102700000000000004450053000000000700323600313138"
+                        },
+                        "context_free": false,
+                        "elapsed": 7,
+                        "console": "",
+                        "trx_id": "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000",
+                        "block_num": 176239,
+                        "block_time": "2019-03-06T13:11:40.000",
+                        "producer_block_id": null,
+                        "account_ram_deltas": [],
+                        "except": null,
+                        "inline_traces": []
+                    }
+                ]
+            }
+        ],
+        "except": null
+    }
+}`
+
+func TestUnmarshalPushTransactionResp(t *testing.T) {
+	respData := []byte(blockResponsePushTransactionJSONData)
+	resp := PushTransactionFullResp{}
+	err := json.Unmarshal(respData, &resp)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
+	expectedTime, _ := ParseJSONTime("2019-03-06T13:11:40.000")
+
+	assert.Equal(t, resp.TransactionID, "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000")
+	assert.Equal(t, resp.Processed.ID.String(), "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000")
+	assert.Equal(t, resp.Processed.BlockNum, uint32(176239))
+	assert.Equal(t, resp.Processed.BlockTime, expectedTime)
+	assert.Equal(t, resp.Processed.ProducerBlockId, "")
+	assert.Equal(t, resp.Processed.Elapsed, uint64(1289))
+	assert.Equal(t, resp.Processed.NetUsage, uint64(1136))
+	assert.Equal(t, resp.Processed.scheduled, false)
+
+	assert.Equal(t, resp.Processed.Receipt.Status, "executed")
+	assert.Equal(t, resp.Processed.Receipt.CpuUsageUs, uint64(1289))
+	assert.Equal(t, resp.Processed.Receipt.NetUsageWords, uint64(17))
+}

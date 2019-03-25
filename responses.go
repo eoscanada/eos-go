@@ -289,15 +289,27 @@ type PushTransactionFullResp struct {
 	StatusCode    string
 	TransactionID string               `json:"transaction_id"`
 	Processed     TransactionProcessed `json:"processed"` // WARN: is an `fc::variant` in server..
-	BlockID       string               `json:"block_id"`
-	BlockNum      uint32               `json:"block_num"`
 }
 
 type TransactionProcessed struct {
-	Status               string      `json:"status"`
-	ID                   Checksum256 `json:"id"`
-	ActionTraces         []Trace     `json:"action_traces"`
-	DeferredTransactions []string    `json:"deferred_transactions"` // that's not right... dig to find what's there..
+	ID              Checksum256      `json:"id"`
+	BlockNum        uint32           `json:"block_num"`
+	BlockTime       JSONTime         `json:"block_time"`
+	ProducerBlockId string           `json:"producer_block_id"`
+	Receipt         ProcessedReceipt `json:"receipt"`
+	Elapsed         uint64           `json:"elapsed"`
+	NetUsage        uint64           `json:"net_usage"`
+	scheduled       bool             `json:"scheduled"`
+	// except
+	ActionTraces         []Trace  `json:"action_traces"`         // it isn`t unpack! Who knows where it has been described in the documentation?
+	DeferredTransactions []string `json:"deferred_transactions"` // that's not right... dig to find what's there..
+	BlockID              string   `json:"block_id"`
+}
+
+type ProcessedReceipt struct {
+	Status        string `json:"status"`
+	CpuUsageUs    uint64 `json:"cpu_usage_us"`
+	NetUsageWords uint64 `json:"net_usage_words"`
 }
 
 type Trace struct {
