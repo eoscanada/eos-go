@@ -432,14 +432,6 @@ type ControlledAccountsResp struct {
 	ControlledAccounts []string `json:"controlled_accounts"`
 }
 
-type KeyAccountsResp struct {
-	AccountNames []string `json:"account_names`
-}
-
-type ControlledAccountsResp struct {
-	ControlledAccounts []string `json:"controlled_accounts`
-}
-
 type GetCurrencyStatsResp struct {
 	Supply    Asset       `json:"supply"`
 	MaxSupply Asset       `json:"max_supply"`
