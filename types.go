@@ -232,6 +232,19 @@ type Symbol struct {
 	symbolCode uint64
 }
 
+func NameToSymbol(name Name) (Symbol, error) {
+	symbol := Symbol{}
+	value, err := StringToName(string(name))
+	if err != nil {
+		return symbol, fmt.Errorf("name %s is invalid: %s", name, err)
+	}
+
+	symbol.Precision = uint8(value & 0xFF)
+	symbol.Symbol = SymbolCode(value >> 8).String()
+
+	return symbol, nil
+}
+
 func StringToSymbol(str string) (Symbol, error) {
 	symbol := Symbol{}
 	if !symbolRegex.MatchString(str) {
@@ -268,6 +281,19 @@ func (s Symbol) MustSymbolCode() SymbolCode {
 	return symbolCode
 }
 
+func (s Symbol) ToName() (uint64, error) {
+	symbolCode, err := s.SymbolCode()
+	if err != nil {
+		return 0, fmt.Errorf("symbol %s is not a valid symbol code: %s", s.Symbol, err)
+	}
+
+	return uint64(symbolCode)<<8 | uint64(s.Precision), nil
+}
+
+func (s Symbol) String() string {
+	return fmt.Sprintf("%d,%s", s.Precision, s.Symbol)
+}
+
 type SymbolCode uint64
 
 func NameToSymbolCode(name Name) (SymbolCode, error) {
@@ -297,8 +323,8 @@ func StringToSymbolCode(str string) (SymbolCode, error) {
 	return SymbolCode(symbolCode), nil
 }
 
-func (sc SymbolCode) ToName() Name {
-	return Name(NameToString(uint64(sc)))
+func (sc SymbolCode) ToName() uint64 {
+	return uint64(sc)
 }
 
 func (sc SymbolCode) String() string {
