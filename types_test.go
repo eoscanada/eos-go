@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -502,6 +503,86 @@ func TestStringToSymbolCode(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, test.expectedValue, uint64(actual))
 				assert.Equal(t, Name(test.expectedName), actual.ToName())
+			} else {
+				assert.Equal(t, test.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestSymbolCode_String(t *testing.T) {
+	tests := []struct {
+		in          uint64
+		expected    string
+		expectedErr error
+	}{
+		{1146312003, "CUSD", nil},
+		{280470110539, "KARMA", nil},
+		{20809, "IQ", nil},
+		{5459781, "EOS", nil},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual := SymbolCode(test.in).String()
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestNameToSymbolCode(t *testing.T) {
+	tests := []struct {
+		in             string
+		expected       SymbolCode
+		expectedString string
+		expectedErr    error
+	}{
+		{"......24eheo3", SymbolCode(1146312003), "CUSD", nil},
+		{".....kehed.of", SymbolCode(280470110539), "KARMA", nil},
+		{".........1cod", SymbolCode(20809), "IQ", nil},
+		{"........ehbo5", SymbolCode(5459781), "EOS", nil},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual, err := NameToSymbolCode(Name(test.in))
+			if test.expectedErr == nil {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, actual)
+				assert.Equal(t, test.expectedString, actual.String())
+			} else {
+				assert.Equal(t, test.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestStringToSymbol(t *testing.T) {
+	tests := []struct {
+		in          string
+		expected    Symbol
+		expectedErr error
+	}{
+		{"1,CUSD", Symbol{Precision: 1, Symbol: "CUSD"}, nil},
+		{"2,CUSD", Symbol{Precision: 2, Symbol: "CUSD"}, nil},
+		{"2,KARMA", Symbol{Precision: 2, Symbol: "KARMA"}, nil},
+		{"4,IQ", Symbol{Precision: 4, Symbol: "IQ"}, nil},
+		{"4,EOS", Symbol{Precision: 4, Symbol: "EOS"}, nil},
+		{"9,EOSEOSA", Symbol{Precision: 9, Symbol: "EOSEOSA"}, nil},
+
+		{"EOS", Symbol{}, errors.New("EOS is not a valid symbol")},
+		{",EOS", Symbol{}, errors.New(",EOS is not a valid symbol")},
+		{"10,EOS", Symbol{}, errors.New("10,EOS is not a valid symbol")},
+		{"10,EOS", Symbol{}, errors.New("10,EOS is not a valid symbol")},
+		{"1,EOSEOSEO", Symbol{}, errors.New("1,EOSEOSEO is not a valid symbol")},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual, err := StringToSymbol(test.in)
+			if test.expectedErr == nil {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, actual)
 			} else {
 				assert.Equal(t, test.expectedErr, err)
 			}
