@@ -22,7 +22,11 @@ func ExtendedStringToName(s string) (val uint64, err error) {
 
 	if symbolCodeRegex.MatchString(s) {
 		symbolCode, err := StringToSymbolCode(s)
-		return symbolCode.ToName(), err
+		if err != nil {
+			return 0, err
+		}
+
+		return symbolCode.ToName(), nil
 	}
 
 	return StringToName(s)
