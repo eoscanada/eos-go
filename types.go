@@ -247,6 +247,10 @@ func StringToSymbolCode(str string) (SymbolCode, error) {
 	return SymbolCode(symbolCode), nil
 }
 
+func (sc SymbolCode) ToName() Name {
+	return Name(NameToString(uint64(sc)))
+}
+
 // EOSSymbol represents the standard EOS symbol on the chain.  It's
 // here just to speed up things.
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
