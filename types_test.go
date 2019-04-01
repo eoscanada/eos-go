@@ -537,7 +537,7 @@ func TestStringToSymbol(t *testing.T) {
 				asName, err := actual.ToName()
 				if test.expectedName != "" {
 					require.NoError(t, err)
-					assert.Equal(t, test.expectedName, NameToString(asName))
+					assert.Equal(t, test.expectedName, asName)
 				}
 			} else {
 				assert.Equal(t, test.expectedErr, err)
@@ -565,7 +565,7 @@ func TestStringToSymbolCode(t *testing.T) {
 			if test.expectedErr == nil {
 				require.NoError(t, err)
 				assert.Equal(t, test.expectedValue, uint64(actual))
-				assert.Equal(t, test.expectedName, NameToString(actual.ToName()))
+				assert.Equal(t, test.expectedName, actual.ToName())
 			} else {
 				assert.Equal(t, test.expectedErr, err)
 			}

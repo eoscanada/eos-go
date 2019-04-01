@@ -17,7 +17,7 @@ func ExtendedStringToName(s string) (val uint64, err error) {
 			return 0, err
 		}
 
-		return symbol.ToName()
+		return symbol.ToUint64()
 	}
 
 	if symbolCodeRegex.MatchString(s) {
@@ -26,7 +26,7 @@ func ExtendedStringToName(s string) (val uint64, err error) {
 			return 0, err
 		}
 
-		return symbolCode.ToName(), nil
+		return uint64(symbolCode), nil
 	}
 
 	return StringToName(s)

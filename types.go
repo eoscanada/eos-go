@@ -281,13 +281,21 @@ func (s Symbol) MustSymbolCode() SymbolCode {
 	return symbolCode
 }
 
-func (s Symbol) ToName() (uint64, error) {
+func (s Symbol) ToUint64() (uint64, error) {
 	symbolCode, err := s.SymbolCode()
 	if err != nil {
 		return 0, fmt.Errorf("symbol %s is not a valid symbol code: %s", s.Symbol, err)
 	}
 
 	return uint64(symbolCode)<<8 | uint64(s.Precision), nil
+}
+
+func (s Symbol) ToName() (string, error) {
+	u, err := s.ToUint64()
+	if err != nil {
+		return "", err
+	}
+	return NameToString(u), nil
 }
 
 func (s Symbol) String() string {
@@ -323,8 +331,8 @@ func StringToSymbolCode(str string) (SymbolCode, error) {
 	return SymbolCode(symbolCode), nil
 }
 
-func (sc SymbolCode) ToName() uint64 {
-	return uint64(sc)
+func (sc SymbolCode) ToName() string {
+	return NameToString(uint64(sc))
 }
 
 func (sc SymbolCode) String() string {
