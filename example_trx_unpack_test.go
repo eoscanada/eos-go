@@ -14,7 +14,8 @@ func ExamplePackedTransaction_Unpack() {
 		panic(fmt.Errorf("unmarshaling to PackedTransaction: %s", err))
 	}
 
-	signedTrx, err := packedTrx.Unpack()
+	var signedTrx *eos.SignedTransaction
+	signedTrx, err = packedTrx.Unpack()
 	if err != nil {
 		panic(fmt.Errorf("unpacking transaction: %s", err))
 	}
@@ -25,12 +26,12 @@ func ExamplePackedTransaction_Unpack() {
 func packedTrxData() []byte {
 	return []byte(`
 		{
-			"signatures": [
-				"SIG_K1_KcVC8F2bH5ETYRNeZwK27PQW6WVGmPcB1kGHYkT7sqH91JaY3YuLt5UuFo5w5o2QzLfMEXRdwWaH8qesSiD3MaKyW732Jq"
-			],
-			"compression": "none",
-			"packed_context_free_data": "",
-			"packed_trx": "714d7d5c5149e2bb30a9000000000100a6823403ea3055000000572d3ccdcd01000000000060b64a00000000a8ed323227000000000060b64a000000000070b64a307500000000000004454f53000000000674657374203100"
-		}
+		"signatures": [
+		  "SIG_K1_K8VSYk76oK4Hdy23UtAJwwRHtBNP8mbu8uo9TVKsT3si5cujPbRqif8eqxqTwLbKREDFm7eK7YG3skLg9LVXZ54KrEoTuJ"
+		],
+		"compression": "none",
+		"packed_context_free_data": "",
+		"packed_trx": "a67a815c0d358ee0065800000000011082422e6575305500405647ed48b1ba0140a7c3066575305500000000489aa6b94a1c88ee2531ab18a800201ee9053cde8078023ba1229389f58a0c72ef7fe9ee942e6be7705021630a03e206b016a9711064ee11cc894100701a1160f12c37000903729a1b60f3c7b0117900"
+	  }
 	`)
 }

@@ -26,7 +26,7 @@ func TestUnmarshalBlockResp(t *testing.T) {
 	err := json.Unmarshal([]byte(blockResponseJSONData), resp)
 	assert.NoError(t, err)
 
-	timestamp, _ := time.Parse("2006-01-02T15:04:05.000", "2018-07-17T11:18:10.000")
+	timestamp, _ := time.Parse("2006-01-02T15:04:05.999", "2018-07-17T11:18:10.000")
 
 	// Block Header
 	assert.Equal(t, BlockTimestamp{timestamp}, resp.Timestamp)

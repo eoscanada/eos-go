@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"time"
 
 	"math"
 
@@ -395,8 +396,11 @@ func (e *Encoder) writeTstamp(t Tstamp) (err error) {
 
 func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
 	encoderLog.Debug("write block timestamp", zap.Time("time", bt.Time))
-	n := uint32(bt.Unix() - 946684800)
-	return e.writeUint32(n)
+
+	milliseconds := bt.UnixNano() / time.Millisecond.Nanoseconds()
+	slot := (milliseconds - 946684800000) / 500
+
+	return e.writeUint32(uint32(slot))
 }
 
 func (e *Encoder) writeCurrencyName(currency CurrencyName) (err error) {
