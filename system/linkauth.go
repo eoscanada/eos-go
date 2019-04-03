@@ -15,7 +15,10 @@ func NewLinkAuth(account, code eos.AccountName, actionName eos.ActionName, requi
 		Account: AN("eosio"),
 		Name:    ActN("linkauth"),
 		Authorization: []eos.PermissionLevel{
-			{account, eos.PermissionName("active")},
+			{
+				Actor:      account,
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(LinkAuth{
 			Account:     account,

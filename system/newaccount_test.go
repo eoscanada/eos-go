@@ -21,7 +21,10 @@ func TestActionNewAccount(t *testing.T) {
 		Account: eos.AccountName("eosio"),
 		Name:    eos.ActionName("newaccount"),
 		Authorization: []eos.PermissionLevel{
-			{eos.AccountName("eosio"), eos.PermissionName("active")},
+			{
+				Actor:      eos.AccountName("eosio"),
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(NewAccount{
 			Creator: eos.AccountName("eosio"),
@@ -78,7 +81,10 @@ func TestMarshalTransactionAndSigned(t *testing.T) {
 		Account: eos.AccountName("eosio"),
 		Name:    eos.ActionName("newaccount"),
 		Authorization: []eos.PermissionLevel{
-			{eos.AccountName("eosio"), eos.PermissionName("active")},
+			{
+				Actor:      eos.AccountName("eosio"),
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(NewAccount{
 			Creator: eos.AccountName("eosio"),
@@ -109,7 +115,10 @@ func TestMarshalTransactionAndPack(t *testing.T) {
 		Account: eos.AccountName("eosio"),
 		Name:    eos.ActionName("newaccount"),
 		Authorization: []eos.PermissionLevel{
-			{eos.AccountName("eosio"), eos.PermissionName("active")},
+			{
+				Actor:      eos.AccountName("eosio"),
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(NewAccount{
 			Creator: eos.AccountName("eosio"),
@@ -120,7 +129,10 @@ func TestMarshalTransactionAndPack(t *testing.T) {
 		Account: eos.AccountName("eosio"),
 		Name:    eos.ActionName("transfer"),
 		Authorization: []eos.PermissionLevel{
-			{eos.AccountName("eosio"), eos.PermissionName("active")},
+			{
+				Actor:      eos.AccountName("eosio"),
+				Permission: eos.PermissionName("active"),
+			},
 		},
 		ActionData: eos.NewActionData(NewAccount{
 			Creator: eos.AccountName("eosio"),
