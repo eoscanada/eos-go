@@ -174,6 +174,10 @@ func (c *Catchup) sendSyncRequest(peer *Peer) error {
 		zap.Uint32("startBlock", c.requestedStartBlock),
 		zap.Uint32("endBlock", c.requestedEndBlock))
 
-	return errors.Wrapf(peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1),
-		"send sync request to %s", peer.Address)
+	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
+	if err != nil {
+		return errors.Wrapf(err, "send sync request to %s", peer.Address)
+	}
+
+	return nil
 }

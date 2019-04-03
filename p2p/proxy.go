@@ -1,6 +1,8 @@
 package p2p
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	"go.uber.org/zap"
@@ -112,6 +114,11 @@ func (p *Proxy) Start() error {
 	go p.read(p.Peer2, p.Peer1, errorChannel)
 
 	if p.Peer2.handshakeInfo != nil {
+		err := triggerHandshake(p.Peer2)
+		if err != nil {
+			return fmt.Errorf("connect and start: trigger handshake: %s", err)
+		}
+
 		return errors.Wrap(triggerHandshake(p.Peer2),
 			"connect and start: trigger handshake")
 	}

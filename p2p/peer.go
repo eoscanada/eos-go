@@ -196,12 +196,15 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 	encoder := eos.NewEncoder(buff)
 	err = encoder.Encode(packet)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to encode message %s", message)
 	}
-	_, err = p.Write(buff.Bytes())
 
-	err = errors.Wrapf(err, "write msg to %s err when send : %s", p.Address, message)
-	return
+	_, err = p.Write(buff.Bytes())
+	if err != nil {
+		return errors.Wrapf(err, "write msg to %s", p.Address)
+	}
+
+	return nil
 }
 
 func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
@@ -298,5 +301,10 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 		Generation:               int16(1),
 	}
 
-	return errors.WithStack(p.WriteP2PMessage(handshake))
+	err = p.WriteP2PMessage(handshake)
+	if err != nil {
+		err = errors.Wrapf(err, "sending handshake to %s", p.Address)
+	}
+
+	return nil
 }
