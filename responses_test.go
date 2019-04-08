@@ -447,7 +447,7 @@ func TestUnmarshalPushTransactionResp(t *testing.T) {
 	assert.Equal(t, resp.Processed.ProducerBlockId, "")
 	assert.Equal(t, resp.Processed.Elapsed, uint64(1289))
 	assert.Equal(t, resp.Processed.NetUsage, uint64(1136))
-	assert.Equal(t, resp.Processed.scheduled, false)
+	assert.Equal(t, resp.Processed.Scheduled, false)
 
 	assert.Equal(t, resp.Processed.Receipt.Status, "executed")
 	assert.Equal(t, resp.Processed.Receipt.CpuUsageUs, uint64(1289))
