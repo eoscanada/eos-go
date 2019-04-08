@@ -653,12 +653,14 @@ func enc(v interface{}) (io.Reader, error) {
 		return nil, nil
 	}
 
-	cnt, err := json.Marshal(v)
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+
+	err := encoder.Encode(v)
 	if err != nil {
 		return nil, err
 	}
 
-	//fmt.Println("BODY", string(cnt))
-
-	return bytes.NewReader(cnt), nil
+	return buffer, nil
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/eoscanada/eos-go/token"
 )
 
-func ExampleAPI_Transfer_EOS() {
+func ExampleAPI_PushTransaction_transfer_EOS() {
 	api := eos.New(getAPIURL())
 
 	keyBag := &eos.KeyBag{}

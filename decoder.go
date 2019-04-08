@@ -699,8 +699,13 @@ func (d *Decoder) ReadBlockTimestamp() (out BlockTimestamp, err error) {
 		err = fmt.Errorf("blockTimestamp required [%d] bytes, remaining [%d]", TypeSize.BlockTimestamp, d.remaining())
 		return
 	}
+
+	// Encoded value of block timestamp is the slot, which represents the amount of 500 ms that
+	// has elapsed since block epoch which is Januaray 1st, 2000 (946684800000 Unix Timestamp Milliseconds)
 	n, err := d.ReadUint32()
-	out.Time = time.Unix(int64(n)+946684800, 0)
+	milliseconds := int64(n)*500 + 946684800000
+
+	out.Time = time.Unix(0, milliseconds*1000*1000)
 	decoderLog.Debug("read block timestamp", zap.Time("time", out.Time))
 	return
 }

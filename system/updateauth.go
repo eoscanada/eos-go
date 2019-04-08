@@ -12,7 +12,10 @@ func NewUpdateAuth(account eos.AccountName, permission, parent eos.PermissionNam
 		Account: AN("eosio"),
 		Name:    ActN("updateauth"),
 		Authorization: []eos.PermissionLevel{
-			{account, usingPermission},
+			{
+				Actor:      account,
+				Permission: usingPermission,
+			},
 		},
 		ActionData: eos.NewActionData(UpdateAuth{
 			Account:    account,

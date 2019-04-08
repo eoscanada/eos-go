@@ -6,8 +6,11 @@ import (
 	"compress/zlib"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
+	"reflect"
 	"time"
 
 	"io"
@@ -53,8 +56,56 @@ func (tx *Transaction) SetExpiration(in time.Duration) {
 }
 
 type Extension struct {
-	Type uint16   `json:"type"`
-	Data HexBytes `json:"data"`
+	Type uint16
+	Data HexBytes
+}
+
+func (e *Extension) MarshalJSON() ([]byte, error) {
+	pair := make([]interface{}, 2)
+	pair[0] = e.Type
+	pair[1] = e.Data
+
+	return json.Marshal(&pair)
+}
+
+func (e *Extension) UnmarshalJSON(data []byte) error {
+	var pair []interface{}
+	err := json.Unmarshal(data, &pair)
+	if err != nil {
+		return err
+	}
+
+	typeFloat, ok := pair[0].(float64)
+	if !ok {
+		return unmarshalTypeError(pair[0], typeFloat, e, "Type")
+	}
+
+	if typeFloat < 0 || typeFloat > math.MaxUint16 {
+		return unmarshalTypeError(pair[0], e.Type, e, "Type")
+	}
+
+	e.Type = uint16(typeFloat)
+
+	dataHexString, ok := pair[1].(string)
+	if !ok {
+		return unmarshalTypeError(pair[1], dataHexString, e, "Data")
+	}
+
+	e.Data, err = hex.DecodeString(dataHexString)
+	if err != nil {
+		return unmarshalTypeError(pair[1], e.Data, e, "Data")
+	}
+
+	return nil
+}
+
+func unmarshalTypeError(value interface{}, reflectTypeHost interface{}, target interface{}, field string) *json.UnmarshalTypeError {
+	return &json.UnmarshalTypeError{
+		Value:  fmt.Sprintf("%T", value),
+		Type:   reflect.TypeOf(reflectTypeHost),
+		Struct: fmt.Sprintf("%T", target),
+		Field:  field,
+	}
 }
 
 // Fill sets the fields on a transaction.  If you pass `headBlockID`, then `api` can be nil. If you don't pass `headBlockID`, then the `api` is going to be called to fetch

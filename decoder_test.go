@@ -355,14 +355,18 @@ func TestDecoder_Tstamp(t *testing.T) {
 }
 
 func TestDecoder_BlockTimestamp(t *testing.T) {
-
+	// Represents block timestamp at slot 1, which is 500 millisecons pass
+	// the block epoch which is
 	ts := BlockTimestamp{
-		time.Unix(time.Now().Unix(), 0),
+		time.Unix(0, 500*1000*1000+946684800000*1000*1000),
 	}
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 	enc.writeBlockTimestamp(ts)
+
+	// This represents slot 1 in big endian uint32 encoding
+	assert.Equal(t, "01000000", hex.EncodeToString(buf.Bytes()))
 
 	d := NewDecoder(buf.Bytes())
 
@@ -426,7 +430,7 @@ func TestDecoder_Encode(t *testing.T) {
 	enc := NewEncoder(buf)
 	assert.NoError(t, enc.Encode(s))
 
-	assert.Equal(t, "03616263b5ff6300e7030000000000000000000000000000000000000000000000000000000000000000000002036465660337383903666f6f036261720000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001570000000000000005010203040504ae0f517acd57150b973d23e70701a08601000000000004454f5300000000", hex.EncodeToString(buf.Bytes()))
+	assert.Equal(t, "03616263b5ff6300e7030000000000000000000000000000000000000000000000000000000000000000000002036465660337383903666f6f036261720000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001570000000000000005010203040504ae0f517acd5715162e7b46e70701a08601000000000004454f5300000000", hex.EncodeToString(buf.Bytes()))
 
 	decoder := NewDecoder(buf.Bytes())
 	assert.NoError(t, decoder.Decode(s))
@@ -624,4 +628,42 @@ func TestDecoder_readUint16_missing_data(t *testing.T) {
 
 	_, err = NewDecoder([]byte{}).ReadBlockTimestamp()
 	assert.EqualError(t, err, "blockTimestamp required [4] bytes, remaining [0]")
+}
+
+func TestDecoder_SignedBlock_Full(t *testing.T) {
+	dataHex := "1b146b480000000000ea305500000000000140215a6edeea1e697207b5a917d83edf56a963d03e3d5d8d8e1ddb0900000000000000000000000000000000000000000000000000000000000000006a46611d7b15f71ff42de916e19f8ed1011096178f81d9b17987637a545b152100000000000100002001000000000000000000000000000000000000000000000000000000000000fe001f5e6962745bb4fb84dec1e7779b7e3b58c5fe20ed39c41cac1bdefe3e71568bf67bdfb05e4df40087c9ecbc6d9d0f6bcfcddfdc1d00dc1d035c665936307535ab0001000020fe00000000000000000000000000000000000000000000000000000000000004"
+	data, err := hex.DecodeString(dataHex)
+	require.NoError(t, err)
+
+	var signedBlock *SignedBlock
+	err = UnmarshalBinary(data, &signedBlock)
+	require.NoError(t, err)
+
+	expectedTimestamp, _ := time.Parse("2006-01-02T15:04:05.999-0700", "2019-04-01T22:48:45.500-0400")
+
+	// TODO: I'm not quite sure about endiannes of this value, I would have though it should have been
+	//       equal to `fe00000000000000000000000000000000000000000000000000000000000001` as in the
+	//       nodeos binary data, which is usually all big endian, it is written as
+	//       `01000000000000000000000000000000000000000000000000000000000000fe`.
+	//
+	//       Our current real data has only 0s so it's impossible to tell right endiannes. We would
+	//       need to craft a block with some data in it or search `nodeos` to validate how a `vector<char>`
+	//       is written to binary.
+	//
+	//       Same reasoning apply to both []*Extension fields
+	expectedHeaderExtension, _ := hex.DecodeString("01000000000000000000000000000000000000000000000000000000000000fe")
+	expectedBlockExtension, _ := hex.DecodeString("fe00000000000000000000000000000000000000000000000000000000000004")
+
+	assert.Equal(t, BlockTimestamp{expectedTimestamp}, signedBlock.Timestamp)
+	assert.Equal(t, AccountName("eosio"), signedBlock.Producer)
+	assert.Equal(t, uint16(0), signedBlock.Confirmed)
+	assert.Equal(t, "0000000140215a6edeea1e697207b5a917d83edf56a963d03e3d5d8d8e1ddb09", signedBlock.Previous.String())
+	assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", signedBlock.TransactionMRoot.String())
+	assert.Equal(t, "6a46611d7b15f71ff42de916e19f8ed1011096178f81d9b17987637a545b1521", signedBlock.ActionMRoot.String())
+	assert.Equal(t, uint32(0), signedBlock.ScheduleVersion)
+	assert.Equal(t, (*OptionalProducerSchedule)(nil), signedBlock.NewProducers)
+	assert.Equal(t, []*Extension{&Extension{uint16(0), expectedHeaderExtension}}, signedBlock.HeaderExtensions)
+	assert.Equal(t, "SIG_K1_K7cBDNuka9kLUNAGaCm4FpNTdJwVKY3rP3v2esU8RGv1KXNNDEEdrWBAJSH3cPB8t1478e4RmhjkP48Sbuaqkf6Z5iDZKW", signedBlock.ProducerSignature.String())
+	assert.Equal(t, []TransactionReceipt{}, signedBlock.Transactions)
+	assert.Equal(t, []*Extension{&Extension{uint16(0), expectedBlockExtension}}, signedBlock.BlockExtensions)
 }

@@ -4,6 +4,34 @@ import (
 	"strings"
 )
 
+// ExtendedStringToName acts similar to StringToName with the big differences
+// that it will automtically try to infer from which format to convert to a name.
+// Current rules are:
+// - If the `s` contains a `,` character, assumes it's a `Symbol`
+// - If the `s` contains only upper-case characters and length is <= 7, assumes it's a `SymbolCode`
+// - Otherwise, forwards `s` to `StringToName` directly
+func ExtendedStringToName(s string) (val uint64, err error) {
+	if strings.Contains(s, ",") {
+		symbol, err := StringToSymbol(s)
+		if err != nil {
+			return 0, err
+		}
+
+		return symbol.ToUint64()
+	}
+
+	if symbolCodeRegex.MatchString(s) {
+		symbolCode, err := StringToSymbolCode(s)
+		if err != nil {
+			return 0, err
+		}
+
+		return uint64(symbolCode), nil
+	}
+
+	return StringToName(s)
+}
+
 func StringToName(s string) (val uint64, err error) {
 	// ported from the eosio codebase, libraries/chain/include/eosio/chain/name.hpp
 	var i uint32

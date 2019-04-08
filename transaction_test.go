@@ -66,3 +66,40 @@ func TestTransaction_UnmarshalPacked_Compression(t *testing.T) {
 		})
 	}
 }
+
+func TestTransaction_ExtensionMarshalJSON(t *testing.T) {
+	tests := []struct {
+		in       *Extension
+		expected string
+	}{
+		{&Extension{1, HexBytes([]byte{0x60, 0x01, 0x2a, 0xbd, 0xef})}, `[1, "60012abdef"]`},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual, err := json.Marshal(test.in)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, test.expected, string(actual), string(actual))
+		})
+	}
+}
+
+func TestTransaction_ExtensionUnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		in       string
+		expected Extension
+	}{
+		{`[1, "60012abdef"]`, Extension{1, HexBytes([]byte{0x60, 0x01, 0x2a, 0xbd, 0xef})}},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var actual Extension
+			err := json.Unmarshal([]byte(test.in), &actual)
+			require.NoError(t, err)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}

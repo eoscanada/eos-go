@@ -9,6 +9,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"go.uber.org/zap"
 
 	"go.uber.org/zap/zapcore"
@@ -101,7 +103,7 @@ func (p *Peer) Read() (*eos.Packet, error) {
 	}
 	if err != nil {
 		p2pLog.Error("Connection Read Err", zap.String("address", p.Address), zap.Error(err))
-		return nil, fmt.Errorf("connection: read: %s", err)
+		return nil, errors.Wrapf(err, "connection: read %s err", p.Address)
 	}
 	return packet, nil
 }
@@ -116,7 +118,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 	nodeID := make([]byte, 32)
 	_, err := rand.Read(nodeID)
 	if err != nil {
-		errChan <- fmt.Errorf("generating random node id: %s", err)
+		errChan <- errors.Wrap(err, "generating random node id")
 	}
 
 	p.NodeID = nodeID
@@ -132,13 +134,13 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 
 			ln, err := net.Listen("tcp", p.Address)
 			if err != nil {
-				errChan <- fmt.Errorf("peer init: listening %s: %s", p.Address, err)
+				errChan <- errors.Wrapf(err, "peer init: listening %s", p.Address)
 			}
 
 			p2pLog.Debug("Accepting connection on", address2log)
 			conn, err := ln.Accept()
 			if err != nil {
-				errChan <- fmt.Errorf("peer init: accepting connection on %s: %s", p.Address, err)
+				errChan <- errors.Wrapf(err, "peer init: accepting connection on %s", p.Address)
 			}
 			p2pLog.Debug("Connected on", address2log)
 
@@ -151,7 +153,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 					select {
 					case <-time.After(p.handshakeTimeout):
 						p2pLog.Warn("handshake took too long", address2log)
-						errChan <- fmt.Errorf("handshake took too long: %s", p.Address)
+						errChan <- errors.Wrapf(err, "handshake took too long: %s", p.Address)
 					case <-p.cancelHandshakeTimeout:
 						p2pLog.Warn("cancelHandshakeTimeout canceled", address2log)
 					}
@@ -164,7 +166,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				if p.handshakeTimeout > 0 {
 					p.cancelHandshakeTimeout <- true
 				}
-				errChan <- fmt.Errorf("peer init: dial %s: %s", p.Address, err)
+				errChan <- errors.Wrapf(err, "peer init: dial %s", p.Address)
 				return
 			}
 			p2pLog.Info("Connected to", address2log)
@@ -194,11 +196,15 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 	encoder := eos.NewEncoder(buff)
 	err = encoder.Encode(packet)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to encode message %s", message)
 	}
-	_, err = p.Write(buff.Bytes())
 
-	return
+	_, err = p.Write(buff.Bytes())
+	if err != nil {
+		return errors.Wrapf(err, "write msg to %s", p.Address)
+	}
+
+	return nil
 }
 
 func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
@@ -212,7 +218,7 @@ func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err
 		EndBlock:   endBlockNumber,
 	}
 
-	return p.WriteP2PMessage(syncRequest)
+	return errors.WithStack(p.WriteP2PMessage(syncRequest))
 }
 func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
 	p2pLog.Debug("SendRequest",
@@ -231,10 +237,10 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 		},
 	}
 
-	return p.WriteP2PMessage(request)
+	return errors.WithStack(p.WriteP2PMessage(request))
 }
 
-func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err error) {
+func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
 	p2pLog.Debug("Send Notice",
 		zap.String("peer", p.Address),
 		zap.Uint32("head", headBlockNum),
@@ -251,23 +257,21 @@ func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) (err er
 			Pending: libNum,
 		},
 	}
-	return p.WriteP2PMessage(notice)
+	return errors.WithStack(p.WriteP2PMessage(notice))
 }
 
-func (p *Peer) SendTime() (err error) {
+func (p *Peer) SendTime() error {
 	p2pLog.Debug("SendTime", zap.String("peer", p.Address))
 
 	notice := &eos.TimeMessage{}
-	return p.WriteP2PMessage(notice)
+	return errors.WithStack(p.WriteP2PMessage(notice))
 }
 
-func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
+func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
-		logErr("publicKey err", err)
-		err = fmt.Errorf("sending handshake to %s: create public key: %s", p.Address, err)
-		return
+		return errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
 	}
 
 	p2pLog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
@@ -299,7 +303,8 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) (err error) {
 
 	err = p.WriteP2PMessage(handshake)
 	if err != nil {
-		err = fmt.Errorf("sending handshake to %s: %s", p.Address, err)
+		err = errors.Wrapf(err, "sending handshake to %s", p.Address)
 	}
-	return
+
+	return nil
 }
