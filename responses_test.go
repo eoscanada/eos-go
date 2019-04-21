@@ -440,16 +440,37 @@ func TestUnmarshalPushTransactionResp(t *testing.T) {
 
 	expectedTime, _ := ParseJSONTime("2019-03-06T13:11:40.000")
 
-	assert.Equal(t, resp.TransactionID, "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000")
-	assert.Equal(t, resp.Processed.ID.String(), "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000")
-	assert.Equal(t, resp.Processed.BlockNum, uint32(176239))
-	assert.Equal(t, resp.Processed.BlockTime, expectedTime)
-	assert.Equal(t, resp.Processed.ProducerBlockId, "")
-	assert.Equal(t, resp.Processed.Elapsed, uint64(1289))
-	assert.Equal(t, resp.Processed.NetUsage, uint64(1136))
-	assert.Equal(t, resp.Processed.Scheduled, false)
+	TransactionID := "abab142d000040084d9e64dbd4000029b744a5fbd1209328054be53916300000"
 
-	assert.Equal(t, resp.Processed.Receipt.Status, "executed")
-	assert.Equal(t, resp.Processed.Receipt.CpuUsageUs, uint64(1289))
-	assert.Equal(t, resp.Processed.Receipt.NetUsageWords, uint64(17))
+	assert.Equal(t, TransactionID, resp.TransactionID)
+	assert.Equal(t, TransactionID, resp.Processed.ID.String())
+	assert.Equal(t, uint32(176239), resp.Processed.BlockNum)
+	assert.Equal(t, expectedTime, resp.Processed.BlockTime)
+	assert.Equal(t, "", resp.Processed.ProducerBlockId)
+	assert.Equal(t, uint64(1289), resp.Processed.Elapsed)
+	assert.Equal(t, uint64(1136), resp.Processed.NetUsage)
+	assert.Equal(t, false, resp.Processed.Scheduled)
+
+	assert.Equal(t, "executed", resp.Processed.Receipt.Status)
+	assert.Equal(t, uint64(1289), resp.Processed.Receipt.CpuUsageUs)
+	assert.Equal(t, uint64(17), resp.Processed.Receipt.NetUsageWords)
+
+	assert.Equal(t, 1, len(resp.Processed.ActionTraces))
+	assert.Equal(t, "eosio.token", string(resp.Processed.ActionTraces[0].Receipt.Receiver))
+	assert.Equal(t, "cd9e3f72031ebcc31b6fe67dadd03651232e0000b400fcab2801004381e70024", resp.Processed.ActionTraces[0].Receipt.ActionDigest)
+	assert.Equal(t, Uint64(227002914), resp.Processed.ActionTraces[0].Receipt.GlobalSequence)
+	assert.Equal(t, Uint64(41100400), resp.Processed.ActionTraces[0].Receipt.ReceiveSequence)
+	assert.Equal(t, "ariontestusr", string(resp.Processed.ActionTraces[0].Receipt.AuthSequence[0].Account))
+	assert.Equal(t, Uint64(7), resp.Processed.ActionTraces[0].Receipt.AuthSequence[0].Sequence)
+	assert.Equal(t, Uint64(3), resp.Processed.ActionTraces[0].Receipt.CodeSequence)
+	assert.Equal(t, Uint64(2), resp.Processed.ActionTraces[0].Receipt.ABISequence)
+
+	assert.Equal(t, "eosio.token", string(resp.Processed.ActionTraces[0].Action.Account))
+	assert.Equal(t, "transfer", string(resp.Processed.ActionTraces[0].Action.Name))
+	assert.Equal(t, "ariontestusr", string(resp.Processed.ActionTraces[0].Action.Authorization[0].Actor))
+	assert.Equal(t, "active", string(resp.Processed.ActionTraces[0].Action.Authorization[0].Permission))
+	assert.Equal(t, "4004b90aeb000035400400009049dd00102700000000000004450053000000000700323600313138", resp.Processed.ActionTraces[0].Action.HexData.String())
+	assert.Equal(t, 1136, resp.Processed.ActionTraces[0].Elapsed)
+	assert.Equal(t, "", resp.Processed.ActionTraces[0].Console)
+	assert.Equal(t, TransactionID, resp.Processed.ActionTraces[0].TransactionID.String())
 }

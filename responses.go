@@ -300,9 +300,9 @@ type TransactionProcessed struct {
 	NetUsage        uint64           `json:"net_usage"`
 	Scheduled       bool             `json:"scheduled"`
 	// except
-	ActionTraces         []Trace  `json:"action_traces"`         // it isn`t unpack! Who knows where it has been described in the documentation?
-	DeferredTransactions []string `json:"deferred_transactions"` // that's not right... dig to find what's there..
-	BlockID              string   `json:"block_id"`
+	ActionTraces         []ActionTrace `json:"action_traces"`         // it isn`t unpack! Who knows where it has been described in the documentation?
+	DeferredTransactions []string      `json:"deferred_transactions"` // that's not right... dig to find what's there..
+	BlockID              string        `json:"block_id"`
 }
 
 type ProcessedReceipt struct {
