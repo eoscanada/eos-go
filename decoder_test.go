@@ -654,7 +654,7 @@ func TestDecoder_SignedBlock_Full(t *testing.T) {
 	expectedHeaderExtension, _ := hex.DecodeString("01000000000000000000000000000000000000000000000000000000000000fe")
 	expectedBlockExtension, _ := hex.DecodeString("fe00000000000000000000000000000000000000000000000000000000000004")
 
-	assert.Equal(t, BlockTimestamp{expectedTimestamp}, signedBlock.Timestamp)
+	assert.Equal(t, BlockTimestamp{expectedTimestamp.Local()}, signedBlock.Timestamp)
 	assert.Equal(t, AccountName("eosio"), signedBlock.Producer)
 	assert.Equal(t, uint16(0), signedBlock.Confirmed)
 	assert.Equal(t, "0000000140215a6edeea1e697207b5a917d83edf56a963d03e3d5d8d8e1ddb09", signedBlock.Previous.String())
