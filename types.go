@@ -487,9 +487,9 @@ type PermissionLevelWeight struct {
 
 type Authority struct {
 	Threshold uint32                  `json:"threshold"`
-	Keys      []KeyWeight             `json:"keys,omitempty"`
-	Accounts  []PermissionLevelWeight `json:"accounts,omitempty"`
-	Waits     []WaitWeight            `json:"waits,omitempty"`
+	Keys      []KeyWeight             `json:"keys"`
+	Accounts  []PermissionLevelWeight `json:"accounts"`
+	Waits     []WaitWeight            `json:"waits"`
 }
 
 type KeyWeight struct {
