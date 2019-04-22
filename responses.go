@@ -192,8 +192,17 @@ type GetTableByScopeRequest struct {
 }
 
 type GetTableByScopeResp struct {
-	More string          `json:"more"`
-	Rows json.RawMessage `json:"rows"`
+	More string                     `json:"more"`
+	Rows []GetTableByScopeResultRow `json:"rows"`
+}
+
+// GetTableByScopeResultRow is a row of data returned by chain/get_table_by_scope API endpoint
+type GetTableByScopeResultRow struct {
+	Code  string `json:"code"`
+	Scope string `json:"scope"`
+	Table string `json:"table"`
+	Payer string `json:"payer"`
+	Count int    `json:"count"`
 }
 
 type GetTableRowsRequest struct {
