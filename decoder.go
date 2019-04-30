@@ -793,26 +793,24 @@ func (d *Decoder) ReadExtendedAsset() (out ExtendedAsset, err error) {
 }
 
 func (d *Decoder) ReadSymbol() (out *Symbol, err error) {
+	rawValue, err := d.ReadUint64()
+	if err != nil {
+		return out, fmt.Errorf("read symbol: %s", err)
+	}
 
-	precision, err := d.ReadUInt8()
-	if err != nil {
-		return out, fmt.Errorf("read symbol: read precision: %s", err)
-	}
-	symbol, err := d.ReadString()
-	if err != nil {
-		return out, fmt.Errorf("read symbol: read symbol: %s", err)
-	}
+	precision := uint8(rawValue & 0xFF)
+	symbolCode := SymbolCode(rawValue >> 8).String()
 
 	out = &Symbol{
 		Precision: precision,
-		Symbol:    symbol,
+		Symbol:    symbolCode,
 	}
-	decoderLog.Debug("read symbol", zap.String("symbol", symbol), zap.Uint8("precision", precision))
+
+	decoderLog.Debug("read symbol", zap.String("symbol", symbolCode), zap.Uint8("precision", precision))
 	return
 }
 
 func (d *Decoder) ReadSymbolCode() (out SymbolCode, err error) {
-
 	n, err := d.ReadUint64()
 	out = SymbolCode(n)
 

@@ -629,6 +629,16 @@ func TestABI_Read_TimePointSec(t *testing.T) {
 	assert.Equal(t, `{"name":"2018-10-30T18:06:09"}`, string(out))
 }
 
+func TestABI_Read_Symbol(t *testing.T) {
+	abi := ABI{}
+	data, err := hex.DecodeString("04454f5300000000")
+	require.NoError(t, err)
+
+	out, err := abi.decodeField(NewDecoder(data), "name", "symbol", false, false, []byte("{}"))
+	require.NoError(t, err)
+	assert.Equal(t, `{"name":"4,EOS"}`, string(out))
+}
+
 func TestABIDecoder_analyseFieldType(t *testing.T) {
 
 	testCases := []map[string]interface{}{

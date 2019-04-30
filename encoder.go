@@ -128,6 +128,13 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeBlockTimestamp(cv)
 	case CurrencyName:
 		return e.writeCurrencyName(cv)
+	case Symbol:
+		value, err := cv.ToUint64()
+		if err != nil {
+			return fmt.Errorf("encoding symbol: %s", err)
+		}
+
+		return e.writeUint64(value)
 	case SymbolCode:
 		return e.writeUint64(uint64(cv))
 	case Asset:
