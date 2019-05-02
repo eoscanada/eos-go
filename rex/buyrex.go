@@ -4,7 +4,7 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
-func NewBuyREX(from eos.AccountName, amount eos.AccountName) *eos.Action {
+func NewBuyREX(from eos.AccountName, amount eos.Asset) *eos.Action {
 	return &eos.Action{
 		Account: REXAN,
 		Name:    ActN("buyrex"),
@@ -20,5 +20,5 @@ func NewBuyREX(from eos.AccountName, amount eos.AccountName) *eos.Action {
 
 type BuyREX struct {
 	From   eos.AccountName
-	Amount eos.AccountName
+	Amount eos.Asset
 }

@@ -427,6 +427,67 @@ func TestNewAsset(t *testing.T) {
 	}
 }
 
+func TestNewAssetFromString(t *testing.T) {
+	tests := []struct {
+		in     string
+		amount int64
+	}{
+		{
+			"1000.0000000 TEST",
+			10000000000,
+		},
+		{
+			"1000.0000 TEST",
+			10000000000,
+		},
+		{
+			"1000",
+			10000000000,
+		},
+		{
+			"1000 TEST",
+			10000000000,
+		},
+		{
+			"1000.1 TEST",
+			10001000000,
+		},
+		{
+			"1000.1",
+			10001000000,
+		},
+		{
+			"1000.01",
+			10000100000,
+		},
+		{
+			"1000.001",
+			10000010000,
+		},
+		{
+			"1.0001",
+			10001000,
+		},
+		{
+			"0.1",
+			1000000,
+		},
+	}
+
+	symbol := MustStringToSymbol("7,TEST")
+
+	for _, test := range tests {
+		asset, err := NewAssetFromString(symbol, test.in)
+		require.NoError(t, err)
+		assert.Equal(t, asset.Amount, Int64(test.amount))
+		assert.Equal(t, asset.Symbol.Symbol, "TEST")
+		assert.Equal(t, asset.Symbol.Precision, uint8(7))
+	}
+
+	_, err := NewAssetFromString(symbol, "10.00000001")
+	assert.Error(t, err)
+}
+
 func TestNewEOSAssetFromString(t *testing.T) {
 
 	tests := []struct {

@@ -4,19 +4,19 @@ import (
 	eos "github.com/eoscanada/eos-go"
 )
 
-func NewCancelREXorder(owner eos.AccountName) *eos.Action {
+func NewCancelREXOrder(owner eos.AccountName) *eos.Action {
 	return &eos.Action{
 		Account: REXAN,
 		Name:    ActN("cnclrexorder"),
 		Authorization: []eos.PermissionLevel{
 			{Actor: owner, Permission: eos.PermissionName("active")},
 		},
-		ActionData: eos.NewActionData(CancelREXorder{
+		ActionData: eos.NewActionData(CancelREXOrder{
 			Owner: owner,
 		}),
 	}
 }
 
-type CancelREXorder struct {
+type CancelREXOrder struct {
 	Owner eos.AccountName
 }

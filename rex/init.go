@@ -5,7 +5,7 @@ import eos "github.com/eoscanada/eos-go"
 func init() {
 	eos.RegisterAction(REXAN, ActN("buyrex"), BuyREX{})
 	eos.RegisterAction(REXAN, ActN("closerex"), CloseREX{})
-	eos.RegisterAction(REXAN, ActN("cnclrexorder"), CancelREXorder{})
+	eos.RegisterAction(REXAN, ActN("cnclrexorder"), CancelREXOrder{})
 	eos.RegisterAction(REXAN, ActN("consolidate"), Consolidate{})
 	eos.RegisterAction(REXAN, ActN("defcpuloan"), DefundCPULoan{})
 	eos.RegisterAction(REXAN, ActN("defnetloan"), DefundNetLoan{})

@@ -259,6 +259,15 @@ func StringToSymbol(str string) (Symbol, error) {
 	return symbol, nil
 }
 
+func MustStringToSymbol(str string) Symbol {
+	symbol, err := StringToSymbol(str)
+	if err != nil {
+		panic("invalid symbol " + str)
+	}
+
+	return symbol
+}
+
 func (s Symbol) SymbolCode() (SymbolCode, error) {
 	if s.symbolCode != 0 {
 		return SymbolCode(s.symbolCode), nil
@@ -275,7 +284,7 @@ func (s Symbol) SymbolCode() (SymbolCode, error) {
 func (s Symbol) MustSymbolCode() SymbolCode {
 	symbolCode, err := StringToSymbolCode(s.Symbol)
 	if err != nil {
-		panic("Invalid symbol code " + s.Symbol)
+		panic("invalid symbol code " + s.Symbol)
 	}
 
 	return symbolCode
@@ -355,36 +364,60 @@ func (sc SymbolCode) String() string {
 // here just to speed up things.
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
 
-func NewEOSAssetFromString(amount string) (out Asset, err error) {
-	if len(amount) == 0 {
-		return out, fmt.Errorf("cannot be an empty string")
+// EOSSymbol represents the standard REX symbol on the chain.  It's
+// here just to speed up things.
+var REXSymbol = Symbol{Precision: 4, Symbol: "REX"}
+
+func NewEOSAssetFromString(input string) (out Asset, err error) {
+	return NewAssetFromString(EOSSymbol, input)
+}
+
+func NewREXAssetFromString(input string) (out Asset, err error) {
+	return NewAssetFromString(REXSymbol, input)
+}
+
+func NewAssetFromString(symbol Symbol, input string) (out Asset, err error) {
+	symbolCode := symbol.MustSymbolCode().String()
+	precision := symbol.Precision
+
+	if len(input) == 0 {
+		return out, fmt.Errorf("input cannot be an empty string")
 	}
 
-	if strings.Contains(amount, " EOS") {
-		amount = strings.Replace(amount, " EOS", "", 1)
+	if strings.Contains(input, " "+symbolCode) {
+		input = strings.Replace(input, " "+symbolCode, "", 1)
 	}
-	if !strings.Contains(amount, ".") {
-		val, err := strconv.ParseInt(amount, 10, 64)
+
+	if !strings.Contains(input, ".") {
+		val, err := strconv.ParseInt(input, 10, 64)
 		if err != nil {
 			return out, err
 		}
-		return NewEOSAsset(val * 10000), nil
+
+		return Asset{
+			Amount: Int64(val * int64(math.Pow10(int(precision)))),
+			Symbol: Symbol{Precision: precision, Symbol: symbolCode},
+		}, nil
 	}
 
-	parts := strings.Split(amount, ".")
+	parts := strings.Split(input, ".")
 	if len(parts) != 2 {
-		return out, fmt.Errorf("cannot have two . in amount")
+		return out, fmt.Errorf("cannot have two . in input")
 	}
 
-	if len(parts[1]) > 4 {
-		return out, fmt.Errorf("EOS has only 4 decimals")
+	if len(parts[1]) > int(precision) {
+		return out, fmt.Errorf("%s has max %d decimals", symbolCode, precision)
 	}
 
-	val, err := strconv.ParseInt(strings.Replace(amount, ".", "", 1), 10, 64)
+	val, err := strconv.ParseInt(strings.Replace(input, ".", "", 1), 10, 64)
 	if err != nil {
 		return out, err
 	}
-	return NewEOSAsset(val * int64(math.Pow10(4-len(parts[1])))), nil
+
+	return Asset{
+		Amount: Int64(val * int64(math.Pow10(int(precision)-len(parts[1])))),
+		Symbol: Symbol{Precision: precision, Symbol: symbolCode},
+	}, nil
 }
 
 func NewEOSAsset(amount int64) Asset {
@@ -392,6 +425,9 @@ func NewEOSAsset(amount int64) Asset {
 }
 
 // NewAsset parses a string like `1000.0000 EOS` into a properly setup Asset
+//
+// Deprecated: Use NewEOSAssetFromString instead of EOS asset parsing or NewAssetFromString
+// for generic asset from string
 func NewAsset(in string) (out Asset, err error) {
 	sec := strings.SplitN(in, " ", 2)
 	if len(sec) != 2 {
