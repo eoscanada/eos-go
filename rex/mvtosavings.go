@@ -13,6 +13,7 @@ func NewMoveToSavings(owner eos.AccountName, rex eos.Asset) *eos.Action {
 		},
 		ActionData: eos.NewActionData(MoveToSavings{
 			Owner: owner,
+			REX:   rex,
 		}),
 	}
 }
