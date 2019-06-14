@@ -364,94 +364,140 @@ func (sc SymbolCode) String() string {
 // here just to speed up things.
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
 
-// EOSSymbol represents the standard REX symbol on the chain.  It's
+// REXSymbol represents the standard REX symbol on the chain.  It's
 // here just to speed up things.
 var REXSymbol = Symbol{Precision: 4, Symbol: "REX"}
-
-func NewEOSAssetFromString(input string) (out Asset, err error) {
-	return NewAssetFromString(EOSSymbol, input)
-}
-
-func NewREXAssetFromString(input string) (out Asset, err error) {
-	return NewAssetFromString(REXSymbol, input)
-}
-
-func NewAssetFromString(symbol Symbol, input string) (out Asset, err error) {
-	symbolCode := symbol.MustSymbolCode().String()
-	precision := symbol.Precision
-
-	if len(input) == 0 {
-		return out, fmt.Errorf("input cannot be an empty string")
-	}
-
-	if strings.Contains(input, " "+symbolCode) {
-		input = strings.Replace(input, " "+symbolCode, "", 1)
-	}
-
-	if !strings.Contains(input, ".") {
-		val, err := strconv.ParseInt(input, 10, 64)
-		if err != nil {
-			return out, err
-		}
-
-		return Asset{
-			Amount: Int64(val * int64(math.Pow10(int(precision)))),
-			Symbol: Symbol{Precision: precision, Symbol: symbolCode},
-		}, nil
-	}
-
-	parts := strings.Split(input, ".")
-	if len(parts) != 2 {
-		return out, fmt.Errorf("cannot have two . in input")
-	}
-
-	if len(parts[1]) > int(precision) {
-		return out, fmt.Errorf("%s has max %d decimals", symbolCode, precision)
-	}
-
-	val, err := strconv.ParseInt(strings.Replace(input, ".", "", 1), 10, 64)
-	if err != nil {
-		return out, err
-	}
-
-	return Asset{
-		Amount: Int64(val * int64(math.Pow10(int(precision)-len(parts[1])))),
-		Symbol: Symbol{Precision: precision, Symbol: symbolCode},
-	}, nil
-}
 
 func NewEOSAsset(amount int64) Asset {
 	return Asset{Amount: Int64(amount), Symbol: EOSSymbol}
 }
 
-// NewAsset parses a string like `1000.0000 EOS` into a properly setup Asset
+// NewAsset reads from a string an EOS asset.
 //
-// Deprecated: Use NewEOSAssetFromString instead of EOS asset parsing or NewAssetFromString
-// for generic asset from string
+// Deprecated: Use `NewAssetFromString` instead
 func NewAsset(in string) (out Asset, err error) {
-	sec := strings.SplitN(in, " ", 2)
-	if len(sec) != 2 {
+	return NewAssetFromString(in)
+}
+
+// NewAssetFromString reads a string an decode it to an eos.Asset
+// structure if possible. The input must contains an amount and
+// a symbol. The precision is inferred based on the actual number
+// of decimals present.
+func NewAssetFromString(in string) (out Asset, err error) {
+	out, err = newAssetFromString(in)
+	if err != nil {
+		return out, err
+	}
+
+	if out.Symbol.Symbol == "" {
 		return out, fmt.Errorf("invalid format %q, expected an amount and a currency symbol", in)
 	}
 
-	if len(sec[1]) > 7 {
-		return out, fmt.Errorf("currency symbol %q too long", sec[1])
+	return
+}
+
+func NewEOSAssetFromString(input string) (Asset, error) {
+	return NewFixedSymbolAssetFromString(EOSSymbol, input)
+}
+
+func NewREXAssetFromString(input string) (Asset, error) {
+	return NewFixedSymbolAssetFromString(REXSymbol, input)
+}
+
+func NewFixedSymbolAssetFromString(symbol Symbol, input string) (out Asset, err error) {
+	integralPart, decimalPart, symbolPart, err := splitAsset(input)
+	if err != nil {
+		return out, err
 	}
 
-	out.Symbol.Symbol = sec[1]
-	amount := sec[0]
-	amountSec := strings.SplitN(amount, ".", 2)
+	symbolCode := symbol.MustSymbolCode().String()
+	precision := symbol.Precision
 
-	if len(amountSec) == 2 {
-		out.Symbol.Precision = uint8(len(amountSec[1]))
+	if len(decimalPart) > int(precision) {
+		return out, fmt.Errorf("symbol %s precision mismatch: expected %d, got %d", symbol, precision, len(decimalPart))
 	}
 
-	val, err := strconv.ParseInt(strings.Replace(amount, ".", "", 1), 10, 64)
+	if symbolPart != "" && symbolPart != symbolCode {
+		return out, fmt.Errorf("symbol %s code mismatch: expected %s, got %s", symbol, symbolCode, symbolPart)
+	}
+
+	if len(decimalPart) < int(precision) {
+		decimalPart += strings.Repeat("0", int(precision)-len(decimalPart))
+	}
+
+	val, err := strconv.ParseInt(integralPart+decimalPart, 10, 64)
+	if err != nil {
+		return out, err
+	}
+
+	return Asset{
+		Amount: Int64(val),
+		Symbol: Symbol{Precision: precision, Symbol: symbolCode},
+	}, nil
+}
+
+func newAssetFromString(in string) (out Asset, err error) {
+	integralPart, decimalPart, symbolPart, err := splitAsset(in)
+	if err != nil {
+		return out, err
+	}
+
+	val, err := strconv.ParseInt(integralPart+decimalPart, 10, 64)
 	if err != nil {
 		return out, err
 	}
 
 	out.Amount = Int64(val)
+	out.Symbol.Precision = uint8(len(decimalPart))
+	out.Symbol.Symbol = symbolPart
+
+	return
+}
+
+func splitAsset(input string) (integralPart, decimalPart, symbolPart string, err error) {
+	input = strings.Trim(input, " ")
+	if len(input) == 0 {
+		return "", "", "", fmt.Errorf("input cannot be empty")
+	}
+
+	parts := strings.Split(input, " ")
+	if len(parts) >= 1 {
+		integralPart, decimalPart, err = splitAssetAmount(parts[0])
+		if err != nil {
+			return
+		}
+	}
+
+	if len(parts) == 2 {
+		symbolPart = parts[1]
+		if len(symbolPart) > 7 {
+			return "", "", "", fmt.Errorf("invalid asset %q, symbol should have less than 7 characters", input)
+		}
+	}
+
+	if len(parts) > 2 {
+		return "", "", "", fmt.Errorf("invalid asset %q, expecting an amount alone or an amount and a currency symbol", input)
+	}
+
+	return
+}
+
+func splitAssetAmount(input string) (integralPart, decimalPart string, err error) {
+	parts := strings.Split(input, ".")
+	switch len(parts) {
+	case 1:
+		integralPart = parts[0]
+	case 2:
+		integralPart = parts[0]
+		decimalPart = parts[1]
+
+		if len(decimalPart) > math.MaxUint8 {
+			err = fmt.Errorf("invalid asset amount precision %q, should have less than %d characters", input, math.MaxUint8)
+
+		}
+	default:
+		return "", "", fmt.Errorf("invalid asset amount %q, expected amount to have at most a single dot", input)
+	}
 
 	return
 }
