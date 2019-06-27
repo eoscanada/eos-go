@@ -135,6 +135,28 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 }
 
 func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
+	variant := a.VariantForName(fieldType)
+	if variant != nil {
+		variantIndex, err := binaryDecoder.ReadUvarint32()
+		if err != nil {
+			return nil, fmt.Errorf("unable to read variant type index: %s", err)
+		}
+
+		if int(variantIndex) >= len(variant.Types) {
+			return nil, fmt.Errorf("variant type index is unknown, got type index %d, know up to index %d", variantIndex, len(variant.Types)-1)
+		}
+
+		variantFieldType := variant.Types[variantIndex]
+		abiDecoderLog.Debug("field is a variant", zap.String("type", variantFieldType))
+
+		resolvedVariantFieldType, isAlias := a.TypeNameForNewTypeName(variantFieldType)
+		if isAlias {
+			abiDecoderLog.Debug("variant type is an alias", zap.String("from", fieldType), zap.String("to", resolvedVariantFieldType))
+		}
+
+		fieldType = resolvedVariantFieldType
+	}
+
 	structure := a.StructForName(fieldType)
 
 	if structure != nil {

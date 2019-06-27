@@ -457,6 +457,117 @@ func TestABI_decode_StructFieldArrayType_HasSjsonPathLikeName(t *testing.T) {
 	assert.JSONEq(t, `{"item.1":[1,10]}`, string(json))
 }
 
+func TestABI_decode_StructVariantField(t *testing.T) {
+	abi := &ABI{
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "variant_"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":100}`, string(json))
+}
+
+func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "name", NewTypeName: "my_name"},
+		},
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"my_name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "variant_"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":100}`, string(json))
+}
+
+func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "variant_", NewTypeName: "my_variant"},
+		},
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "my_variant"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":100}`, string(json))
+}
+
 func TestABI_decodeFields(t *testing.T) {
 	types := []ABIType{
 		{NewTypeName: "action.type.1", Type: "name"},

@@ -17,6 +17,7 @@ type ABI struct {
 	RicardianClauses []ClausePair      `json:"ricardian_clauses,omitempty"`
 	ErrorMessages    []ABIErrorMessage `json:"error_messages,omitempty"`
 	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
+	Variants         []VariantDef      `json:"variants,omitempty"`
 }
 
 func NewABI(r io.Reader) (*ABI, error) {
@@ -50,6 +51,15 @@ func (a *ABI) StructForName(name string) *StructDef {
 
 func (a *ABI) TableForName(name TableName) *TableDef {
 	for _, s := range a.Tables {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (a *ABI) VariantForName(name string) *VariantDef {
+	for _, s := range a.Variants {
 		if s.Name == name {
 			return &s
 		}
@@ -95,6 +105,12 @@ type TableDef struct {
 	KeyNames  []string  `json:"key_names,omitempty"`
 	KeyTypes  []string  `json:"key_types,omitempty"`
 	Type      string    `json:"type"`
+}
+
+// VariantDef defines a variant type. See libraries/chain/include/eosio/chain/contracts/types.hpp:78
+type VariantDef struct {
+	Name  string   `json:"name"`
+	Types []string `json:"types,omitempty"`
 }
 
 // ClausePair represents clauses, related to Ricardian Contracts.
