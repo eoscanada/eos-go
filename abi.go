@@ -17,7 +17,7 @@ type ABI struct {
 	RicardianClauses []ClausePair      `json:"ricardian_clauses,omitempty"`
 	ErrorMessages    []ABIErrorMessage `json:"error_messages,omitempty"`
 	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
-	Variants         []VariantDef      `json:"variants,omitempty"`
+	Variants         []VariantDef      `json:"variants,omitempty" eos:"binary_extension"`
 }
 
 func NewABI(r io.Reader) (*ABI, error) {

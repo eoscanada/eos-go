@@ -600,6 +600,52 @@ func TestEncoder_Encode_struct_tag(t *testing.T) {
 
 }
 
+func TestDecoder_Decode_struct_tag_BinaryExtension(t *testing.T) {
+	type BinaryExtensionTestStruct struct {
+		S2 string
+		S1 string `eos:"binary_extension"`
+	}
+
+	var s BinaryExtensionTestStruct
+	err := UnmarshalBinary([]byte{0x3, 0x61, 0x62, 0x63}, &s)
+	require.NoError(t, err)
+
+	assert.Equal(t, "", s.S1)
+	assert.Equal(t, "abc", s.S2)
+
+	err = UnmarshalBinary([]byte{0x3, 0x61, 0x62, 0x63, 0x3, 0x31, 0x32, 0x33}, &s)
+	require.NoError(t, err)
+
+	assert.Equal(t, "123", s.S1)
+	assert.Equal(t, "abc", s.S2)
+}
+
+func TestDecoder_Decode_struct_tag_BinaryExtension_NotGrouped(t *testing.T) {
+	type BinaryExtensionTestStruct struct {
+		S1 string
+		S2 string `eos:"binary_extension"`
+		S3 string
+	}
+
+	require.PanicsWithValue(t, "the `eos: \"binary_extension\"` tags must be packed together at the end of struct fields, problematic field S3", func() {
+		var s BinaryExtensionTestStruct
+		UnmarshalBinary([]byte{0x1, 0x61, 0x01, 0x62, 0x01, 0x63}, &s)
+	})
+}
+
+func TestDecoder_Decode_struct_tag_BinaryExtension_AllAtStart(t *testing.T) {
+	type BinaryExtensionTestStruct struct {
+		S1 string `eos:"binary_extension"`
+		S2 string `eos:"binary_extension"`
+		S3 string
+	}
+
+	require.PanicsWithValue(t, "the `eos: \"binary_extension\"` tags must be packed together at the end of struct fields, problematic field S3", func() {
+		var s BinaryExtensionTestStruct
+		UnmarshalBinary([]byte{0x1, 0x61, 0x01, 0x62, 0x01, 0x63}, &s)
+	})
+}
+
 func TestDecoder_readUint16_missing_data(t *testing.T) {
 
 	_, err := NewDecoder([]byte{}).ReadByte()
