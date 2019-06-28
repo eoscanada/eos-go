@@ -60,6 +60,27 @@ func TestABISerialization_V1_1(t *testing.T) {
 	assert.Equal(t, systemABIGeneratedV1_1, hex.EncodeToString(bin))
 }
 
+func TestABI_ReadPacked_V1_1(t *testing.T) {
+	systemABIV1_1 := strings.ReplaceAll(testSystemABIRaw, "__VERSION__", "eosio::abi/1.1")
+	systemABIV1_1 = strings.ReplaceAll(systemABIV1_1, "__VARIANTS__", `,"variants":[{"name":"variant","types":["name","uint32"]}]`)
+
+	// Here we remove the last byte (in hex so 2 characeters) since we will replace with our own variant hex binary
+	hexData := systemABIGeneratedV1_1[0 : len(systemABIGeneratedV1_0)-2]
+	hexData += "010776617269616e7402046e616d650675696e743332"
+
+	buffer, err := hex.DecodeString(hexData)
+	require.NoError(t, err)
+
+	var abiDef ABI
+	err = UnmarshalBinary(buffer, &abiDef)
+	require.NoError(t, err)
+
+	actualJSON, err := json.Marshal(abiDef)
+	require.NoError(t, err)
+
+	assert.JSONEq(t, systemABIV1_1, string(actualJSON))
+}
+
 var testSystemABIRaw = `{
   "version": "__VERSION__",
   "types": [{
