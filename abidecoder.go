@@ -67,7 +67,12 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
 	resultingJSON := json
 	for _, field := range fields {
-		fieldType, isOptional, isArray := analyzeFieldType(field.Type)
+		fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(field.Type)
+		if isBinaryExtension && !binaryDecoder.hasRemaining() {
+			abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", field.Type))
+			continue
+		}
+
 		typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
 		if isAlias {
 			abiDecoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
@@ -295,17 +300,20 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.Reflect("value", value))
 
 	return sjson.SetBytes(json, fieldName, value)
-
 }
 
-func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArray bool) {
+func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArray bool, isBinaryExtension bool) {
 	if strings.HasSuffix(fieldType, "?") {
-		return fieldType[0 : len(fieldType)-1], true, false
+		return fieldType[0 : len(fieldType)-1], true, false, false
+	}
+
+	if strings.HasSuffix(fieldType, "$") {
+		return fieldType[0 : len(fieldType)-1], false, false, true
 	}
 
 	if strings.HasSuffix(fieldType, "[]") {
-		return fieldType[0 : len(fieldType)-2], false, true
+		return fieldType[0 : len(fieldType)-2], false, true, false
 	}
 
-	return fieldType, false, false
+	return fieldType, false, false, false
 }

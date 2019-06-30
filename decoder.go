@@ -902,6 +902,10 @@ func (d *Decoder) remaining() int {
 	return len(d.data) - d.pos
 }
 
+func (d *Decoder) hasRemaining() bool {
+	return d.remaining() > 0
+}
+
 func UnmarshalBinaryReader(reader io.Reader, v interface{}) (err error) {
 	data, err := ioutil.ReadAll(reader)
 	if err != nil {

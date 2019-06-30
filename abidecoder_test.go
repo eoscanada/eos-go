@@ -568,6 +568,30 @@ func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 	assert.JSONEq(t, `{"name":100}`, string(json))
 }
 
+func TestABI_decode_BinaryExtension(t *testing.T) {
+	abi := &ABI{
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "id", Type: "uint8"},
+					{Name: "name", Type: "name$"},
+				},
+			},
+		},
+	}
+
+	json, err := abi.decode(NewDecoder(HexString("00")), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"id":0}`, string(json))
+
+	json, err = abi.decode(NewDecoder(HexString("000000000000a0a499")), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"id":0,"name":"name"}`, string(json))
+}
+
 func TestABI_decodeFields(t *testing.T) {
 	types := []ABIType{
 		{NewTypeName: "action.type.1", Type: "name"},
@@ -751,17 +775,35 @@ func TestABI_Read_Symbol(t *testing.T) {
 }
 
 func TestABIDecoder_analyseFieldType(t *testing.T) {
-
-	testCases := []map[string]interface{}{
-		{"fieldType": "field.type.1", "expectedName": "field.type.1", "expectedOptional": false, "expectedArray": false},
-		{"fieldType": "field.type.1?", "expectedName": "field.type.1", "expectedOptional": true, "expectedArray": false},
-		{"fieldType": "field.type.1[]", "expectedName": "field.type.1", "expectedOptional": false, "expectedArray": true},
+	testCases := []struct {
+		fieldType               string
+		expectedName            string
+		expectedOptional        bool
+		expectedArray           bool
+		expectedBinaryExtension bool
+	}{
+		{"field.type.1", "field.type.1", false, false, false},
+		{"field.type.1?", "field.type.1", true, false, false},
+		{"field.type.1[]", "field.type.1", false, true, false},
+		{"field.type.1$", "field.type.1", false, false, true},
 	}
 
-	for _, c := range testCases {
-		name, isOption, isArray := analyzeFieldType(c["fieldType"].(string))
-		assert.Equal(t, c["expectedName"], name)
-		assert.Equal(t, c["expectedOptional"], isOption)
-		assert.Equal(t, c["expectedArray"], isArray)
+	for i, test := range testCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			name, isOptional, isArray, isBinaryExtension := analyzeFieldType(test.fieldType)
+			assert.Equal(t, test.expectedName, name)
+			assert.Equal(t, test.expectedOptional, isOptional)
+			assert.Equal(t, test.expectedArray, isArray)
+			assert.Equal(t, test.expectedBinaryExtension, isBinaryExtension)
+		})
 	}
+}
+
+func HexString(input string) []byte {
+	buffer, err := hex.DecodeString(input)
+	if err != nil {
+		panic(err)
+	}
+
+	return buffer
 }
