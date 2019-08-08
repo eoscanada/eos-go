@@ -232,6 +232,14 @@ type Symbol struct {
 	symbolCode uint64
 }
 
+func NewSymbolFromUint64(value uint64) (out Symbol) {
+	out.Precision = uint8(value & 0xFF)
+	out.symbolCode = value >> 8
+	out.Symbol = SymbolCode(out.symbolCode).String()
+
+	return
+}
+
 func NameToSymbol(name Name) (Symbol, error) {
 	symbol := Symbol{}
 	value, err := StringToName(string(name))
@@ -240,7 +248,8 @@ func NameToSymbol(name Name) (Symbol, error) {
 	}
 
 	symbol.Precision = uint8(value & 0xFF)
-	symbol.Symbol = SymbolCode(value >> 8).String()
+	symbol.symbolCode = value >> 8
+	symbol.Symbol = SymbolCode(symbol.symbolCode).String()
 
 	return symbol, nil
 }

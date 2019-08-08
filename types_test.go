@@ -480,8 +480,8 @@ func TestNameToSymbol(t *testing.T) {
 		expected    Symbol
 		expectedErr error
 	}{
-		{".....l2nep1k4", Symbol{Precision: 4, Symbol: "CUSD"}, nil},
-		{"......2ndx2k4", Symbol{Precision: 4, Symbol: "EOS"}, nil},
+		{".....l2nep1k4", Symbol{Precision: 4, Symbol: "CUSD", symbolCode: uint64(1146312003)}, nil},
+		{"......2ndx2k4", Symbol{Precision: 4, Symbol: "EOS", symbolCode: uint64(5459781)}, nil},
 	}
 
 	for i, test := range tests {
@@ -493,6 +493,23 @@ func TestNameToSymbol(t *testing.T) {
 			} else {
 				assert.Equal(t, test.expectedErr, err)
 			}
+		})
+	}
+}
+
+func TestNewSymbolFromUint64(t *testing.T) {
+	tests := []struct {
+		in       uint64
+		expected Symbol
+	}{
+		{293455872769, Symbol{Precision: 1, Symbol: "CUSD", symbolCode: uint64(1146312003)}},
+		{5327108, Symbol{Precision: 4, Symbol: "IQ", symbolCode: uint64(20809)}},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual := NewSymbolFromUint64(test.in)
+			assert.Equal(t, test.expected, actual)
 		})
 	}
 }
