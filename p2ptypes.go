@@ -242,16 +242,6 @@ type PendingSchedule struct {
 	Schedule       *ProducerSchedule `json:"producer_schedule"`
 }
 
-func (b *SignedBlock) ToHeader() *BlockHeader {
-	return &BlockHeader{
-		Timestamp: b.Timestamp,
-	}
-}
-
-func (b *BlockState) Header() *BlockHeader {
-	return b.SignedBlock.ToHeader()
-}
-
 type BlockHeader struct {
 	Timestamp        BlockTimestamp            `json:"timestamp"`
 	Producer         AccountName               `json:"producer"`
