@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/eoscanada/eos-go/ecc"
 )
 
@@ -517,14 +519,59 @@ type RLimitOp struct {
 	Kind      string `json:"kind"`
 	Operation string `json:"op"`
 	account   string
-	Data      json.RawMessage `json:"data"`
+	Data      json.RawMessage
+	Config    *RlimitConfig
+	State     *RlimitState
+	Object    *RlimitObject
+}
+
+func (r *RLimitOp) IsGlobalKind() bool {
+	return r.Kind == "CONFIG" || r.Kind == "STATE"
+}
+
+func (r *RLimitOp) IsLocalKind() bool {
+	return r.Kind == "ACCOUNT_LIMITS" || r.Kind == "ACCOUNT_USAGE"
+}
+
+func (r *RLimitOp) IsInsertOp() bool {
+	return r.Operation == "INS"
+}
+
+func (r *RLimitOp) IsUpdateOp() bool {
+	return r.Operation == "UPD"
+}
+
+func (r *RLimitOp) Account() string {
+	if r.account != "" {
+		return r.account
+	}
+
+	if r.IsGlobalKind() {
+		return ""
+	}
+
+	accountResult := gjson.GetBytes(r.Data, "owner")
+	if accountResult.Raw != "" {
+		r.account = accountResult.String()
+	}
+
+	return r.account
 }
 
 type RlimitState struct {
-	ID uint32 `json:"id"`
+	ID                   uint32            `json:"id"`
+	AverageBlockNetUsage *UsageAccumulator `json:"average_block_net_usage"`
+	AverageBlockCpuUsage *UsageAccumulator `json:"average_block_cpu_usage"`
+	PendingNetUsage      uint64            `json:"pending_net_usage"`
+	PendingCpuUsage      uint64            `json:"pending_cpu_usage"`
+	TotalNetWeight       uint64            `json:"total_net_weight"`
+	TotalCpuWeight       uint64            `json:"total_cpu_weight"`
+	TotalRamBytes        uint64            `json:"total_ram_bytes"`
+	VirtualNetLimit      uint64            `json:"virtual_net_limit"`
+	VirtualCpuLimit      uint64            `json:"virtual_cpu_limit"`
 }
 
-type Accumulator struct {
+type UsageAccumulator struct {
 	LastOrdinal uint32 `json:"last_ordinal"`
 	ValueEx     uint32 `json:"value_ex"`
 	Consumed    uint64 `json:"consumed"`
@@ -538,16 +585,25 @@ type RlimitConfig struct {
 	AccountNetUsageAverageWindow uint32                 `json:"account_net_usage_average_window"`
 }
 
+type RlimitObject struct {
+	ID        uint32      `json:"id"`
+	Owner     AccountName `json:"owner"`
+	Pending   bool        `json:"pending"`
+	NetWeight int64       `json:"net_weight"`
+	CpuWeight int64       `json:"cpu_weight"`
+	RamBytes  int64       `json:"ram_bytes"`
+}
+
 type ElasticLimitParameters struct {
 	Target        uint64 `json:"target"`
 	Max           uint64 `json:"max"`
 	Periods       uint32 `json:"periods"`
 	MaxMultiplier uint32 `json:"max_multiplier"`
 	ContractRate  Ratio  `json:"contract_rate"`
-	expandRate    Ratio  `json:"expand_rate"`
+	ExpandRate    Ratio  `json:"expand_rate"`
 }
 
 type Ratio struct {
-	Numerator   uint64
-	Denominator uint64
+	Numerator   uint64 `json:"numerator"`
+	Denominator uint64 `json:"denominator"`
 }
