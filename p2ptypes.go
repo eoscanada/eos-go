@@ -227,7 +227,7 @@ type BlockState struct {
 	ActiveSchedule                   *ProducerSchedule   `json:"active_schedule"`
 	BlockrootMerkle                  *MerkleRoot         `json:"blockroot_merkle"`
 	ProducerToLastProduced           []EOSNameOrUint32   `json:"producer_to_last_produced"`
-	ProducerToLastIRB                []EOSNameOrUint32   `json:"producer_to_last_implied_irb"`
+	ProducerToLastImpliedIRB         []EOSNameOrUint32   `json:"producer_to_last_implied_irb"`
 	BlockSigningKey                  ecc.PublicKey       `json:"block_signing_key"`
 	ConfirmCount                     []uint32            `json:"confirm_count"`
 	PendingSchedule                  *PendingSchedule    `json:"pending_schedule"`
