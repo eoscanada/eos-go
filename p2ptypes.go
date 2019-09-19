@@ -220,20 +220,20 @@ type MerkleRoot struct {
 type EOSNameOrUint32 interface{}
 
 type BlockState struct {
-	BlockID                          string               `json:"id"`
-	BlockNum                         uint32               `json:"block_num"`
-	DPoSProposedIrreversibleBlockNum uint32               `json:"dpos_proposed_irreversible_blocknum"`
-	DPoSIrreversibleBlockNum         uint32               `json:"dpos_irreversible_blocknum"`
-	ActiveSchedule                   *ProducerSchedule    `json:"active_schedule"`
-	BlockrootMerkle                  *MerkleRoot          `json:"blockroot_merkle"`
-	ProducerToLastProduced           [][2]EOSNameOrUint32 `json:"producer_to_last_produced"`
-	ProducerToLastImpliedIRB         [][2]EOSNameOrUint32 `json:"producer_to_last_implied_irb"`
-	BlockSigningKey                  ecc.PublicKey        `json:"block_signing_key"`
-	ConfirmCount                     []uint32             `json:"confirm_count"`
-	PendingSchedule                  *PendingSchedule     `json:"pending_schedule"`
-	ActivatedProtocolFeatures        map[string]HexBytes  `json:"activated_protocol_features"`
-	SignedBlock                      *SignedBlock         `json:"signed_block"`
-	Validated                        bool                 `json:"validated"`
+	BlockID                          string                `json:"id"`
+	BlockNum                         uint32                `json:"block_num"`
+	DPoSProposedIrreversibleBlockNum uint32                `json:"dpos_proposed_irreversible_blocknum"`
+	DPoSIrreversibleBlockNum         uint32                `json:"dpos_irreversible_blocknum"`
+	ActiveSchedule                   *ProducerSchedule     `json:"active_schedule"`
+	BlockrootMerkle                  *MerkleRoot           `json:"blockroot_merkle"`
+	ProducerToLastProduced           [][2]EOSNameOrUint32  `json:"producer_to_last_produced"`
+	ProducerToLastImpliedIRB         [][2]EOSNameOrUint32  `json:"producer_to_last_implied_irb"`
+	BlockSigningKey                  ecc.PublicKey         `json:"block_signing_key"`
+	ConfirmCount                     []uint32              `json:"confirm_count"`
+	PendingSchedule                  *PendingSchedule      `json:"pending_schedule"`
+	ActivatedProtocolFeatures        map[string][]HexBytes `json:"activated_protocol_features"`
+	SignedBlock                      *SignedBlock          `json:"signed_block"`
+	Validated                        bool                  `json:"validated"`
 }
 
 type PendingSchedule struct {
