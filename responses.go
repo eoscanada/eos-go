@@ -102,14 +102,28 @@ type ActionTraceReceipt struct {
 }
 
 type ActionTrace struct {
-	Receipt       ActionTraceReceipt `json:"receipt"`
-	Action        *Action            `json:"act"`
-	Elapsed       int                `json:"elapsed"`
-	CPUUsage      int                `json:"cpu_usage"`
-	Console       string             `json:"console"`
-	TotalCPUUsage int                `json:"total_cpu_usage"`
-	TransactionID Checksum256        `json:"trx_id"`
-	InlineTraces  []*ActionTrace     `json:"inline_traces"`
+	Receipt                                ActionTraceReceipt `json:"receipt"`
+	Action                                 *Action            `json:"act"`
+	Elapsed                                int                `json:"elapsed"`
+	CPUUsage                               int                `json:"cpu_usage"`
+	Console                                string             `json:"console"`
+	TotalCPUUsage                          int                `json:"total_cpu_usage"`
+	TransactionID                          Checksum256        `json:"trx_id"`
+	InlineTraces                           []ActionTrace      `json:"inline_traces"`
+	ContextFree                            bool               `json:"context_free"`
+	BlockTime                              JSONTime           `json:"block_time"`
+	BlockNum                               uint32             `json:"block_num"`
+	ProducerBlockID                        Checksum256        `json:"producer_block_id"`
+	AccountRAMDeltas                       []*AccountRAMDelta `json:"account_ram_deltas"`
+	Except                                 *Except            `json:"except"`
+	ActionOrdinal                          int32              `json:"action_ordinal"`
+	CreatorActionOrdinal                   int32              `json:"creator_action_ordinal"`
+	ClosestUnnotifiedAncestorActionOrdinal int32              `json:"closest_unnotified_ancestor_action_ordinal"`
+}
+
+type AccountRAMDelta struct {
+	Account AccountName `json:"account"`
+	Delta   int64       `json:"delta"`
 }
 
 type TransactionTraceAuthSequence struct {
@@ -425,4 +439,115 @@ type GetCurrencyStatsResp struct {
 	Supply    Asset       `json:"supply"`
 	MaxSupply Asset       `json:"max_supply"`
 	Issuer    AccountName `json:"issuer"`
+}
+
+type Except struct {
+	Code    int    `json:"code"`
+	Name    string `json:"name"`
+	Message string `json:"message"`
+	Stack   []struct {
+		Context struct {
+			Level      string   `json:"level"`
+			File       string   `json:"file"`
+			Line       int      `json:"line"`
+			Method     string   `json:"method"`
+			Hostname   string   `json:"hostname"`
+			ThreadName string   `json:"thread_name"`
+			Timestamp  JSONTime `json:"timestamp"`
+		} `json:"context"`
+		Format string          `json:"format"`
+		Data   json.RawMessage `json:"data,omitempty"`
+	} `json:"stack"`
+}
+
+type FeatureOp struct {
+	Kind          string   `json:"kind"`
+	ActionIndex   int      `json:"action_idx"`
+	FeatureDigest string   `json:"feature_digest"`
+	Feature       *Feature `json:"feature"`
+}
+
+type Feature struct {
+	FeatureDigest          string
+	SubjectiveRestrictions *SubjectiveRestrictions
+	DescriptionDigest      string
+	Dependencies           []string
+	ProtocolFeatureType    string
+	Specification          []*Specification
+}
+
+type Specification struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+type SubjectiveRestrictions struct {
+	Enable                        bool     `json:"enable"`
+	PreactivationRequired         bool     `json:"preactivation_required"`
+	EarliestAllowedActivationTime JSONTime `json:"earliest_allowed_activation_time"`
+}
+
+type PermOp struct {
+	Operation   string      `json:"op"`
+	ActionIndex int         `json:"action_idx"`
+	OldPerm     *Permission `json:"old,omitempty"`
+	NewPerm     *Permission `json:"new,omitempty"`
+}
+
+type RAMOp struct {
+	ActionIndex int    `json:"action_idx"`
+	EventID     string `json:"event_id"`
+	Family      string `json:"family"`
+	Action      string `json:"action"`
+	// Deprecated: Use `Family` and `Action` instead
+	Operation string `json:"op"`
+	Payer     string `json:"payer"`
+	Delta     int64  `json:"delta"`
+	Usage     uint64 `json:"usage"` // new usage
+}
+
+type RAMCorrectionOp struct {
+	ActionIndex  int    `json:"action_idx"`
+	CorrectionID string `json:"correction_id"`
+	EventID      string `json:"event_id"`
+	Payer        string `json:"payer"`
+	Delta        int64  `json:"delta"`
+}
+
+type RLimitOp struct {
+	Kind      string `json:"kind"`
+	Operation string `json:"op"`
+	account   string
+	Data      json.RawMessage `json:"data"`
+}
+
+type RlimitState struct {
+	ID uint32 `json:"id"`
+}
+
+type Accumulator struct {
+	LastOrdinal uint32 `json:"last_ordinal"`
+	ValueEx     uint32 `json:"value_ex"`
+	Consumed    uint64 `json:"consumed"`
+}
+
+type RlimitConfig struct {
+	ID                           uint32                 `json:"id"`
+	CPULimitParameters           ElasticLimitParameters `json:"cpu_limit_parameters"`
+	NetLimitParameters           ElasticLimitParameters `json:"net_limit_parameters"`
+	AccountCpuUsageAverageWindow uint32                 `json:"account_cpu_usage_average_window"`
+	AccountNetUsageAverageWindow uint32                 `json:"account_net_usage_average_window"`
+}
+
+type ElasticLimitParameters struct {
+	Target        uint64 `json:"target"`
+	Max           uint64 `json:"max"`
+	Periods       uint32 `json:"periods"`
+	MaxMultiplier uint32 `json:"max_multiplier"`
+	ContractRate  Ratio  `json:"contract_rate"`
+	expandRate    Ratio  `json:"expand_rate"`
+}
+
+type Ratio struct {
+	Numerator   uint64
+	Denominator uint64
 }

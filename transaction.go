@@ -134,6 +134,29 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
 }
 
+type TransactionTrace struct {
+	ID              Checksum256 `json:"id"`
+	BlockNum        uint32      `json:"block_num"`
+	BlockTime       JSONTime    `json:"block_time"`
+	ProducerBlockID Checksum256 `json:"producer_block_id"`
+	Receipt         struct {
+		Status           TransactionStatus `json:"status"`
+		CPUUsageMicrosec int               `json:"cpu_usage_us"`
+		NetUsageWords    int               `json:"net_usage_words"`
+	} `json:"receipt"`
+	Elapsed         int64         `json:"elapsed"`
+	NetUsage        uint64        `json:"net_usage"`
+	Scheduled       bool          `json:"scheduled"`
+	ActionTraces    []ActionTrace `json:"action_traces"`
+	AccountRamDelta struct {
+		AccountName AccountName `json:"account_name"`
+		Delta       int64       `json:"delta"`
+	} `json:"account_ram_delta"`
+	Except          json.RawMessage   `json:"except"`
+	ErrorCode       uint64            `json:"error_code"`
+	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
+}
+
 type SignedTransaction struct {
 	*Transaction
 
