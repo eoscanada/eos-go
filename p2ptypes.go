@@ -232,7 +232,7 @@ type BlockState struct {
 	ConfirmCount                     []uint32              `json:"confirm_count"`
 	PendingSchedule                  *PendingSchedule      `json:"pending_schedule"`
 	ActivatedProtocolFeatures        map[string][]HexBytes `json:"activated_protocol_features"`
-	SignedBlock                      *SignedBlock          `json:"signed_block"`
+	SignedBlock                      *SignedBlock          `json:"block"`
 	Validated                        bool                  `json:"validated"`
 }
 
