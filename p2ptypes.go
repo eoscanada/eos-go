@@ -221,7 +221,7 @@ type EOSNameOrUint32 interface{}
 
 type BlockState struct {
 	BlockID                          string              `json:"id"`
-	BlockNum                         string              `json:"block_num"`
+	BlockNum                         uint32              `json:"block_num"`
 	DPoSProposedIrreversibleBlockNum uint32              `json:"dpos_proposed_irreversible_blocknum"`
 	DPoSIrreversibleBlockNum         uint32              `json:"dpos_irreversible_blocknum"`
 	ActiveSchedule                   *ProducerSchedule   `json:"active_schedule"`
