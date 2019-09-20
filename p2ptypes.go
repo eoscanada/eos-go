@@ -239,7 +239,7 @@ type BlockState struct {
 type PendingSchedule struct {
 	ScheduleLIBNum uint32            `json:"schedule_lib_num"`
 	ScheduleHash   HexBytes          `json:"schedule_hash"`
-	Schedule       *ProducerSchedule `json:"producer_schedule"`
+	Schedule       *ProducerSchedule `json:"schedule"`
 }
 
 type BlockHeader struct {
