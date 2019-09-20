@@ -244,7 +244,7 @@ func TestUnpackBinaryTableRows(t *testing.T) {
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
 	}
 	var out []*MyStruct
-	assert.NoError(t, resp.BinaryToStructs(&out))
+	require.NoError(t, resp.BinaryToStructs(&out))
 	assert.Equal(t, "CUR", string(out[0].Currency.Name))
 	//spew.Dump(out)
 }

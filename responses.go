@@ -125,7 +125,7 @@ type ActionTrace struct {
 
 type AccountRAMDelta struct {
 	Account AccountName `json:"account"`
-	Delta   int64       `json:"delta"`
+	Delta   Int64       `json:"delta"`
 }
 
 type TransactionTraceAuthSequence struct {
@@ -349,7 +349,7 @@ type WalletSignTransactionResp struct {
 
 type MyStruct struct {
 	Currency
-	Balance uint64
+	Balance Uint64
 }
 
 // NetConnectionResp
@@ -389,12 +389,12 @@ type Global struct {
 	TotalRAMBytesReserved          Int64   `json:"total_ram_bytes_reserved"`
 	TotalRAMStake                  Int64   `json:"total_ram_stake"`
 	LastProducerScheduleUpdate     string  `json:"last_producer_schedule_update"`
-	LastPervoteBucketFill          int64   `json:"last_pervote_bucket_fill,string"`
+	LastPervoteBucketFill          Int64   `json:"last_pervote_bucket_fill,string"`
 	PervoteBucket                  int     `json:"pervote_bucket"`
 	PerblockBucket                 int     `json:"perblock_bucket"`
 	TotalUnpaidBlocks              int     `json:"total_unpaid_blocks"`
 	TotalActivatedStake            float64 `json:"total_activated_stake,string"`
-	ThreshActivatedStakeTime       int64   `json:"thresh_activated_stake_time,string"`
+	ThreshActivatedStakeTime       Int64   `json:"thresh_activated_stake_time,string"`
 	LastProducerScheduleSize       int     `json:"last_producer_schedule_size"`
 	TotalProducerVoteWeight        float64 `json:"total_producer_vote_weight,string"`
 	LastNameClose                  string  `json:"last_name_close"`
@@ -415,8 +415,8 @@ type ProducersResp struct {
 }
 type GetActionsRequest struct {
 	AccountName AccountName `json:"account_name"`
-	Pos         int64       `json:"pos"`
-	Offset      int64       `json:"offset"`
+	Pos         Int64       `json:"pos"`
+	Offset      Int64       `json:"offset"`
 }
 type ActionResp struct {
 	GlobalSeq  JSONInt64   `json:"global_action_seq"`
@@ -503,8 +503,8 @@ type RAMOp struct {
 	// Deprecated: Use `Family` and `Action` instead
 	Operation string `json:"op"`
 	Payer     string `json:"payer"`
-	Delta     int64  `json:"delta"`
-	Usage     uint64 `json:"usage"` // new usage
+	Delta     Int64  `json:"delta"`
+	Usage     Uint64 `json:"usage"` // new usage
 }
 
 type RAMCorrectionOp struct {
@@ -512,7 +512,7 @@ type RAMCorrectionOp struct {
 	CorrectionID string `json:"correction_id"`
 	EventID      string `json:"event_id"`
 	Payer        string `json:"payer"`
-	Delta        int64  `json:"delta"`
+	Delta        Int64  `json:"delta"`
 }
 
 type RLimitOp struct {
@@ -562,19 +562,19 @@ type RlimitState struct {
 	ID                   uint32            `json:"id"`
 	AverageBlockNetUsage *UsageAccumulator `json:"average_block_net_usage"`
 	AverageBlockCpuUsage *UsageAccumulator `json:"average_block_cpu_usage"`
-	PendingNetUsage      uint64            `json:"pending_net_usage"`
-	PendingCpuUsage      uint64            `json:"pending_cpu_usage"`
-	TotalNetWeight       uint64            `json:"total_net_weight"`
-	TotalCpuWeight       uint64            `json:"total_cpu_weight"`
-	TotalRamBytes        uint64            `json:"total_ram_bytes"`
-	VirtualNetLimit      uint64            `json:"virtual_net_limit"`
-	VirtualCpuLimit      uint64            `json:"virtual_cpu_limit"`
+	PendingNetUsage      Uint64            `json:"pending_net_usage"`
+	PendingCpuUsage      Uint64            `json:"pending_cpu_usage"`
+	TotalNetWeight       Uint64            `json:"total_net_weight"`
+	TotalCpuWeight       Uint64            `json:"total_cpu_weight"`
+	TotalRamBytes        Uint64            `json:"total_ram_bytes"`
+	VirtualNetLimit      Uint64            `json:"virtual_net_limit"`
+	VirtualCpuLimit      Uint64            `json:"virtual_cpu_limit"`
 }
 
 type UsageAccumulator struct {
 	LastOrdinal uint32 `json:"last_ordinal"`
 	ValueEx     uint32 `json:"value_ex"`
-	Consumed    uint64 `json:"consumed"`
+	Consumed    Uint64 `json:"consumed"`
 }
 
 type RlimitConfig struct {
@@ -589,14 +589,14 @@ type RlimitObject struct {
 	ID        uint32      `json:"id"`
 	Owner     AccountName `json:"owner"`
 	Pending   bool        `json:"pending"`
-	NetWeight int64       `json:"net_weight"`
-	CpuWeight int64       `json:"cpu_weight"`
-	RamBytes  int64       `json:"ram_bytes"`
+	NetWeight Int64       `json:"net_weight"`
+	CpuWeight Int64       `json:"cpu_weight"`
+	RamBytes  Int64       `json:"ram_bytes"`
 }
 
 type ElasticLimitParameters struct {
-	Target        uint64 `json:"target"`
-	Max           uint64 `json:"max"`
+	Target        Uint64 `json:"target"`
+	Max           Uint64 `json:"max"`
 	Periods       uint32 `json:"periods"`
 	MaxMultiplier uint32 `json:"max_multiplier"`
 	ContractRate  Ratio  `json:"contract_rate"`
@@ -604,6 +604,6 @@ type ElasticLimitParameters struct {
 }
 
 type Ratio struct {
-	Numerator   uint64 `json:"numerator"`
-	Denominator uint64 `json:"denominator"`
+	Numerator   Uint64 `json:"numerator"`
+	Denominator Uint64 `json:"denominator"`
 }
