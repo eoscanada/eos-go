@@ -144,16 +144,16 @@ type TransactionTrace struct {
 		CPUUsageMicrosec int               `json:"cpu_usage_us"`
 		NetUsageWords    int               `json:"net_usage_words"`
 	} `json:"receipt"`
-	Elapsed         int64         `json:"elapsed"`
-	NetUsage        uint64        `json:"net_usage"`
+	Elapsed         Int64         `json:"elapsed"`
+	NetUsage        Uint64        `json:"net_usage"`
 	Scheduled       bool          `json:"scheduled"`
 	ActionTraces    []ActionTrace `json:"action_traces"`
-	AccountRamDelta struct {
+	AccountRamDelta *struct {
 		AccountName AccountName `json:"account_name"`
-		Delta       int64       `json:"delta"`
+		Delta       Int64       `json:"delta"`
 	} `json:"account_ram_delta"`
 	Except          json.RawMessage   `json:"except"`
-	ErrorCode       uint64            `json:"error_code"`
+	ErrorCode       Uint64            `json:"error_code"`
 	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
 }
 
