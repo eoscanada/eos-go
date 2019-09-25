@@ -158,6 +158,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
 		return
+	case *Uint64:
+		var n uint64
+		n, err = d.ReadUint64()
+		rv.SetUint(uint64(n))
+		return
 	case *JSONFloat64:
 		var n float64
 		n, err = d.ReadFloat64()
