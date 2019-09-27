@@ -103,6 +103,7 @@ type ActionTraceReceipt struct {
 
 type ActionTrace struct {
 	Receipt       ActionTraceReceipt `json:"receipt"`
+	Receiver      AccountName        `json:"receiver"`
 	Action        *Action            `json:"act"`
 	Elapsed       int                `json:"elapsed"`
 	CPUUsage      int                `json:"cpu_usage"`
