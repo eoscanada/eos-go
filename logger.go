@@ -10,18 +10,30 @@ var encoderLog = zap.NewNop()
 var decoderLog = zap.NewNop()
 var abiEncoderLog = zap.NewNop()
 var abiDecoderLog = zap.NewNop()
+var loggingEnabled = false
 
 func EnableEncoderLogging() {
 	encoderLog = newLogger(false)
+	enableLogging(encoderLog)
 }
 func EnableDecoderLogging() {
 	decoderLog = newLogger(false)
+	enableLogging(decoderLog)
 }
 func EnableABIEncoderLogging() {
 	abiEncoderLog = newLogger(false)
+	enableLogging(abiEncoderLog)
 }
 func EnableABIDecoderLogging() {
 	abiDecoderLog = newLogger(false)
+	enableLogging(abiDecoderLog)
+}
+
+func enableLogging(logger *zap.Logger) {
+	if loggingEnabled == false {
+		logger.Warn("Enabling logs. Expect performance hits for high throughput")
+		loggingEnabled = true
+	}
 }
 
 type logStringerFunc func() string

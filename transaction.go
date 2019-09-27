@@ -148,7 +148,7 @@ type TransactionTrace struct {
 		AccountName AccountName `json:"account_name"`
 		Delta       Int64       `json:"delta"`
 	} `json:"account_ram_delta"`
-	Except          json.RawMessage   `json:"except"`
+	Except          *Except           `json:"except"`
 	ErrorCode       Uint64            `json:"error_code"`
 	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
 }

@@ -12,5 +12,6 @@ func init() {
 		decoderLog, _ = zap.NewDevelopment()
 		abiEncoderLog, _ = zap.NewDevelopment()
 		abiDecoderLog, _ = zap.NewDevelopment()
+		loggingEnabled = true
 	}
 }
