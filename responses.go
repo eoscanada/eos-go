@@ -102,24 +102,24 @@ type ActionTraceReceipt struct {
 }
 
 type ActionTrace struct {
-	Receipt                                ActionTraceReceipt `json:"receipt"`
-	Receiver                               AccountName        `json:"receiver"`
-	Action                                 *Action            `json:"act"`
-	Elapsed                                int                `json:"elapsed"`
-	CPUUsage                               int                `json:"cpu_usage"`
-	Console                                string             `json:"console"`
-	TotalCPUUsage                          int                `json:"total_cpu_usage"`
-	TransactionID                          Checksum256        `json:"trx_id"`
-	InlineTraces                           []ActionTrace      `json:"inline_traces"`
-	ContextFree                            bool               `json:"context_free"`
-	BlockTime                              JSONTime           `json:"block_time"`
-	BlockNum                               uint32             `json:"block_num"`
-	ProducerBlockID                        Checksum256        `json:"producer_block_id"`
-	AccountRAMDeltas                       []*AccountRAMDelta `json:"account_ram_deltas"`
-	Except                                 *Except            `json:"except"`
-	ActionOrdinal                          int32              `json:"action_ordinal"`
-	CreatorActionOrdinal                   int32              `json:"creator_action_ordinal"`
-	ClosestUnnotifiedAncestorActionOrdinal int32              `json:"closest_unnotified_ancestor_action_ordinal"`
+	Receipt                                *ActionTraceReceipt `json:"receipt,omitempty"`
+	Receiver                               AccountName         `json:"receiver"`
+	Action                                 *Action             `json:"act"`
+	Elapsed                                int                 `json:"elapsed"`
+	CPUUsage                               int                 `json:"cpu_usage"`
+	Console                                string              `json:"console"`
+	TotalCPUUsage                          int                 `json:"total_cpu_usage"`
+	TransactionID                          Checksum256         `json:"trx_id"`
+	InlineTraces                           []ActionTrace       `json:"inline_traces"`
+	ContextFree                            bool                `json:"context_free"`
+	BlockTime                              JSONTime            `json:"block_time"`
+	BlockNum                               uint32              `json:"block_num"`
+	ProducerBlockID                        Checksum256         `json:"producer_block_id"`
+	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
+	Except                                 *Except             `json:"except"`
+	ActionOrdinal                          int32               `json:"action_ordinal"`
+	CreatorActionOrdinal                   int32               `json:"creator_action_ordinal"`
+	ClosestUnnotifiedAncestorActionOrdinal int32               `json:"closest_unnotified_ancestor_action_ordinal"`
 }
 
 type AccountRAMDelta struct {

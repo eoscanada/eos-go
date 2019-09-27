@@ -135,19 +135,15 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 }
 
 type TransactionTrace struct {
-	ID              Checksum256 `json:"id"`
-	BlockNum        uint32      `json:"block_num"`
-	BlockTime       JSONTime    `json:"block_time"`
-	ProducerBlockID Checksum256 `json:"producer_block_id"`
-	Receipt         struct {
-		Status           TransactionStatus `json:"status"`
-		CPUUsageMicrosec int               `json:"cpu_usage_us"`
-		NetUsageWords    int               `json:"net_usage_words"`
-	} `json:"receipt"`
-	Elapsed         Int64         `json:"elapsed"`
-	NetUsage        Uint64        `json:"net_usage"`
-	Scheduled       bool          `json:"scheduled"`
-	ActionTraces    []ActionTrace `json:"action_traces"`
+	ID              Checksum256               `json:"id"`
+	BlockNum        uint32                    `json:"block_num"`
+	BlockTime       JSONTime                  `json:"block_time"`
+	ProducerBlockID Checksum256               `json:"producer_block_id"`
+	Receipt         *TransactionReceiptHeader `json:"receipt,omitempty"`
+	Elapsed         Int64                     `json:"elapsed"`
+	NetUsage        Uint64                    `json:"net_usage"`
+	Scheduled       bool                      `json:"scheduled"`
+	ActionTraces    []ActionTrace             `json:"action_traces"`
 	AccountRamDelta *struct {
 		AccountName AccountName `json:"account_name"`
 		Delta       Int64       `json:"delta"`
