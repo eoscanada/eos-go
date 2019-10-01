@@ -117,9 +117,9 @@ type ActionTrace struct {
 	ProducerBlockID                        Checksum256         `json:"producer_block_id"`
 	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
 	Except                                 *Except             `json:"except"`
-	ActionOrdinal                          int32               `json:"action_ordinal"`
-	CreatorActionOrdinal                   int32               `json:"creator_action_ordinal"`
-	ClosestUnnotifiedAncestorActionOrdinal int32               `json:"closest_unnotified_ancestor_action_ordinal"`
+	ActionOrdinal                          uint32              `json:"action_ordinal"`
+	CreatorActionOrdinal                   uint32              `json:"creator_action_ordinal"`
+	ClosestUnnotifiedAncestorActionOrdinal uint32              `json:"closest_unnotified_ancestor_action_ordinal"`
 }
 
 type AccountRAMDelta struct {
