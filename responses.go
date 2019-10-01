@@ -443,20 +443,26 @@ type GetCurrencyStatsResp struct {
 }
 
 type Except struct {
-	Code    int    `json:"code"`
-	Name    string `json:"name"`
-	Message string `json:"message"`
-	Stack   []struct {
-		Context struct {
-			Level      string   `json:"level"`
-			File       string   `json:"file"`
-			Line       int      `json:"line"`
-			Method     string   `json:"method"`
-			Hostname   string   `json:"hostname"`
-			ThreadName string   `json:"thread_name"`
-			Timestamp  JSONTime `json:"timestamp"`
-		} `json:"context"`
-		Format string          `json:"format"`
-		Data   json.RawMessage `json:"data,omitempty"`
-	} `json:"stack"`
+	Code    int                 `json:"code"`
+	Name    string              `json:"name"`
+	Message string              `json:"message"`
+	Stack   []*ExceptLogMessage `json:"stack"`
+}
+
+// LogMessage is a line of message in an exception.
+type ExceptLogMessage struct {
+	Context ExceptLogContext `json:"context"`
+	Format  string           `json:"format"`
+	Data    json.RawMessage  `json:"data"`
+}
+
+type ExceptLogContext struct {
+	Level      string            `json:"level"` // "debug", "info", "warn", "error", also: "all", "off"
+	File       string            `json:"file"`
+	Line       int               `json:"line"`
+	Method     string            `json:"method"`
+	Hostname   string            `json:"hostname"`
+	ThreadName string            `json:"thread_name"`
+	Timestamp  JSONTime          `json:"timestamp"`
+	Context    *ExceptLogContext `json:"context,omitempty"`
 }
