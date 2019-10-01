@@ -105,10 +105,8 @@ type ActionTrace struct {
 	Receipt                                *ActionTraceReceipt `json:"receipt,omitempty"`
 	Receiver                               AccountName         `json:"receiver"`
 	Action                                 *Action             `json:"act"`
-	Elapsed                                int                 `json:"elapsed"`
-	CPUUsage                               int                 `json:"cpu_usage"`
+	Elapsed                                Int64               `json:"elapsed"`
 	Console                                string              `json:"console"`
-	TotalCPUUsage                          int                 `json:"total_cpu_usage"`
 	TransactionID                          Checksum256         `json:"trx_id"`
 	InlineTraces                           []ActionTrace       `json:"inline_traces"`
 	ContextFree                            bool                `json:"context_free"`
