@@ -110,7 +110,7 @@ type ActionTrace struct {
 	TransactionID                          Checksum256         `json:"trx_id"`
 	InlineTraces                           []ActionTrace       `json:"inline_traces"`
 	ContextFree                            bool                `json:"context_free"`
-	BlockTime                              JSONTime            `json:"block_time"`
+	BlockTime                              BlockTimestamp      `json:"block_time"`
 	BlockNum                               uint32              `json:"block_num"`
 	ProducerBlockID                        Checksum256         `json:"producer_block_id"`
 	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
