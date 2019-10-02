@@ -792,7 +792,11 @@ type BlockTimestamp struct {
 const BlockTimestampFormat = "2006-01-02T15:04:05.999"
 
 func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("%q", t.Format(BlockTimestampFormat))), nil
+	strTime := t.Format(BlockTimestampFormat)
+	if len(strTime) == len("2006-01-02T15:04:05.5") {
+		strTime += "00"
+	}
+	return []byte(fmt.Sprintf("%q", strTime)), nil
 }
 
 func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
