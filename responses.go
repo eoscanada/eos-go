@@ -27,14 +27,14 @@ import (
 */
 
 type InfoResp struct {
-	ServerVersion            string      `json:"server_version"` // "2cc40a4e"
-	ChainID                  Checksum256 `json:"chain_id"`
-	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
-	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
-	LastIrreversibleBlockID  Checksum256 `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
-	HeadBlockID              Checksum256 `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
-	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
-	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
+	ServerVersion            string         `json:"server_version"` // "2cc40a4e"
+	ChainID                  Checksum256    `json:"chain_id"`
+	HeadBlockNum             uint32         `json:"head_block_num"`              // 2465669,
+	LastIrreversibleBlockNum uint32         `json:"last_irreversible_block_num"` // 2465655
+	LastIrreversibleBlockID  Checksum256    `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
+	HeadBlockID              Checksum256    `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	HeadBlockTime            BlockTimestamp `json:"head_block_time"`             //  "2018-02-02T04:19:32"
+	HeadBlockProducer        AccountName    `json:"head_block_producer"`         // "inita"
 
 	VirtualBlockCPULimit Int64  `json:"virtual_block_cpu_limit"`
 	VirtualBlockNetLimit Int64  `json:"virtual_block_net_limit"`
@@ -81,7 +81,7 @@ type TransactionResp struct {
 		PackedTransaction TransactionWithID `json:"trx"`
 	} `json:"receipt"`
 	Transaction           ProcessedTransaction `json:"trx"`
-	BlockTime             JSONTime             `json:"block_time"`
+	BlockTime             BlockTimestamp       `json:"block_time"`
 	BlockNum              uint32               `json:"block_num"`
 	LastIrreversibleBlock uint32               `json:"last_irreversible_block"`
 	Traces                []ActionTrace        `json:"traces"`
@@ -417,11 +417,11 @@ type GetActionsRequest struct {
 	Offset      Int64       `json:"offset"`
 }
 type ActionResp struct {
-	GlobalSeq  JSONInt64   `json:"global_action_seq"`
-	AccountSeq JSONInt64   `json:"account_action_seq"`
-	BlockNum   uint32      `json:"block_num"`
-	BlockTime  JSONTime    `json:"block_time"`
-	Trace      ActionTrace `json:"action_trace"`
+	GlobalSeq  JSONInt64      `json:"global_action_seq"`
+	AccountSeq JSONInt64      `json:"account_action_seq"`
+	BlockNum   uint32         `json:"block_num"`
+	BlockTime  BlockTimestamp `json:"block_time"`
+	Trace      ActionTrace    `json:"action_trace"`
 }
 type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
