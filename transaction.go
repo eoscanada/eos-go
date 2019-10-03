@@ -137,7 +137,7 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 type TransactionTrace struct {
 	ID              Checksum256               `json:"id"`
 	BlockNum        uint32                    `json:"block_num"`
-	BlockTime       JSONTime                  `json:"block_time"`
+	BlockTime       BlockTimestamp            `json:"block_time"`
 	ProducerBlockID Checksum256               `json:"producer_block_id"`
 	Receipt         *TransactionReceiptHeader `json:"receipt,omitempty"`
 	Elapsed         Int64                     `json:"elapsed"`
@@ -149,7 +149,7 @@ type TransactionTrace struct {
 		Delta       Int64       `json:"delta"`
 	} `json:"account_ram_delta"`
 	Except          *Except           `json:"except"`
-	ErrorCode       *Uint64            `json:"error_code"`
+	ErrorCode       *Uint64           `json:"error_code"`
 	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
 }
 
