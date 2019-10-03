@@ -114,6 +114,7 @@ type ActionTrace struct {
 	BlockNum                               uint32              `json:"block_num"`
 	ProducerBlockID                        Checksum256         `json:"producer_block_id"`
 	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
+	ErrorCode                              *Uint64             `json:"error_code"`
 	Except                                 *Except             `json:"except"`
 	ActionOrdinal                          uint32              `json:"action_ordinal"`
 	CreatorActionOrdinal                   uint32              `json:"creator_action_ordinal"`

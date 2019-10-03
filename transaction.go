@@ -149,7 +149,7 @@ type TransactionTrace struct {
 		Delta       Int64       `json:"delta"`
 	} `json:"account_ram_delta"`
 	Except          *Except           `json:"except"`
-	ErrorCode       Uint64            `json:"error_code"`
+	ErrorCode       *Uint64            `json:"error_code"`
 	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
 }
 
