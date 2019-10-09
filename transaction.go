@@ -156,8 +156,8 @@ type TransactionTrace struct {
 type SignedTransaction struct {
 	*Transaction
 
-	Signatures      []ecc.Signature `json:"signatures"`
-	ContextFreeData []HexBytes      `json:"context_free_data"`
+	Signatures      []ecc.Signature `json:"signatures,omitempty"`
+	ContextFreeData []HexBytes      `json:"context_free_data,omitempty"`
 
 	packed *PackedTransaction
 }
