@@ -369,6 +369,10 @@ func (sc SymbolCode) String() string {
 	return builder.String()
 }
 
+func (sc SymbolCode) MarshalJSON() (data []byte, err error) {
+	return []byte(`"` + sc.String() + `"`), nil
+}
+
 // EOSSymbol represents the standard EOS symbol on the chain.  It's
 // here just to speed up things.
 var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
