@@ -32,6 +32,16 @@ func ExtendedStringToName(s string) (val uint64, err error) {
 	return StringToName(s)
 }
 
+func MustStringToName(s string) (val uint64) {
+	var err error
+	val, err = StringToName(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return
+}
+
 func StringToName(s string) (val uint64, err error) {
 	// ported from the eosio codebase, libraries/chain/include/eosio/chain/name.hpp
 	var i uint32
