@@ -8,7 +8,25 @@ import (
 	"encoding/json"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestUnmarshalAuthSequenceString(t *testing.T) {
+	resp := &TransactionTraceAuthSequence{}
+
+	err := json.Unmarshal([]byte(`["hello", "123"]`), resp)
+	require.NoError(t, err)
+	assert.Equal(t, AccountName("hello"), resp.Account)
+	assert.Equal(t, Uint64(123), resp.Sequence)
+}
+func TestUnmarshalAuthSequenceFloat64(t *testing.T) {
+	resp := &TransactionTraceAuthSequence{}
+
+	err := json.Unmarshal([]byte(`["hello", 123]`), resp)
+	require.NoError(t, err)
+	assert.Equal(t, AccountName("hello"), resp.Account)
+	assert.Equal(t, Uint64(123), resp.Sequence)
+}
 
 func TestUnmarshalAccountResp(t *testing.T) {
 	resp := &AccountResp{}

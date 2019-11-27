@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -147,12 +148,23 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expected 1st item to be a string (account name)")
 	}
 
-	seq, ok := ins[1].(float64)
-	if !ok {
-		return fmt.Errorf("expected 2nd item to be a sequence number (float64)")
+	var seq Uint64
+	switch el := ins[1].(type) {
+	case float64:
+		seq = Uint64(el)
+	case string:
+		seqInt, err := strconv.ParseUint(el, 10, 64)
+		if err != nil {
+			return fmt.Errorf("decoding auth_sequence as string: %s", err)
+		}
+
+		seq = Uint64(seqInt)
+	default:
+
+		return fmt.Errorf("expected 2nd item of auth_sequence to be a sequence number (float64 or string)")
 	}
 
-	*auth = TransactionTraceAuthSequence{AccountName(account), Uint64(seq)}
+	*auth = TransactionTraceAuthSequence{AccountName(account), seq}
 
 	return nil
 }
