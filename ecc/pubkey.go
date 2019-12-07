@@ -165,7 +165,11 @@ func (p PublicKey) String() string {
 	copy(rawKey, data[:33])
 	copy(rawKey[33:], hash[:4])
 
-	return p.inner.prefix() + base58.Encode(rawKey)
+	prefix := "???"
+	if p.inner != nil {
+		prefix = p.inner.prefix()
+	}
+	return prefix + base58.Encode(rawKey)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {
