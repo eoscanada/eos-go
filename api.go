@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"strings"
 	"sync"
 	"time"
 
@@ -52,7 +53,7 @@ func New(baseURL string) *API {
 				DisableKeepAlives:     true, // default behavior, because of `nodeos`'s lack of support for Keep alives.
 			},
 		},
-		BaseURL:  baseURL,
+		BaseURL:  strings.TrimRight(baseURL, "/"),
 		Compress: CompressionZlib,
 		Header:   make(http.Header),
 	}
