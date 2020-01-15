@@ -9,10 +9,13 @@ type innerWAPrivateKey struct {
 }
 
 func (k *innerWAPrivateKey) publicKey() PublicKey {
-	//TODO: Finish WA support here - for now we  return bogus key
+	//TODO: Finish WA support here - for now we return bogus key
 	var pubKeyData []byte
-	pubKeyData = append(pubKeyData, byte(1))
-	pubKeyData = append(pubKeyData, bytes.Repeat([]byte{0}, 33)...)
+	pubKeyData = append(pubKeyData, 0x03)                           // ySign (either 0x02 or 0x03)
+	pubKeyData = append(pubKeyData, bytes.Repeat([]byte{0}, 32)...) // X
+	pubKeyData = append(pubKeyData, 0x02)                           // Flags Presence (2 Verified, 1 Present, 0 None)
+	pubKeyData = append(pubKeyData, 0x00)                           // Relay Party ID (String encoded, i.e. varuint32 length + characters)
+
 	return PublicKey{Curve: CurveWA, Content: pubKeyData, inner: &innerWAPublicKey{}}
 }
 

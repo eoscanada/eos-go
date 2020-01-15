@@ -207,6 +207,28 @@ func TestSignatureUnmarshalChecksum(t *testing.T) {
 	require.Equal(t, "signature checksum failed, found a9c72981 expected a9c72982", err.Error())
 }
 
+func TestSignatureVerify_WA(t *testing.T) {
+	t.Skip(
+		"Debugging this should probably work, however, it fails. I think I might have the wrong",
+		"hash to check up. The signature extraction of R and S fits with data obtained from the Browser",
+		" while X & Y point of the public key are also correct. And the verify uses a single built-in method",
+		"to call verify, so I'm under the impression that all is good, except I don't use the proper hash",
+		"to verify the signature.",
+	)
+
+	hash, err := hex.DecodeString("dc471f5e1f0022bd4211000000000100a6823403ea3055000000572d3ccdcd014052546ea998b33900000000a8ed3232214052546ea998b3390000000000ea3055102700000000000004454f53000000000000")
+	require.NoError(t, err)
+
+	signature := "SIG_WA_26v1VRi4Jj2XqACtwKbv7V4RoaCsCKqwSEqsyLkjyNXgA4MGzGs27LhBhGXRj3b1oR4fd7FpgK4Dk8QCsj62pCJzAzju9MpDr6ta5GehQ9hEQqwPbZBcpJWS7EYiJ9XpV5Heo5ZxSzzbNwXKEXLGHXpizPpfAt7AafTJvb1PNPbLsnXQHFFQR6ugaunA6QP6KSMcwTSNwv1kSyPkTtqNm15GdEpTRAbCxBk6uM25foADacYNv9bAJh5wWh2hvgsBNAhSEfTLT739dJmGAXVS7e544VmBuwawarVXizJHAbyrVX5HS"
+	sig, err := NewSignature(signature)
+	require.NoError(t, err)
+
+	pubKey, err := NewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj")
+	require.NoError(t, err)
+
+	assert.Equal(t, true, sig.Verify(hash, pubKey))
+}
+
 //to do this here because of a import cycle when use eos.SigDigest
 func sigDigest(chainID, payload, contextFreeData []byte) []byte {
 	h := sha256.New()
