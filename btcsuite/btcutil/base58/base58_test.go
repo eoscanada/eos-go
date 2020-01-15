@@ -62,6 +62,13 @@ var hexTests = []struct {
 	{"00000000000000000000", "1111111111"},
 }
 
+var hexVarTests = []struct {
+	in  string
+	out string
+}{
+	{"02364ee3c86f1a4159576e46078431a9906b44ec2bdc720ec4dbea4afae0ac643b01096c6f63616c686f737417008178", "5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"},
+}
+
 func TestBase58(t *testing.T) {
 	// Encode tests
 	for x, test := range stringTests {
@@ -82,7 +89,21 @@ func TestBase58(t *testing.T) {
 		}
 		if res := base58.Decode(test.out); !bytes.Equal(res, b) {
 			t.Errorf("Decode test #%d failed: got: %q want: %q",
-				x, res, test.in)
+				x, hex.EncodeToString(res), test.in)
+			continue
+		}
+	}
+
+	// DecodeVarSize tests
+	for x, test := range hexVarTests {
+		b, err := hex.DecodeString(test.in)
+		if err != nil {
+			t.Errorf("hex.DecodeString failed failed #%d: got: %s", x, test.in)
+			continue
+		}
+		if res := base58.DecodeVarSize(test.out); !bytes.Equal(res, b) {
+			t.Errorf("DecodeVarSize test #%d failed: got: %q want: %q",
+				x, hex.EncodeToString(res), test.in)
 			continue
 		}
 	}

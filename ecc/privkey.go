@@ -62,6 +62,11 @@ func NewPrivateKey(wif string) (*PrivateKey, error) {
 			inner := &innerR1PrivateKey{}
 			return &PrivateKey{Curve: CurveR1, inner: inner}, nil
 
+		case "WA_":
+
+			inner := &innerWAPrivateKey{}
+			return &PrivateKey{Curve: CurveWA, inner: inner}, nil
+
 		default:
 			return nil, fmt.Errorf("unsupported curve prefix %q", curvePrefix)
 		}

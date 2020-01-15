@@ -418,8 +418,10 @@ func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write public key", zap.Stringer("pubkey", pk))
 	}
-	if len(pk.Content) != 33 {
-		return fmt.Errorf("public key %q should be 33 bytes, was %d", hex.EncodeToString(pk.Content), len(pk.Content))
+
+	err = pk.Validate()
+	if err != nil {
+		return fmt.Errorf("invalid public key: %s", err)
 	}
 
 	if err = e.writeByte(byte(pk.Curve)); err != nil {

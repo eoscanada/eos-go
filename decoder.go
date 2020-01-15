@@ -737,23 +737,78 @@ func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
 }
 
 func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
-
-	if d.remaining() < TypeSize.PublicKey {
-		err = fmt.Errorf("publicKey required [%d] bytes, remaining [%d]", TypeSize.PublicKey, d.remaining())
-		return
-	}
-	keyContent := make([]byte, 34)
-	copy(keyContent, d.data[d.pos:d.pos+TypeSize.PublicKey])
-
-	out, err = ecc.NewPublicKeyFromData(keyContent)
+	typeID, err := d.ReadUInt8()
 	if err != nil {
-		err = fmt.Errorf("publicKey: key from data: %s", err)
+		return out, fmt.Errorf("unable to read public key type: %s", err)
 	}
 
-	d.pos += TypeSize.PublicKey
+	curveID := ecc.CurveID(typeID)
+	var keyMaterial []byte
+
+	if curveID == ecc.CurveK1 || curveID == ecc.CurveR1 {
+		// Minus 1 because we already read the curveID which is 1 out of the 34 bytes of a full "legacy" PublicKey
+		keyMaterial, err = d.readPublicKeyMaterial(curveID, TypeSize.PublicKey-1)
+	} else if curveID == ecc.CurveWA {
+		keyMaterial, err = d.readWAPublicKeyMaterial()
+	} else {
+		err = fmt.Errorf("unsupported curve ID")
+	}
+
+	if err != nil {
+		return out, fmt.Errorf("unable to read public key material for curve %s: %s", curveID, err)
+	}
+
+	data := append([]byte{byte(curveID)}, keyMaterial...)
+	out, err = ecc.NewPublicKeyFromData(data)
+	if err != nil {
+		return out, fmt.Errorf("new public key from data: %s", err)
+	}
+
 	if loggingEnabled {
 		decoderLog.Debug("read public key", zap.Stringer("pubkey", out))
 	}
+
+	return
+}
+
+func (d *Decoder) readPublicKeyMaterial(curveID ecc.CurveID, keyMaterialSize int) (out []byte, err error) {
+	if d.remaining() < keyMaterialSize {
+		err = fmt.Errorf("publicKey %s key material requires [%d] bytes, remaining [%d]", curveID, keyMaterialSize, d.remaining())
+		return
+	}
+
+	out = make([]byte, keyMaterialSize)
+	copy(out, d.data[d.pos:d.pos+keyMaterialSize])
+	d.pos += keyMaterialSize
+
+	return
+}
+
+func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
+	begin := d.pos
+	fmt.Println("begin", d.pos)
+	if d.remaining() < 35 {
+		err = fmt.Errorf("publicKey WA key material requires at least [35] bytes, remaining [%d]", d.remaining())
+		return
+	}
+
+	d.pos += 34
+	reminderDataSize, err := d.ReadUvarint32()
+	if err != nil {
+		return out, fmt.Errorf("unable to read public key WA key material size: %s", err)
+	}
+
+	if d.remaining() < int(reminderDataSize) {
+		err = fmt.Errorf("publicKey WA reminder key material requires [%d] bytes, remaining [%d]", reminderDataSize, d.remaining())
+		return
+	}
+
+	d.pos += int(reminderDataSize)
+	keyMaterialSize := d.pos - begin
+
+	out = make([]byte, keyMaterialSize)
+	copy(out, d.data[begin:begin+keyMaterialSize])
+
 	return
 }
 

@@ -3,6 +3,7 @@ package eos
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"bytes"
@@ -302,6 +303,27 @@ func TestDecoder_PublicKey_R1(t *testing.T) {
 	assert.Equal(t, 0, d.remaining())
 }
 
+func TestDecoder_PublicKey_WA(t *testing.T) {
+	pk := ecc.MustNewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj")
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	assert.NoError(t, enc.writePublicKey(pk))
+
+	fmt.Println(hex.EncodeToString(buf.Bytes()))
+
+	d := NewDecoder(buf.Bytes())
+
+	rpk, err := d.ReadPublicKey()
+	fmt.Println(hex.EncodeToString([]byte{byte(rpk.Curve)}))
+	fmt.Println(hex.EncodeToString(rpk.Content))
+
+	require.NoError(t, err)
+
+	assert.Equal(t, pk, rpk)
+	assert.Equal(t, 0, d.remaining())
+}
+
 func TestDecoder_Empty_PublicKey(t *testing.T) {
 
 	pk := ecc.PublicKey{Curve: ecc.CurveK1, Content: []byte{}}
@@ -312,7 +334,6 @@ func TestDecoder_Empty_PublicKey(t *testing.T) {
 }
 
 func TestDecoder_Signature(t *testing.T) {
-
 	sig := ecc.MustNewSignatureFromData(bytes.Repeat([]byte{0}, 66))
 
 	buf := new(bytes.Buffer)
@@ -664,7 +685,7 @@ func TestDecoder_readUint16_missing_data(t *testing.T) {
 	assert.EqualError(t, err, "checksum 256 required [32] bytes, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadPublicKey()
-	assert.EqualError(t, err, "publicKey required [34] bytes, remaining [0]")
+	assert.EqualError(t, err, "unable to read public key type: byte required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadSignature()
 	assert.EqualError(t, err, "signature required [66] bytes, remaining [0]")
