@@ -9,6 +9,10 @@ import (
 type innerR1PublicKey struct {
 }
 
+func newInnerR1PublicKey() innerPublicKey {
+	return &innerR1PublicKey{}
+}
+
 func (p *innerR1PublicKey) key(content []byte) (*btcec.PublicKey, error) {
 	key, err := btcec.ParsePubKey(content, btcec.S256())
 	if err != nil {
@@ -20,4 +24,8 @@ func (p *innerR1PublicKey) key(content []byte) (*btcec.PublicKey, error) {
 
 func (p *innerR1PublicKey) prefix() string {
 	return PublicKeyR1Prefix
+}
+
+func (p *innerR1PublicKey) keyMaterialSize() *int {
+	return publicKeyDataSize
 }

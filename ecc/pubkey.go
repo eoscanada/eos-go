@@ -1,8 +1,8 @@
 package ecc
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,11 +14,17 @@ import (
 const PublicKeyPrefix = "PUB_"
 const PublicKeyK1Prefix = "PUB_K1_"
 const PublicKeyR1Prefix = "PUB_R1_"
+const PublicKeyWAPrefix = "PUB_WA_"
 const PublicKeyPrefixCompat = "EOS"
+
+var publicKeyDataSize = new(int)
+
+func init() { *publicKeyDataSize = 33 }
 
 type innerPublicKey interface {
 	key(content []byte) (*btcec.PublicKey, error)
 	prefix() string
+	keyMaterialSize() *int
 }
 
 type PublicKey struct {
@@ -29,13 +35,13 @@ type PublicKey struct {
 }
 
 func NewPublicKeyFromData(data []byte) (out PublicKey, err error) {
-	if len(data) != 34 {
-		return out, fmt.Errorf("public key data must have a length of 33 ")
+	if len(data) <= 0 {
+		return out, errors.New("data must have at least one byte, got 0")
 	}
 
 	out = PublicKey{
 		Curve:   CurveID(data[0]), // 1 byte
-		Content: data[1:],         // 33 bytes
+		Content: data[1:],         // 33 bytes for K1 & R1 keys, variable size for WA
 	}
 
 	switch out.Curve {
@@ -43,11 +49,13 @@ func NewPublicKeyFromData(data []byte) (out PublicKey, err error) {
 		out.inner = &innerK1PublicKey{}
 	case CurveR1:
 		out.inner = &innerR1PublicKey{}
+	case CurveWA:
+		out.inner = &innerWAPublicKey{}
 	default:
 		return out, fmt.Errorf("unsupported curve prefix %q", out.Curve)
 	}
 
-	return out, nil
+	return out, out.Validate()
 }
 
 func MustNewPublicKeyFromData(data []byte) PublicKey {
@@ -58,44 +66,38 @@ func MustNewPublicKeyFromData(data []byte) PublicKey {
 	return key
 }
 
+type pubkeyReaderManifest struct {
+	curveID CurveID
+	inner   func() innerPublicKey
+}
+
+var pubKeyReaderManifest = map[string]pubkeyReaderManifest{
+	PublicKeyPrefixCompat: pubkeyReaderManifest{CurveK1, newInnerK1PublicKey},
+	PublicKeyK1Prefix:     pubkeyReaderManifest{CurveK1, newInnerK1PublicKey},
+	PublicKeyR1Prefix:     pubkeyReaderManifest{CurveR1, newInnerR1PublicKey},
+	PublicKeyWAPrefix:     pubkeyReaderManifest{CurveWA, newInnerWAPublicKey},
+}
+
 func NewPublicKey(pubKey string) (out PublicKey, err error) {
 	if len(pubKey) < 8 {
 		return out, fmt.Errorf("invalid format")
 	}
 
-	var decodedPubKey []byte
-	var curveID CurveID
-	var inner innerPublicKey
+	for prefix, manifest := range pubKeyReaderManifest {
+		if !strings.HasPrefix(pubKey, prefix) {
+			continue
+		}
 
-	if strings.HasPrefix(pubKey, PublicKeyR1Prefix) {
-		pubKeyMaterial := pubKey[len(PublicKeyR1Prefix):] // strip "PUB_R1_"
-		curveID = CurveR1
-		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
+		pubKeyMaterial := pubKey[len(prefix):]
+		decodedPubKey, err := decodeKeyMaterial(pubKeyMaterial, manifest.curveID)
 		if err != nil {
 			return out, fmt.Errorf("checkDecode: %s", err)
 		}
-		inner = &innerR1PublicKey{}
-	} else if strings.HasPrefix(pubKey, PublicKeyK1Prefix) {
-		pubKeyMaterial := pubKey[len(PublicKeyK1Prefix):] // strip "PUB_K1_"
-		curveID = CurveK1
-		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
-		if err != nil {
-			return out, fmt.Errorf("checkDecode: %s", err)
-		}
-		inner = &innerK1PublicKey{}
-	} else if strings.HasPrefix(pubKey, PublicKeyPrefixCompat) { // "EOS"
-		pubKeyMaterial := pubKey[len(PublicKeyPrefixCompat):] // strip "EOS"
-		curveID = CurveK1
-		decodedPubKey, err = checkDecode(pubKeyMaterial, curveID)
-		if err != nil {
-			return out, fmt.Errorf("checkDecode: %s", err)
-		}
-		inner = &innerK1PublicKey{}
-	} else {
-		return out, fmt.Errorf("public key should start with [%q | %q] (or the old %q)", PublicKeyK1Prefix, PublicKeyR1Prefix, PublicKeyPrefixCompat)
+
+		return PublicKey{Curve: manifest.curveID, Content: decodedPubKey, inner: manifest.inner()}, nil
 	}
 
-	return PublicKey{Curve: curveID, Content: decodedPubKey, inner: inner}, nil
+	return out, fmt.Errorf("public key should start with [%q | %q | %q] (or the old %q)", PublicKeyK1Prefix, PublicKeyR1Prefix, PublicKeyWAPrefix, PublicKeyPrefixCompat)
 }
 
 func MustNewPublicKey(pubKey string) PublicKey {
@@ -106,24 +108,23 @@ func MustNewPublicKey(pubKey string) PublicKey {
 	return key
 }
 
-// CheckDecode decodes a string that was encoded with CheckEncode and verifies the checksum.
-func checkDecode(input string, curve CurveID) (result []byte, err error) {
-	decoded := base58.Decode(input)
-	if len(decoded) < 5 {
-		return nil, fmt.Errorf("invalid format")
+func (p PublicKey) Validate() error {
+	if p.inner == nil {
+		return fmt.Errorf("the inner public key structure must be present, was nil")
 	}
-	var cksum [4]byte
-	copy(cksum[:], decoded[len(decoded)-4:])
-	///// WARN: ok the ripemd160checksum should include the prefix in CERTAIN situations,
-	// like when we imported the PubKey without a prefix ?! tied to the string representation
-	// or something ? weird.. checksum shouldn't change based on the string reprsentation.
-	if bytes.Compare(ripemd160checksum(decoded[:len(decoded)-4], curve), cksum[:]) != 0 {
-		return nil, fmt.Errorf("invalid checksum")
+
+	if p.Curve == CurveK1 || p.Curve == CurveR1 {
+		size := p.inner.keyMaterialSize()
+		if size == nil {
+			return fmt.Errorf("R1 & K1 public keys must have a fixed key material size")
+		}
+
+		if len(p.Content) != *size {
+			return fmt.Errorf("public key data must have a length of %d, got %d", *size, len(p.Content))
+		}
 	}
-	// perhaps bitcoin has a leading net ID / version, but EOS doesn't
-	payload := decoded[:len(decoded)-4]
-	result = append(result, payload...)
-	return
+
+	return nil
 }
 
 func ripemd160checksum(in []byte, curve CurveID) []byte {
@@ -153,19 +154,32 @@ func (p PublicKey) Key() (*btcec.PublicKey, error) {
 	return p.inner.key(p.Content)
 }
 
+var emptyKeyMaterial = make([]byte, 33)
+
 func (p PublicKey) String() string {
 	data := p.Content
 	if len(data) == 0 {
-		data = make([]byte, 33)
+		// Nothing really to do, just output some garbage
+		return p.inner.prefix() + base58.Encode(emptyKeyMaterial)
 	}
 
 	hash := ripemd160checksum(data, p.Curve)
+	size := p.KeyMaterialSize()
 
-	rawKey := make([]byte, 37)
-	copy(rawKey, data[:33])
-	copy(rawKey[33:], hash[:4])
+	rawKey := make([]byte, size+4)
+	copy(rawKey, data[:size])
+	copy(rawKey[size:], hash[:4])
 
 	return p.inner.prefix() + base58.Encode(rawKey)
+}
+
+func (p PublicKey) KeyMaterialSize() int {
+	size := p.inner.keyMaterialSize()
+	if size != nil {
+		return *size
+	}
+
+	return len(p.Content)
 }
 
 func (p PublicKey) MarshalJSON() ([]byte, error) {

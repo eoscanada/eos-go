@@ -28,6 +28,11 @@ func Test_PublicKeyMarshalUnmarshal(t *testing.T) {
 			key:         "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
 			expectedKey: "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
 		},
+		{
+			name:        "WA",
+			key:         "PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj",
+			expectedKey: "PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj",
+		},
 	}
 
 	for _, c := range cases {
@@ -59,6 +64,11 @@ func TestPublicKey_MarshalJSON(t *testing.T) {
 			name:         "R1",
 			key:          "PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm",
 			expectedJSON: `"PUB_R1_78rbUHSk87e7eCBoccgWUkhNTCZLYdvJzerDRHg6fxj2SQy6Xm"`,
+		},
+		{
+			name:         "WA",
+			key:          "PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj",
+			expectedJSON: `"PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"`,
 		},
 	}
 

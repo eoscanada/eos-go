@@ -99,6 +99,14 @@ func NewSignature(fromText string) (Signature, error) {
 
 		return Signature{Curve: CurveR1, Content: content, innerSignature: &innerR1Signature{}}, nil
 
+	case "WA_":
+
+		fromText = fromText[3:] // strip WA_
+		content := base58.DecodeVarSize(fromText)
+		//todo: stuff here
+
+		return Signature{Curve: CurveWA, Content: content, innerSignature: &innerWASignature{}}, nil
+
 	default:
 		return Signature{}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
 	}
