@@ -523,7 +523,7 @@ func (d *Decoder) ReadByteArray() (out []byte, err error) {
 
 func (d *Decoder) ReadByte() (out byte, err error) {
 	if d.remaining() < TypeSize.Byte {
-		err = fmt.Errorf("byte required [1] byte, remaining [%d]", d.remaining())
+		err = fmt.Errorf("required [1] byte, remaining [%d]", d.remaining())
 		return
 	}
 
@@ -751,7 +751,7 @@ func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
 	} else if curveID == ecc.CurveWA {
 		keyMaterial, err = d.readWAPublicKeyMaterial()
 	} else {
-		err = fmt.Errorf("unsupported curve ID")
+		err = fmt.Errorf("unsupported curve ID: %s", curveID)
 	}
 
 	if err != nil {
@@ -786,7 +786,6 @@ func (d *Decoder) readPublicKeyMaterial(curveID ecc.CurveID, keyMaterialSize int
 
 func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
 	begin := d.pos
-	fmt.Println("begin", d.pos)
 	if d.remaining() < 35 {
 		err = fmt.Errorf("publicKey WA key material requires at least [35] bytes, remaining [%d]", d.remaining())
 		return
@@ -813,23 +812,94 @@ func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
 }
 
 func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
-	if d.remaining() < TypeSize.Signature {
-		err = fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature, d.remaining())
-		return
+	typeID, err := d.ReadUInt8()
+	if err != nil {
+		return out, fmt.Errorf("unable to read signature type: %s", err)
 	}
 
-	sigContent := make([]byte, 66)
-	copy(sigContent, d.data[d.pos:d.pos+TypeSize.Signature])
+	curveID := ecc.CurveID(typeID)
+	var data []byte
 
-	out, err = ecc.NewSignatureFromData(sigContent)
+	if curveID == ecc.CurveK1 || curveID == ecc.CurveR1 {
+		// Minus 1 because we already read the curveID which is 1 out of the 34 bytes of a full "legacy" PublicKey
+		if d.remaining() < TypeSize.Signature-1 {
+			return out, fmt.Errorf("signature required [%d] bytes, remaining [%d]", TypeSize.Signature-1, d.remaining())
+		}
+
+		data = make([]byte, 66)
+		data[0] = byte(curveID)
+		copy(data[1:], d.data[d.pos:d.pos+TypeSize.Signature-1])
+		d.pos += TypeSize.Signature - 1
+	} else if curveID == ecc.CurveWA {
+		data, err = d.readWASignatureData()
+		if err != nil {
+			return out, fmt.Errorf("unable to read WA signature: %s", err)
+		}
+	} else {
+		return out, fmt.Errorf("unsupported curve ID: %s", curveID)
+	}
+
+	out, err = ecc.NewSignatureFromData(data)
 	if err != nil {
 		return out, fmt.Errorf("new signature: %s", err)
 	}
 
-	d.pos += TypeSize.Signature
 	if loggingEnabled {
 		decoderLog.Debug("read signature", zap.Stringer("sig", out))
 	}
+
+	// sigContent := make([]byte, 66)
+	// copy(sigContent, d.data[d.pos:d.pos+TypeSize.Signature])
+
+	// out, err = ecc.NewSignatureFromData(sigContent)
+	// if err != nil {
+	// 	return out, fmt.Errorf("new signature: %s", err)
+	// }
+
+	// d.pos += TypeSize.Signature
+	// if loggingEnabled {
+	// 	decoderLog.Debug("read signature", zap.Stringer("sig", out))
+	// }
+	return
+}
+
+func (d *Decoder) readWASignatureData() (out []byte, err error) {
+	begin := d.pos
+	if d.remaining() < 66 {
+		err = fmt.Errorf("signature WA key material requires at least [66] bytes, remaining [%d]", d.remaining())
+		return
+	}
+
+	// Skip key recover param id (1 byte), R value (32 bytes) and S value (32 bytes)
+	d.pos += 65
+	authenticatorDataSize, err := d.ReadUvarint32()
+	if err != nil {
+		return out, fmt.Errorf("unable to read signature WA authenticator data size: %s", err)
+	}
+
+	if d.remaining() < int(authenticatorDataSize) {
+		err = fmt.Errorf("signature WA authenticator data requires [%d] bytes, remaining [%d]", authenticatorDataSize, d.remaining())
+		return
+	}
+	d.pos += int(authenticatorDataSize)
+
+	clientDataJSONSize, err := d.ReadUvarint32()
+	if err != nil {
+		return out, fmt.Errorf("unable to read signature WA client data JSON size: %s", err)
+	}
+
+	if d.remaining() < int(clientDataJSONSize) {
+		err = fmt.Errorf("signature WA client data JSON requires [%d] bytes, remaining [%d]", clientDataJSONSize, d.remaining())
+		return
+	}
+	d.pos += int(clientDataJSONSize)
+
+	signatureMaterialSize := d.pos - begin
+
+	out = make([]byte, signatureMaterialSize+1)
+	out[0] = byte(ecc.CurveWA)
+	copy(out[1:], d.data[begin:begin+signatureMaterialSize])
+
 	return
 }
 

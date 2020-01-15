@@ -71,7 +71,7 @@ type pubkeyReaderManifest struct {
 	inner   func() innerPublicKey
 }
 
-var pubKeyReaderManifest = map[string]pubkeyReaderManifest{
+var pubKeyReaderManifests = map[string]pubkeyReaderManifest{
 	PublicKeyPrefixCompat: pubkeyReaderManifest{CurveK1, newInnerK1PublicKey},
 	PublicKeyK1Prefix:     pubkeyReaderManifest{CurveK1, newInnerK1PublicKey},
 	PublicKeyR1Prefix:     pubkeyReaderManifest{CurveR1, newInnerR1PublicKey},
@@ -83,7 +83,7 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 		return out, fmt.Errorf("invalid format")
 	}
 
-	for prefix, manifest := range pubKeyReaderManifest {
+	for prefix, manifest := range pubKeyReaderManifests {
 		if !strings.HasPrefix(pubKey, prefix) {
 			continue
 		}

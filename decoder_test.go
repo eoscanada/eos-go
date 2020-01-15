@@ -1,13 +1,10 @@
 package eos
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"testing"
-
-	"bytes"
-
 	"time"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -310,14 +307,9 @@ func TestDecoder_PublicKey_WA(t *testing.T) {
 	enc := NewEncoder(buf)
 	assert.NoError(t, enc.writePublicKey(pk))
 
-	fmt.Println(hex.EncodeToString(buf.Bytes()))
-
 	d := NewDecoder(buf.Bytes())
 
 	rpk, err := d.ReadPublicKey()
-	fmt.Println(hex.EncodeToString([]byte{byte(rpk.Curve)}))
-	fmt.Println(hex.EncodeToString(rpk.Content))
-
 	require.NoError(t, err)
 
 	assert.Equal(t, pk, rpk)
@@ -344,6 +336,23 @@ func TestDecoder_Signature(t *testing.T) {
 
 	rsig, err := d.ReadSignature()
 	assert.NoError(t, err)
+	assert.Equal(t, sig, rsig)
+	assert.Equal(t, 0, d.remaining())
+}
+
+func TestDecoder_Signature_WA(t *testing.T) {
+	sig := ecc.MustNewSignature("SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s")
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	assert.NoError(t, enc.writeSignature(sig))
+
+	d := NewDecoder(buf.Bytes())
+
+	rsig, err := d.ReadSignature()
+
+	require.NoError(t, err)
+
 	assert.Equal(t, sig, rsig)
 	assert.Equal(t, 0, d.remaining())
 }
@@ -436,7 +445,7 @@ func TestDecoder_Encode(t *testing.T) {
 		// maps don't serialize deterministically.. we no want that.
 		//		F8:  map[string]string{"foo": "bar", "hello": "you"},
 		F9:  ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"),
-		F10: ecc.Signature{Curve: ecc.CurveK1, Content: make([]byte, 65)},
+		F10: ecc.MustNewSignatureFromData(make([]byte, 66)),
 		F11: byte(1),
 		F12: uint64(87),
 		F13: []byte{1, 2, 3, 4, 5},
@@ -670,7 +679,7 @@ func TestDecoder_Decode_struct_tag_BinaryExtension_AllAtStart(t *testing.T) {
 func TestDecoder_readUint16_missing_data(t *testing.T) {
 
 	_, err := NewDecoder([]byte{}).ReadByte()
-	assert.EqualError(t, err, "byte required [1] byte, remaining [0]")
+	assert.EqualError(t, err, "required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadUint16()
 	assert.EqualError(t, err, "uint16 required [2] bytes, remaining [0]")
@@ -685,10 +694,10 @@ func TestDecoder_readUint16_missing_data(t *testing.T) {
 	assert.EqualError(t, err, "checksum 256 required [32] bytes, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadPublicKey()
-	assert.EqualError(t, err, "unable to read public key type: byte required [1] byte, remaining [0]")
+	assert.EqualError(t, err, "unable to read public key type: required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadSignature()
-	assert.EqualError(t, err, "signature required [66] bytes, remaining [0]")
+	assert.EqualError(t, err, "unable to read signature type: required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadTstamp()
 	assert.EqualError(t, err, "tstamp required [8] bytes, remaining [0]")
