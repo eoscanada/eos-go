@@ -9,6 +9,10 @@ import (
 type innerWASignature struct {
 }
 
+func newInnerWASignature() innerSignature {
+	return &innerWASignature{}
+}
+
 func (s innerWASignature) verify(content []byte, hash []byte, pubKey PublicKey) bool {
 	// It seems from my understanding that WA uses standard ECDSA P256 algorithm, so we
 	// should be able to verify signature of message against PublicKey.
@@ -22,5 +26,11 @@ func (s *innerWASignature) publicKey(content []byte, hash []byte) (out PublicKey
 }
 
 func (s innerWASignature) string(content []byte) string {
-	return "SIG_WA_" + base58.Encode(content)
+	checksum := Ripemd160checksumHashCurve(content, CurveWA)
+	buf := append(content[:], checksum...)
+	return "SIG_WA_" + base58.Encode(buf)
+}
+
+func (s innerWASignature) signatureMaterialSize() *int {
+	return nil
 }

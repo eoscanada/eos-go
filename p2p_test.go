@@ -218,7 +218,7 @@ func FixmeTestDecode_OptionalProducerSchedule_Missing_PresentByte(t *testing.T) 
 
 	decoder := NewDecoder([]byte{})
 	err := decoder.Decode(&OptionalProducerSchedule{})
-	assert.EqualError(t, err, "decode: OptionalProducerSchedule isPresent, byte required [1] byte, remaining [0]")
+	assert.EqualError(t, err, "decode: OptionalProducerSchedule isPresent, required [1] byte, remaining [0]")
 
 }
 
@@ -235,7 +235,7 @@ func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
 
 	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&Packet{})
-	assert.EqualError(t, err, "decode, p2p envelope type: byte required [1] byte, remaining [0]")
+	assert.EqualError(t, err, "decode, p2p envelope type: required [1] byte, remaining [0]")
 
 	buf = new(bytes.Buffer)
 	encoder = NewEncoder(buf)

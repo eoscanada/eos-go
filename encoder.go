@@ -435,15 +435,17 @@ func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write signature", zap.Stringer("sig", s))
 	}
-	if len(s.Content) != 65 {
-		return fmt.Errorf("signature should be 65 bytes, was %d", len(s.Content))
+
+	err = s.Validate()
+	if err != nil {
+		return fmt.Errorf("invalid signature: %s", err)
 	}
 
 	if err = e.writeByte(byte(s.Curve)); err != nil {
 		return
 	}
 
-	return e.toWriter(s.Content) // should write 65 bytes
+	return e.toWriter(s.Content)
 }
 
 func (e *Encoder) writeTstamp(t Tstamp) (err error) {
