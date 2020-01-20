@@ -34,6 +34,10 @@ type PublicKey struct {
 	inner innerPublicKey
 }
 
+func (p PublicKey) IsEmpty() bool {
+	return p.Curve == 0 && p.Content == nil && p.inner == nil
+}
+
 func NewPublicKeyFromData(data []byte) (out PublicKey, err error) {
 	if len(data) <= 0 {
 		return out, errors.New("data must have at least one byte, got 0")
@@ -157,6 +161,10 @@ func (p PublicKey) Key() (*btcec.PublicKey, error) {
 var emptyKeyMaterial = make([]byte, 33)
 
 func (p PublicKey) String() string {
+	if p.IsEmpty() {
+		return ""
+	}
+
 	data := p.Content
 	if len(data) == 0 {
 		// Nothing really to do, just output some garbage

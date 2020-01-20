@@ -8,6 +8,7 @@ import (
 
 func init() {
 	if os.Getenv("DEBUG") != "" {
+		coreLog, _ = zap.NewDevelopment()
 		encoderLog, _ = zap.NewDevelopment()
 		decoderLog, _ = zap.NewDevelopment()
 		abiEncoderLog, _ = zap.NewDevelopment()

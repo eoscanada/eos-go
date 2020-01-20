@@ -737,7 +737,7 @@ func TestDecoder_SignedBlock_Full(t *testing.T) {
 	assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", signedBlock.TransactionMRoot.String())
 	assert.Equal(t, "6a46611d7b15f71ff42de916e19f8ed1011096178f81d9b17987637a545b1521", signedBlock.ActionMRoot.String())
 	assert.Equal(t, uint32(0), signedBlock.ScheduleVersion)
-	assert.Equal(t, (*OptionalProducerSchedule)(nil), signedBlock.NewProducers)
+	assert.Equal(t, (*ProducerSchedule)(nil), signedBlock.NewProducersV1)
 	assert.Equal(t, []*Extension{&Extension{uint16(0), expectedHeaderExtension}}, signedBlock.HeaderExtensions)
 	assert.Equal(t, "SIG_K1_K7cBDNuka9kLUNAGaCm4FpNTdJwVKY3rP3v2esU8RGv1KXNNDEEdrWBAJSH3cPB8t1478e4RmhjkP48Sbuaqkf6Z5iDZKW", signedBlock.ProducerSignature.String())
 	assert.Equal(t, []TransactionReceipt{}, signedBlock.Transactions)

@@ -7,10 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"time"
-
-	"math"
 
 	"github.com/eoscanada/eos-go/ecc"
 	"go.uber.org/zap"
@@ -139,12 +138,6 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		return e.writeUint64(uint64(cv))
 	case Asset:
 		return e.writeAsset(cv)
-	// case *OptionalProducerSchedule:
-	// 	isPresent := cv != nil
-	// 	e.writeBool(isPresent)
-	// 	if isPresent {
-
-	// 	}
 	case ActionData:
 		return e.writeActionData(cv)
 	case *ActionData:
