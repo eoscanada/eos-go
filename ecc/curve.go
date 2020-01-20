@@ -1,5 +1,7 @@
 package ecc
 
+import "runtime/debug"
+
 type CurveID uint8
 
 const (
@@ -17,6 +19,7 @@ func (c CurveID) String() string {
 	case CurveWA:
 		return "WA"
 	default:
+		debug.PrintStack()
 		return "UN" // unknown
 	}
 }

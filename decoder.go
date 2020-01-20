@@ -2,22 +2,26 @@ package eos
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
-	"math"
-
-	"time"
-
-	"errors"
-	"reflect"
-
-	"strings"
-
 	"io/ioutil"
+	"math"
+	"reflect"
+	"strings"
+	"time"
 
 	"github.com/eoscanada/eos-go/ecc"
 	"go.uber.org/zap"
 )
+
+// UnmarshalerBinary is the interface implemented by types
+// that can unmarshal an EOSIO binary description of themselves.
+//
+// **Warning** This is experimental, exposed only for internal usage for now.
+type UnmarshalerBinary interface {
+	UnmarshalBinary(decoder *Decoder) error
+}
 
 var TypeSize = struct {
 	Byte           int
@@ -98,7 +102,20 @@ func (d *Decoder) DecodeActions(decode bool) {
 	d.decodeActions = decode
 }
 
-func (d *Decoder) Decode(v interface{}) (err error) {
+type DecodeOption = interface{}
+
+type optionalFieldType bool
+
+const OptionalField optionalFieldType = true
+
+func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
+	optionalField := false
+	for _, option := range options {
+		if _, isOptionalField := option.(optionalFieldType); isOptionalField {
+			optionalField = true
+		}
+	}
+
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
 		return errors.New("decode, can only Decode to pointer type")
@@ -106,20 +123,51 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 	t := rv.Type()
 
 	if loggingEnabled {
-		decoderLog.Debug("decode type", typeField("type", v))
+		decoderLog.Debug("decode type", typeField("type", v), zap.Bool("optional", optionalField))
 	}
+
 	if !rv.CanAddr() {
 		return errors.New("binary: can only Decode to pointer type")
+	}
+
+	if optionalField {
+		isPresent, e := d.ReadByte()
+		if e != nil {
+			err = fmt.Errorf("decode: %t isPresent, %s", v, e)
+			return
+		}
+
+		if isPresent == 0 {
+			if loggingEnabled {
+				decoderLog.Debug("skipping optional", typeField("type", v))
+			}
+
+			rv.Set(reflect.Zero(t))
+			return
+		}
 	}
 
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 		newRV := reflect.New(t)
 		rv.Set(newRV)
+
+		// At this point, `newRV` is a pointer to our target type, we need to check here because
+		// after that, when `reflect.Indirect` is used, we get a `**<Type>` instead of a `*<Type>`
+		// which breaks the interface checking.
+		//
+		// Ultimetaly, I think this could should be re-written, I don't think the `**<Type>` is necessary.
+		if u, ok := newRV.Interface().(UnmarshalerBinary); ok {
+			if loggingEnabled {
+				decoderLog.Debug("using UnmarshalBinary method to decode type", typeField("type", v))
+			}
+			return u.UnmarshalBinary(d)
+		}
+
 		rv = reflect.Indirect(newRV)
 	}
 
-	switch realV := v.(type) {
+	switch v.(type) {
 	case *string:
 		s, e := d.ReadString()
 		if e != nil {
@@ -277,7 +325,6 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		asset, err = d.ReadAsset()
 		rv.Set(reflect.ValueOf(asset))
 		return
-
 	case *TransactionWithID:
 
 		t, e := d.ReadByte()
@@ -309,21 +356,6 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 			trx := TransactionWithID{Packed: packedTrx}
 			rv.Set(reflect.ValueOf(trx))
 			return nil
-		}
-
-	case **OptionalProducerSchedule:
-		isPresent, e := d.ReadByte()
-		if e != nil {
-			err = fmt.Errorf("decode: OptionalProducerSchedule isPresent, %s", e)
-			return
-		}
-
-		if isPresent == 0 {
-			if loggingEnabled {
-				decoderLog.Debug("skipping optional OptionalProducerSchedule")
-			}
-			*realV = nil
-			return
 		}
 
 	case **Action:
@@ -445,7 +477,13 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 			if loggingEnabled {
 				decoderLog.Debug("field", zap.String("name", typeField.Name))
 			}
-			if err = d.Decode(iface); err != nil {
+
+			var options []DecodeOption
+			if tag == "optional" {
+				options = append(options, OptionalField)
+			}
+
+			if err = d.Decode(iface, options...); err != nil {
 				return
 			}
 		}
@@ -792,17 +830,17 @@ func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
 	}
 
 	d.pos += 34
-	reminderDataSize, err := d.ReadUvarint32()
+	remainderDataSize, err := d.ReadUvarint32()
 	if err != nil {
 		return out, fmt.Errorf("unable to read public key WA key material size: %s", err)
 	}
 
-	if d.remaining() < int(reminderDataSize) {
-		err = fmt.Errorf("publicKey WA reminder key material requires [%d] bytes, remaining [%d]", reminderDataSize, d.remaining())
+	if d.remaining() < int(remainderDataSize) {
+		err = fmt.Errorf("publicKey WA remainder key material requires [%d] bytes, remaining [%d]", remainderDataSize, d.remaining())
 		return
 	}
 
-	d.pos += int(reminderDataSize)
+	d.pos += int(remainderDataSize)
 	keyMaterialSize := d.pos - begin
 
 	out = make([]byte, keyMaterialSize)
@@ -848,18 +886,6 @@ func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 		decoderLog.Debug("read signature", zap.Stringer("sig", out))
 	}
 
-	// sigContent := make([]byte, 66)
-	// copy(sigContent, d.data[d.pos:d.pos+TypeSize.Signature])
-
-	// out, err = ecc.NewSignatureFromData(sigContent)
-	// if err != nil {
-	// 	return out, fmt.Errorf("new signature: %s", err)
-	// }
-
-	// d.pos += TypeSize.Signature
-	// if loggingEnabled {
-	// 	decoderLog.Debug("read signature", zap.Stringer("sig", out))
-	// }
 	return
 }
 

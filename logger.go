@@ -6,24 +6,33 @@ import (
 	"go.uber.org/zap"
 )
 
+var coreLog = zap.NewNop()
 var encoderLog = zap.NewNop()
 var decoderLog = zap.NewNop()
 var abiEncoderLog = zap.NewNop()
 var abiDecoderLog = zap.NewNop()
 var loggingEnabled = false
 
+func EnableCoreLogging() {
+	coreLog = newLogger(false)
+	enableLogging(coreLog)
+}
+
 func EnableEncoderLogging() {
 	encoderLog = newLogger(false)
 	enableLogging(encoderLog)
 }
+
 func EnableDecoderLogging() {
 	decoderLog = newLogger(false)
 	enableLogging(decoderLog)
 }
+
 func EnableABIEncoderLogging() {
 	abiEncoderLog = newLogger(false)
 	enableLogging(abiEncoderLog)
 }
+
 func EnableABIDecoderLogging() {
 	abiDecoderLog = newLogger(false)
 	enableLogging(abiDecoderLog)
