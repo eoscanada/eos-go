@@ -24,45 +24,81 @@ type UnmarshalerBinary interface {
 }
 
 var TypeSize = struct {
-	Byte           int
-	Int8           int
-	UInt8          int
-	UInt16         int
-	Int16          int
-	UInt32         int
-	UInt64         int
-	UInt128        int
-	Float32        int
-	Float64        int
-	Checksum160    int
-	Checksum256    int
-	Checksum512    int
-	PublicKey      int
-	Signature      int
+	Bool int
+	Byte int
+
+	Int8  int
+	Int16 int
+
+	Uint8   int
+	Uint16  int
+	Uint32  int
+	Uint64  int
+	Uint128 int
+
+	Float32 int
+	Float64 int
+
+	Checksum160 int
+	Checksum256 int
+	Checksum512 int
+
+	PublicKey int
+	Signature int
+
 	Tstamp         int
 	BlockTimestamp int
-	CurrencyName   int
-	Bool           int
+
+	CurrencyName int
+
+	// Deprecated Fields
+
+	// Deprecated: use Uint8 instead
+	UInt8 int
+	// Deprecated: use Uint16 instead
+	UInt16 int
+	// Deprecated: use Uint32 instead
+	UInt32 int
+	// Deprecated: use Uint64 instead
+	UInt64 int
+	// Deprecated: use Uint128 instead
+	UInt128 int
 }{
-	Byte:           1,
-	Int8:           1,
-	UInt8:          1,
-	UInt16:         2,
-	Int16:          2,
-	UInt32:         4,
-	UInt64:         8,
-	UInt128:        16,
-	Float32:        4,
-	Float64:        8,
-	Checksum160:    20,
-	Checksum256:    32,
-	Checksum512:    64,
-	PublicKey:      34,
-	Signature:      66,
+	Byte: 1,
+	Bool: 1,
+
+	Int8:  1,
+	Int16: 2,
+
+	Uint8:   1,
+	Uint16:  2,
+	Uint32:  4,
+	Uint64:  8,
+	Uint128: 16,
+
+	Float32: 4,
+	Float64: 8,
+
+	Checksum160: 20,
+	Checksum256: 32,
+	Checksum512: 64,
+
+	PublicKey: 34,
+	Signature: 66,
+
 	Tstamp:         8,
 	BlockTimestamp: 4,
-	CurrencyName:   7,
-	Bool:           1,
+
+	CurrencyName: 7,
+}
+
+func init() {
+	// Deprecated fields initialization
+	TypeSize.UInt8 = TypeSize.Uint8
+	TypeSize.UInt16 = TypeSize.Uint16
+	TypeSize.UInt32 = TypeSize.Uint32
+	TypeSize.UInt64 = TypeSize.Uint64
+	TypeSize.UInt128 = TypeSize.Uint128
 }
 
 var RegisteredActions = map[AccountName]map[ActionName]reflect.Type{}
@@ -592,10 +628,16 @@ func (d *Decoder) ReadBool() (out bool, err error) {
 
 }
 
-func (d *Decoder) ReadUInt8() (out uint8, err error) {
+func (d *Decoder) ReadUint8() (out uint8, err error) {
 	out, err = d.ReadByte()
 	return
 }
+
+// Deprecated: Use `ReadUint8` (with a lower case `i`) instead
+func (d *Decoder) ReadUInt8() (out uint8, err error) {
+	return d.ReadUint8()
+}
+
 func (d *Decoder) ReadInt8() (out int8, err error) {
 	b, err := d.ReadByte()
 	out = int8(b)
@@ -606,13 +648,13 @@ func (d *Decoder) ReadInt8() (out int8, err error) {
 }
 
 func (d *Decoder) ReadUint16() (out uint16, err error) {
-	if d.remaining() < TypeSize.UInt16 {
-		err = fmt.Errorf("uint16 required [%d] bytes, remaining [%d]", TypeSize.UInt16, d.remaining())
+	if d.remaining() < TypeSize.Uint16 {
+		err = fmt.Errorf("uint16 required [%d] bytes, remaining [%d]", TypeSize.Uint16, d.remaining())
 		return
 	}
 
 	out = binary.LittleEndian.Uint16(d.data[d.pos:])
-	d.pos += TypeSize.UInt16
+	d.pos += TypeSize.Uint16
 	if loggingEnabled {
 		decoderLog.Debug("read uint16", zap.Uint16("val", out))
 	}
@@ -637,13 +679,13 @@ func (d *Decoder) ReadInt64() (out int64, err error) {
 }
 
 func (d *Decoder) ReadUint32() (out uint32, err error) {
-	if d.remaining() < TypeSize.UInt32 {
-		err = fmt.Errorf("uint32 required [%d] bytes, remaining [%d]", TypeSize.UInt32, d.remaining())
+	if d.remaining() < TypeSize.Uint32 {
+		err = fmt.Errorf("uint32 required [%d] bytes, remaining [%d]", TypeSize.Uint32, d.remaining())
 		return
 	}
 
 	out = binary.LittleEndian.Uint32(d.data[d.pos:])
-	d.pos += TypeSize.UInt32
+	d.pos += TypeSize.Uint32
 	if loggingEnabled {
 		decoderLog.Debug("read uint32", zap.Uint32("val", out))
 	}
@@ -659,14 +701,14 @@ func (d *Decoder) ReadInt32() (out int32, err error) {
 }
 
 func (d *Decoder) ReadUint64() (out uint64, err error) {
-	if d.remaining() < TypeSize.UInt64 {
-		err = fmt.Errorf("uint64 required [%d] bytes, remaining [%d]", TypeSize.UInt64, d.remaining())
+	if d.remaining() < TypeSize.Uint64 {
+		err = fmt.Errorf("uint64 required [%d] bytes, remaining [%d]", TypeSize.Uint64, d.remaining())
 		return
 	}
 
-	data := d.data[d.pos : d.pos+TypeSize.UInt64]
+	data := d.data[d.pos : d.pos+TypeSize.Uint64]
 	out = binary.LittleEndian.Uint64(data)
-	d.pos += TypeSize.UInt64
+	d.pos += TypeSize.Uint64
 	if loggingEnabled {
 		decoderLog.Debug("read uint64", zap.Uint64("val", out), zap.Stringer("hex", HexBytes(data)))
 	}
@@ -674,16 +716,16 @@ func (d *Decoder) ReadUint64() (out uint64, err error) {
 }
 
 func (d *Decoder) ReadUint128(typeName string) (out Uint128, err error) {
-	if d.remaining() < TypeSize.UInt128 {
-		err = fmt.Errorf("%s required [%d] bytes, remaining [%d]", typeName, TypeSize.UInt128, d.remaining())
+	if d.remaining() < TypeSize.Uint128 {
+		err = fmt.Errorf("%s required [%d] bytes, remaining [%d]", typeName, TypeSize.Uint128, d.remaining())
 		return
 	}
 
-	data := d.data[d.pos : d.pos+TypeSize.UInt128]
+	data := d.data[d.pos : d.pos+TypeSize.Uint128]
 	out.Lo = binary.LittleEndian.Uint64(data)
 	out.Hi = binary.LittleEndian.Uint64(data[8:])
 
-	d.pos += TypeSize.UInt128
+	d.pos += TypeSize.Uint128
 	if loggingEnabled {
 		decoderLog.Debug("read uint128", zap.Stringer("hex", out), zap.Uint64("lo", out.Lo), zap.Uint64("lo", out.Lo))
 	}
@@ -775,7 +817,7 @@ func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
 }
 
 func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
-	typeID, err := d.ReadUInt8()
+	typeID, err := d.ReadUint8()
 	if err != nil {
 		return out, fmt.Errorf("unable to read public key type: %s", err)
 	}
@@ -850,7 +892,7 @@ func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
 }
 
 func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
-	typeID, err := d.ReadUInt8()
+	typeID, err := d.ReadUint8()
 	if err != nil {
 		return out, fmt.Errorf("unable to read signature type: %s", err)
 	}

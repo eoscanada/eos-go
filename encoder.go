@@ -295,7 +295,7 @@ func (e *Encoder) writeUint16(i uint16) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write uint16", zap.Uint16("val", i))
 	}
-	buf := make([]byte, TypeSize.UInt16)
+	buf := make([]byte, TypeSize.Uint16)
 	binary.LittleEndian.PutUint16(buf, i)
 	return e.toWriter(buf)
 }
@@ -318,7 +318,7 @@ func (e *Encoder) writeUint32(i uint32) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write uint32", zap.Uint32("val", i))
 	}
-	buf := make([]byte, TypeSize.UInt32)
+	buf := make([]byte, TypeSize.Uint32)
 	binary.LittleEndian.PutUint32(buf, i)
 	return e.toWriter(buf)
 }
@@ -334,7 +334,7 @@ func (e *Encoder) writeUint64(i uint64) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write uint64", zap.Uint64("val", i))
 	}
-	buf := make([]byte, TypeSize.UInt64)
+	buf := make([]byte, TypeSize.Uint64)
 	binary.LittleEndian.PutUint64(buf, i)
 	return e.toWriter(buf)
 }
@@ -343,9 +343,9 @@ func (e *Encoder) writeUint128(i Uint128) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write uint128", zap.Stringer("hex", i), zap.Uint64("lo", i.Lo), zap.Uint64("hi", i.Hi))
 	}
-	buf := make([]byte, TypeSize.UInt128)
+	buf := make([]byte, TypeSize.Uint128)
 	binary.LittleEndian.PutUint64(buf, i.Lo)
-	binary.LittleEndian.PutUint64(buf[TypeSize.UInt64:], i.Hi)
+	binary.LittleEndian.PutUint64(buf[TypeSize.Uint64:], i.Hi)
 	return e.toWriter(buf)
 }
 
@@ -354,7 +354,7 @@ func (e *Encoder) writeFloat32(f float32) (err error) {
 		encoderLog.Debug("write float32", zap.Float32("val", f))
 	}
 	i := math.Float32bits(f)
-	buf := make([]byte, TypeSize.UInt32)
+	buf := make([]byte, TypeSize.Uint32)
 	binary.LittleEndian.PutUint32(buf, i)
 
 	return e.toWriter(buf)
@@ -364,7 +364,7 @@ func (e *Encoder) writeFloat64(f float64) (err error) {
 		encoderLog.Debug("write float64", zap.Float64("val", f))
 	}
 	i := math.Float64bits(f)
-	buf := make([]byte, TypeSize.UInt64)
+	buf := make([]byte, TypeSize.Uint64)
 	binary.LittleEndian.PutUint64(buf, i)
 
 	return e.toWriter(buf)
