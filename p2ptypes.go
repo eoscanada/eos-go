@@ -66,10 +66,10 @@ const (
 	GoAwayUnlinkable
 	GoAwayBadTransaction
 	GoAwayValidation
-	GoAwayAuthentication
-	GoAwayFatalOther
 	GoAwayBenignOther
-	GoAwayCrazy
+	GoAwayFatalOther
+	GoAwayAuthentication
+	GoAwayCrazy // not in eosio code
 )
 
 func (r GoAwayReason) String() string {
