@@ -58,6 +58,7 @@ func (m *HandshakeMessage) String() string {
 
 type GoAwayReason uint8
 
+// See plugins/net_plugin/include/eosio/net_plugin/protocol.hpp#L39
 const (
 	GoAwayNoReason = GoAwayReason(iota)
 	GoAwaySelfConnect
@@ -71,39 +72,29 @@ const (
 	GoAwayBenignOther
 	GoAwayFatalOther
 	GoAwayAuthentication
-	GoAwayCrazy // not in eosio code
 )
 
+var goAwayToStringMap = map[GoAwayReason]string{
+	GoAwayNoReason:       "no reason",
+	GoAwaySelfConnect:    "self connect",
+	GoAwayDuplicate:      "duplicate",
+	GoAwayWrongChain:     "wrong chain",
+	GoAwayWrongVersion:   "wrong version",
+	GoAwayForked:         "chain is forked",
+	GoAwayUnlinkable:     "unlinkable block received",
+	GoAwayBadTransaction: "bad transaction",
+	GoAwayValidation:     "invalid block",
+	GoAwayAuthentication: "authentication failure",
+	GoAwayFatalOther:     "some other failure",
+	GoAwayBenignOther:    "some other non-fatal condition, possibly unknown block",
+}
+
 func (r GoAwayReason) String() string {
-	switch r {
-	case GoAwayNoReason:
-		return "no reason"
-	case GoAwaySelfConnect:
-		return "self connect"
-	case GoAwayDuplicate:
-		return "duplicate"
-	case GoAwayWrongChain:
-		return "wrong chain"
-	case GoAwayWrongVersion:
-		return "wrong version"
-	case GoAwayForked:
-		return "forked"
-	case GoAwayUnlinkable:
-		return "unlinkable"
-	case GoAwayBadTransaction:
-		return "bad transaction"
-	case GoAwayValidation:
-		return "validation"
-	case GoAwayAuthentication:
-		return "authentication"
-	case GoAwayFatalOther:
-		return "fatal other"
-	case GoAwayBenignOther:
-		return "benign other"
-	case GoAwayCrazy:
-		return "crazy"
+	if value, exists := goAwayToStringMap[r]; exists {
+		return value
 	}
-	return "invalid go away code"
+
+	return "some crazy reason"
 }
 
 type GoAwayMessage struct {
