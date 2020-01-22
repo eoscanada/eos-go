@@ -142,6 +142,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		n, err = d.ReadByte()
 		rv.SetUint(uint64(n))
 		return
+	case *int8:
+		var n int8
+		n, err = d.ReadInt8()
+		rv.SetInt(int64(n))
+		return
 	case *int16:
 		var n int16
 		n, err = d.ReadInt16()
@@ -261,6 +266,11 @@ func (d *Decoder) Decode(v interface{}) (err error) {
 		var cur CurrencyName
 		cur, err = d.ReadCurrencyName()
 		rv.Set(reflect.ValueOf(cur))
+		return
+	case *Symbol:
+		var symbol *Symbol
+		symbol, err = d.ReadSymbol()
+		rv.Set(reflect.ValueOf(*symbol))
 		return
 	case *Asset:
 		var asset Asset
