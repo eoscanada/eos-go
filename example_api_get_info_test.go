@@ -1,6 +1,7 @@
 package eos_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -10,7 +11,7 @@ import (
 func ExampleAPI_GetInfo() {
 	api := eos.New(getAPIURL())
 
-	info, err := api.GetInfo()
+	info, err := api.GetInfo(context.Background())
 	if err != nil {
 		panic(fmt.Errorf("get info: %s", err))
 	}

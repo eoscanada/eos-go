@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 
@@ -38,15 +39,15 @@ func NewWalletSigner(api *API, walletName string) *WalletSigner {
 	return &WalletSigner{api, walletName}
 }
 
-func (s *WalletSigner) ImportPrivateKey(wifKey string) (err error) {
-	return s.api.WalletImportKey(s.walletName, wifKey)
+func (s *WalletSigner) ImportPrivateKey(ctx context.Context, wifKey string) (err error) {
+	return s.api.WalletImportKey(ctx, s.walletName, wifKey)
 }
 
-func (s *WalletSigner) AvailableKeys() (out []ecc.PublicKey, err error) {
-	return s.api.WalletPublicKeys()
+func (s *WalletSigner) AvailableKeys(ctx context.Context) (out []ecc.PublicKey, err error) {
+	return s.api.WalletPublicKeys(ctx)
 }
 
-func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
+func (s *WalletSigner) Sign(ctx context.Context, tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
 	// Fetch the available keys over there... and ask this wallet
 	// provider to sign with the keys he has..
 
@@ -54,7 +55,7 @@ func (s *WalletSigner) Sign(tx *SignedTransaction, chainID []byte, requiredKeys 
 	// and the available keys, return something about
 	// `SignatureIncomplete`.
 
-	resp, err := s.api.WalletSignTransaction(tx, chainID, requiredKeys...)
+	resp, err := s.api.WalletSignTransaction(ctx, tx, chainID, requiredKeys...)
 	if err != nil {
 		return nil, err
 	}

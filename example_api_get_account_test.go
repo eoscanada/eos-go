@@ -1,6 +1,7 @@
 package eos_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -11,7 +12,7 @@ func ExampleAPI_GetAccount() {
 	api := eos.New(getAPIURL())
 
 	account := eos.AccountName("eos.rex")
-	info, err := api.GetAccount(account)
+	info, err := api.GetAccount(context.Background(), account)
 	if err != nil {
 		if err == eos.ErrNotFound {
 			fmt.Printf("unknown account: %s", account)

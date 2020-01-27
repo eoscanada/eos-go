@@ -1,6 +1,7 @@
 package eos_test
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -30,12 +31,12 @@ func ExampleAPI_PushTransaction_transfer_EOS() {
 	}
 
 	txOpts := &eos.TxOptions{}
-	if err := txOpts.FillFromChain(api); err != nil {
+	if err := txOpts.FillFromChain(context.Background(), api); err != nil {
 		panic(fmt.Errorf("filling tx opts: %s", err))
 	}
 
 	tx := eos.NewTransaction([]*eos.Action{token.NewTransfer(from, to, quantity, memo)}, txOpts)
-	signedTx, packedTx, err := api.SignTransaction(tx, txOpts.ChainID, eos.CompressionNone)
+	signedTx, packedTx, err := api.SignTransaction(context.Background(), tx, txOpts.ChainID, eos.CompressionNone)
 	if err != nil {
 		panic(fmt.Errorf("sign transaction: %s", err))
 	}
@@ -48,7 +49,7 @@ func ExampleAPI_PushTransaction_transfer_EOS() {
 	fmt.Println(string(content))
 	fmt.Println()
 
-	response, err := api.PushTransaction(packedTx)
+	response, err := api.PushTransaction(context.Background(), packedTx)
 	if err != nil {
 		panic(fmt.Errorf("push transaction: %s", err))
 	}

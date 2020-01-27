@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/zlib"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -453,13 +454,13 @@ type TxOptions struct {
 
 // FillFromChain will load ChainID (for signing transactions) and
 // HeadBlockID (to fill transaction with TaPoS data).
-func (opts *TxOptions) FillFromChain(api *API) error {
+func (opts *TxOptions) FillFromChain(ctx context.Context, api *API) error {
 	if opts == nil {
 		return errors.New("TxOptions should not be nil, send an object")
 	}
 
 	if opts.HeadBlockID == nil || opts.ChainID == nil {
-		info, err := api.cachedGetInfo()
+		info, err := api.cachedGetInfo(ctx)
 		if err != nil {
 			return err
 		}
