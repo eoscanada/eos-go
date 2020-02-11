@@ -317,7 +317,7 @@ type BlockSigningAuthority struct {
 	BaseVariant
 }
 
-var blockSigningVariantFactoryImplMap = map[uint]VariantImplFactory{
+var blockSigningVariantFactoryImplMap = map[uint32]VariantImplFactory{
 	BlockSigningAuthorityV0Type: func() interface{} { return new(BlockSigningAuthorityV0) },
 }
 
