@@ -42,6 +42,12 @@ func (e *Encoder) writeName(name Name) error {
 
 func (e *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
+	case BaseVariant:
+		err = e.writeUVarInt(int(cv.TypeID))
+		if err != nil {
+			return
+		}
+		return e.Encode(cv.Impl)
 	case Name:
 		return e.writeName(cv)
 	case AccountName:

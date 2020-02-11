@@ -37,6 +37,10 @@ func (a *ABI) DecodeTableRowTyped(tableType string, data []byte) ([]byte, error)
 	return a.decode(binaryDecoder, tableType)
 }
 
+func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
+	return a.decode(binaryDecoder, structName)
+}
+
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
 	if loggingEnabled {
 		abiDecoderLog.Debug("decode struct", zap.String("name", structName))
