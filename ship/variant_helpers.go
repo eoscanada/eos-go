@@ -157,7 +157,7 @@ const (
 )
 
 var TransactionVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	TransactionIDType:     func() interface{} { return new(TransactionID) },
+	TransactionIDType:     func() interface{} { return new(eos.Checksum256) },
 	PackedTransactionType: func() interface{} { return new(eos.PackedTransaction) },
 }
 

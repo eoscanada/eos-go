@@ -119,7 +119,7 @@ type TransactionTraceV0 struct {
 	Scheduled       bool                 `json:"scheduled"`
 	ActionTraces    []*ActionTrace       `json:"action_traces"`
 	AccountDelta    *eos.AccountRAMDelta `json:"account_delta" eos:"optional"`
-	Except          string               `json:"except"`
+	Except          string               `json:"except" eos:"optional"`
 	ErrorCode       uint64               `json:"error_code" eos:"optional"`
 	FailedDtrxTrace *TransactionTrace    `json:"failed_dtrx_trace" eos:"optional"`
 	Partial         *PartialTransaction  `json:"partial" eos:"optional"`
@@ -135,7 +135,7 @@ type TransactionReceipt struct {
 	Trx *TransactionVariant
 }
 
-type TransactionID eos.Checksum256
+//type TransactionID eos.Checksum256
 
 type SignedBlock struct {
 	SignedBlockHeader

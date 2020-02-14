@@ -73,7 +73,21 @@ func init() {
 //	}
 //}
 
+func TestBlock33Complete(t *testing.T) {
+	result, err := hex.DecodeString(block33Block)
+	require.NoError(t, err)
+
+	//out := &Result{}
+	//err = eos.UnmarshalBinary(result, &out)
+	out, err := ParseGetBlockResultV0(result)
+	require.NoError(t, err)
+	for _, tt := range out.Traces.AsTransactionTracesV0() {
+		fmt.Println(tt.ID)
+	}
+}
+
 func TestBlock5Complete(t *testing.T) {
+	t.Skip()
 	result, err := hex.DecodeString(longresult)
 	require.NoError(t, err)
 
