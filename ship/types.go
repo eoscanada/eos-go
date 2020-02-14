@@ -130,14 +130,8 @@ type SignedBlockHeader struct {
 	ProducerSignature ecc.Signature // no pointer!!
 }
 
-type TransactionReceiptHeader struct {
-	Status        uint8
-	CPUUsageUS    uint32
-	NetUsageWords eos.Varuint32
-}
-
 type TransactionReceipt struct {
-	TransactionReceiptHeader
+	eos.TransactionReceiptHeader
 	Trx *TransactionVariant
 }
 
