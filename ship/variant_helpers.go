@@ -1,6 +1,8 @@
 package ship
 
-import "github.com/eoscanada/eos-go"
+import (
+	"github.com/eoscanada/eos-go"
+)
 
 // Request
 
@@ -54,6 +56,19 @@ var TransactionTraceVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
 
 type TransactionTraceArray struct {
 	Elem []*TransactionTrace
+}
+
+func (t *TransactionTraceArray) AsTransactionTracesV0() (out []*TransactionTraceV0) {
+	if t == nil || t.Elem == nil {
+		return nil
+	}
+	for _, e := range t.Elem {
+		if e.TypeID != TransactionTraceV0Type {
+			panic("wrong type for conversion")
+		}
+		out = append(out, e.Impl.(*TransactionTraceV0))
+	}
+	return out
 }
 
 func (r *TransactionTraceArray) UnmarshalBinary(decoder *eos.Decoder) error {
