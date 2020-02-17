@@ -42,7 +42,7 @@ type GetBlocksResultV0 struct {
 	PrevBlock        *BlockPosition         `eos:"optional"`
 	Block            *SignedBlockBytes      `eos:"optional"`
 	Traces           *TransactionTraceArray `eos:"optional"`
-	Deltas           []byte                 `eos:"optional"` // *TableDeltaArray `eos:"optional"`
+	Deltas           *TableDeltaArray       `eos:"optional"`
 }
 
 // State History Plugin version of EOS structs
@@ -142,23 +142,6 @@ type SignedBlock struct {
 	Transactions    []*TransactionReceipt
 	BlockExtensions []*Extension
 }
-
-//type TransactionTraceArrayBytes []*TransactionTrace
-//
-//func (r *TransactionTraceArrayBytes) UnmarshalBinary(decoder *eos.Decoder) error {
-//	data, err := decoder.ReadByteArray()
-//	if err != nil {
-//		return err
-//	}
-//	tt := []*TransactionTrace(*r)
-//	err = eos.UnmarshalBinary(data, &tt)
-//	r = *TransactionTraceArrayBytes(*tt)
-//	return err
-//}
-//
-//func (r *TransactionTraceArrayBytes) AsTransactionTraces() []*TransactionTrace {
-//	return []*TransactionTrace(*r)
-//}
 
 type SignedBlockBytes SignedBlock
 

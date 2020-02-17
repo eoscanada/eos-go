@@ -134,7 +134,7 @@ type TableDelta struct {
 	eos.BaseVariant
 }
 
-func (d TableDelta) UnmarshalBinary(decoder *eos.Decoder) error {
+func (d *TableDelta) UnmarshalBinary(decoder *eos.Decoder) error {
 	return d.BaseVariant.UnmarshalBinaryVariant(decoder, TableDeltaVariantFactoryImplMap)
 }
 
@@ -142,12 +142,25 @@ type TableDeltaArray struct {
 	Elem []*TableDelta
 }
 
-func (d TableDeltaArray) UnmarshalBinary(decoder *eos.Decoder) error {
+func (d *TableDeltaArray) UnmarshalBinary(decoder *eos.Decoder) error {
 	data, err := decoder.ReadByteArray()
 	if err != nil {
 		return err
 	}
 	return eos.UnmarshalBinary(data, &d.Elem)
+}
+
+func (t *TableDeltaArray) AsTableDeltasV0() (out []*TableDeltaV0) {
+	if t == nil || t.Elem == nil {
+		return nil
+	}
+	for _, e := range t.Elem {
+		if e.TypeID != TableDeltaV0Type {
+			panic("wrong type for conversion")
+		}
+		out = append(out, e.Impl.(*TableDeltaV0))
+	}
+	return out
 }
 
 // TransactionVariant
