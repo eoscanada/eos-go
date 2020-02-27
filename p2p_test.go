@@ -418,7 +418,7 @@ func checkProducerAuthoritySchedule(t *testing.T, schedule *ProducerAuthoritySch
 }
 
 func checkBlockSigningAuthority(t *testing.T, authority *BlockSigningAuthority) {
-	assert.Equal(t, uint(0), authority.TypeID)
+	assert.Equal(t, uint32(0), authority.TypeID)
 	switch v0 := authority.Impl.(type) {
 	case *BlockSigningAuthorityV0:
 		assert.Equal(t, uint32(2), v0.Threshold)
