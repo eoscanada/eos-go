@@ -25,8 +25,8 @@ Basic usage
 ```go
 api := eos.New("http://testnet1.eos.io")
 
-infoResp, _ := api.GetInfo()
-accountResp, _ := api.GetAccount("initn")
+infoResp, _ := api.GetInfo(ctx)
+accountResp, _ := api.GetAccount(ctx, "initn")
 fmt.Println("Permission for initn:", accountResp.Permissions[0].RequiredAuth.Keys)
 ```
 
