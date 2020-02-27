@@ -1,29 +1,26 @@
 package eos
 
 import (
+	"bufio"
 	"context"
 	"crypto/sha256"
 	"fmt"
-
 	"os"
-
-	"bufio"
-
 	"strings"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
 
 type Signer interface {
-	AvailableKeys() (out []ecc.PublicKey, err error)
+	AvailableKeys(ctx context.Context) (out []ecc.PublicKey, err error)
 
 	// Sign signs a `tx` transaction. It gets passed a
 	// SignedTransaction because it is possible that it holds a few
 	// signatures and requests this wallet only to add one or more
 	// signatures it requires.
-	Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error)
+	Sign(ctx context.Context, tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error)
 
-	ImportPrivateKey(wifPrivKey string) error
+	ImportPrivateKey(ctx context.Context, wifPrivKey string) error
 }
 
 // `eosiowd` wallet-based signer
@@ -110,14 +107,14 @@ func (b *KeyBag) ImportFromFile(path string) error {
 	return nil
 }
 
-func (b *KeyBag) AvailableKeys() (out []ecc.PublicKey, err error) {
+func (b *KeyBag) AvailableKeys(ctx context.Context) (out []ecc.PublicKey, err error) {
 	for _, k := range b.Keys {
 		out = append(out, k.PublicKey())
 	}
 	return
 }
 
-func (b *KeyBag) ImportPrivateKey(wifPrivKey string) (err error) {
+func (b *KeyBag) ImportPrivateKey(ctx context.Context, wifPrivKey string) (err error) {
 	return b.Add(wifPrivKey)
 }
 
@@ -131,7 +128,7 @@ func (b *KeyBag) SignDigest(digest []byte, requiredKey ecc.PublicKey) (ecc.Signa
 	return privateKey.Sign(digest)
 }
 
-func (b *KeyBag) Sign(tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
+func (b *KeyBag) Sign(ctx context.Context, tx *SignedTransaction, chainID []byte, requiredKeys ...ecc.PublicKey) (*SignedTransaction, error) {
 	// TODO: probably want to use `tx.packed` and hash the ContextFreeData also.
 	txdata, cfd, err := tx.PackedTransactionAndCFD()
 	if err != nil {

@@ -15,7 +15,7 @@ func ExampleAPI_PushTransaction_transfer_EOS() {
 	api := eos.New(getAPIURL())
 
 	keyBag := &eos.KeyBag{}
-	err := keyBag.ImportPrivateKey(readPrivateKey())
+	err := keyBag.ImportPrivateKey(context.Background(), readPrivateKey())
 	if err != nil {
 		panic(fmt.Errorf("import private key: %s", err))
 	}

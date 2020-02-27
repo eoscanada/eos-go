@@ -34,7 +34,7 @@ type API struct {
 	lastGetInfoStamp time.Time
 	lastGetInfoLock  sync.Mutex
 
-	customGetRequiredKeys func(tx *Transaction) ([]ecc.PublicKey, error)
+	customGetRequiredKeys func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
 }
 
 func New(baseURL string) *API {
@@ -102,7 +102,7 @@ func (api *API) EnableKeepAlives() bool {
 	return false
 }
 
-func (api *API) SetCustomGetRequiredKeys(f func(tx *Transaction) ([]ecc.PublicKey, error)) {
+func (api *API) SetCustomGetRequiredKeys(f func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)) {
 	api.customGetRequiredKeys = f
 }
 
@@ -118,7 +118,7 @@ func (api *API) ProducerPause(ctx context.Context) error {
 
 // CreateSnapshot will write a snapshot file on a nodeos with
 // `producer_api` plugin loaded.
-func (api *API) CreateSnapshot() (ctx context.Context, out *CreateSnapshotResp, err error) {
+func (api *API) CreateSnapshot(ctx context.Context) (out *CreateSnapshotResp, err error) {
 	err = api.call(ctx, "producer", "create_snapshot", nil, &out)
 	return
 }
@@ -354,7 +354,7 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 	var requiredKeys []ecc.PublicKey
 	if api.customGetRequiredKeys != nil {
 		var err error
-		requiredKeys, err = api.customGetRequiredKeys(tx)
+		requiredKeys, err = api.customGetRequiredKeys(ctx, tx)
 		if err != nil {
 			return nil, nil, fmt.Errorf("custom_get_required_keys: %s", err)
 		}
@@ -366,7 +366,7 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 		requiredKeys = resp.RequiredKeys
 	}
 
-	signedTx, err := api.Signer.Sign(stx, chainID, requiredKeys...)
+	signedTx, err := api.Signer.Sign(ctx, stx, chainID, requiredKeys...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("signing through wallet: %s", err)
 	}
@@ -531,7 +531,7 @@ func (api *API) GetRawABI(ctx context.Context, params GetRawABIRequest) (out *Ge
 }
 
 func (api *API) GetRequiredKeys(ctx context.Context, tx *Transaction) (out *GetRequiredKeysResp, err error) {
-	keys, err := api.Signer.AvailableKeys()
+	keys, err := api.Signer.AvailableKeys(ctx)
 	if err != nil {
 		return nil, err
 	}
