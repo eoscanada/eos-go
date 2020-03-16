@@ -230,6 +230,29 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 				}
 			}
 
+		case reflect.Map:
+			keyCount := len(rv.MapKeys())
+
+			if loggingEnabled {
+				encoderLog.Debug("encode: map", zap.Int("key_count", keyCount), typeField("key_type", t.Key()), typeField("value_type", rv.Elem()))
+				defer func(prev *zap.Logger) { encoderLog = prev }(encoderLog)
+				encoderLog = encoderLog.Named("struct")
+			}
+
+			if err = e.writeUVarInt(keyCount); err != nil {
+				return
+			}
+
+			for _, mapKey := range rv.MapKeys() {
+				if err = e.Encode(mapKey.Interface()); err != nil {
+					return
+				}
+
+				if err = e.Encode(rv.MapIndex(mapKey).Interface()); err != nil {
+					return
+				}
+			}
+
 		default:
 			return errors.New("Encode: unsupported type " + t.String())
 		}
