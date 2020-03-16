@@ -220,7 +220,7 @@ type GetTableByScopeRequest struct {
 }
 
 type GetTableByScopeResp struct {
-	More bool            `json:"more"`
+	More string          `json:"more"`
 	Rows json.RawMessage `json:"rows"`
 }
 
