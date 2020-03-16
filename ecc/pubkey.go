@@ -11,11 +11,11 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-const PublicKeyPrefix = "PUB_"
-const PublicKeyK1Prefix = "PUB_K1_"
-const PublicKeyR1Prefix = "PUB_R1_"
-const PublicKeyWAPrefix = "PUB_WA_"
-const PublicKeyPrefixCompat = "EOS"
+var PublicKeyPrefix = "PUB_"
+var PublicKeyK1Prefix = "PUB_K1_"
+var PublicKeyR1Prefix = "PUB_R1_"
+var PublicKeyWAPrefix = "PUB_WA_"
+var PublicKeyPrefixCompat = "EOS"
 
 var publicKeyDataSize = new(int)
 
