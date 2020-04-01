@@ -24,7 +24,6 @@ type ABIEncoder struct {
 }
 
 func (a *ABI) EncodeAction(actionName ActionName, json []byte) ([]byte, error) {
-
 	action := a.ActionForName(actionName)
 	if action == nil {
 		return nil, fmt.Errorf("encode action: action %s not found in abi", actionName)
@@ -40,23 +39,50 @@ func (a *ABI) EncodeAction(actionName ActionName, json []byte) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func (a *ABI) encode(binaryEncoder *Encoder, structureName string, json []byte) error {
-	if loggingEnabled {
-		abiEncoderLog.Debug("abi encode struct", zap.String("name", structureName))
+func (a *ABI) EncodeTable(tableName TableName, json []byte) ([]byte, error) {
+	table := a.TableForName(tableName)
+	if table == nil {
+		return nil, fmt.Errorf("encode table: table %s not found in abi", tableName)
 	}
 
-	structure := a.StructForName(structureName)
+	var buffer bytes.Buffer
+	encoder := NewEncoder(&buffer)
+
+	err := a.encode(encoder, table.Type, json)
+	if err != nil {
+		return nil, fmt.Errorf("encode table: %s", err)
+	}
+	return buffer.Bytes(), nil
+}
+
+func (a *ABI) EncodeStruct(structName string, json []byte) ([]byte, error) {
+	var buffer bytes.Buffer
+	encoder := NewEncoder(&buffer)
+
+	err := a.encode(encoder, structName, json)
+	if err != nil {
+		return nil, fmt.Errorf("encode: %s", err)
+	}
+	return buffer.Bytes(), nil
+}
+
+func (a *ABI) encode(binaryEncoder *Encoder, structName string, json []byte) error {
+	if loggingEnabled {
+		abiEncoderLog.Debug("abi encode struct", zap.String("name", structName))
+	}
+
+	structure := a.StructForName(structName)
 	if structure == nil {
-		return fmt.Errorf("encode struct [%s] not found in abi", structureName)
+		return fmt.Errorf("encode struct [%s] not found in abi", structName)
 	}
 
 	if structure.Base != "" {
 		if loggingEnabled {
-			abiEncoderLog.Debug("struct has base struct", zap.String("struct", structureName), zap.String("base", structure.Base))
+			abiEncoderLog.Debug("struct has base struct", zap.String("struct", structName), zap.String("base", structure.Base))
 		}
 		err := a.encode(binaryEncoder, structure.Base, json)
 		if err != nil {
-			return fmt.Errorf("encode base [%s]: %s", structureName, err)
+			return fmt.Errorf("encode base [%s]: %s", structName, err)
 		}
 	}
 	err := a.encodeFields(binaryEncoder, structure.Fields, json)
