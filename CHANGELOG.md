@@ -8,3 +8,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * BREAKING: The serialization for `ExtendedAsset` was aligned with the `eos` codebase.  Beforehand, it would serialize the field name `"Contract"` with a capital `C`, and the `Asset` field as `"asset"` where it should have been `"quantity"`.
+* BREAKING: The serialization for `Bool` was aligned with the `eos` codebase.  Beforehand, it would serialize the value as `"true /false"` where it should have been `"0 / 1"`.
