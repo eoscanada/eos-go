@@ -3,6 +3,7 @@ package eos
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,7 +121,10 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 			if loggingEnabled {
 				abiDecoderLog.Debug("field is not present", zap.String("name", fieldName))
 			}
-			return resultingJSON, nil
+			if !a.fitNodeos {
+				return resultingJSON, nil
+			}
+			fieldType = "null"
 		}
 	}
 
@@ -232,6 +236,8 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	var value interface{}
 	var err error
 	switch fieldType {
+	case "null":
+		value = nil
 	case "int8":
 		value, err = binaryDecoder.ReadInt8()
 	case "uint8":
@@ -263,7 +269,15 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "float32":
 		value, err = binaryDecoder.ReadFloat32()
 	case "float64":
-		value, err = binaryDecoder.ReadFloat64()
+		v, e := binaryDecoder.ReadFloat64()
+		if e == nil {
+			if a.fitNodeos {
+				value = strconv.FormatFloat(v, 'f', 17, 64)
+				break
+			}
+		}
+		value = v
+		err = e
 	case "float128":
 		value, err = binaryDecoder.ReadUint128("float128")
 	case "bool":
