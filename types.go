@@ -220,8 +220,8 @@ func (a Asset) String() string {
 }
 
 type ExtendedAsset struct {
-	Asset    Asset `json:"asset"`
-	Contract AccountName
+	Asset    Asset       `json:"quantity"`
+	Contract AccountName `json:"contract"`
 }
 
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
