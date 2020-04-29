@@ -469,27 +469,81 @@ func TestABI_decode_StructVariantField(t *testing.T) {
 			{
 				Name: "root",
 				Fields: []FieldDef{
-					{Name: "name", Type: "variant_"},
+					{Name: "field", Type: "variant_"},
+				},
+			},
+		},
+	}
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"field": ["name", "serialize"]}`, string(json))
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"field":["uint32", 100]}`, string(json))
+}
+
+func TestABI_decode_StructArrayOfVariantField_OneOfVariantIsAlias(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "name", NewTypeName: "my_name"},
+		},
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"my_name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "field", Type: "variant_[]"},
 				},
 			},
 		},
 	}
 
-	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	buffer, err := hex.DecodeString("0200000050df45e3aec20164000000")
 	require.NoError(t, err)
 
 	json, err := abi.decode(NewDecoder(buffer), "root")
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+	assert.JSONEq(t, `{"field":[["name","serialize"],["uint32",100]]}`, string(json))
+}
 
-	buffer, err = hex.DecodeString("0164000000")
+func TestABI_decode_Struct2DArrayOfVariantField_OneOfVariantIsAlias(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "name", NewTypeName: "my_name"},
+		},
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"my_name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "field", Type: "variant_[][]"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("010200000050df45e3aec20164000000")
 	require.NoError(t, err)
 
-	json, err = abi.decode(NewDecoder(buffer), "root")
+	json, err := abi.decode(NewDecoder(buffer), "root")
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"name":100}`, string(json))
+	assert.JSONEq(t, `{"field":[[["name","serialize"],["uint32",100]]]}`, string(json))
 }
 
 func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
@@ -507,7 +561,7 @@ func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
 			{
 				Name: "root",
 				Fields: []FieldDef{
-					{Name: "name", Type: "variant_"},
+					{Name: "field", Type: "variant_"},
 				},
 			},
 		},
@@ -519,7 +573,7 @@ func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
 	json, err := abi.decode(NewDecoder(buffer), "root")
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+	assert.JSONEq(t, `{"field":["name","serialize"]}`, string(json))
 
 	buffer, err = hex.DecodeString("0164000000")
 	require.NoError(t, err)
@@ -527,7 +581,7 @@ func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
 	json, err = abi.decode(NewDecoder(buffer), "root")
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"name":100}`, string(json))
+	assert.JSONEq(t, `{"field":["uint32",100]}`, string(json))
 }
 
 func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
@@ -545,7 +599,7 @@ func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 			{
 				Name: "root",
 				Fields: []FieldDef{
-					{Name: "name", Type: "my_variant"},
+					{Name: "field", Type: "my_variant"},
 				},
 			},
 		},
@@ -557,7 +611,7 @@ func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 	json, err := abi.decode(NewDecoder(buffer), "root")
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+	assert.JSONEq(t, `{"field":["name","serialize"]}`, string(json))
 
 	buffer, err = hex.DecodeString("0164000000")
 	require.NoError(t, err)
@@ -565,7 +619,7 @@ func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 	json, err = abi.decode(NewDecoder(buffer), "root")
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"name":100}`, string(json))
+	assert.JSONEq(t, `{"field":["uint32",100]}`, string(json))
 }
 
 func TestABI_decode_Uint8ArrayVec(t *testing.T) {

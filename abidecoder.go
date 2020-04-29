@@ -365,6 +365,11 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.Reflect("value", value))
 	}
 
+	if variant != nil {
+		// As a variant we need to include the field type in the json
+		return sjson.SetBytes(json, fieldName, []interface{}{fieldType,value})
+	}
+
 	return sjson.SetBytes(json, fieldName, value)
 }
 
