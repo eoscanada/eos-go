@@ -73,32 +73,44 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 	return a.decodeFields(binaryDecoder, structure.Fields, resultingJSON)
 }
 
+
+
 func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
 	resultingJSON := json
+	var err error;
 	for _, field := range fields {
-		fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(field.Type)
-		if isBinaryExtension && !binaryDecoder.hasRemaining() {
-			if loggingEnabled {
-				abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", field.Type))
-			}
-			continue
-		}
-
-		typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
-		if isAlias {
-			if loggingEnabled {
-				abiDecoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
-			}
-		}
-
-		var err error
-		resultingJSON, err = a.decodeField(binaryDecoder, field.Name, typeName, isOptional, isArray, resultingJSON)
+		resultingJSON, err = a.resolveField(binaryDecoder, field.Name, field.Type, resultingJSON)
 		if err != nil {
-			return nil, fmt.Errorf("decoding fields: %s", err)
+			return nil, err
 		}
 	}
 
 	return resultingJSON, nil
+}
+
+func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName , fieldType string,json []byte) ([]byte, error){
+	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(fieldType)
+	if isBinaryExtension && !binaryDecoder.hasRemaining() {
+		if loggingEnabled {
+			abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
+		}
+		return json, nil
+	}
+
+	typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
+	if isAlias {
+		if loggingEnabled {
+			abiDecoderLog.Debug("type is an alias", zap.String("from", fieldType), zap.String("to", typeName))
+		}
+	}
+
+	var err error
+	json, err = a.decodeField(binaryDecoder, fieldName, typeName, isOptional, isArray, json)
+	if err != nil {
+		return nil, fmt.Errorf("decoding fields: %s", err)
+	}
+
+	return json, nil
 }
 
 func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) ([]byte, error) {
@@ -147,7 +159,8 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 				abiDecoderLog.Debug("adding value for field", zap.String("name", fieldName), zap.Uint64("index", i))
 			}
 			indexedFieldName := fmt.Sprintf("%s.%d", fieldName, i)
-			resultingJSON, err = a.read(binaryDecoder, indexedFieldName, fieldType, resultingJSON)
+
+			resultingJSON, err = a.resolveField(binaryDecoder, indexedFieldName, fieldType, resultingJSON)
 			if err != nil {
 				return nil, fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
 			}
@@ -241,6 +254,8 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "int8":
 		value, err = binaryDecoder.ReadInt8()
 	case "uint8":
+		value, err = binaryDecoder.ReadUInt8()
+	case "uint8[]":
 		value, err = binaryDecoder.ReadUInt8()
 	case "int16":
 		value, err = binaryDecoder.ReadInt16()

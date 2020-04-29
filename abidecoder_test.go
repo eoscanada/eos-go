@@ -568,6 +568,28 @@ func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 	assert.JSONEq(t, `{"name":100}`, string(json))
 }
 
+func TestABI_decode_Uint8ArrayVec(t *testing.T) {
+
+
+	buf := bytes.NewBufferString(`
+		{
+		   "version": "eosio::abi/1.1",
+		   "structs": [
+			  { "name": "endgame", "fields": [{ "name": "player_hands", "type": "uint8[][]" }]}
+		   ]
+		}`)
+
+	abi, err := NewABI(buf)
+	require.NoError(t, err)
+
+
+	json, err := abi.decode(NewDecoder(HexString("01020d13")), "endgame")
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"player_hands": [[13,19]]}`, string(json))
+}
+
+
+
 func TestABI_decode_BinaryExtension(t *testing.T) {
 	abi := &ABI{
 		Structs: []StructDef{
@@ -733,7 +755,7 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "array", "typeName": "string", "value": "[\"value.1\",\"value.2\"]", "encode": []string{"value.1", "value.2"}, "expectedError": nil, "isOptional": false, "isArray": true, "fieldName": "testedField"},
 		{"caseName": "array empty", "typeName": "string", "value": "[]", "encode": []string{}, "expectedError": nil, "isOptional": false, "isArray": true, "fieldName": "testedField"},
 		{"caseName": "missing array", "typeName": "string", "value": nil, "encode": nil, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true, "fieldName": "testedField"},
-		{"caseName": "array item unknown type", "typeName": "invalid.field.type", "value": nil, "encode": []string{"value.1", "value.2"}, "expectedError": fmt.Errorf("reading field [testedField] index [0]: read field of type [invalid.field.type]: unknown type"), "isOptional": false, "isArray": true, "fieldName": "testedField"},
+		{"caseName": "array item unknown type", "typeName": "invalid.field.type", "value": nil, "encode": []string{"value.1", "value.2"}, "expectedError": fmt.Errorf("reading field [testedField] index [0]: decoding fields: decoding field [testedField.0] of type [invalid.field.type]: read field of type [invalid.field.type]: unknown type"), "isOptional": false, "isArray": true, "fieldName": "testedField"},
 	}
 
 	for _, c := range testCases {
@@ -749,6 +771,7 @@ func TestABI_Read(t *testing.T) {
 			if v, ok := c["fitNodeos"]; ok {
 				abi.fitNodeos = v.(bool)
 			}
+
 			json, err := abi.decodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
 
 			require.Equal(t, c["expectedError"], err, c["caseName"])
