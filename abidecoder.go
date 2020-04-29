@@ -267,6 +267,10 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "float128":
 		value, err = binaryDecoder.ReadUint128("float128")
 	case "bool":
+		if a.fitNodeos {
+			value, err = binaryDecoder.ReadByte()
+			break
+		}
 		value, err = binaryDecoder.ReadBool()
 	case "time_point":
 		timePoint, e := binaryDecoder.ReadTimePoint() //todo double check
