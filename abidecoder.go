@@ -73,11 +73,9 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 	return a.decodeFields(binaryDecoder, structure.Fields, resultingJSON)
 }
 
-
-
 func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
 	resultingJSON := json
-	var err error;
+	var err error
 	for _, field := range fields {
 		resultingJSON, err = a.resolveField(binaryDecoder, field.Name, field.Type, resultingJSON)
 		if err != nil {
@@ -88,7 +86,7 @@ func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byt
 	return resultingJSON, nil
 }
 
-func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName , fieldType string,json []byte) ([]byte, error){
+func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, json []byte) ([]byte, error) {
 	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(fieldType)
 	if isBinaryExtension && !binaryDecoder.hasRemaining() {
 		if loggingEnabled {
@@ -255,8 +253,6 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		value, err = binaryDecoder.ReadInt8()
 	case "uint8":
 		value, err = binaryDecoder.ReadUInt8()
-	case "uint8[]":
-		value, err = binaryDecoder.ReadUInt8()
 	case "int16":
 		value, err = binaryDecoder.ReadInt16()
 	case "uint16":
@@ -367,7 +363,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 
 	if variant != nil {
 		// As a variant we need to include the field type in the json
-		return sjson.SetBytes(json, fieldName, []interface{}{fieldType,value})
+		return sjson.SetBytes(json, fieldName, []interface{}{fieldType, value})
 	}
 
 	return sjson.SetBytes(json, fieldName, value)
