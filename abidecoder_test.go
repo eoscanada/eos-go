@@ -352,6 +352,69 @@ func TestABI_decode_StructFieldArrayTypeHasAlias(t *testing.T) {
 	assert.JSONEq(t, `{"item":[1,10]}`, string(json))
 }
 
+func TestABI_decode_StructFieldTypeHasAliasArray(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "uint8[]", NewTypeName: "alias"},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "item", Type: "alias"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("02010a")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"item":[1,10]}`, string(json))
+}
+
+
+func TestABI_decode_StructFieldHasAliasWithStructType(t *testing.T) {
+
+	abi := &ABI{
+		fitNodeos:        true,
+		Types: []ABIType{
+			ABIType{Type: "collab_data[]", NewTypeName: "approvals_t"},
+		},
+		Structs: []StructDef{
+			{
+				Name: "struct_with_alias_with_struct_type",
+				Fields: []FieldDef{
+					{Name: "requested", Type: "approvals_t"},
+				},
+			},
+			{
+				Name: "collab_data",
+				Fields: []FieldDef{
+					{Name: "asset_owner", Type: "name"},
+					{Name: "asset_id", Type: "uint64"},
+					{Name: "asset_uid", Type: "uint64"},
+					{Name: "percentage", Type: "uint64"},
+					{Name: "accepted", Type: "bool"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("0190316d4c65338d54510b000000000000f1477db8479a050040420f000000000001")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "struct_with_alias_with_struct_type")
+
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"requested": [{"asset_owner": "emanateghost", "accepted": 1, "asset_id": 2897, "asset_uid": "1577007712126961", "percentage": 1000000}]}`, string(json))
+}
+
+
+
 func TestABI_decode_StructFieldHasAlias(t *testing.T) {
 
 	abi := &ABI{
@@ -584,6 +647,7 @@ func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
 	assert.JSONEq(t, `{"field":["uint32",100]}`, string(json))
 }
 
+
 func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
@@ -623,8 +687,6 @@ func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 }
 
 func TestABI_decode_Uint8ArrayVec(t *testing.T) {
-
-
 	buf := bytes.NewBufferString(`
 		{
 		   "version": "eosio::abi/1.1",

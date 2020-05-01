@@ -88,6 +88,17 @@ func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byt
 
 func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, json []byte) ([]byte, error) {
 	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(fieldType)
+	if loggingEnabled {
+		abiDecoderLog.Debug("analyzed field",
+			zap.String("field_name", fieldName),
+			zap.String("field_type", fieldType),
+			zap.Bool("is_optional", isOptional),
+			zap.Bool("is_array", isArray),
+			zap.Bool("is_binaryExtension", isBinaryExtension),
+		)
+	}
+
+
 	if isBinaryExtension && !binaryDecoder.hasRemaining() {
 		if loggingEnabled {
 			abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
@@ -95,15 +106,26 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, 
 		return json, nil
 	}
 
+	isAliasArray := false
 	typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
-	if isAlias {
+	if isAlias  {
+		// points to a new type, thus we must re-analyze it, as prior assumption may have changed
 		if loggingEnabled {
 			abiDecoderLog.Debug("type is an alias", zap.String("from", fieldType), zap.String("to", typeName))
 		}
+
+		typeName, isOptional, isAliasArray, isBinaryExtension = analyzeFieldType(typeName)
+		if isBinaryExtension && !binaryDecoder.hasRemaining() {
+			if loggingEnabled {
+				abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", typeName))
+			}
+			return json, nil
+		}
 	}
 
+
 	var err error
-	json, err = a.decodeField(binaryDecoder, fieldName, typeName, isOptional, isArray, json)
+	json, err = a.decodeField(binaryDecoder, fieldName, typeName, isOptional, (isArray || isAliasArray), json)
 	if err != nil {
 		return nil, fmt.Errorf("decoding fields: %s", err)
 	}
