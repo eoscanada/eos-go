@@ -747,6 +747,22 @@ func (d *Decoder) ReadFloat32() (out float32, err error) {
 	return
 }
 
+func (d *Decoder) ReadNodeosFloat32() (out float32, err error) {
+	if d.remaining() < TypeSize.Float32 {
+		err = fmt.Errorf("float32 required [%d] bytes, remaining [%d]", TypeSize.Float32, d.remaining())
+		return
+	}
+
+	n := binary.LittleEndian.Uint32(d.data[d.pos:])
+	out = math.Float32frombits(n)
+	d.pos += TypeSize.Float32
+	if loggingEnabled {
+		decoderLog.Debug("read float32", zap.Float32("val", out))
+	}
+	return
+}
+
+
 func (d *Decoder) ReadFloat64() (out float64, err error) {
 	if d.remaining() < TypeSize.Float64 {
 		err = fmt.Errorf("float64 required [%d] bytes, remaining [%d]", TypeSize.Float64, d.remaining())

@@ -87,7 +87,9 @@ func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byt
 }
 
 func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, json []byte) ([]byte, error) {
+	// retrieve the fields characteristics, note we can be a few depth down here....
 	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(fieldType)
+
 	if loggingEnabled {
 		abiDecoderLog.Debug("analyzed field",
 			zap.String("field_name", fieldName),
@@ -98,7 +100,19 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, 
 		)
 	}
 
+	// check if this field is an alias
+	aliasFieldType, isAlias := a.TypeNameForNewTypeName(fieldType)
+	if isAlias  {
+		if loggingEnabled {
+			abiDecoderLog.Debug("type is an alias",
+				zap.String("from", fieldType),
+				zap.String("to", aliasFieldType),
+			)
+		}
+		fieldType = aliasFieldType
+	}
 
+	// check if the field is a binary extension
 	if isBinaryExtension && !binaryDecoder.hasRemaining() {
 		if loggingEnabled {
 			abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
@@ -106,41 +120,8 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, 
 		return json, nil
 	}
 
-	isAliasArray := false
-	typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
-	if isAlias  {
-		// points to a new type, thus we must re-analyze it, as prior assumption may have changed
-		if loggingEnabled {
-			abiDecoderLog.Debug("type is an alias", zap.String("from", fieldType), zap.String("to", typeName))
-		}
-
-		typeName, isOptional, isAliasArray, isBinaryExtension = analyzeFieldType(typeName)
-		if isBinaryExtension && !binaryDecoder.hasRemaining() {
-			if loggingEnabled {
-				abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", typeName))
-			}
-			return json, nil
-		}
-	}
-
-
-	var err error
-	json, err = a.decodeField(binaryDecoder, fieldName, typeName, isOptional, (isArray || isAliasArray), json)
-	if err != nil {
-		return nil, fmt.Errorf("decoding fields: %s", err)
-	}
-
-	return json, nil
-}
-
-func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) ([]byte, error) {
-	if loggingEnabled {
-		abiDecoderLog.Debug("decoding field", zap.String("name", fieldName), zap.String("type", fieldType), zap.Bool("is_optional", isOptional), zap.Bool("is_array", isArray))
-	}
-
-	resultingJSON := json
+	// check if the field is optional
 	if isOptional {
-
 		if loggingEnabled {
 			abiDecoderLog.Debug("field is optional", zap.String("name", fieldName))
 		}
@@ -154,50 +135,57 @@ func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType st
 				abiDecoderLog.Debug("field is not present", zap.String("name", fieldName))
 			}
 			if !a.fitNodeos {
-				return resultingJSON, nil
+				return json, nil
 			}
+
+			// TODO: Not sure about this right now
 			fieldType = "null"
 		}
 	}
 
+	// if we have an array, we will loop in it and handle the subField (note that if we have an array of ALIAS we would loop here)
 	if isArray {
-		length, err := binaryDecoder.ReadUvarint64()
-		if err != nil {
-			return nil, fmt.Errorf("reading field [%s] array length: %s", fieldName, err)
-		}
-
-		if length == 0 {
-			resultingJSON, _ = sjson.SetBytes(resultingJSON, fieldName, []interface{}{})
-			//ignoring err because there is a bug in sjson. sjson shadow the err in case of a default type ...
-			//if err != nil {
-			//	return nil, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
-			//}
-		}
-
-		for i := uint64(0); i < length; i++ {
-			if loggingEnabled {
-				abiDecoderLog.Debug("adding value for field", zap.String("name", fieldName), zap.Uint64("index", i))
-			}
-			indexedFieldName := fmt.Sprintf("%s.%d", fieldName, i)
-
-			resultingJSON, err = a.resolveField(binaryDecoder, indexedFieldName, fieldType, resultingJSON)
-			if err != nil {
-				return nil, fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
-			}
-		}
-
-		return resultingJSON, nil
+		return a.readArray(binaryDecoder, fieldName, fieldType, json)
 	}
 
-	resultingJSON, err := a.read(binaryDecoder, fieldName, fieldType, resultingJSON)
-	if err != nil {
-		return nil, fmt.Errorf("decoding field [%s] of type [%s]: %s", fieldName, fieldType, err)
+	// if the fiels is not an array, but is an alias we need to re-resolve the field again
+	if isAlias {
+		return a.resolveField(binaryDecoder, fieldName, fieldType, json)
 	}
 
-	return resultingJSON, nil
+	return a.read(binaryDecoder, fieldName, fieldType, json)
 }
 
-func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
+func (a *ABI) readArray(binaryDecoder *Decoder, fieldName, fieldType string, json []byte) ([]byte, error) {
+	length, err := binaryDecoder.ReadUvarint64()
+	if err != nil {
+		return nil, fmt.Errorf("reading field [%s] array length: %s", fieldName, err)
+	}
+
+	if length == 0 {
+		json, _ = sjson.SetBytes(json, fieldName, []interface{}{})
+		//ignoring err because there is a bug in sjson. sjson shadow the err in case of a default type ...
+		//if err != nil {
+		//	return nil, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
+		//}
+	}
+
+	for i := uint64(0); i < length; i++ {
+		if loggingEnabled {
+			abiDecoderLog.Debug("adding value for field", zap.String("name", fieldName), zap.Uint64("index", i))
+		}
+		indexedFieldName := fmt.Sprintf("%s.%d", fieldName, i)
+
+		json, err = a.resolveField(binaryDecoder, indexedFieldName, fieldType, json)
+		if err != nil {
+			return nil, fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
+		}
+	}
+	return json, nil
+}
+
+// Decodes the EOS ABIs built-in types
+func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error){
 	variant := a.VariantForName(fieldType)
 	if variant != nil {
 		variantIndex, err := binaryDecoder.ReadUvarint32()
@@ -223,7 +211,6 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	}
 
 	structure := a.StructForName(fieldType)
-
 	if structure != nil {
 		if loggingEnabled {
 			abiDecoderLog.Debug("field is a struct", zap.String("name", fieldName))
@@ -300,16 +287,24 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "varuint32":
 		value, err = binaryDecoder.ReadUvarint32()
 	case "float32":
-		value, err = binaryDecoder.ReadFloat32()
+		v, e := binaryDecoder.ReadFloat32()
+		if e == nil {
+			if a.fitNodeos {
+				value = strconv.FormatFloat(float64(v), 'f', 17, 32)
+			} else {
+				value = v
+			}
+		}
+		err = e
 	case "float64":
 		v, e := binaryDecoder.ReadFloat64()
 		if e == nil {
 			if a.fitNodeos {
 				value = strconv.FormatFloat(v, 'f', 17, 64)
-				break
+			} else {
+				value = v
 			}
 		}
-		value = v
 		err = e
 	case "float128":
 		value, err = binaryDecoder.ReadUint128("float128")
@@ -358,13 +353,11 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "signature":
 		value, err = binaryDecoder.ReadSignature()
 	case "symbol":
-
 		symbol, e := binaryDecoder.ReadSymbol()
 		err = e
 		if err == nil {
 			value = fmt.Sprintf("%d,%s", symbol.Precision, symbol.Symbol)
 		}
-
 	case "symbol_code":
 		value, err = binaryDecoder.ReadSymbolCode()
 	case "asset":
@@ -380,7 +373,10 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	}
 
 	if loggingEnabled {
-		abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.Reflect("value", value))
+		abiDecoderLog.Debug("set field value",
+			zap.String("name", fieldName),
+			zap.Reflect("value", value),
+		)
 	}
 
 	if variant != nil {
@@ -389,6 +385,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	}
 
 	return sjson.SetBytes(json, fieldName, value)
+
 }
 
 func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArray bool, isBinaryExtension bool) {
