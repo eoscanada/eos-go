@@ -975,7 +975,7 @@ func (i Uint128) String() string {
 
 func (i Uint128) DecimalString() string {
 	number := i.BigInt()
-	return fmt.Sprintf("%d",number)
+	return fmt.Sprintf("%d", number)
 }
 
 func (i Uint128) MarshalJSON() (data []byte, err error) {
@@ -1047,9 +1047,7 @@ func (i *Int128) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-
 type Float128 Uint128
-
 
 func (i Float128) MarshalJSON() (data []byte, err error) {
 	return json.Marshal(Uint128(i).String())

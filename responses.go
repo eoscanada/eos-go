@@ -56,13 +56,6 @@ type ScheduledTransactionsResp struct {
 	More         string                 `json:"more"`
 }
 
-// type BlockTransaction struct {
-// 	Status        string            `json:"status"`
-// 	CPUUsageUS    int               `json:"cpu_usage_us"`
-// 	NetUsageWords int               `json:"net_usage_words"`
-// 	Trx           []json.RawMessage `json:"trx"`
-// }
-
 type DBSizeResp struct {
 	FreeBytes Int64 `json:"free_bytes"`
 	UsedBytes Int64 `json:"used_bytes"`
@@ -116,7 +109,7 @@ type ActionTrace struct {
 	BlockNum                               uint32              `json:"block_num"`
 	BlockTime                              BlockTimestamp      `json:"block_time"`
 	ProducerBlockID                        Checksum256         `json:"producer_block_id" eos:"optional"`
-	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas,omitempty"`
+	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
 	Except                                 *Except             `json:"except,omitempty" eos:"optional"`
 	ErrorCode                              *Uint64             `json:"error_code,omitempty" eos:"optional"`
 

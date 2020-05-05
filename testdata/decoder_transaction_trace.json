@@ -17,6 +17,7 @@
       "creator_action_ordinal": 0,
       "closest_unnotified_ancestor_action_ordinal": 0,
       "receiver": "battlefield1",
+      "account_ram_deltas": [],
       "act": {
         "account": "eosio",
         "name": "onerror",
@@ -93,6 +94,7 @@
         "creator_action_ordinal": 0,
         "closest_unnotified_ancestor_action_ordinal": 0,
         "receiver": "battlefield1",
+        "account_ram_deltas": [],
         "act": {
           "account": "battlefield1",
           "name": "dtrxexec",
