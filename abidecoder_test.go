@@ -558,7 +558,7 @@ func TestABI_decode_StructBaseNotFound(t *testing.T) {
 }
 
 func TestABI_decode_StructFieldArrayType_HasSjsonPathLikeName(t *testing.T) {
-	t.Skipf("This test exhibits the problem where the field name has sjson array like path, the output is completely wrong.")
+	t.Skipf("This test exhibits the problem where the field name has sjson array like path, the expectOutput is completely wrong.")
 
 	abi := &ABI{
 		Structs: []StructDef{
@@ -1001,8 +1001,17 @@ func TestABI_Read(t *testing.T) {
 		{name: "stringified lower int64", fieldName: "testedField", typeName: "int64", data: int64(-5000000000), expectedValue: s(`"-5000000000"`) },
 		{name: "min uint64", fieldName: "testedField", typeName: "uint64", data: uint64(0),expectedValue:s ("0") },
 		{name: "max uint64", fieldName: "testedField", typeName: "uint64", data: uint64(18446744073709551615), expectedValue: s(`"18446744073709551615"`) },
-		{name: "int128", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: 2}, expectedValue: s(`"0x01000000000000000200000000000000"`) },
-		{name: "uint128", fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 1, Hi: 2},expectedValue: s(`"0x01000000000000000200000000000000"`) },
+		{name: "int128 1", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: 0}, expectedValue: s(`"0x01000000000000000000000000000000"`) },
+		{name: "int128 -1", fieldName: "testedField", typeName: "int128", data: Int128{Lo: math.MaxUint64, Hi: math.MaxUint64}, expectedValue: s(`"0xffffffffffffffffffffffffffffffff"`) },
+		{name: "int128", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 925, Hi: 125}, expectedValue: s(`"0x9d030000000000007d00000000000000"`) },
+		{name: "int128 negative ", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: math.MaxUint64}, expectedValue: s(`"0x0100000000000000ffffffffffffffff"`) },
+		{name: "int128 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "int128", data: Int128{Lo: 925, Hi: 125}, expectedValue: s(`"2305843009213693952925"`) },
+		{name: "int128 negative fit nodeos ", fieldName: "testedField", fitNodeos: true, typeName: "int128", data: Int128{Lo: 1, Hi: math.MaxUint64}, expectedValue: s(`"-18446744073709551615"`) },
+		{name: "uint128 1", fieldName: "testedField", typeName: "uint128", data: Int128{Lo: 1, Hi: 0}, expectedValue: s(`"0x01000000000000000000000000000000"`) },
+		{name: "uint128", fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 925, Hi: 125},expectedValue: s(`"0x9d030000000000007d00000000000000"`) },
+		{name: "uint128 fit nodeos", fitNodeos: true,fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 925, Hi: 125},expectedValue: s(`"2305843009213693952925"`) },
+		{name: "uint128 max",fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: math.MaxUint64, Hi: math.MaxUint64},expectedValue: s(`"0xffffffffffffffffffffffffffffffff"`) },
+		{name: "uint128 fit nodeos", fitNodeos: true,fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: math.MaxUint64, Hi: math.MaxUint64},expectedValue: s(`"340282366920938463463374607431768211455"`) },
 		{name: "min varint32", fieldName: "testedField", typeName: "varint32", data: Varint32(-2147483648), expectedValue: s("-2147483648") },
 		{name: "max varint32", fieldName: "testedField", typeName: "varint32", data: Varint32(2147483647), expectedValue:s ("2147483647") },
 		{name: "min varuint32", fieldName: "testedField", typeName: "varuint32", data: Varuint32(0), expectedValue:s ("0") },

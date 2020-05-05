@@ -1027,9 +1027,28 @@ func (i *Uint128) UnmarshalJSON(data []byte) error {
 type Int128 Uint128
 
 func (i Int128) BigInt() *big.Int {
-	// decode the Lo and Hi to handle the sign
-	return nil
+	comp := byte(0x80)
+	buf := make([]byte, 16)
+	binary.BigEndian.PutUint64(buf[:], i.Hi)
+	binary.BigEndian.PutUint64(buf[8:], i.Lo)
+
+	var value *big.Int
+	if  (buf[0] & comp) == comp {
+		buf = twosComplement(buf)
+		value = (&big.Int{}).SetBytes(buf)
+		value = value.Neg(value)
+	} else {
+		value = (&big.Int{}).SetBytes(buf)
+	}
+	return value
 }
+
+func (i Int128) DecimalString() string {
+	number := i.BigInt()
+	fmt.Printf("t: %d\n",number)
+	return fmt.Sprintf("%d",number)
+}
+
 
 func (i Int128) MarshalJSON() (data []byte, err error) {
 	return json.Marshal(Uint128(i).String())
@@ -1164,6 +1183,17 @@ func (a *BaseVariant) UnmarshalBinaryVariant(decoder *Decoder, newImplPointer ma
 	return nil
 }
 
+
+
+func twosComplement(v []byte) []byte {
+	buf := make([]byte, len(v))
+	for i, b := range v {
+		buf[i] = b ^ byte(0xff)
+	}
+	one := big.NewInt(1)
+	value := (&big.Int{}).SetBytes(buf)
+	return value.Add(value, one).Bytes()
+}
 // Implementation of `fc::variant` types
 
 type fcVariantType uint32

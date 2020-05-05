@@ -739,6 +739,15 @@ func (d *Decoder) ReadUint64() (out uint64, err error) {
 	return
 }
 
+func (d *Decoder) ReadInt128() (out Int128, err error) {
+	v, err := d.ReadUint128("int128")
+	if err != nil {
+		return
+	}
+
+	return Int128(v), nil
+}
+
 func (d *Decoder) ReadUint128(typeName string) (out Uint128, err error) {
 	if d.remaining() < TypeSize.Uint128 {
 		err = fmt.Errorf("%s required [%d] bytes, remaining [%d]", typeName, TypeSize.Uint128, d.remaining())

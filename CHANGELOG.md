@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Ability to decode a `int128` and `uint128` in decimal fomart when `fitNodeos` flag is set on the ABI 
 - Ability to decode nested `arrays` in ABI decoder.
 - Added `BlockState.Header` field of type `SignedBlockHeader` that was previously missing from the struct definition.
 - Added `BlockState.AdditionalSignatures` field of type `[]ecc.Signature` that was previously missing from the struct definition.
@@ -19,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unpacking binary `BlockState` now correctly works but is restricted to EOSIO 2.0.x version.
 
 ### Changed
-- **BREAKING**: Fixed binary unpacking of `BlockState`, `TransactionTrace`, `SignedTransaction`, `Action` (and some inner types). This required changing a few struct fields to better fit with EOSIO definition, here the full list:
+  - **BREAKING**: Fixed binary unpacking of `BlockState`, `TransactionTrace`, `SignedTransaction`, `Action` (and some inner types). This required changing a few struct fields to better fit with EOSIO definition, here the full list:
   - `MerkleRoot.ActiveNodes` is now a `[]Checksum256`, was previously `[]string`
   - `MerkleRoot.NodeCount` is now a `uint64`, was previously `uint32`
   - Type `EOSNameOrUint32` has been removed and replaced by `PairAccountNameBlockNum` which is strictly typed now.

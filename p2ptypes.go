@@ -314,7 +314,7 @@ type ProducerScheduleOrAuthoritySchedule struct {
 }
 
 func (p *ProducerScheduleOrAuthoritySchedule) MarshalJSON() ([]byte, error) {
-	// In case of ambiguity, which arise only on empty `producers` array, the first one is picked since it does not matter (same JSON output)
+	// In case of ambiguity, which arise only on empty `producers` array, the first one is picked since it does not matter (same JSON expectOutput)
 	if p.V1 != nil {
 		return json.Marshal(p.V1)
 	}

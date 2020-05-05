@@ -52,6 +52,13 @@ func TestUint128JSONUnmarshal(t *testing.T) {
 			expectedDecimal: "13543070",
 		},
 		{
+			name:            "max uint64",
+			input:           `"0xffffffffffffffff0000000000000000"`,
+			expectedLo:      math.MaxUint64,
+			expectedHi:      0,
+			expectedDecimal: "18446744073709551615",
+		},
+		{
 			name:            "one more than uint64",
 			input:           `"0x00000000000000000100000000000000"`,
 			expectedLo:      0,
@@ -64,6 +71,13 @@ func TestUint128JSONUnmarshal(t *testing.T) {
 			expectedLo:      925,
 			expectedHi:      125,
 			expectedDecimal: "2305843009213693952925",
+		},
+		{
+			name:            "one less then largest ever",
+			input:           `"0xfeffffffffffffffffffffffffffffff"`,
+			expectedLo:      0xFFFFFFFFFFFFFFFE, // 18446744073709551614
+			expectedHi:      math.MaxUint64,
+			expectedDecimal: "340282366920938463463374607431768211454",
 		},
 		{
 			name:            "largest ever",
@@ -97,14 +111,50 @@ func TestUint128JSONUnmarshal(t *testing.T) {
 	}
 }
 
-//check_type(context, 0, "int128", R"("0")");
-//check_type(context, 0, "int128", R"("1")");
-//check_type(context, 0, "int128", R"("-1")");
-//check_type(context, 0, "int128", R"("18446744073709551615")");
-//check_type(context, 0, "int128", R"("-18446744073709551615")");
-//check_type(context, 0, "int128", R"("170141183460469231731687303715884105727")");
-//check_type(context, 0, "int128", R"("-170141183460469231731687303715884105727")");
-//check_type(context, 0, "int128", R"("-170141183460469231731687303715884105728")");
+func Test_twosComplement(t *testing.T) {
+	tests := []struct{
+		name         string
+		input        []byte
+		expectOutput []byte
+	}{
+		{
+			name:   "-1",
+			// 0xffffffffffffffffffffffffffffffff
+			input:   []byte{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+			// 0x00000000000000000000000000000001
+			// the current algorithm will simply omit MSB 0's
+			expectOutput: []byte{0x01},
+		},
+		{
+			name:   "-18446744073709551615",
+			// 0xffffffffffffffff0000000000000001
+			input:   []byte{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01},
+			// 0x0000000000000000ffffffffffffffff
+			// the current algorithm will simply omit MSB 0's
+			expectOutput: []byte{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+		},
+		{
+			name:   "-170141183460469231731687303715884105727",
+			// 0x80000000000000000000000000000001
+			input:   []byte{0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01},
+			// 0x7fffffffffffffffffffffffffffffff
+			expectOutput: []byte{0x7f,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+		},
+		{
+			name:   "-170141183460469231731687303715884105728",
+			// 0x80000000000000000000000000000000
+			input:[]byte{0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+			// 0x80000000000000000000000000000000
+			expectOutput: []byte{0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expectOutput, twosComplement(test.input))
+		})
+	}
+}
 
 func TestInt128JSONUnmarshal(t *testing.T) {
 	tests := []struct {
@@ -113,6 +163,7 @@ func TestInt128JSONUnmarshal(t *testing.T) {
 		expectedLo    uint64
 		expectedHi    uint64
 		expectedError string
+		expectedDecimal string
 	}{
 		{
 			name:          "broken prefix",
@@ -134,30 +185,63 @@ func TestInt128JSONUnmarshal(t *testing.T) {
 			input:      `"0x00000000000000000000000000000000"`,
 			expectedLo: 0,
 			expectedHi: 0,
+			expectedDecimal: "0",
 		},
 		{
 			name:       "one",
 			input:      `"0x01000000000000000000000000000000"`,
 			expectedLo: 1,
 			expectedHi: 0,
+			expectedDecimal: "1",
 		},
 		{
-			name:       "one more than uint64",
-			input:      `"0x00000000000000000100000000000000"`,
+			name:       "negative one",
+			input:      `"0xffffffffffffffffffffffffffffffff"`,
+			expectedLo: math.MaxUint64,
+			expectedHi: math.MaxUint64,
+			expectedDecimal: "-1",
+		},
+		{
+			name:       "max uint64",
+			input:      `"0xffffffffffffffff0000000000000000"`,
+			expectedLo: math.MaxUint64,
+			expectedHi: 0,
+			expectedDecimal: "18446744073709551615",
+		},
+		{
+			name:       "negative max uint64",
+			input:      `"0x0100000000000000ffffffffffffffff"`,
+			expectedLo: 1,
+			expectedHi: math.MaxUint64,
+			expectedDecimal: "-18446744073709551615",
+		},
+		{
+			name:       "largest positive number",
+			input:      `"0xffffffffffffffffffffffffffffff7f"`,
+			expectedLo: math.MaxUint64,
+			expectedHi: 0x7fffffffffffffff, //9223372036854775807
+			expectedDecimal: "170141183460469231731687303715884105727",
+		},
+		{
+			name:       "before smallest negative number",
+			input:      `"0x01000000000000000000000000000080"`,
+			expectedLo: 1,
+			expectedHi: 0x8000000000000000, //9223372036854775808
+			expectedDecimal: "-170141183460469231731687303715884105727",
+		},
+		{
+			name:       "smallest negative number",
+			input:      `"0x00000000000000000000000000000080"`,
 			expectedLo: 0,
-			expectedHi: 1,
+			expectedHi: 0x8000000000000000,
+			expectedDecimal: "-170141183460469231731687303715884105728",
 		},
 		{
 			name:       "value from nodeos serialization",
 			input:      `"0x9d030000000000007d00000000000000"`,
 			expectedLo: 925,
 			expectedHi: 125,
-		},
-		{
-			name:       "largest ever",
-			input:      `"0xffffffffffffffffffffffffffffffff"`,
-			expectedLo: math.MaxUint64,
-			expectedHi: math.MaxUint64,
+			expectedDecimal: "2305843009213693952925",
 		},
 	}
 
@@ -177,6 +261,8 @@ func TestInt128JSONUnmarshal(t *testing.T) {
 				res, err := json.Marshal(i)
 				require.NoError(t, err)
 				assert.Equal(t, test.input, string(res))
+
+				assert.Equal(t, test.expectedDecimal, i.DecimalString(), "decimal")
 			}
 		})
 	}
