@@ -15,6 +15,21 @@ import (
 	"go.uber.org/zap"
 )
 
+// MarshalerBinary is the interface implemented by types
+// that can marshal to an EOSIO binary description of themselves.
+//
+// **Warning** This is experimental, exposed only for internal usage for now.
+type MarshalerBinary interface {
+	MarshalerBinary(encoder *Encoder) error
+}
+
+func MarshalBinary(v interface{}) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	encoder := NewEncoder(buf)
+	err := encoder.Encode(v)
+	return buf.Bytes(), err
+}
+
 // --------------------------------------------------------------
 // Encoder implements the EOS packing, similar to FC_BUFFER
 // --------------------------------------------------------------
@@ -42,6 +57,8 @@ func (e *Encoder) writeName(name Name) error {
 
 func (e *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
+	case MarshalerBinary:
+		return cv.MarshalerBinary(e)
 	case BaseVariant:
 		err = e.writeUVarInt(int(cv.TypeID))
 		if err != nil {
@@ -68,9 +85,9 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case string:
 		return e.writeString(cv)
 	case CompressionType:
-		return e.writeByte(uint8(cv))
+		return e.writeByte(byte(cv))
 	case TransactionStatus:
-		return e.writeByte(uint8(cv))
+		return e.writeByte(byte(cv))
 	case IDListMode:
 		return e.writeByte(byte(cv))
 	case byte:
@@ -593,11 +610,4 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 	}
 
 	return e.writeByteArray(actionData.HexData)
-}
-
-func MarshalBinary(v interface{}) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	encoder := NewEncoder(buf)
-	err := encoder.Encode(v)
-	return buf.Bytes(), err
 }

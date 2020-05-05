@@ -1084,7 +1084,7 @@ func (b Blob) String() string {
 }
 
 //
-/// Variant (emulates `fc::variant` type)
+/// Variant (emulates `fc::static_variant` type)
 //
 
 type Variant interface {
@@ -1114,7 +1114,7 @@ func (a *BaseVariant) DoFor(doers map[uint32]OnVariant) error {
 		return doer(a.Impl)
 	}
 
-	return fmt.Errorf("to doer found for typeID %d", a.TypeID)
+	return fmt.Errorf("no doer found for typeID %d", a.TypeID)
 }
 
 func (a *BaseVariant) MarshalJSON() ([]byte, error) {
@@ -1163,5 +1163,275 @@ func (a *BaseVariant) UnmarshalBinaryVariant(decoder *Decoder, newImplPointer ma
 		return fmt.Errorf("unable to decode variant type %d: %s", typeID, err)
 	}
 
+	return nil
+}
+
+// Implementation of `fc::variant` types
+
+type fcVariantType uint32
+
+const (
+	fcVariantNullType fcVariantType = iota
+	fcVariantInt64Type
+	fcVariantUint64Type
+	fcVariantDoubleType
+	fcVariantBoolType
+	fcVariantStringType
+	fcVariantArrayType
+	fcVariantObjectType
+	fcVariantBlobType
+)
+
+func (t fcVariantType) String() string {
+	switch t {
+	case fcVariantNullType:
+		return "null"
+	case fcVariantInt64Type:
+		return "int64"
+	case fcVariantUint64Type:
+		return "uint64"
+	case fcVariantDoubleType:
+		return "double"
+	case fcVariantBoolType:
+		return "bool"
+	case fcVariantStringType:
+		return "string"
+	case fcVariantArrayType:
+		return "array"
+	case fcVariantObjectType:
+		return "object"
+	case fcVariantBlobType:
+		return "blob"
+	}
+
+	return "unknown"
+}
+
+// FIXME: Ideally, we would re-use `BaseVariant` but that requires some
+//        re-thinking of the decoder to make it efficient to read FCVariant types. For now,
+//        let's re-code it a bit to make it as efficient as possible.
+type fcVariant struct {
+	TypeID fcVariantType
+	Impl   interface{}
+}
+
+func (a fcVariant) IsNil() bool {
+	return a.TypeID == fcVariantNullType
+}
+
+// ToNative transform the actual implementation, walking each sub-element like array
+// and object, turning everything along the way in Go primitives types.
+//
+// **Note** For `Int64` and `Uint64`, we return `eos.Int64` and `eos.Uint64` types
+//          so that JSON marshalling is done correctly for large numbers
+func (a fcVariant) ToNative() interface{} {
+	if a.TypeID == fcVariantNullType ||
+		a.TypeID == fcVariantDoubleType ||
+		a.TypeID == fcVariantBoolType ||
+		a.TypeID == fcVariantStringType {
+		return a.Impl
+	}
+
+	if a.TypeID == fcVariantInt64Type {
+		return Int64(a.Impl.(uint64))
+	}
+
+	if a.TypeID == fcVariantUint64Type {
+		return Uint64(a.Impl.(uint64))
+	}
+
+	if a.TypeID == fcVariantArrayType {
+		return a.Impl.(fcVariantArray).ToNative()
+	}
+
+	if a.TypeID == fcVariantObjectType {
+		return a.Impl.(fcVariantObject).ToNative()
+	}
+
+	panic(fmt.Errorf("not implemented for %s yet", fcVariantBlobType))
+}
+
+// MustAsUint64 casts the underlying `impl` as a `uint64` type, panics if not of the correct type.
+func (a fcVariant) MustAsUint64() uint64 {
+	return a.Impl.(uint64)
+}
+
+// MustAsString casts the underlying `impl` as a `string` type, panics if not of the correct type.
+func (a fcVariant) MustAsString() string {
+	return a.Impl.(string)
+}
+
+// MustAsObject casts the underlying `impl` as a `fcObject` type, panics if not of the correct type.
+func (a fcVariant) MustAsObject() fcVariantObject {
+	return a.Impl.(fcVariantObject)
+}
+
+func (a *fcVariant) UnmarshalBinary(decoder *Decoder) error {
+	typeID, err := decoder.ReadUvarint32()
+	if err != nil {
+		return fmt.Errorf("unable to read fc variant type ID: %s", err)
+	}
+
+	if typeID > uint32(fcVariantBlobType) {
+		return fmt.Errorf("invalid fc variant type ID, should have been lower than or equal to %d", fcVariantBlobType)
+	}
+
+	a.TypeID = fcVariantType(typeID)
+	if a.TypeID == fcVariantNullType {
+		// There is probably no bytes to read here, but it's not super clear
+		a.Impl = nil
+		return nil
+	}
+
+	if a.TypeID == fcVariantInt64Type {
+		if a.Impl, err = decoder.ReadInt64(); err != nil {
+			return fmt.Errorf("unable to read int64 fc variant: %s", err)
+		}
+	} else if a.TypeID == fcVariantUint64Type {
+		if a.Impl, err = decoder.ReadUint64(); err != nil {
+			return fmt.Errorf("unable to read uint64 fc variant: %s", err)
+		}
+	} else if a.TypeID == fcVariantDoubleType {
+		if a.Impl, err = decoder.ReadFloat64(); err != nil {
+			return fmt.Errorf("unable to read double fc variant: %s", err)
+		}
+	} else if a.TypeID == fcVariantBoolType {
+		if a.Impl, err = decoder.ReadBool(); err != nil {
+			return fmt.Errorf("unable to read bool fc variant: %s", err)
+		}
+	} else if a.TypeID == fcVariantStringType {
+		if a.Impl, err = decoder.ReadString(); err != nil {
+			return fmt.Errorf("unable to read string fc variant: %s", err)
+		}
+	} else if a.TypeID == fcVariantArrayType {
+		out := fcVariantArray(nil)
+		if err = decoder.Decode(&out); err != nil {
+			return fmt.Errorf("unable to read fc array variant: %s", err)
+		}
+		a.Impl = out
+	} else if a.TypeID == fcVariantObjectType {
+		out := fcVariantObject{}
+		if err = decoder.Decode(&out); err != nil {
+			return fmt.Errorf("unable to read fc object variant: %s", err)
+		}
+		a.Impl = out
+	} else if a.TypeID == fcVariantBlobType {
+		// FIXME: This one is really not clear what the output format looks like, do we even need an object for it?
+		var out fcVariantBlob
+		if err = decoder.Decode(&out); err != nil {
+			return fmt.Errorf("unable to read fc blob variant: %s", err)
+		}
+		a.Impl = out
+	}
+
+	return nil
+}
+
+type fcVariantArray []fcVariant
+
+func (o fcVariantArray) ToNative() interface{} {
+	out := make([]interface{}, len(o))
+	for i, element := range o {
+		out[i] = element.ToNative()
+	}
+
+	return out
+}
+
+func (o *fcVariantArray) UnmarshalBinary(decoder *Decoder) error {
+	elementCount, err := decoder.ReadUvarint64()
+	if err != nil {
+		return fmt.Errorf("unable to read length: %s", err)
+	}
+
+	array := make([]fcVariant, elementCount)
+	for i := uint64(0); i < elementCount; i++ {
+		err := decoder.Decode(&array[i])
+		if err != nil {
+			return fmt.Errorf("unable to read elememt at index %d: %s", i, err)
+		}
+	}
+
+	*o = fcVariantArray(array)
+	return nil
+}
+
+type fcVariantObject map[string]fcVariant
+
+func (o fcVariantObject) ToNative() map[string]interface{} {
+	out := map[string]interface{}{}
+	for key, value := range o {
+		out[key] = value.ToNative()
+	}
+
+	return out
+}
+
+func (o fcVariantObject) validateFields(nameToType map[string]fcVariantType) error {
+	for key, fcType := range nameToType {
+		if len(key) <= 0 {
+			continue
+		}
+
+		optional := false
+		if string(key[0]) == "?" {
+			key = key[1:]
+			optional = true
+		}
+
+		actualType := o[key].TypeID
+		if optional && actualType == fcVariantNullType {
+			continue
+		}
+
+		if !optional && actualType == fcVariantNullType {
+			return fmt.Errorf("field %q of type %s is required but actual type is null", key, fcType)
+		}
+
+		if actualType != fcType {
+			return fmt.Errorf("field %q should be a variant of type %s, got %s", key, fcType, actualType)
+		}
+	}
+
+	return nil
+}
+
+func (o *fcVariantObject) UnmarshalBinary(decoder *Decoder) error {
+	elementCount, err := decoder.ReadUvarint64()
+	if err != nil {
+		return fmt.Errorf("unable to read length: %s", err)
+	}
+
+	mappings := make(map[string]fcVariant, elementCount)
+	for i := uint64(0); i < elementCount; i++ {
+		key, err := decoder.ReadString()
+		if err != nil {
+			return fmt.Errorf("unable to read key of elememt at index %d: %s", i, err)
+		}
+
+		variant := fcVariant{}
+		err = decoder.Decode(&variant)
+		if err != nil {
+			return fmt.Errorf("unable to read value of elememt with key %s at index %d: %s", key, i, err)
+		}
+
+		mappings[key] = variant
+	}
+
+	*o = fcVariantObject(mappings)
+	return nil
+}
+
+// FIXME: This one I'm unsure, is this correct at all?
+type fcVariantBlob Blob
+
+func (o *fcVariantBlob) UnmarshalBinary(decoder *Decoder) error {
+	var blob Blob
+	err := decoder.Decode(&blob)
+	if err != nil {
+		return err
+	}
+
+	*o = fcVariantBlob(blob)
 	return nil
 }

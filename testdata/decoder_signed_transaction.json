@@ -1,0 +1,27 @@
+{
+  "expiration": "2020-01-28T16:15:37",
+  "ref_block_num": 43,
+  "ref_block_prefix": 1509304514,
+  "max_net_usage_words": 0,
+  "max_cpu_usage_ms": 0,
+  "delay_sec": 1,
+  "context_free_actions": [],
+  "actions": [
+    {
+      "account": "battlefield1",
+      "name": "dbinstwo",
+      "authorization": [
+        {
+          "actor": "battlefield1",
+          "permission": "active"
+        }
+      ],
+      "hex_data": "1052546ea998b33966000000000000006400000000000000"
+    }
+  ],
+  "transaction_extensions": [],
+  "signatures": [
+    "SIG_K1_K7D97sjtsqAVRtpMv2hUwuz1o2bHp2whxSxdJXbBQebB4HJBbazTibfyDRmJZhLdbEe9teT7S8Y4i7HYVAuTmrvyQecVKK"
+  ],
+  "context_free_data": []
+}

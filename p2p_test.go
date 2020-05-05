@@ -295,7 +295,7 @@ func TestBlockState_UnmarshalJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			expected := fmt.Sprintf(`{"id":"","block_num":0,"dpos_irreversible_blocknum":0,"dpos_proposed_irreversible_blocknum":0,"validated":false,%s}`, strings.Join(test.fields, ","))
+			expected := fmt.Sprintf(`{"id":"","block_num":0,"dpos_irreversible_blocknum":0,"dpos_proposed_irreversible_blocknum":0,"validated":false,"additional_signatures": null,%s}`, strings.Join(test.fields, ","))
 
 			entity := new(BlockState)
 			err := json.Unmarshal([]byte(expected), entity)
@@ -449,9 +449,19 @@ func FixmeTestPackedTransaction_Unpack(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func printJSONDiff(expected string, actual string) string {
-	// Really bad for now, but good enough since strings are rather small in here
-	return fmt.Sprintf("\nActual\n%s\n\nExpected\n%s\n", expected, actual)
+func unifiedDiff(t *testing.T, expectedContent, actualContent []byte) string {
+	file1 := "/tmp/eos-go-tests-expected"
+	file2 := "/tmp/eos-go-tests-actual"
+	err := ioutil.WriteFile(file1, prettifyJSON(expectedContent), 0600)
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile(file2, prettifyJSON(actualContent), 0600)
+	require.NoError(t, err)
+
+	cmd := exec.Command("diff", "-u", file1, file2)
+	out, _ := cmd.Output()
+
+	return string(out)
 }
 
 func prettifyJSON(cnt []byte) []byte {
@@ -467,19 +477,4 @@ func prettifyJSON(cnt []byte) []byte {
 	}
 
 	return out
-}
-
-func unifiedDiff(t *testing.T, cnt1, cnt2 []byte) string {
-	file1 := "/tmp/gotests-evm-executor-linediff-1"
-	file2 := "/tmp/gotests-evm-executor-linediff-2"
-	err := ioutil.WriteFile(file1, prettifyJSON(cnt1), 0600)
-	require.NoError(t, err)
-
-	err = ioutil.WriteFile(file2, prettifyJSON(cnt2), 0600)
-	require.NoError(t, err)
-
-	cmd := exec.Command("diff", "-u", file1, file2)
-	out, _ := cmd.Output()
-
-	return string(out)
 }

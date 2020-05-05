@@ -114,19 +114,17 @@ func RegisterAction(accountName AccountName, actionName ActionName, obj interfac
 
 // Decoder implements the EOS unpacking, similar to FC_BUFFER
 type Decoder struct {
-	data               []byte
-	pos                int
-	decodeP2PMessage   bool
-	decodeTransactions bool
-	decodeActions      bool
+	data             []byte
+	pos              int
+	decodeP2PMessage bool
+	decodeActions    bool
 }
 
 func NewDecoder(data []byte) *Decoder {
 	return &Decoder{
-		data:               data,
-		decodeP2PMessage:   true,
-		decodeTransactions: true,
-		decodeActions:      true,
+		data:             data,
+		decodeP2PMessage: true,
+		decodeActions:    true,
 	}
 }
 
@@ -154,16 +152,12 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 
 	rv := reflect.Indirect(reflect.ValueOf(v))
 	if !rv.CanAddr() {
-		return errors.New("decode, can only Decode to pointer type")
+		return fmt.Errorf("can only decode to pointer type, got %T", v)
 	}
 	t := rv.Type()
 
 	if loggingEnabled {
 		decoderLog.Debug("decode type", typeField("type", v), zap.Bool("optional", optionalField))
-	}
-
-	if !rv.CanAddr() {
-		return errors.New("binary: can only Decode to pointer type")
 	}
 
 	if optionalField {
@@ -201,6 +195,20 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		}
 
 		rv = reflect.Indirect(newRV)
+	} else {
+		// We check if `v` directly is `UnmarshalerBinary` this is to overcome our bad code that
+		// has problem dealing with non-pointer type, which should still be possible here, by allocating
+		// the empty value for it can then unmarshalling using the address of it. See comment above about
+		// `newRV` being turned into `**<Type>`.
+		//
+		// We should re-code all the logic to determine the type and indirection using Golang `json` package
+		// logic. See here: https://github.com/golang/go/blob/54697702e435bddb69c0b76b25b3209c78d2120a/src/encoding/json/decode.go#L439
+		if u, ok := v.(UnmarshalerBinary); ok {
+			if loggingEnabled {
+				decoderLog.Debug("using UnmarshalBinary method to decode type", typeField("type", v))
+			}
+			return u.UnmarshalBinary(d)
+		}
 	}
 
 	switch v.(type) {
@@ -250,6 +258,17 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		var n int64
 		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
+		return
+
+	// This is so hackish, doing it right now, but the decoder needs to handle those
+	// case (a struct field that is itself a pointer) by itself.
+	case **Uint64:
+		var n uint64
+		n, err = d.ReadUint64()
+		if err == nil {
+			rv.Set(reflect.ValueOf((Uint64)(n)))
+		}
+
 		return
 	case *Uint64:
 		var n uint64
@@ -362,10 +381,9 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		rv.Set(reflect.ValueOf(asset))
 		return
 	case *TransactionWithID:
-
 		t, e := d.ReadByte()
 		if err != nil {
-			err = fmt.Errorf("decode: TransactionWithID failed to read type byte: %s", e)
+			err = fmt.Errorf("failed to read TransactionWithID type byte: %s", e)
 			return
 		}
 
@@ -376,7 +394,7 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		if t == 0 {
 			id, e := d.ReadChecksum256()
 			if err != nil {
-				err = fmt.Errorf("decode: TransactionWithID failed to read id: %s", e)
+				err = fmt.Errorf("failed to read TransactionWithID id: %s", e)
 				return
 			}
 
@@ -387,9 +405,15 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		} else {
 			packedTrx := &PackedTransaction{}
 			if err := d.Decode(packedTrx); err != nil {
-				return err
+				return fmt.Errorf("packed transaction: %s", err)
 			}
-			trx := TransactionWithID{Packed: packedTrx}
+
+			id, err := packedTrx.ID()
+			if err != nil {
+				return fmt.Errorf("packed transaction id: %s", err)
+			}
+
+			trx := TransactionWithID{ID: id, Packed: packedTrx}
 			rv.Set(reflect.ValueOf(trx))
 			return nil
 		}
@@ -482,15 +506,14 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 
 	seenBinaryExtensionField := false
 	for i := 0; i < l; i++ {
-		tag := t.Field(i).Tag.Get("eos")
+		structField := t.Field(i)
+		tag := structField.Tag.Get("eos")
 		if tag == "-" {
 			continue
 		}
 
-		typeField := t.Field(i)
-
 		if tag != "binary_extension" && seenBinaryExtensionField {
-			panic(fmt.Sprintf("the `eos: \"binary_extension\"` tags must be packed together at the end of struct fields, problematic field %s", typeField.Name))
+			panic(fmt.Sprintf("the `eos: \"binary_extension\"` tags must be packed together at the end of struct fields, problematic field %s", structField.Name))
 		}
 
 		if tag == "binary_extension" {
@@ -508,18 +531,19 @@ func (d *Decoder) decodeStruct(v interface{}, t reflect.Type, rv reflect.Value) 
 			}
 		}
 
-		if v := rv.Field(i); v.CanSet() && typeField.Name != "_" {
-			iface := v.Addr().Interface()
-			if loggingEnabled {
-				decoderLog.Debug("field", zap.String("name", typeField.Name))
-			}
-
+		if v := rv.Field(i); v.CanSet() && structField.Name != "_" {
 			var options []DecodeOption
 			if tag == "optional" {
 				options = append(options, OptionalField)
 			}
 
-			if err = d.Decode(iface, options...); err != nil {
+			value := v.Addr().Interface()
+
+			if loggingEnabled {
+				decoderLog.Debug("struct field", typeField(structField.Name, value), zap.String("tag", tag))
+			}
+
+			if err = d.Decode(value, options...); err != nil {
 				return
 			}
 		}

@@ -1,0 +1,232 @@
+{
+  "id": "bd1da5d08a3da4fa8d8f3a9e0a22da8c97d82accec9a57ea71ad5c035704eba9",
+  "block_num": 32,
+  "block_time": "2020-01-28T11:15:01.500",
+  "producer_block_id": "0000002025806a84353affbf701c455ee90a0c3c30d4d4b37f535fb22b279d0f",
+  "receipt": {
+    "status": "hard_fail",
+    "cpu_usage_us": 5191,
+    "net_usage_words": 0
+  },
+  "elapsed": 485,
+  "net_usage": 0,
+  "scheduled": false,
+  "action_traces": [
+    {
+      "action_ordinal": 1,
+      "creator_action_ordinal": 0,
+      "closest_unnotified_ancestor_action_ordinal": 0,
+      "receiver": "battlefield1",
+      "act": {
+        "account": "eosio",
+        "name": "onerror",
+        "authorization": [
+          {
+            "actor": "battlefield1",
+            "permission": "active"
+          }
+        ],
+        "hex_data": "887766554433221188776655443322113e055e305e1d00de243fd000000100011052546ea998b3390000004875d56f4e011052546ea998b33900000000a8ed32320c1052546ea998b3390100013100"
+      },
+      "context_free": false,
+      "elapsed": 44,
+      "console": "",
+      "trx_id": "bd1da5d08a3da4fa8d8f3a9e0a22da8c97d82accec9a57ea71ad5c035704eba9",
+      "block_num": 32,
+      "block_time": "2020-01-28T11:15:01.500",
+      "producer_block_id": "0000002025806a84353affbf701c455ee90a0c3c30d4d4b37f535fb22b279d0f",
+      "except": {
+        "code": 3050004,
+        "name": "eosio_assert_code_exception",
+        "message": "eosio_assert_code assertion failure",
+        "stack": [
+          {
+            "context": {
+              "level": "error",
+              "file": "wasm_interface.cpp",
+              "line": 1102,
+              "method": "eosio_assert_code",
+              "hostname": "",
+              "thread_name": "thread-0",
+              "timestamp": "2020-04-30T18:19:51"
+            },
+            "format": "assertion failure with error code: ${error_code}",
+            "data": {
+              "error_code": "8000000000000000001"
+            }
+          },
+          {
+            "context": {
+              "level": "warn",
+              "file": "apply_context.cpp",
+              "line": 113,
+              "method": "exec_one",
+              "hostname": "",
+              "thread_name": "thread-0",
+              "timestamp": "2020-04-30T18:19:51"
+            },
+            "format": "pending console output: ${console}",
+            "data": {
+              "console": ""
+            }
+          }
+        ]
+      },
+      "error_code": "8000000000000000001"
+    }
+  ],
+  "account_ram_delta": {
+    "account_name": "battlefield1",
+    "delta": -334
+  },
+  "failed_dtrx_trace": {
+    "id": "d7d32319da744c13fd389e9d6a4ff298687793948303a94a495f161032dc5b9c",
+    "block_num": 32,
+    "block_time": "2020-01-28T11:15:01.500",
+    "producer_block_id": "0000002025806a84353affbf701c455ee90a0c3c30d4d4b37f535fb22b279d0f",
+    "elapsed": 242,
+    "net_usage": 0,
+    "scheduled": true,
+    "action_traces": [
+      {
+        "action_ordinal": 1,
+        "creator_action_ordinal": 0,
+        "closest_unnotified_ancestor_action_ordinal": 0,
+        "receiver": "battlefield1",
+        "act": {
+          "account": "battlefield1",
+          "name": "dtrxexec",
+          "authorization": [
+            {
+              "actor": "battlefield1",
+              "permission": "active"
+            }
+          ],
+          "hex_data": "1052546ea998b33901000131"
+        },
+        "context_free": false,
+        "elapsed": 165,
+        "console": "dtrxexec start console log, before failing",
+        "trx_id": "d7d32319da744c13fd389e9d6a4ff298687793948303a94a495f161032dc5b9c",
+        "block_num": 32,
+        "block_time": "2020-01-28T11:15:01.500",
+        "producer_block_id": "0000002025806a84353affbf701c455ee90a0c3c30d4d4b37f535fb22b279d0f",
+        "except": {
+          "code": 3050003,
+          "name": "eosio_assert_message_exception",
+          "message": "eosio_assert_message assertion failure",
+          "stack": [
+            {
+              "context": {
+                "level": "error",
+                "file": "wasm_interface.cpp",
+                "line": 1075,
+                "method": "eosio_assert",
+                "hostname": "",
+                "thread_name": "thread-0",
+                "timestamp": "2020-04-30T18:19:51"
+              },
+              "format": "assertion failure with message: ${s}",
+              "data": {
+                "s": "dtrxexec instructed to fail"
+              }
+            },
+            {
+              "context": {
+                "level": "warn",
+                "file": "apply_context.cpp",
+                "line": 113,
+                "method": "exec_one",
+                "hostname": "",
+                "thread_name": "thread-0",
+                "timestamp": "2020-04-30T18:19:51"
+              },
+              "format": "pending console output: ${console}",
+              "data": {
+                "console": "dtrxexec start console log, before failing"
+              }
+            }
+          ]
+        },
+        "error_code": "10000000000000000000"
+      }
+    ],
+    "account_ram_delta": null,
+    "except": {
+      "code": 3050003,
+      "name": "eosio_assert_message_exception",
+      "message": "eosio_assert_message assertion failure",
+      "stack": [
+        {
+          "context": {
+            "level": "error",
+            "file": "wasm_interface.cpp",
+            "line": 1075,
+            "method": "eosio_assert",
+            "hostname": "",
+            "thread_name": "thread-0",
+            "timestamp": "2020-04-30T18:19:51"
+          },
+          "format": "assertion failure with message: ${s}",
+          "data": {
+            "s": "dtrxexec instructed to fail"
+          }
+        },
+        {
+          "context": {
+            "level": "warn",
+            "file": "apply_context.cpp",
+            "line": 113,
+            "method": "exec_one",
+            "hostname": "",
+            "thread_name": "thread-0",
+            "timestamp": "2020-04-30T18:19:51"
+          },
+          "format": "pending console output: ${console}",
+          "data": {
+            "console": "dtrxexec start console log, before failing"
+          }
+        }
+      ]
+    },
+    "error_code": "10000000000000000000"
+  },
+  "except": {
+    "code": 3050004,
+    "name": "eosio_assert_code_exception",
+    "message": "eosio_assert_code assertion failure",
+    "stack": [
+      {
+        "context": {
+          "level": "error",
+          "file": "wasm_interface.cpp",
+          "line": 1102,
+          "method": "eosio_assert_code",
+          "hostname": "",
+          "thread_name": "thread-0",
+          "timestamp": "2020-04-30T18:19:51"
+        },
+        "format": "assertion failure with error code: ${error_code}",
+        "data": {
+          "error_code": "8000000000000000001"
+        }
+      },
+      {
+        "context": {
+          "level": "warn",
+          "file": "apply_context.cpp",
+          "line": 113,
+          "method": "exec_one",
+          "hostname": "",
+          "thread_name": "thread-0",
+          "timestamp": "2020-04-30T18:19:51"
+        },
+        "format": "pending console output: ${console}",
+        "data": {
+          "console": ""
+        }
+      }
+    ]
+  },
+  "error_code": "8000000000000000001"
+}

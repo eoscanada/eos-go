@@ -8,17 +8,14 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math"
 	"reflect"
 	"time"
-
-	"io"
-
-	"encoding/json"
-
-	"io/ioutil"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -33,7 +30,10 @@ type TransactionHeader struct {
 	DelaySec         Varuint32 `json:"delay_sec"` // number of secs to delay, making it cancellable for that duration
 }
 
-type Transaction struct { // WARN: is a `variant` in C++, can be a SignedTransaction or a Transaction.
+// Transaction represents an EOS transaction that is no signed yet.
+//
+// **Note** In EOSIO codebase, used within both `signed_transaction` and `transaction`.
+type Transaction struct {
 	TransactionHeader
 
 	ContextFreeActions []*Action    `json:"context_free_actions"`
@@ -71,7 +71,7 @@ type blockHeaderExtensionMap = map[BlockHeaderExtensionType]newBlockHeaderExtens
 type newBlockHeaderExtension func() BlockHeaderExtension
 
 var blockHeaderExtensions = map[string]blockHeaderExtensionMap{
-	"EOS": blockHeaderExtensionMap{
+	"EOS": {
 		EOS_ProtocolFeatureActivation:       func() BlockHeaderExtension { return new(ProtocolFeatureActivationExtension) },
 		EOS_ProducerScheduleChangeExtension: func() BlockHeaderExtension { return new(ProducerScheduleChangeExtension) },
 	},
@@ -118,6 +118,22 @@ func (e *Extension) UnmarshalJSON(data []byte) error {
 		return unmarshalTypeError(pair[1], e.Data, e, "Data")
 	}
 
+	return nil
+}
+
+func (e *Extension) UnmarshalBinary(decoder *Decoder) error {
+	typeID, err := decoder.ReadUint16()
+	if err != nil {
+		return fmt.Errorf("unable to read extension type id: %w", err)
+	}
+
+	data, err := decoder.ReadByteArray()
+	if err != nil {
+		return fmt.Errorf("unable to read extension data: %w", err)
+	}
+
+	e.Type = typeID
+	e.Data = HexBytes(data)
 	return nil
 }
 
@@ -203,8 +219,8 @@ type TransactionTrace struct {
 	ID              Checksum256               `json:"id"`
 	BlockNum        uint32                    `json:"block_num"`
 	BlockTime       BlockTimestamp            `json:"block_time"`
-	ProducerBlockID Checksum256               `json:"producer_block_id"`
-	Receipt         *TransactionReceiptHeader `json:"receipt,omitempty"`
+	ProducerBlockID Checksum256               `json:"producer_block_id" eos:"optional"`
+	Receipt         *TransactionReceiptHeader `json:"receipt,omitempty" eos:"optional"`
 	Elapsed         Int64                     `json:"elapsed"`
 	NetUsage        Uint64                    `json:"net_usage"`
 	Scheduled       bool                      `json:"scheduled"`
@@ -212,10 +228,10 @@ type TransactionTrace struct {
 	AccountRamDelta *struct {
 		AccountName AccountName `json:"account_name"`
 		Delta       Int64       `json:"delta"`
-	} `json:"account_ram_delta"`
-	Except          *Except           `json:"except"`
-	ErrorCode       *Uint64           `json:"error_code"`
-	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
+	} `json:"account_ram_delta" eos:"optional"`
+	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace,omitempty" eos:"optional"`
+	Except          *Except           `json:"except,omitempty" eos:"optional"`
+	ErrorCode       *Uint64           `json:"error_code,omitempty" eos:"optional"`
 }
 
 type SignedTransaction struct {
@@ -236,7 +252,6 @@ func NewSignedTransaction(tx *Transaction) *SignedTransaction {
 }
 
 func (s *SignedTransaction) String() string {
-
 	data, err := json.Marshal(s)
 	if err != nil {
 		return err.Error()
