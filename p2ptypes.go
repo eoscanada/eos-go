@@ -242,13 +242,13 @@ func (c *PairAccountNameBlockNum) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expecting first element to be a string, got %T", object[0])
 	}
 
-	blockNum, ok := object[1].(uint32)
+	blockNum, ok := object[1].(float64)
 	if !ok {
-		return fmt.Errorf("expecting second element to be a uint32, got %T", object[1])
+		return fmt.Errorf("expecting second element to be a float64, got %T", object[1])
 	}
 
 	c.AccountName = AN(accountName)
-	c.BlockNum = blockNum
+	c.BlockNum = uint32(blockNum)
 
 	return nil
 }
