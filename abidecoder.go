@@ -281,7 +281,15 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "int128":
 		value, err = binaryDecoder.ReadUint128("int128")
 	case "uint128":
-		value, err = binaryDecoder.ReadUint128("uint128")
+		v, e := binaryDecoder.ReadUint128("uint128")
+		if e == nil {
+			if a.fitNodeos {
+				value = v.DecimalString()
+			} else {
+				value = v
+			}
+		}
+		err = e
 	case "varint32":
 		value, err = binaryDecoder.ReadVarint32()
 	case "varuint32":

@@ -727,7 +727,7 @@ func (d *Decoder) ReadUint128(typeName string) (out Uint128, err error) {
 
 	d.pos += TypeSize.Uint128
 	if loggingEnabled {
-		decoderLog.Debug("read uint128", zap.Stringer("hex", out), zap.Uint64("lo", out.Lo), zap.Uint64("lo", out.Lo))
+		decoderLog.Debug("read uint128", zap.Stringer("hex", out), zap.Uint64("hi", out.Hi), zap.Uint64("lo", out.Lo))
 	}
 	return
 }

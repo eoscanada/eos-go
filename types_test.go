@@ -21,6 +21,91 @@ func TestChecksum256String(t *testing.T) {
 	assert.Equal(t, "01020304", s.String())
 }
 
+func TestUint128JSONUnmarshal(t *testing.T) {
+	tests := []struct {
+		name            string
+		input           string
+		expectedLo      uint64
+		expectedHi      uint64
+		expectedError   string
+		expectedDecimal string
+	}{
+		{
+			name:            "zero",
+			input:           `"0x00000000000000000000000000000000"`,
+			expectedLo:      0,
+			expectedHi:      0,
+			expectedDecimal: "0",
+		},
+		{
+			name:            "one",
+			input:           `"0x01000000000000000000000000000000"`,
+			expectedLo:      1,
+			expectedHi:      0,
+			expectedDecimal: "1",
+		},
+		{
+			name:            "value",
+			input:           `"0x9ea6ce00000000000000000000000000"`,
+			expectedLo:      13543070,
+			expectedHi:      0,
+			expectedDecimal: "13543070",
+		},
+		{
+			name:            "one more than uint64",
+			input:           `"0x00000000000000000100000000000000"`,
+			expectedLo:      0,
+			expectedHi:      1,
+			expectedDecimal: "18446744073709551616",
+		},
+		{
+			name:            "value from nodeos serialization",
+			input:           `"0x9d030000000000007d00000000000000"`,
+			expectedLo:      925,
+			expectedHi:      125,
+			expectedDecimal: "2305843009213693952925",
+		},
+		{
+			name:            "largest ever",
+			input:           `"0xffffffffffffffffffffffffffffffff"`,
+			expectedLo:      math.MaxUint64,
+			expectedHi:      math.MaxUint64,
+			expectedDecimal: "340282366920938463463374607431768211455",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var i Uint128
+			err := json.Unmarshal([]byte(test.input), &i)
+
+			if test.expectedError != "" {
+				require.Error(t, err)
+				assert.Equal(t, test.expectedError, err.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectedLo, i.Lo, "lo")
+				assert.Equal(t, test.expectedHi, i.Hi, "hi")
+
+				res, err := json.Marshal(i)
+				require.NoError(t, err)
+				assert.Equal(t, test.input, string(res))
+
+				assert.Equal(t, test.expectedDecimal, i.DecimalString(), "numerical")
+			}
+		})
+	}
+}
+
+//check_type(context, 0, "int128", R"("0")");
+//check_type(context, 0, "int128", R"("1")");
+//check_type(context, 0, "int128", R"("-1")");
+//check_type(context, 0, "int128", R"("18446744073709551615")");
+//check_type(context, 0, "int128", R"("-18446744073709551615")");
+//check_type(context, 0, "int128", R"("170141183460469231731687303715884105727")");
+//check_type(context, 0, "int128", R"("-170141183460469231731687303715884105727")");
+//check_type(context, 0, "int128", R"("-170141183460469231731687303715884105728")");
+
 func TestInt128JSONUnmarshal(t *testing.T) {
 	tests := []struct {
 		name          string

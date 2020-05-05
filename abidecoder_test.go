@@ -343,6 +343,30 @@ func TestABI_decode_StructFieldTypeHasArrayOfAliasArray(t *testing.T) {
 	assert.JSONEq(t, `{"player_hands_string":[["Diamond 3|d64e128fd187cc04a9495e0e3e5c20c982c0571fb96928a7803c916a9022113f,06fcee20464e7a8ac3210d041e3568cd4e40947d7f741c7c242cca1425f562e1,EOS7GaQBbgYwi1Migb7xkAv88SpvzvsScx2Bvom8J26Y2sUmFpp3Z,SIG_K1_K6f7kx2uccZuBYPsMLVJZqxmFecLBvyiVgx83mdHVq9FysrfBcLf8gJbp7RTx3MEWrFrJTpacgb7k7KhNRdMs8osN5rQos","Diamond A|2dd24da7d81c96d5338262384943d3f501ac2881f7c637ebaedf32e29e394e51,06fcee220c57d55b568de137b887e8e9d0421e3140001b10d4f9e2f8190de002,EOS7GaQBbgYwi1Migb7xkAv88SpvzvsScx2Bvom8J26Y2sUmFpp3Z,SIG_K1_K2bm66gmco5SQknGcdbLMMx8FM34iX2wNuCgNDC7rT28p1z3geHmpWP7q9uG3jrpo8jhqGM3YipWabGr7XA1qj9JTZJ7oG","Heart 3|750cf1fa96c7ded0dc1c6756bab26a5ed1f052b70b706c279ff068ef90a63163,06fcee3fb68f4808fb141449e5688fc80a878ef2c1f06701d7383b655fe4c6f6,EOS7GaQBbgYwi1Migb7xkAv88SpvzvsScx2Bvom8J26Y2sUmFpp3Z,SIG_K1_JvHJXwf3afFR6Jhy7ZAZWtKWnsmZNjWSUncTR8jin8UzbLHjGYvLqM871fcpV2js8iSsVX2MjnM7BnYL7Sg9wzRoHtmqo5","Spade 4|a7fa6755e6f2775465342f53c739371688428c31a0f0fff4aef17d41cbb2a7f4,06fcee6a5c3f48569008d8387fff58632bad9c4f95e827e13285ecc8b3376f34,EOS7GaQBbgYwi1Migb7xkAv88SpvzvsScx2Bvom8J26Y2sUmFpp3Z,SIG_K1_KZdN3pUX25WBT8xyWN4xU965nYLrsLHWa3Q891HaiHExtKrSYK1b667vy7mRc1fVQHGDqv2h1bH173dkvDjuR6N6P73UFD"]]}`, string(json))
 }
 
+func TestABI_decode_StructFieldWithUint128(t *testing.T) {
+	abi := &ABI{
+		fitNodeos: true,
+		Types: []ABIType{
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "extern_amount", Type: "uint128" },
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("9ea6ce00000000000000000000000000")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"extern_amount": "13543070"}`, string(json))
+}
+
 func TestABI_decode_StructFieldTypeHasAlias(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
