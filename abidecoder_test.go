@@ -254,6 +254,69 @@ func TestABI_decode_Float32FitNodeos(t *testing.T) {
 	assert.JSONEq(t, `{"field":"1.10000002384185791"}`, string(json))
 }
 
+func TestABI_decode_StructFieldTypeUint128(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "extern_amount", Type: "uint128"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("0000f4b7062e7059ee11000000000000")
+	require.NoError(t, err)
+
+	abi.fitNodeos = false
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"extern_amount":"0x0000f4b7062e7059ee11000000000000"}`, string(json))
+
+	abi.fitNodeos = true
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"extern_amount":"84677000000000000000000"}`, string(json))
+}
+
+
+func TestABI_decode_StructFieldTypeTimePoint(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "timestamp", Type: "time_point"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("0020deedd5920500")
+	require.NoError(t, err)
+
+	abi.fitNodeos = true
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"timestamp":"2019-09-18T16:00:00.000"}`, string(json))
+
+	abi.fitNodeos = false
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"timestamp":"2019-09-18T16:00:00"}`, string(json))
+
+}
+
+
 func TestABI_decode_StructHasAliasedBase(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{

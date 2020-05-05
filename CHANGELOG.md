@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Ability to decode a `int128` and `uint128` in decimal fomart when `fitNodeos` flag is set on the ABI 
+- `TimePoint` will decode with `0` nanoseconds, when the `fitNodeos` flag is set on the ABI. 
+- Ability to decode a `int128` and `uint128` in decimal format when `fitNodeos` flag is set on the ABI 
 - Ability to decode nested `arrays` in ABI decoder.
 - Added `BlockState.Header` field of type `SignedBlockHeader` that was previously missing from the struct definition.
 - Added `BlockState.AdditionalSignatures` field of type `[]ecc.Signature` that was previously missing from the struct definition.

@@ -42,6 +42,8 @@ func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 	return a.decode(binaryDecoder, structName)
 }
 
+
+
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
 	if loggingEnabled {
 		abiDecoderLog.Debug("decode struct", zap.String("name", structName))
@@ -334,7 +336,12 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		timePoint, e := binaryDecoder.ReadTimePoint() //todo double check
 		if e == nil {
 			t := time.Unix(0, int64(timePoint*1000))
-			value = t.UTC().Format("2006-01-02T15:04:05.999")
+			if a.fitNodeos && t.Nanosecond() == 0{
+				// nodeos time_point will contains the nano seconds even if they are 0
+				value = fmt.Sprintf("%s.000", t.UTC().Format("2006-01-02T15:04:05"))
+			} else {
+				value = t.UTC().Format("2006-01-02T15:04:05.999")
+			}
 		}
 		err = e
 	case "time_point_sec":
