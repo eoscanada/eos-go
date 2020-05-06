@@ -1,32 +1,22 @@
 package eos
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/eoscanada/eos-go/ecc"
 	"math"
+	"strings"
+	"testing"
 	"time"
 
-	"testing"
-
-
-	"github.com/stretchr/testify/require"
-
-
-
-	"github.com/tidwall/gjson"
-
-	"bytes"
-
-	"strings"
-
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestABI_DecodeAction(t *testing.T) {
-
 	abiReader := strings.NewReader(abiString)
-
 	mockData := struct {
 		BF1    string
 		F1     Name
@@ -233,8 +223,7 @@ func TestABI_decode_Float32FitNodeos(t *testing.T) {
 
 	abi := &ABI{
 		fitNodeos: true,
-		Types: []ABIType{
-		},
+		Types:     []ABIType{},
 		Structs: []StructDef{
 			{
 				Name: "root",
@@ -256,8 +245,7 @@ func TestABI_decode_Float32FitNodeos(t *testing.T) {
 
 func TestABI_decode_StructFieldTypeUint128(t *testing.T) {
 	abi := &ABI{
-		Types: []ABIType{
-		},
+		Types: []ABIType{},
 		Structs: []StructDef{
 			{
 				Name: "root",
@@ -284,11 +272,9 @@ func TestABI_decode_StructFieldTypeUint128(t *testing.T) {
 	assert.JSONEq(t, `{"extern_amount":"84677000000000000000000"}`, string(json))
 }
 
-
 func TestABI_decode_StructFieldTypeTimePoint(t *testing.T) {
 	abi := &ABI{
-		Types: []ABIType{
-		},
+		Types: []ABIType{},
 		Structs: []StructDef{
 			{
 				Name: "root",
@@ -315,7 +301,6 @@ func TestABI_decode_StructFieldTypeTimePoint(t *testing.T) {
 	assert.JSONEq(t, `{"timestamp":"2019-09-18T16:00:00"}`, string(json))
 
 }
-
 
 func TestABI_decode_StructHasAliasedBase(t *testing.T) {
 	abi := &ABI{
@@ -409,13 +394,12 @@ func TestABI_decode_StructFieldTypeHasArrayOfAliasArray(t *testing.T) {
 func TestABI_decode_StructFieldWithUint128(t *testing.T) {
 	abi := &ABI{
 		fitNodeos: true,
-		Types: []ABIType{
-		},
+		Types:     []ABIType{},
 		Structs: []StructDef{
 			{
 				Name: "root",
 				Fields: []FieldDef{
-					{Name: "extern_amount", Type: "uint128" },
+					{Name: "extern_amount", Type: "uint128"},
 				},
 			},
 		},
@@ -505,7 +489,7 @@ func TestABI_decode_StructFieldTypeHasAliasArray(t *testing.T) {
 func TestABI_decode_StructFieldHasAliasWithStructType(t *testing.T) {
 
 	abi := &ABI{
-		fitNodeos:        true,
+		fitNodeos: true,
 		Types: []ABIType{
 			ABIType{Type: "collab_data[]", NewTypeName: "approvals_t"},
 		},
@@ -824,7 +808,6 @@ func TestABI_decode_Uint8ArrayVec(t *testing.T) {
 		},
 	}
 
-
 	json, err := abi.decode(NewDecoder(HexString("01020d13")), "endgame")
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"player_hands": [[13,19]]}`, string(json))
@@ -909,8 +892,7 @@ func TestABI_decodeFieldsErr(t *testing.T) {
 
 func TestABI_decodeOptionalField(t *testing.T) {
 	abi := &ABI{
-		Types: []ABIType{
-		},
+		Types: []ABIType{},
 		Structs: []StructDef{
 			{
 				Name: "root",
@@ -929,39 +911,37 @@ func TestABI_decodeOptionalField(t *testing.T) {
 	optionalNotPresent := &testOptionalField{
 		B: 0,
 	}
-	optionalMissingFlag := struct {}{}
+	optionalMissingFlag := struct{}{}
 
-	tests := []struct{
-		name string
-		data interface{}
-		fitNodeos bool
-		expectError bool
+	tests := []struct {
+		name         string
+		data         interface{}
+		fitNodeos    bool
+		expectError  bool
 		expectedJSON string
-
 	}{
 		{
-			name: "optional present",
-			data: optional,
+			name:         "optional present",
+			data:         optional,
 			expectedJSON: `{"field":"value.1"}`,
 		},
 		{
-			name: "optional not present",
-			data: optionalNotPresent,
+			name:         "optional not present",
+			data:         optionalNotPresent,
 			expectedJSON: ``,
 		},
 		{
-			name: "optional not present fit nodeos",
-			fitNodeos: true,
-			data: optionalNotPresent,
+			name:         "optional not present fit nodeos",
+			fitNodeos:    true,
+			data:         optionalNotPresent,
 			expectedJSON: `{"field": null}`,
 		},
 		{
-			name: "optional missing flag",
-			data: optionalMissingFlag,
-			expectError:  true,
+			name:        "optional missing flag",
+			data:        optionalMissingFlag,
+			expectError: true,
 		},
 	}
-
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -987,8 +967,6 @@ func TestABI_decodeOptionalField(t *testing.T) {
 		})
 	}
 
-
-
 	//// Option is present
 	//// Option is not present
 	//
@@ -1003,8 +981,7 @@ func TestABI_decodeOptionalField(t *testing.T) {
 
 func TestABI_decode_StructFieldArray(t *testing.T) {
 	abi := &ABI{
-		Types: []ABIType{
-		},
+		Types: []ABIType{},
 		Structs: []StructDef{
 			{
 				Name: "root",
@@ -1035,78 +1012,77 @@ func TestABI_Read(t *testing.T) {
 	signatureBuffer, err := hex.DecodeString("001f69c3e7b2789bccd5c4be1030129f35e93de2e8e18468dca94c65600cac25b4636e5d75342499e5519a0df74c714fd5ad682662204068eff4ca9fac86254ae416")
 	require.NoError(t, err)
 
-	tests := []struct{
-		name string
-		fieldName string
-		typeName string
-		fitNodeos bool
-		data interface{}
-		expectError bool
+	tests := []struct {
+		name          string
+		fieldName     string
+		typeName      string
+		fitNodeos     bool
+		data          interface{}
+		expectError   bool
 		expectedValue *string
-
 	}{
-		{name: "string", fieldName: "testedField", typeName: "string", data: "this.is.a.test", expectedValue: s(`"this.is.a.test"`) },
-		{name: "min int8", fieldName: "testedField", typeName: "int8", data: int8(-128), expectedValue: s("-128") },
-		{name: "max int8", fieldName: "testedField", typeName: "int8", data: int8(127), expectedValue: s("127") },
-		{name: "min uint8", fieldName: "testedField", typeName: "uint8", data: uint8(0), expectedValue: s("0") },
-		{name: "max uint8", fieldName: "testedField", typeName: "uint8", data: uint8(255), expectedValue: s("255") },
-		{name: "min int16", fieldName: "testedField", typeName: "int16", data: int16(-32768), expectedValue: s("-32768") },
-		{name: "max int16", fieldName: "testedField", typeName: "int16", data: int16(32767), expectedValue: s("32767") },
-		{name: "min uint16", fieldName: "testedField", typeName: "uint16", data: uint16(0), expectedValue: s("0") },
-		{name: "max uint16", fieldName: "testedField", typeName: "uint16", data: uint16(65535), expectedValue: s("65535") },
-		{name: "min int32", fieldName: "testedField", typeName: "int32", data: int32(-2147483648), expectedValue: s("-2147483648") },
-		{name: "max int32", fieldName: "testedField", typeName: "int32", data: int32(2147483647), expectedValue: s("2147483647") },
-		{name: "min uint32", fieldName: "testedField", typeName: "uint32", data: uint32(0), expectedValue: s("0") },
-		{name: "max uint32", fieldName: "testedField", typeName: "uint32", data: uint32(4294967295), expectedValue: s("4294967295") },
-		{name: "min int64", fieldName: "testedField", typeName: "int64", data: int64(-9223372036854775808), expectedValue: s(`"-9223372036854775808"`) },
-		{name: "max int64", fieldName: "testedField", typeName: "int64", data:  int64(9223372036854775807), expectedValue: s(`"9223372036854775807"`) },
-		{name: "mid int64", fieldName: "testedField", typeName: "int64", data: int64(4096), expectedValue: s(`4096`) },
-		{name: "stringified lower int64", fieldName: "testedField", typeName: "int64", data: int64(-5000000000), expectedValue: s(`"-5000000000"`) },
-		{name: "min uint64", fieldName: "testedField", typeName: "uint64", data: uint64(0),expectedValue:s ("0") },
-		{name: "max uint64", fieldName: "testedField", typeName: "uint64", data: uint64(18446744073709551615), expectedValue: s(`"18446744073709551615"`) },
-		{name: "int128 1", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: 0}, expectedValue: s(`"0x01000000000000000000000000000000"`) },
-		{name: "int128 -1", fieldName: "testedField", typeName: "int128", data: Int128{Lo: math.MaxUint64, Hi: math.MaxUint64}, expectedValue: s(`"0xffffffffffffffffffffffffffffffff"`) },
-		{name: "int128", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 925, Hi: 125}, expectedValue: s(`"0x9d030000000000007d00000000000000"`) },
-		{name: "int128 negative ", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: math.MaxUint64}, expectedValue: s(`"0x0100000000000000ffffffffffffffff"`) },
-		{name: "int128 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "int128", data: Int128{Lo: 925, Hi: 125}, expectedValue: s(`"2305843009213693952925"`) },
-		{name: "int128 negative fit nodeos ", fieldName: "testedField", fitNodeos: true, typeName: "int128", data: Int128{Lo: 1, Hi: math.MaxUint64}, expectedValue: s(`"-18446744073709551615"`) },
-		{name: "uint128 1", fieldName: "testedField", typeName: "uint128", data: Int128{Lo: 1, Hi: 0}, expectedValue: s(`"0x01000000000000000000000000000000"`) },
-		{name: "uint128", fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 925, Hi: 125},expectedValue: s(`"0x9d030000000000007d00000000000000"`) },
-		{name: "uint128 fit nodeos", fitNodeos: true,fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 925, Hi: 125},expectedValue: s(`"2305843009213693952925"`) },
-		{name: "uint128 max",fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: math.MaxUint64, Hi: math.MaxUint64},expectedValue: s(`"0xffffffffffffffffffffffffffffffff"`) },
-		{name: "uint128 fit nodeos", fitNodeos: true,fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: math.MaxUint64, Hi: math.MaxUint64},expectedValue: s(`"340282366920938463463374607431768211455"`) },
-		{name: "min varint32", fieldName: "testedField", typeName: "varint32", data: Varint32(-2147483648), expectedValue: s("-2147483648") },
-		{name: "max varint32", fieldName: "testedField", typeName: "varint32", data: Varint32(2147483647), expectedValue:s ("2147483647") },
-		{name: "min varuint32", fieldName: "testedField", typeName: "varuint32", data: Varuint32(0), expectedValue:s ("0") },
-		{name: "max varuint32", fieldName: "testedField", typeName: "varuint32", data: Varuint32(4294967295), expectedValue:s ("4294967295") },
-		{name: "min float 32", fieldName: "testedField", typeName: "float32", data: float32(math.SmallestNonzeroFloat32), expectedValue: s("0.000000000000000000000000000000000000000000001401298464324817") },
-		{name: "max float 32", fieldName: "testedField", typeName: "float32", data: float32(math.MaxFloat32), expectedValue:s ("340282346638528860000000000000000000000") },
-		{name: "min float64", fieldName: "testedField", typeName: "float64", data: math.SmallestNonzeroFloat64, expectedValue: s("0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005") },
-		{name: "max float64", fieldName: "testedField", typeName: "float64", data: math.MaxFloat64, expectedValue:s ("179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") },
-		{name: "float128", fieldName: "testedField", typeName: "float128", data: Float128{Lo: 1, Hi: 2}, expectedValue: s(`"0x01000000000000000200000000000000"`) },
-		{name: "bool true", fieldName: "testedField", typeName: "bool", data: true, expectedValue: s("true") },
-		{name: "bool false", fieldName: "testedField", typeName: "bool", data: false, expectedValue: s("false") },
-		{name: "time_point", fieldName: "testedField", typeName: "time_point", data: TimePoint(1541085187001001), expectedValue: s(`"2018-11-01T15:13:07.001"`) },
-		{name: "time_point_sec", fieldName: "testedField", typeName: "time_point_sec", data: TimePointSec(1681469753), expectedValue: s(`"2023-04-14T10:55:53"`) },
-		{name: "block_timestamp_type", fieldName: "testedField", typeName: "block_timestamp_type", data: bt, expectedValue: s(`"2018-09-05T12:48:54"`) },
-		{name: "Name", fieldName: "testedField", typeName: "name",data: Name("eoscanadacom"), expectedValue: s(`"eoscanadacom"`) },
-		{name: "bytes", fieldName: "testedField", typeName: "bytes", data: []byte("this.is.a.test"), expectedValue: s(`"746869732e69732e612e74657374"`) },
-		{name: "checksum160", fieldName: "testedField", typeName: "checksum160", data: Checksum160(make([]byte, TypeSize.Checksum160)), expectedValue: s(`"0000000000000000000000000000000000000000"`) },
-		{name: "checksum256", fieldName: "testedField", typeName: "checksum256", data: Checksum256(make([]byte, TypeSize.Checksum256)), expectedValue: s(`"0000000000000000000000000000000000000000000000000000000000000000"`) },
-		{name: "checksum512", fieldName: "testedField", typeName: "checksum512", data: Checksum512(make([]byte, TypeSize.Checksum512)), expectedValue: s(`"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"`) },
-		{name: "public_key", fieldName: "testedField", typeName: "public_key", data: ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"), expectedValue: s(`"EOS1111111111111111111111111111111114T1Anm"`) },
-		{name: "public_key_wa", fieldName: "testedField", typeName: "public_key", data: ecc.MustNewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"), expectedValue: s(`"PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"`) },
-		{name: "signature", fieldName: "testedField", typeName: "signature", data: ecc.MustNewSignatureFromData(signatureBuffer), expectedValue: s(`"SIG_K1_K96L1au4xFJg5edn6qBK6UDbSsC2RKsMs4cXCA2LoCPZxBDMXehdZFWPh1GeRhzGoQjBwNK2eBmUXf4L8SBApL69pGdUJm"`) },
-		{name: "signature_wa", fieldName: "testedField", typeName: "signature", data: ecc.MustNewSignature("SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"), expectedValue: s(`"SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"`) },
-		{name: "symbol", fieldName: "testedField", typeName: "symbol", data: EOSSymbol, expectedValue: s(`"4,EOS"`) },
-		{name: "symbol_code", fieldName: "testedField", typeName: "symbol_code", data: SymbolCode(22606239386324546), expectedValue: s(`"BNTDAPP"`) },
-		{name: "asset", fieldName: "testedField", typeName: "asset", data: Asset{Amount: 100000, Symbol: EOSSymbol}, expectedValue: s(`"10.0000 EOS"`) },
-		{name: "extended_asset", fieldName: "testedField", typeName: "extended_asset", data: ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, expectedValue: s("{\"quantity\":\"0.0010 EOS\",\"contract\":\"eoscanadacom\"}") },
-		{name: "bad type", fieldName: "testedField", typeName: "bad.type.1", data: nil, expectedValue: nil,  expectError: true},
-		{name: "min float64 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "float64", data: math.SmallestNonzeroFloat64, expectedValue: s(`"0.00000000000000000"`) },
-		{name: "max float64 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "float64", data: math.MaxFloat64, expectedValue: s(`"179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00000000000000000"`) },
-		{name: "bool true fit nodeos", fieldName: "testedField", fitNodeos: true,typeName: "bool", data: true, expectedValue: s("1") },
-		{name: "bool false  fit nodeos", fieldName: "testedField", fitNodeos: true,typeName: "bool", data: false, expectedValue: s("0") },
+		{name: "string", fieldName: "testedField", typeName: "string", data: "this.is.a.test", expectedValue: s(`"this.is.a.test"`)},
+		{name: "min int8", fieldName: "testedField", typeName: "int8", data: int8(-128), expectedValue: s("-128")},
+		{name: "max int8", fieldName: "testedField", typeName: "int8", data: int8(127), expectedValue: s("127")},
+		{name: "min uint8", fieldName: "testedField", typeName: "uint8", data: uint8(0), expectedValue: s("0")},
+		{name: "max uint8", fieldName: "testedField", typeName: "uint8", data: uint8(255), expectedValue: s("255")},
+		{name: "min int16", fieldName: "testedField", typeName: "int16", data: int16(-32768), expectedValue: s("-32768")},
+		{name: "max int16", fieldName: "testedField", typeName: "int16", data: int16(32767), expectedValue: s("32767")},
+		{name: "min uint16", fieldName: "testedField", typeName: "uint16", data: uint16(0), expectedValue: s("0")},
+		{name: "max uint16", fieldName: "testedField", typeName: "uint16", data: uint16(65535), expectedValue: s("65535")},
+		{name: "min int32", fieldName: "testedField", typeName: "int32", data: int32(-2147483648), expectedValue: s("-2147483648")},
+		{name: "max int32", fieldName: "testedField", typeName: "int32", data: int32(2147483647), expectedValue: s("2147483647")},
+		{name: "min uint32", fieldName: "testedField", typeName: "uint32", data: uint32(0), expectedValue: s("0")},
+		{name: "max uint32", fieldName: "testedField", typeName: "uint32", data: uint32(4294967295), expectedValue: s("4294967295")},
+		{name: "min int64", fieldName: "testedField", typeName: "int64", data: int64(-9223372036854775808), expectedValue: s(`"-9223372036854775808"`)},
+		{name: "max int64", fieldName: "testedField", typeName: "int64", data: int64(9223372036854775807), expectedValue: s(`"9223372036854775807"`)},
+		{name: "mid int64", fieldName: "testedField", typeName: "int64", data: int64(4096), expectedValue: s(`4096`)},
+		{name: "stringified lower int64", fieldName: "testedField", typeName: "int64", data: int64(-5000000000), expectedValue: s(`"-5000000000"`)},
+		{name: "min uint64", fieldName: "testedField", typeName: "uint64", data: uint64(0), expectedValue: s("0")},
+		{name: "max uint64", fieldName: "testedField", typeName: "uint64", data: uint64(18446744073709551615), expectedValue: s(`"18446744073709551615"`)},
+		{name: "int128 1", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: 0}, expectedValue: s(`"0x01000000000000000000000000000000"`)},
+		{name: "int128 -1", fieldName: "testedField", typeName: "int128", data: Int128{Lo: math.MaxUint64, Hi: math.MaxUint64}, expectedValue: s(`"0xffffffffffffffffffffffffffffffff"`)},
+		{name: "int128", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 925, Hi: 125}, expectedValue: s(`"0x9d030000000000007d00000000000000"`)},
+		{name: "int128 negative ", fieldName: "testedField", typeName: "int128", data: Int128{Lo: 1, Hi: math.MaxUint64}, expectedValue: s(`"0x0100000000000000ffffffffffffffff"`)},
+		{name: "int128 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "int128", data: Int128{Lo: 925, Hi: 125}, expectedValue: s(`"2305843009213693952925"`)},
+		{name: "int128 negative fit nodeos ", fieldName: "testedField", fitNodeos: true, typeName: "int128", data: Int128{Lo: 1, Hi: math.MaxUint64}, expectedValue: s(`"-18446744073709551615"`)},
+		{name: "uint128 1", fieldName: "testedField", typeName: "uint128", data: Int128{Lo: 1, Hi: 0}, expectedValue: s(`"0x01000000000000000000000000000000"`)},
+		{name: "uint128", fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 925, Hi: 125}, expectedValue: s(`"0x9d030000000000007d00000000000000"`)},
+		{name: "uint128 fit nodeos", fitNodeos: true, fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: 925, Hi: 125}, expectedValue: s(`"2305843009213693952925"`)},
+		{name: "uint128 max", fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: math.MaxUint64, Hi: math.MaxUint64}, expectedValue: s(`"0xffffffffffffffffffffffffffffffff"`)},
+		{name: "uint128 fit nodeos", fitNodeos: true, fieldName: "testedField", typeName: "uint128", data: Uint128{Lo: math.MaxUint64, Hi: math.MaxUint64}, expectedValue: s(`"340282366920938463463374607431768211455"`)},
+		{name: "min varint32", fieldName: "testedField", typeName: "varint32", data: Varint32(-2147483648), expectedValue: s("-2147483648")},
+		{name: "max varint32", fieldName: "testedField", typeName: "varint32", data: Varint32(2147483647), expectedValue: s("2147483647")},
+		{name: "min varuint32", fieldName: "testedField", typeName: "varuint32", data: Varuint32(0), expectedValue: s("0")},
+		{name: "max varuint32", fieldName: "testedField", typeName: "varuint32", data: Varuint32(4294967295), expectedValue: s("4294967295")},
+		{name: "min float 32", fieldName: "testedField", typeName: "float32", data: float32(math.SmallestNonzeroFloat32), expectedValue: s("0.000000000000000000000000000000000000000000001401298464324817")},
+		{name: "max float 32", fieldName: "testedField", typeName: "float32", data: float32(math.MaxFloat32), expectedValue: s("340282346638528860000000000000000000000")},
+		{name: "min float64", fieldName: "testedField", typeName: "float64", data: math.SmallestNonzeroFloat64, expectedValue: s("0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005")},
+		{name: "max float64", fieldName: "testedField", typeName: "float64", data: math.MaxFloat64, expectedValue: s("179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")},
+		{name: "float128", fieldName: "testedField", typeName: "float128", data: Float128{Lo: 1, Hi: 2}, expectedValue: s(`"0x01000000000000000200000000000000"`)},
+		{name: "bool true", fieldName: "testedField", typeName: "bool", data: true, expectedValue: s("true")},
+		{name: "bool false", fieldName: "testedField", typeName: "bool", data: false, expectedValue: s("false")},
+		{name: "time_point", fieldName: "testedField", typeName: "time_point", data: TimePoint(1541085187001001), expectedValue: s(`"2018-11-01T15:13:07.001"`)},
+		{name: "time_point_sec", fieldName: "testedField", typeName: "time_point_sec", data: TimePointSec(1681469753), expectedValue: s(`"2023-04-14T10:55:53"`)},
+		{name: "block_timestamp_type", fieldName: "testedField", typeName: "block_timestamp_type", data: bt, expectedValue: s(`"2018-09-05T12:48:54"`)},
+		{name: "Name", fieldName: "testedField", typeName: "name", data: Name("eoscanadacom"), expectedValue: s(`"eoscanadacom"`)},
+		{name: "bytes", fieldName: "testedField", typeName: "bytes", data: []byte("this.is.a.test"), expectedValue: s(`"746869732e69732e612e74657374"`)},
+		{name: "checksum160", fieldName: "testedField", typeName: "checksum160", data: Checksum160(make([]byte, TypeSize.Checksum160)), expectedValue: s(`"0000000000000000000000000000000000000000"`)},
+		{name: "checksum256", fieldName: "testedField", typeName: "checksum256", data: Checksum256(make([]byte, TypeSize.Checksum256)), expectedValue: s(`"0000000000000000000000000000000000000000000000000000000000000000"`)},
+		{name: "checksum512", fieldName: "testedField", typeName: "checksum512", data: Checksum512(make([]byte, TypeSize.Checksum512)), expectedValue: s(`"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"`)},
+		{name: "public_key", fieldName: "testedField", typeName: "public_key", data: ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"), expectedValue: s(`"EOS1111111111111111111111111111111114T1Anm"`)},
+		{name: "public_key_wa", fieldName: "testedField", typeName: "public_key", data: ecc.MustNewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"), expectedValue: s(`"PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"`)},
+		{name: "signature", fieldName: "testedField", typeName: "signature", data: ecc.MustNewSignatureFromData(signatureBuffer), expectedValue: s(`"SIG_K1_K96L1au4xFJg5edn6qBK6UDbSsC2RKsMs4cXCA2LoCPZxBDMXehdZFWPh1GeRhzGoQjBwNK2eBmUXf4L8SBApL69pGdUJm"`)},
+		{name: "signature_wa", fieldName: "testedField", typeName: "signature", data: ecc.MustNewSignature("SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"), expectedValue: s(`"SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"`)},
+		{name: "symbol", fieldName: "testedField", typeName: "symbol", data: EOSSymbol, expectedValue: s(`"4,EOS"`)},
+		{name: "symbol_code", fieldName: "testedField", typeName: "symbol_code", data: SymbolCode(22606239386324546), expectedValue: s(`"BNTDAPP"`)},
+		{name: "asset", fieldName: "testedField", typeName: "asset", data: Asset{Amount: 100000, Symbol: EOSSymbol}, expectedValue: s(`"10.0000 EOS"`)},
+		{name: "extended_asset", fieldName: "testedField", typeName: "extended_asset", data: ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, expectedValue: s("{\"quantity\":\"0.0010 EOS\",\"contract\":\"eoscanadacom\"}")},
+		{name: "bad type", fieldName: "testedField", typeName: "bad.type.1", data: nil, expectedValue: nil, expectError: true},
+		{name: "min float64 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "float64", data: math.SmallestNonzeroFloat64, expectedValue: s(`"0.00000000000000000"`)},
+		{name: "max float64 fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "float64", data: math.MaxFloat64, expectedValue: s(`"179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00000000000000000"`)},
+		{name: "bool true fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "bool", data: true, expectedValue: s("1")},
+		{name: "bool false  fit nodeos", fieldName: "testedField", fitNodeos: true, typeName: "bool", data: false, expectedValue: s("0")},
 	}
 
 	for _, c := range tests {
@@ -1120,7 +1096,7 @@ func TestABI_Read(t *testing.T) {
 			if c.expectedValue != nil {
 				value = *c.expectedValue
 			}
-			require.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s",value , c.typeName), c.name)
+			require.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", value, c.typeName), c.name)
 
 			abi := ABI{}
 			abi.fitNodeos = c.fitNodeos
@@ -1189,6 +1165,73 @@ func TestABIDecoder_analyseFieldType(t *testing.T) {
 			assert.Equal(t, test.expectedBinaryExtension, isBinaryExtension)
 		})
 	}
+}
+
+func Test_formatTimePoint(t *testing.T) {
+	tests := []struct {
+		name            string
+		time            TimePoint
+		shouldFitNodeos bool
+		expectedOutput  string
+	}{
+		{
+			name:            "golden path with fit nodeos",
+			time:            1588450213523000,
+			shouldFitNodeos: false,
+			expectedOutput:  "2020-05-02T20:10:13.523",
+		},
+		{
+			name:            "golden path without fit nodeos",
+			time:            1588450213523000,
+			shouldFitNodeos: false,
+			expectedOutput:  "2020-05-02T20:10:13.523",
+		},
+		{
+			name:            "0 nano second with fit nodeos",
+			time:            1568822400000000,
+			shouldFitNodeos: true,
+			expectedOutput:  "2019-09-18T16:00:00.000",
+		},
+		{
+			name:            "0 nano second without fit nodeos",
+			time:            1568822400000000,
+			shouldFitNodeos: false,
+			expectedOutput:  "2019-09-18T16:00:00",
+		},
+		{
+			name:            "500 nano second with fit nodeos",
+			time:            1588450213500000,
+			shouldFitNodeos: true,
+			expectedOutput:  "2020-05-02T20:10:13.500",
+		},
+		{
+			name:            "500 nano second without fit nodeos",
+			time:            1588450213500000,
+			shouldFitNodeos: false,
+			expectedOutput:  "2020-05-02T20:10:13.5",
+		},
+		{
+			name:            "520 nano second with fit nodeos",
+			time:            1588450213520000,
+			shouldFitNodeos: true,
+			expectedOutput:  "2020-05-02T20:10:13.520",
+		},
+		{
+			name:            "520 nano second without fit nodeos",
+			time:            1588450213520000,
+			shouldFitNodeos: false,
+			expectedOutput:  "2020-05-02T20:10:13.52",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			time := formatTimePoint(test.time, test.shouldFitNodeos)
+			fmt.Println(time)
+			assert.Equal(t, test.expectedOutput, time)
+		})
+	}
+
 }
 
 func HexString(input string) []byte {

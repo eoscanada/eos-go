@@ -42,8 +42,6 @@ func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 	return a.decode(binaryDecoder, structName)
 }
 
-
-
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
 	if loggingEnabled {
 		abiDecoderLog.Debug("decode struct", zap.String("name", structName))
@@ -104,7 +102,7 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, fieldName, fieldType string, 
 
 	// check if this field is an alias
 	aliasFieldType, isAlias := a.TypeNameForNewTypeName(fieldType)
-	if isAlias  {
+	if isAlias {
 		if loggingEnabled {
 			abiDecoderLog.Debug("type is an alias",
 				zap.String("from", fieldType),
@@ -187,7 +185,7 @@ func (a *ABI) readArray(binaryDecoder *Decoder, fieldName, fieldType string, jso
 }
 
 // Decodes the EOS ABIs built-in types
-func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error){
+func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
 	variant := a.VariantForName(fieldType)
 	if variant != nil {
 		variantIndex, err := binaryDecoder.ReadUvarint32()
@@ -329,19 +327,13 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "bool":
 		if a.fitNodeos {
 			value, err = binaryDecoder.ReadByte()
-			break
+		} else {
+			value, err = binaryDecoder.ReadBool()
 		}
-		value, err = binaryDecoder.ReadBool()
 	case "time_point":
 		timePoint, e := binaryDecoder.ReadTimePoint() //todo double check
 		if e == nil {
-			t := time.Unix(0, int64(timePoint*1000))
-			if a.fitNodeos && t.Nanosecond() == 0{
-				// nodeos time_point will contains the nano seconds even if they are 0
-				value = fmt.Sprintf("%s.000", t.UTC().Format("2006-01-02T15:04:05"))
-			} else {
-				value = t.UTC().Format("2006-01-02T15:04:05.999")
-			}
+			value = formatTimePoint(timePoint, a.fitNodeos)
 		}
 		err = e
 	case "time_point_sec":
@@ -425,4 +417,13 @@ func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArr
 	}
 
 	return fieldType, false, false, false
+}
+
+func formatTimePoint(timePoint TimePoint, shouldFitNodeos bool) string {
+	t := time.Unix(0, int64(timePoint*1000))
+	format := "2006-01-02T15:04:05.999"
+	if shouldFitNodeos {
+		format = "2006-01-02T15:04:05.000"
+	}
+	return t.UTC().Format(format)
 }
