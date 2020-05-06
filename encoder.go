@@ -65,6 +65,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 			return
 		}
 		return e.Encode(cv.Impl)
+	case ConsoleLog:
+		return e.writeString(string(cv))
 	case Name:
 		return e.writeName(cv)
 	case AccountName:

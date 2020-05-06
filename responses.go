@@ -104,7 +104,7 @@ type ActionTrace struct {
 	Action                                 *Action             `json:"act"`
 	ContextFree                            bool                `json:"context_free"`
 	Elapsed                                Int64               `json:"elapsed"`
-	Console                                string              `json:"console"`
+	Console                                ConsoleLog          `json:"console"`
 	TransactionID                          Checksum256         `json:"trx_id"`
 	BlockNum                               uint32              `json:"block_num"`
 	BlockTime                              BlockTimestamp      `json:"block_time"`
@@ -326,7 +326,7 @@ type TransactionProcessed struct {
 type Trace struct {
 	Receiver AccountName `json:"receiver"`
 	// Action     Action       `json:"act"` // FIXME: how do we unpack that ? what's on the other side anyway?
-	Console    string       `json:"console"`
+	Console    ConsoleLog   `json:"console"`
 	DataAccess []DataAccess `json:"data_access"`
 }
 

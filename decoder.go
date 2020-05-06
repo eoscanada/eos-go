@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/eoscanada/eos-go/ecc"
 	"go.uber.org/zap"
@@ -229,6 +230,17 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		}
 		rv.SetString(name)
 		return
+
+	case *ConsoleLog:
+		s, e := d.SafeReadUTF8String()
+		if e != nil {
+			err = e
+			return
+		}
+
+		rv.SetString(s)
+		return
+
 	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode, *GoAwayReason:
 		var n byte
 		n, err = d.ReadByte()
@@ -795,7 +807,6 @@ func (d *Decoder) ReadNodeosFloat32() (out float32, err error) {
 	return
 }
 
-
 func (d *Decoder) ReadFloat64() (out float64, err error) {
 	if d.remaining() < TypeSize.Float64 {
 		err = fmt.Errorf("float64 required [%d] bytes, remaining [%d]", TypeSize.Float64, d.remaining())
@@ -807,6 +818,21 @@ func (d *Decoder) ReadFloat64() (out float64, err error) {
 	d.pos += TypeSize.Float64
 	if loggingEnabled {
 		decoderLog.Debug("read Float64", zap.Float64("val", float64(out)))
+	}
+	return
+}
+
+func fixUtf(r rune) rune {
+	if r == utf8.RuneError {
+		return '�'
+	}
+	return r
+}
+func (d *Decoder) SafeReadUTF8String() (out string, err error) {
+	data, err := d.ReadByteArray()
+	out = strings.Map(fixUtf, string(data))
+	if loggingEnabled {
+		decoderLog.Debug("read safe UTF8 string", zap.String("val", out))
 	}
 	return
 }
