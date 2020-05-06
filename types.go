@@ -974,12 +974,11 @@ func (i Uint128) String() string {
 }
 
 func (i Uint128) DecimalString() string {
-	number := i.BigInt()
-	return fmt.Sprintf("%d", number)
+	return i.BigInt().String()
 }
 
 func (i Uint128) MarshalJSON() (data []byte, err error) {
-	return json.Marshal(i.String())
+	return []byte(`"` + i.String() + `"`), nil
 }
 
 func (i *Uint128) UnmarshalJSON(data []byte) error {
@@ -1033,7 +1032,7 @@ func (i Int128) BigInt() *big.Int {
 	binary.BigEndian.PutUint64(buf[8:], i.Lo)
 
 	var value *big.Int
-	if  (buf[0] & comp) == comp {
+	if (buf[0] & comp) == comp {
 		buf = twosComplement(buf)
 		value = (&big.Int{}).SetBytes(buf)
 		value = value.Neg(value)
@@ -1044,14 +1043,11 @@ func (i Int128) BigInt() *big.Int {
 }
 
 func (i Int128) DecimalString() string {
-	number := i.BigInt()
-	fmt.Printf("t: %d\n",number)
-	return fmt.Sprintf("%d",number)
+	return i.BigInt().String()
 }
 
-
 func (i Int128) MarshalJSON() (data []byte, err error) {
-	return json.Marshal(Uint128(i).String())
+	return []byte(`"` + Uint128(i).String() + `"`), nil
 }
 
 func (i *Int128) UnmarshalJSON(data []byte) error {
@@ -1069,7 +1065,7 @@ func (i *Int128) UnmarshalJSON(data []byte) error {
 type Float128 Uint128
 
 func (i Float128) MarshalJSON() (data []byte, err error) {
-	return json.Marshal(Uint128(i).String())
+	return []byte(`"` + Uint128(i).String() + `"`), nil
 }
 
 func (i *Float128) UnmarshalJSON(data []byte) error {
@@ -1183,8 +1179,6 @@ func (a *BaseVariant) UnmarshalBinaryVariant(decoder *Decoder, newImplPointer ma
 	return nil
 }
 
-
-
 func twosComplement(v []byte) []byte {
 	buf := make([]byte, len(v))
 	for i, b := range v {
@@ -1194,6 +1188,7 @@ func twosComplement(v []byte) []byte {
 	value := (&big.Int{}).SetBytes(buf)
 	return value.Add(value, one).Bytes()
 }
+
 // Implementation of `fc::variant` types
 
 type fcVariantType uint32
