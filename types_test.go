@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -19,6 +20,31 @@ import (
 func TestChecksum256String(t *testing.T) {
 	s := Checksum256{0x01, 0x02, 0x03, 0x04}
 	assert.Equal(t, "01020304", s.String())
+}
+
+func TestSafeString(t *testing.T) {
+	const nonUTF8 = "\xca\xc0\x20\xbd\xe7\x0a"
+	filtered := strings.Map(fixUtf, nonUTF8)
+
+	require.NotEqual(t, filtered, nonUTF8)
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	enc.writeString(nonUTF8)
+
+	d := NewDecoder(buf.Bytes())
+	var ss SafeString
+
+	err := d.Decode(&ss)
+	require.NoError(t, err)
+	assert.Equal(t, SafeString(filtered), ss, "SafeString should contain filtered data")
+
+	d = NewDecoder(buf.Bytes())
+	var s string
+	err = d.Decode(&s)
+	require.NoError(t, err)
+	assert.Equal(t, nonUTF8, s, "string should return unfiltered data")
+
 }
 
 func TestUint128JSONUnmarshal(t *testing.T) {
@@ -112,40 +138,40 @@ func TestUint128JSONUnmarshal(t *testing.T) {
 }
 
 func Test_twosComplement(t *testing.T) {
-	tests := []struct{
+	tests := []struct {
 		name         string
 		input        []byte
 		expectOutput []byte
 	}{
 		{
-			name:   "-1",
+			name: "-1",
 			// 0xffffffffffffffffffffffffffffffff
-			input:   []byte{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+			input: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 			// 0x00000000000000000000000000000001
 			// the current algorithm will simply omit MSB 0's
 			expectOutput: []byte{0x01},
 		},
 		{
-			name:   "-18446744073709551615",
+			name: "-18446744073709551615",
 			// 0xffffffffffffffff0000000000000001
-			input:   []byte{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01},
+			input: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 			// 0x0000000000000000ffffffffffffffff
 			// the current algorithm will simply omit MSB 0's
-			expectOutput: []byte{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+			expectOutput: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		},
 		{
-			name:   "-170141183460469231731687303715884105727",
+			name: "-170141183460469231731687303715884105727",
 			// 0x80000000000000000000000000000001
-			input:   []byte{0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01},
+			input: []byte{0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 			// 0x7fffffffffffffffffffffffffffffff
-			expectOutput: []byte{0x7f,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+			expectOutput: []byte{0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		},
 		{
-			name:   "-170141183460469231731687303715884105728",
+			name: "-170141183460469231731687303715884105728",
 			// 0x80000000000000000000000000000000
-			input:[]byte{0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+			input: []byte{0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 			// 0x80000000000000000000000000000000
-			expectOutput: []byte{0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+			expectOutput: []byte{0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		},
 	}
 
@@ -158,11 +184,11 @@ func Test_twosComplement(t *testing.T) {
 
 func TestInt128JSONUnmarshal(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		expectedLo    uint64
-		expectedHi    uint64
-		expectedError string
+		name            string
+		input           string
+		expectedLo      uint64
+		expectedHi      uint64
+		expectedError   string
 		expectedDecimal string
 	}{
 		{
@@ -181,66 +207,66 @@ func TestInt128JSONUnmarshal(t *testing.T) {
 			expectedError: "encoding/hex: invalid byte: U+006D 'm'",
 		},
 		{
-			name:       "zero",
-			input:      `"0x00000000000000000000000000000000"`,
-			expectedLo: 0,
-			expectedHi: 0,
+			name:            "zero",
+			input:           `"0x00000000000000000000000000000000"`,
+			expectedLo:      0,
+			expectedHi:      0,
 			expectedDecimal: "0",
 		},
 		{
-			name:       "one",
-			input:      `"0x01000000000000000000000000000000"`,
-			expectedLo: 1,
-			expectedHi: 0,
+			name:            "one",
+			input:           `"0x01000000000000000000000000000000"`,
+			expectedLo:      1,
+			expectedHi:      0,
 			expectedDecimal: "1",
 		},
 		{
-			name:       "negative one",
-			input:      `"0xffffffffffffffffffffffffffffffff"`,
-			expectedLo: math.MaxUint64,
-			expectedHi: math.MaxUint64,
+			name:            "negative one",
+			input:           `"0xffffffffffffffffffffffffffffffff"`,
+			expectedLo:      math.MaxUint64,
+			expectedHi:      math.MaxUint64,
 			expectedDecimal: "-1",
 		},
 		{
-			name:       "max uint64",
-			input:      `"0xffffffffffffffff0000000000000000"`,
-			expectedLo: math.MaxUint64,
-			expectedHi: 0,
+			name:            "max uint64",
+			input:           `"0xffffffffffffffff0000000000000000"`,
+			expectedLo:      math.MaxUint64,
+			expectedHi:      0,
 			expectedDecimal: "18446744073709551615",
 		},
 		{
-			name:       "negative max uint64",
-			input:      `"0x0100000000000000ffffffffffffffff"`,
-			expectedLo: 1,
-			expectedHi: math.MaxUint64,
+			name:            "negative max uint64",
+			input:           `"0x0100000000000000ffffffffffffffff"`,
+			expectedLo:      1,
+			expectedHi:      math.MaxUint64,
 			expectedDecimal: "-18446744073709551615",
 		},
 		{
-			name:       "largest positive number",
-			input:      `"0xffffffffffffffffffffffffffffff7f"`,
-			expectedLo: math.MaxUint64,
-			expectedHi: 0x7fffffffffffffff, //9223372036854775807
+			name:            "largest positive number",
+			input:           `"0xffffffffffffffffffffffffffffff7f"`,
+			expectedLo:      math.MaxUint64,
+			expectedHi:      0x7fffffffffffffff, //9223372036854775807
 			expectedDecimal: "170141183460469231731687303715884105727",
 		},
 		{
-			name:       "before smallest negative number",
-			input:      `"0x01000000000000000000000000000080"`,
-			expectedLo: 1,
-			expectedHi: 0x8000000000000000, //9223372036854775808
+			name:            "before smallest negative number",
+			input:           `"0x01000000000000000000000000000080"`,
+			expectedLo:      1,
+			expectedHi:      0x8000000000000000, //9223372036854775808
 			expectedDecimal: "-170141183460469231731687303715884105727",
 		},
 		{
-			name:       "smallest negative number",
-			input:      `"0x00000000000000000000000000000080"`,
-			expectedLo: 0,
-			expectedHi: 0x8000000000000000,
+			name:            "smallest negative number",
+			input:           `"0x00000000000000000000000000000080"`,
+			expectedLo:      0,
+			expectedHi:      0x8000000000000000,
 			expectedDecimal: "-170141183460469231731687303715884105728",
 		},
 		{
-			name:       "value from nodeos serialization",
-			input:      `"0x9d030000000000007d00000000000000"`,
-			expectedLo: 925,
-			expectedHi: 125,
+			name:            "value from nodeos serialization",
+			input:           `"0x9d030000000000007d00000000000000"`,
+			expectedLo:      925,
+			expectedHi:      125,
 			expectedDecimal: "2305843009213693952925",
 		},
 	}

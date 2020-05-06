@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"testing"
 	"time"
 
@@ -193,30 +192,6 @@ func TestDecoder_Uint64(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(100), n)
 	assert.Equal(t, 0, d.remaining())
-}
-
-func TestDecoder_stringNonUTF8(t *testing.T) {
-	const nonUTF8 = "\xca\xc0\x20\xbd\xe7\x0a"
-	filtered := strings.Map(fixUtf, nonUTF8)
-
-	require.NotEqual(t, filtered, nonUTF8)
-
-	buf := new(bytes.Buffer)
-	enc := NewEncoder(buf)
-	enc.writeString(nonUTF8)
-
-	d := NewDecoder(buf.Bytes())
-	s, err := d.SafeReadUTF8String()
-	assert.NoError(t, err)
-	assert.Equal(t, filtered, s, "SafeReadUTF8String should return filtered data")
-	assert.Equal(t, 0, d.remaining())
-
-	d = NewDecoder(buf.Bytes())
-	s, err = d.ReadString()
-	assert.NoError(t, err)
-	assert.Equal(t, nonUTF8, s, "ReadString should return unfiltered data")
-	assert.Equal(t, 0, d.remaining())
-
 }
 
 func TestDecoder_string(t *testing.T) {

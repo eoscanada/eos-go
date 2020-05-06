@@ -231,16 +231,6 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		rv.SetString(name)
 		return
 
-	case *ConsoleLog:
-		s, e := d.SafeReadUTF8String()
-		if e != nil {
-			err = e
-			return
-		}
-
-		rv.SetString(s)
-		return
-
 	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode, *GoAwayReason:
 		var n byte
 		n, err = d.ReadByte()

@@ -35,7 +35,17 @@ func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
-type ConsoleLog string
+type SafeString string
+
+func (ss *SafeString) UnmarshalBinary(d *Decoder) error {
+	s, e := d.SafeReadUTF8String()
+	if e != nil {
+		return e
+	}
+
+	*ss = SafeString(s)
+	return nil
+}
 
 type AccountResourceLimit struct {
 	Used      Int64 `json:"used"`
