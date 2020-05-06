@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -367,28 +368,45 @@ func TestDecoder_Empty_Signature(t *testing.T) {
 	enc := NewEncoder(buf)
 	assert.Error(t, enc.writeSignature(sig))
 }
+func TestB(t *testing.T) {
 
+}
 func TestDecoder_BlockState(t *testing.T) {
-	hexString, err := ioutil.ReadFile("testdata/block_state_1.hex")
-	require.NoError(t, err)
+	tests := []struct {
+		name             string
+		inHexFile        string
+		expectedJSONFile string
+	}{
+		{"block state 1", "testdata/block_state_1.hex", "testdata/decoder_block_state_1.json"},
+		{"block state 2", "testdata/block_state_2.hex", "testdata/decoder_block_state_2.json"},
+	}
 
-	rawData, err := hex.DecodeString(string(hexString))
-	require.NoError(t, err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			hexString, err := ioutil.ReadFile(test.inHexFile)
+			require.NoError(t, err)
 
-	decoder := NewDecoder(rawData)
-	decoder.decodeActions = false
+			rawData, err := hex.DecodeString(string(hexString))
+			require.NoError(t, err)
 
-	trxTrace := &BlockState{}
-	err = decoder.Decode(trxTrace)
-	require.NoError(t, err)
+			decoder := NewDecoder(rawData)
+			decoder.decodeActions = false
 
-	json, err := json.MarshalIndent(trxTrace, "", "  ")
-	require.NoError(t, err)
+			blockState := &BlockState{}
+			err = decoder.Decode(blockState)
+			require.NoError(t, err)
 
-	expected, err := ioutil.ReadFile("testdata/decoder_block_state.json")
-	require.NoError(t, err)
+			json, err := json.MarshalIndent(blockState, "", "  ")
+			require.NoError(t, err)
 
-	assert.JSONEq(t, string(expected), string(json), unifiedDiff(t, expected, json))
+			fmt.Println(string(json))
+
+			expected, err := ioutil.ReadFile(test.expectedJSONFile)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(expected), string(json), unifiedDiff(t, expected, json))
+		})
+	}
 }
 
 func TestDecoder_TransactionTrace(t *testing.T) {
