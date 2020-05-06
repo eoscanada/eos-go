@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Greatly improved performance of `NameToString` (`~230%`) method.
 - `TimePoint` will decode with `0` nanoseconds, when the `fitNodeos` flag is set on the ABI.
 - Ability to decode a `int128` and `uint128` in decimal format when `fitNodeos` flag is set on the ABI
 - Ability to decode nested `arrays` in ABI decoder.

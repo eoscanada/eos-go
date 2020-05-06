@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -398,8 +397,6 @@ func TestDecoder_BlockState(t *testing.T) {
 
 			json, err := json.MarshalIndent(blockState, "", "  ")
 			require.NoError(t, err)
-
-			fmt.Println(string(json))
 
 			expected, err := ioutil.ReadFile(test.expectedJSONFile)
 			require.NoError(t, err)

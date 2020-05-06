@@ -374,7 +374,7 @@ func TestSimplePacking(t *testing.T) {
 	}
 	cnt, err := MarshalBinary(&M{
 		Acct: AccountName("bob"),
-		A:    []*S{&S{"hello"}, &S{"world"}},
+		A:    []*S{{"hello"}, {"world"}},
 	})
 
 	require.NoError(t, err)
@@ -482,6 +482,8 @@ func TestNameToString(t *testing.T) {
 		in  string
 		out string
 	}{
+		{"0000000000000000", ""},
+		{"0000000000003055", "eos"},
 		{"0000001e4d75af46", "currency"},
 		{"0000000000ea3055", "eosio"},
 		{"00409e9a2264b89a", "newaccount"},
@@ -494,7 +496,6 @@ func TestNameToString(t *testing.T) {
 		{"0000000080ab26a7", "owner"},
 		{"00000040258ab2c2", "setcode"},
 		{"00000000b863b2c2", "setabi"},
-		{"00000000b863b2c2", "setabi"},
 	}
 
 	for _, test := range tests {
@@ -502,6 +503,23 @@ func TestNameToString(t *testing.T) {
 		require.NoError(t, err)
 		res := NameToString(binary.LittleEndian.Uint64(h))
 		assert.Equal(t, test.out, res)
+	}
+}
+
+func BenchmarkNameToString(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NameToString(5093418677655568384)
+		NameToString(6138663577826885632)
+		NameToString(11148770977341390848)
+		NameToString(14542491017828892672)
+		NameToString(3617214756542218240)
+		NameToString(14829575313431724032)
+		NameToString(3596594555622785024)
+		NameToString(15335505127214321600)
+		NameToString(15371467950649982976)
+		NameToString(12044502819693133824)
+		NameToString(14029427681804681216)
+		NameToString(14029385431137648640)
 	}
 }
 
@@ -545,7 +563,7 @@ func TestAuthorityBinaryMarshal(t *testing.T) {
 	a := Authority{
 		Threshold: 2,
 		Keys: []KeyWeight{
-			KeyWeight{
+			{
 				PublicKey: key,
 				Weight:    5,
 			},
