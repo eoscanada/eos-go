@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `TimePoint` will decode with `0` nanoseconds, when the `fitNodeos` flag is set on the ABI. 
-- Ability to decode a `int128` and `uint128` in decimal format when `fitNodeos` flag is set on the ABI 
+- `TimePoint` will decode with `0` nanoseconds, when the `fitNodeos` flag is set on the ABI.
+- Ability to decode a `int128` and `uint128` in decimal format when `fitNodeos` flag is set on the ABI
 - Ability to decode nested `arrays` in ABI decoder.
 - Added `BlockState.Header` field of type `SignedBlockHeader` that was previously missing from the struct definition.
 - Added `BlockState.AdditionalSignatures` field of type `[]ecc.Signature` that was previously missing from the struct definition.
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `BlockState.ProducerToLastImpliedIRB` is now `[]PairAccountNameBlockNum`, was previously `[][2]EOSNameOrUint32`.
   - `BlockState.BlockID` is now a `Checksum256`, was previously `string`.
   - `BlockState.ActivatedProtocolFeatures` is now a `*ProtocolFeatureActivationSet`, was previously `map[string][]HexBytes`.
+  - `BlockState.ConfirmCount` is now a `[]uint8`, was previously `[]uint32`.
   - `PendingSchedule.ScheduleHash` is now a `Checksum256`, was previously `HexBytes`.
   - `ActionTraceReceipt.ActionDigest` is now a `Checksum256`, was previously `string`.
   - `ActionTraceReceipt.CodeSequence` is now a `Varuint32`, was previously `Uint64`.

@@ -290,7 +290,7 @@ type BlockState struct {
 	// EOSIO 2.x
 	ValidBlockSigningAuthorityV2 *BlockSigningAuthority `json:"valid_block_signing_authority,omitempty"`
 
-	ConfirmCount []uint32 `json:"confirm_count,omitempty"`
+	ConfirmCount []uint8 `json:"confirm_count,omitempty"`
 
 	BlockID                   Checksum256                   `json:"id"`
 	Header                    *SignedBlockHeader            `json:"header,omitempty"`
