@@ -1268,7 +1268,7 @@ func (a fcVariant) ToNative() interface{} {
 	}
 
 	if a.TypeID == fcVariantInt64Type {
-		return Int64(a.Impl.(uint64))
+		return Int64(a.Impl.(int64))
 	}
 
 	if a.TypeID == fcVariantUint64Type {
