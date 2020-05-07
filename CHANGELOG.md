@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `ActionTrace.ContextFree` field of type `bool` that was previously missing from the struct definition.
 
 ### Fixed
+- Fix json tags for delegatebw action data.
 - Unpacking binary `Except` now correctly works.
 - Unpacking binary `Action` and `ActionTrace` now correctly works.
 - Unpacking binary `TransactionTrace` now correctly works.
