@@ -963,6 +963,10 @@ func (i *Uint64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (i Uint64) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeUint64(uint64(i))
+}
+
 // uint128
 type Uint128 struct {
 	Lo uint64
