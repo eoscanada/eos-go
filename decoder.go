@@ -2,6 +2,7 @@ package eos
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -135,6 +136,8 @@ func (d *Decoder) DecodeP2PMessage(decode bool) {
 
 func (d *Decoder) DecodeActions(decode bool) {
 	d.decodeActions = decode
+
+	json.Unmarshal(nil, nil)
 }
 
 type DecodeOption = interface{}
@@ -151,15 +154,12 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		}
 	}
 
-	rv := reflect.Indirect(reflect.ValueOf(v))
-	if !rv.CanAddr() {
-		return fmt.Errorf("can only decode to pointer type, got %T", v)
-	}
-	t := rv.Type()
-
 	if loggingEnabled {
 		decoderLog.Debug("decode type", typeField("type", v), zap.Bool("optional", optionalField))
 	}
+
+	unmarshaler, rv := indirect(reflect.ValueOf(v), true)
+	rvType := rv.Type()
 
 	if optionalField {
 		isPresent, e := d.ReadByte()
@@ -170,47 +170,60 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 
 		if isPresent == 0 {
 			if loggingEnabled {
-				decoderLog.Debug("skipping optional", typeField("type", v))
+				decoderLog.Debug("skipping optional value")
 			}
 
-			rv.Set(reflect.Zero(t))
+			rv.Set(reflect.Zero(rvType))
 			return
 		}
 	}
 
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-		newRV := reflect.New(t)
-		rv.Set(newRV)
-
-		// At this point, `newRV` is a pointer to our target type, we need to check here because
-		// after that, when `reflect.Indirect` is used, we get a `**<Type>` instead of a `*<Type>`
-		// which breaks the interface checking.
-		//
-		// Ultimetaly, I think this could should be re-written, I don't think the `**<Type>` is necessary.
-		if u, ok := newRV.Interface().(UnmarshalerBinary); ok {
-			if loggingEnabled {
-				decoderLog.Debug("using UnmarshalBinary method to decode type", typeField("type", v))
-			}
-			return u.UnmarshalBinary(d)
+	if unmarshaler != nil {
+		if loggingEnabled {
+			decoderLog.Debug("using UnmarshalBinary method to decode type")
 		}
-
-		rv = reflect.Indirect(newRV)
-	} else {
-		// We check if `v` directly is `UnmarshalerBinary` this is to overcome our bad code that
-		// has problem dealing with non-pointer type, which should still be possible here, by allocating
-		// the empty value for it can then unmarshalling using the address of it. See comment above about
-		// `newRV` being turned into `**<Type>`.
-		//
-		// We should re-code all the logic to determine the type and indirection using Golang `json` package
-		// logic. See here: https://github.com/golang/go/blob/54697702e435bddb69c0b76b25b3209c78d2120a/src/encoding/json/decode.go#L439
-		if u, ok := v.(UnmarshalerBinary); ok {
-			if loggingEnabled {
-				decoderLog.Debug("using UnmarshalBinary method to decode type", typeField("type", v))
-			}
-			return u.UnmarshalBinary(d)
-		}
+		return unmarshaler.UnmarshalBinary(d)
 	}
+
+	// rv := reflect.Indirect(reflect.ValueOf(v))
+	// if !rv.CanAddr() {
+	// 	return fmt.Errorf("can only decode to pointer type, got %T", v)
+	// }
+	// t := rv.Type()
+
+	// if t.Kind() == reflect.Ptr {
+	// 	t = t.Elem()
+	// 	newRV := reflect.New(t)
+	// 	rv.Set(newRV)
+
+	// 	// At this point, `newRV` is a pointer to our target type, we need to check here because
+	// 	// after that, when `reflect.Indirect` is used, we get a `**<Type>` instead of a `*<Type>`
+	// 	// which breaks the interface checking.
+	// 	//
+	// 	// Ultimetaly, I think this could should be re-written, I don't think the `**<Type>` is necessary.
+	// 	if u, ok := newRV.Interface().(UnmarshalerBinary); ok {
+	// 		if loggingEnabled {
+	// 			decoderLog.Debug("using UnmarshalBinary method to decode type", typeField("type", v))
+	// 		}
+	// 		return u.UnmarshalBinary(d)
+	// 	}
+
+	// 	rv = reflect.Indirect(newRV)
+	// } else {
+	// 	// We check if `v` directly is `UnmarshalerBinary` this is to overcome our bad code that
+	// 	// has problem dealing with non-pointer type, which should still be possible here, by allocating
+	// 	// the empty value for it can then unmarshalling using the address of it. See comment above about
+	// 	// `newRV` being turned into `**<Type>`.
+	// 	//
+	// 	// We should re-code all the logic to determine the type and indirection using Golang `json` package
+	// 	// logic. See here: https://github.com/golang/go/blob/54697702e435bddb69c0b76b25b3209c78d2120a/src/encoding/json/decode.go#L439
+	// 	if u, ok := v.(UnmarshalerBinary); ok {
+	// 		if loggingEnabled {
+	// 			decoderLog.Debug("using UnmarshalBinary method to decode type", typeField("type", v))
+	// 		}
+	// 		return u.UnmarshalBinary(d)
+	// 	}
+	// }
 
 	switch v.(type) {
 	case *string:
@@ -421,7 +434,7 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		}
 
 	case **Action:
-		err = d.decodeStruct(v, t, rv)
+		err = d.decodeStruct(v, rvType, rv)
 		if err != nil {
 			return
 		}
@@ -461,12 +474,12 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		return
 	}
 
-	switch t.Kind() {
+	switch rvType.Kind() {
 	case reflect.Array:
 		if loggingEnabled {
 			decoderLog.Debug("reading array")
 		}
-		len := t.Len()
+		len := rvType.Len()
 		for i := 0; i < int(len); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
 				return
@@ -482,7 +495,7 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		if loggingEnabled {
 			decoderLog.Debug("reading slice", zap.Uint64("len", l), typeField("type", v))
 		}
-		rv.Set(reflect.MakeSlice(t, int(l), int(l)))
+		rv.Set(reflect.MakeSlice(rvType, int(l), int(l)))
 		for i := 0; i < int(l); i++ {
 			if err = d.Decode(rv.Index(i).Addr().Interface()); err != nil {
 				return
@@ -490,14 +503,13 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		}
 
 	case reflect.Struct:
-
-		err = d.decodeStruct(v, t, rv)
+		err = d.decodeStruct(v, rvType, rv)
 		if err != nil {
 			return
 		}
 
 	default:
-		return errors.New("decode, unsupported type " + t.String())
+		return fmt.Errorf("decode, unsupported type %q", rvType)
 	}
 
 	return
@@ -1278,4 +1290,80 @@ func UnmarshalBinaryReader(reader io.Reader, v interface{}) (err error) {
 func UnmarshalBinary(data []byte, v interface{}) (err error) {
 	decoder := NewDecoder(data)
 	return decoder.Decode(v)
+}
+
+// indirect walks down v allocating pointers as needed,
+// until it gets to a non-pointer.
+// if it encounters an Unmarshaler, indirect stops and returns that.
+// if decodingNull is true, indirect stops at the last pointer so it can be set to nil.
+//
+// *Note* This is a copy of `encoding/json/decoder.go#indirect` of Golang 1.14.
+//
+// See here: https://github.com/golang/go/blob/go1.14.2/src/encoding/json/decode.go#L439
+func indirect(v reflect.Value, decodingNull bool) (UnmarshalerBinary, reflect.Value) {
+	// Issue #24153 indicates that it is generally not a guaranteed property
+	// that you may round-trip a reflect.Value by calling Value.Addr().Elem()
+	// and expect the value to still be settable for values derived from
+	// unexported embedded struct fields.
+	//
+	// The logic below effectively does this when it first addresses the value
+	// (to satisfy possible pointer methods) and continues to dereference
+	// subsequent pointers as necessary.
+	//
+	// After the first round-trip, we set v back to the original value to
+	// preserve the original RW flags contained in reflect.Value.
+	v0 := v
+	haveAddr := false
+
+	// If v is a named type and is addressable,
+	// start with its address, so that if the type has pointer methods,
+	// we find them.
+	if v.Kind() != reflect.Ptr && v.Type().Name() != "" && v.CanAddr() {
+		haveAddr = true
+		v = v.Addr()
+	}
+	for {
+		// Load value from interface, but only if the result will be
+		// usefully addressable.
+		if v.Kind() == reflect.Interface && !v.IsNil() {
+			e := v.Elem()
+			if e.Kind() == reflect.Ptr && !e.IsNil() && (!decodingNull || e.Elem().Kind() == reflect.Ptr) {
+				haveAddr = false
+				v = e
+				continue
+			}
+		}
+
+		if v.Kind() != reflect.Ptr {
+			break
+		}
+
+		if v.Elem().Kind() != reflect.Ptr && decodingNull && v.CanSet() {
+			break
+		}
+
+		// Prevent infinite loop if v is an interface pointing to its own address:
+		//     var v interface{}
+		//     v = &v
+		if v.Elem().Kind() == reflect.Interface && v.Elem().Elem() == v {
+			v = v.Elem()
+			break
+		}
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		if v.Type().NumMethod() > 0 && v.CanInterface() {
+			if u, ok := v.Interface().(UnmarshalerBinary); ok {
+				return u, reflect.Value{}
+			}
+		}
+
+		if haveAddr {
+			v = v0 // restore original value after round-trip Value.Addr().Elem()
+			haveAddr = false
+		} else {
+			v = v.Elem()
+		}
+	}
+	return nil, v
 }
