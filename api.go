@@ -395,6 +395,10 @@ func (api *API) PushTransactionRaw(ctx context.Context, tx *PackedTransaction) (
 	err = api.call(ctx, "chain", "push_transaction", tx, &out)
 	return
 }
+func (api *API) SendTransactionRaw(ctx context.Context, tx *PackedTransaction) (out json.RawMessage, err error) {
+	err = api.call(ctx, "chain", "send_transaction", tx, &out)
+	return
+}
 
 func (api *API) GetInfo(ctx context.Context) (out *InfoResp, err error) {
 	err = api.call(ctx, "chain", "get_info", nil, &out)
