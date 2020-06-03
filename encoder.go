@@ -20,7 +20,7 @@ import (
 //
 // **Warning** This is experimental, exposed only for internal usage for now.
 type MarshalerBinary interface {
-	MarshalerBinary(encoder *Encoder) error
+	MarshalBinary(encoder *Encoder) error
 }
 
 func MarshalBinary(v interface{}) ([]byte, error) {
@@ -58,13 +58,15 @@ func (e *Encoder) writeName(name Name) error {
 func (e *Encoder) Encode(v interface{}) (err error) {
 	switch cv := v.(type) {
 	case MarshalerBinary:
-		return cv.MarshalerBinary(e)
+		return cv.MarshalBinary(e)
 	case BaseVariant:
 		err = e.writeUVarInt(int(cv.TypeID))
 		if err != nil {
 			return
 		}
 		return e.Encode(cv.Impl)
+	case SafeString:
+		return e.writeString(string(cv))
 	case Name:
 		return e.writeName(cv)
 	case AccountName:
@@ -105,8 +107,6 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case uint64:
 		return e.writeUint64(cv)
 	case Int64:
-		return e.writeUint64(uint64(cv))
-	case Uint64:
 		return e.writeUint64(uint64(cv))
 	case int64:
 		return e.writeInt64(cv)
@@ -234,7 +234,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 					if v.CanInterface() {
 						isPresent := true
 						if tag == "optional" {
-							isPresent = !v.IsNil()
+							isPresent = !v.IsZero()
 							e.writeBool(isPresent)
 						}
 

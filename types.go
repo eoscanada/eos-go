@@ -35,6 +35,18 @@ func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
+type SafeString string
+
+func (ss *SafeString) UnmarshalBinary(d *Decoder) error {
+	s, e := d.SafeReadUTF8String()
+	if e != nil {
+		return e
+	}
+
+	*ss = SafeString(s)
+	return nil
+}
+
 type AccountResourceLimit struct {
 	Used      Int64 `json:"used"`
 	Available Int64 `json:"available"`
@@ -951,6 +963,10 @@ func (i *Uint64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (i Uint64) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeUint64(uint64(i))
+}
+
 // uint128
 type Uint128 struct {
 	Lo uint64
@@ -1256,7 +1272,7 @@ func (a fcVariant) ToNative() interface{} {
 	}
 
 	if a.TypeID == fcVariantInt64Type {
-		return Int64(a.Impl.(uint64))
+		return Int64(a.Impl.(int64))
 	}
 
 	if a.TypeID == fcVariantUint64Type {

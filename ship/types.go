@@ -64,7 +64,7 @@ type ActionTraceV0 struct {
 	Act                  *Action
 	ContextFree          bool
 	Elapsed              int64
-	Console              string
+	Console              eos.SafeString
 	AccountRamDeltas     []*eos.AccountRAMDelta
 	Except               string `eos:"optional"`
 	ErrorCode            uint64 `eos:"optional"`

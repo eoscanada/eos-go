@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Greatly improved performance of `NameToString` (`~230%`) method.
 - `TimePoint` will decode with `0` nanoseconds, when the `fitNodeos` flag is set on the ABI.
 - Ability to decode a `int128` and `uint128` in decimal format when `fitNodeos` flag is set on the ABI
 - Ability to decode nested `arrays` in ABI decoder.
@@ -14,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `ActionTrace.ContextFree` field of type `bool` that was previously missing from the struct definition.
 
 ### Fixed
+- Optional encoding of primitive types.
+
+  A struct with a non-pointer type tagged with `eos:"optional"` is now properly encoded at the binary level. **Important** that means that for non-pointer type, when the value of the type is the "emtpy" value according to Golang rules, it will be written as not-present at the binary level. If it's something that you do want want, use a pointer to a primitive type. It's actually a good habit to use a pointer type for "optional" element anyway, to increase awarness.
+
+- Fix json tags for delegatebw action data.
 - Unpacking binary `Except` now correctly works.
 - Unpacking binary `Action` and `ActionTrace` now correctly works.
 - Unpacking binary `TransactionTrace` now correctly works.
@@ -21,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unpacking binary `BlockState` now correctly works but is restricted to EOSIO 2.0.x version.
 
 ### Changed
-  - **BREAKING**: Fixed binary unpacking of `BlockState`, `TransactionTrace`, `SignedTransaction`, `Action` (and some inner types). This required changing a few struct fields to better fit with EOSIO definition, here the full list:
+- **BREAKING**: Fixed binary unpacking of `BlockState`, `TransactionTrace`, `SignedTransaction`, `Action` (and some inner types). This required changing a few struct fields to better fit with EOSIO definition, here the full list:
   - `MerkleRoot.ActiveNodes` is now a `[]Checksum256`, was previously `[]string`
   - `MerkleRoot.NodeCount` is now a `uint64`, was previously `uint32`
   - Type `EOSNameOrUint32` has been removed and replaced by `PairAccountNameBlockNum` which is strictly typed now.
