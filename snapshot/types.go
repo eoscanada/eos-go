@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/eoscanada/eos-go"
 )
@@ -122,3 +123,57 @@ func readContractTables(buf *bufio.Reader) error {
 //       shared_blob           value;
 //    };
 // }
+
+type AccountObject struct {
+	Name         eos.AccountName
+	CreationDate eos.BlockTimestamp
+	RawABI       []byte
+}
+
+func readAccountObjects(buf *bufio.Reader, count uint64) error {
+	for i := uint64(0); i < count; i++ {
+		a := AccountObject{}
+		cnt := make([]byte, 12)
+		_, err := buf.Read(cnt)
+		if err != nil {
+			return err
+		}
+
+		if err := eos.UnmarshalBinary(cnt[:8], &a.Name); err != nil {
+			return err
+		}
+
+		if err := eos.UnmarshalBinary(cnt[8:12], &a.CreationDate); err != nil {
+			return err
+		}
+
+		val, err := readByteArray(buf)
+		if err != nil {
+			return err
+		}
+
+		a.RawABI = val
+
+		fmt.Println("Account", a.Name, "created", a.CreationDate.Format(time.RFC3339), "abi length", len(val))
+	}
+	return nil
+}
+
+func readByteArray(buf *bufio.Reader) ([]byte, error) {
+	valueSize, err := binary.ReadUvarint(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	val := make([]byte, valueSize)
+
+	written, err := buf.Read(val)
+	if err != nil {
+		return nil, err
+	}
+	if uint64(written) != valueSize {
+		return nil, fmt.Errorf("inconsistent read, expected %d bytes, read %d", valueSize, written)
+	}
+
+	return val, nil
+}

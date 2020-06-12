@@ -1,10 +1,13 @@
 package snapshot
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"testing"
 
+	"github.com/eoscanada/eos-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,12 +43,51 @@ func TestSnapshotRead(t *testing.T) {
 				assert.NoError(t, err)
 				fmt.Println("Section", section.Name, "rows", section.RowCount, "bytes", section.BufferSize)
 
-				if section.Name == "contract_tables" {
+				switch section.Name {
+				case "eosio::chain::chain_snapshot_header":
+				case "eosio::chain::block_state":
+					cnt := make([]byte, section.BufferSize)
+					_, err := section.Buffer.Read(cnt)
+					//fmt.Println(hex.EncodeToString(cnt))
+					require.NoError(t, err)
+					var state eos.BlockState
+					assert.NoError(t, eos.UnmarshalBinary(cnt, &state))
+					cnt, _ = json.MarshalIndent(state, "  ", "  ")
+					fmt.Println(string(cnt))
+
+				case "eosio::chain::account_object":
+					require.NoError(t, readAccountObjects(section.Buffer, section.RowCount))
+					cnt := make([]byte, section.BufferSize)
+					_, err := section.Buffer.Read(cnt)
+					require.NoError(t, err)
+
+					require.NoError(t, ioutil.WriteFile("/tmp/test.dat", cnt, 0664))
+
+					var accounts []AccountObject
+					assert.NoError(t, eos.UnmarshalBinary(cnt, &accounts))
+					cnt, _ = json.MarshalIndent(accounts, "  ", "  ")
+					fmt.Println(string(cnt))
+
+				case "eosio::chain::account_metadata_object":
+				case "eosio::chain::account_ram_correction_object":
+				case "eosio::chain::global_property_object":
+				case "eosio::chain::protocol_state_object":
+				case "eosio::chain::dynamic_global_property_object":
+				case "eosio::chain::block_summary_object":
+				case "eosio::chain::transaction_object":
+				case "eosio::chain::generated_transaction_object":
+				case "eosio::chain::code_object":
+				case "contract_tables":
 					err := readContractTables(section.Buffer)
 					require.NoError(t, err)
-					// dt := make([]byte, 10000)
-					// _, _ = section.Buffer.Read(dt)
-					// _ = ioutil.WriteFile("/tmp/test.dat", dt, 0644)
+				case "eosio::chain::permission_object":
+				case "eosio::chain::permission_link_object":
+				case "eosio::chain::resource_limits::resource_limits_object":
+				case "eosio::chain::resource_limits::resource_usage_object":
+				case "eosio::chain::resource_limits::resource_limits_state_object":
+				case "eosio::chain::resource_limits::resource_limits_config_object":
+				default:
+					panic("unsupported section")
 				}
 			}
 			fmt.Println("Done")
