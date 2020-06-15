@@ -16,7 +16,7 @@ import (
 )
 
 type Operation interface {
-	Actions(b *BIOS) ([]*eos.Action, error)
+	Actions(b *Boot) ([]*eos.Action, error)
 }
 
 var operationsRegistry = map[string]Operation{
@@ -91,7 +91,7 @@ type OpSetCode struct {
 	ContractNameRef string `json:"contract_name_ref"`
 }
 
-func (op *OpSetCode) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpSetCode) Actions(b *Boot) (out []*eos.Action, err error) {
 	wasmFileRef, err := b.GetContentsCacheRef(fmt.Sprintf("%s.wasm", op.ContractNameRef))
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ type OpSetRAM struct {
 	MaxRAMSize uint64 `json:"max_ram_size"`
 }
 
-func (op *OpSetRAM) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpSetRAM) Actions(b *Boot) (out []*eos.Action, err error) {
 	return append(out, system.NewSetRAM(op.MaxRAMSize)), nil
 }
 
@@ -132,8 +132,8 @@ type OpNewAccount struct {
 	RamBytes   uint32 `json:"ram_bytes"`
 }
 
-func (op *OpNewAccount) Actions(b *BIOS) (out []*eos.Action, err error) {
-	pubKey := b.EphemeralPublicKey
+func (op *OpNewAccount) Actions(b *Boot) (out []*eos.Action, err error) {
+	pubKey := b.getPublicKey()
 
 	if op.Pubkey != "ephemeral" {
 		pubKey, err = ecc.NewPublicKey(op.Pubkey)
@@ -158,7 +158,7 @@ type OpDelegateBW struct {
 	Transfer bool
 }
 
-func (op *OpDelegateBW) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpDelegateBW) Actions(b *Boot) (out []*eos.Action, err error) {
 	return append(out, system.NewDelegateBW(op.From, op.To, eos.NewEOSAsset(op.StakeCPU), eos.NewEOSAsset(op.StakeNet), op.Transfer)), nil
 }
 
@@ -168,7 +168,7 @@ type OpBuyRam struct {
 	EOSQuantity uint64 `json:"eos_quantity"`
 }
 
-func (op *OpBuyRam) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpBuyRam) Actions(b *Boot) (out []*eos.Action, err error) {
 	return append(out, system.NewBuyRAM(op.Payer, op.Receiver, op.EOSQuantity)), nil
 }
 
@@ -178,7 +178,7 @@ type OpBuyRamBytes struct {
 	Bytes    uint32
 }
 
-func (op *OpBuyRamBytes) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpBuyRamBytes) Actions(b *Boot) (out []*eos.Action, err error) {
 	return append(out, system.NewBuyRAMBytes(op.Payer, op.Receiver, op.Bytes)), nil
 }
 
@@ -189,7 +189,7 @@ type OpTransfer struct {
 	Memo   string
 }
 
-func (op *OpTransfer) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpTransfer) Actions(b *Boot) (out []*eos.Action, err error) {
 	return append(out, token.NewTransfer(op.From, op.to, op.Amount, op.Memo)), nil
 }
 
@@ -199,8 +199,8 @@ type OpCreateVoters struct {
 	Count   int
 }
 
-func (op *OpCreateVoters) Actions(b *BIOS) (out []*eos.Action, err error) {
-	pubKey := b.EphemeralPublicKey
+func (op *OpCreateVoters) Actions(b *Boot) (out []*eos.Action, err error) {
+	pubKey := b.getPublicKey()
 
 	if op.Pubkey != "ephemeral" {
 		pubKey, err = ecc.NewPublicKey(op.Pubkey)
@@ -231,7 +231,7 @@ type OpSetPriv struct {
 	Account eos.AccountName
 }
 
-func (op *OpSetPriv) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpSetPriv) Actions(b *Boot) (out []*eos.Action, err error) {
 	return append(out, system.NewSetPriv(op.Account)), nil
 }
 
@@ -240,7 +240,7 @@ type OpCreateToken struct {
 	Amount  eos.Asset       `json:"amount"`
 }
 
-func (op *OpCreateToken) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpCreateToken) Actions(b *Boot) (out []*eos.Action, err error) {
 	act := token.NewCreate(op.Account, op.Amount)
 	return append(out, act), nil
 }
@@ -251,7 +251,7 @@ type OpIssueToken struct {
 	Memo    string
 }
 
-func (op *OpIssueToken) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpIssueToken) Actions(b *Boot) (out []*eos.Action, err error) {
 	act := token.NewIssue(op.Account, op.Amount, op.Memo)
 	return append(out, act), nil
 }
@@ -265,7 +265,7 @@ type OpTransferToken struct {
 	Memo     string
 }
 
-func (op *OpTransferToken) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpTransferToken) Actions(b *Boot) (out []*eos.Action, err error) {
 	act := token.NewTransfer(op.From, op.To, op.Quantity, op.Memo)
 	return append(out, act), nil
 }
@@ -277,7 +277,7 @@ type OpSnapshotCreateAccounts struct {
 	TestnetTruncateSnapshot int    `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
-func (op *OpSnapshotCreateAccounts) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpSnapshotCreateAccounts) Actions(b *Boot) (out []*eos.Action, err error) {
 	snapshotFile, err := b.GetContentsCacheRef("snapshot.csv")
 	if err != nil {
 		return nil, err
@@ -362,7 +362,7 @@ type OpInjectUnregdSnapshot struct {
 	TestnetTruncateSnapshot int `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
-func (op *OpInjectUnregdSnapshot) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpInjectUnregdSnapshot) Actions(b *Boot) (out []*eos.Action, err error) {
 	snapshotFile, err := b.GetContentsCacheRef("snapshot_unregistered.csv")
 	if err != nil {
 		return nil, err
@@ -413,7 +413,7 @@ type OpSetProds struct {
 	Prods []producerKeyString
 }
 
-func (op *OpSetProds) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpSetProds) Actions(b *Boot) (out []*eos.Action, err error) {
 
 	var prodKeys []system.ProducerKey
 
@@ -422,7 +422,7 @@ func (op *OpSetProds) Actions(b *BIOS) (out []*eos.Action, err error) {
 			ProducerName: key.ProducerName,
 		}
 		if key.BlockSigningKeyString == "" || key.BlockSigningKeyString == "ephemeral" {
-			prodKey.BlockSigningKey = b.EphemeralPublicKey
+			prodKey.BlockSigningKey = b.getPublicKey()
 		} else {
 			k, err := ecc.NewPublicKey(key.BlockSigningKeyString)
 			if err != nil {
@@ -436,7 +436,7 @@ func (op *OpSetProds) Actions(b *BIOS) (out []*eos.Action, err error) {
 	if len(prodKeys) == 0 {
 		prodKeys = []system.ProducerKey{system.ProducerKey{
 			ProducerName:    AN("eosio"),
-			BlockSigningKey: b.EphemeralPublicKey,
+			BlockSigningKey: b.getPublicKey(),
 		}}
 	}
 
@@ -457,7 +457,7 @@ type OpResignAccounts struct {
 	TestnetKeepAccounts bool `json:"TESTNET_KEEP_ACCOUNTS"`
 }
 
-func (op *OpResignAccounts) Actions(b *BIOS) (out []*eos.Action, err error) {
+func (op *OpResignAccounts) Actions(b *Boot) (out []*eos.Action, err error) {
 	if op.TestnetKeepAccounts {
 		zlog.Debug("Keeping system accounts around, for testing purposes.")
 		return

@@ -9,6 +9,7 @@ require (
 	github.com/dfuse-io/logging v0.0.0-20200611143916-aade15324493
 	github.com/eoscanada/eosc v1.4.0
 	github.com/pkg/errors v0.8.1
+	github.com/spf13/viper v1.3.1
 	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/gjson v1.3.2
 	github.com/tidwall/sjson v1.0.4

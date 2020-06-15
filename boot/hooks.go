@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (b *BIOS) DispatchBootNode(genesisJSON, publicKey, privateKey string) error {
+func (b *Boot) DispatchBootNode(genesisJSON, publicKey, privateKey string) error {
 	return b.dispatch("boot", []string{
 		genesisJSON,
 		publicKey,
@@ -17,7 +17,7 @@ func (b *BIOS) DispatchBootNode(genesisJSON, publicKey, privateKey string) error
 }
 
 // dispatch to both exec calls, and remote web hooks.
-func (b *BIOS) dispatch(hookName string, args []string, f func() error) error {
+func (b *Boot) dispatch(hookName string, args []string, f func() error) error {
 	zlog.Info("BEGIN", zap.String("hook", hookName))
 
 	executable := fmt.Sprintf("./%s.sh", hookName)

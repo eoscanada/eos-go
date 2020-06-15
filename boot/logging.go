@@ -1,12 +1,13 @@
 package boot
 
 import (
-	"github.com/dfuse-io/logging"
+	"github.com/eoscanada/eos-go"
 	"go.uber.org/zap"
 )
 
-var zlog *zap.Logger
+var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/eoscanada/eosc/bios", &zlog)
+	zlog = eos.NewLogger(false)
+
 }
