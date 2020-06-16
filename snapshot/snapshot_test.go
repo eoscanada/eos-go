@@ -1,7 +1,7 @@
 package snapshot
 
 import (
-	"encoding/json"/Users/julien/codebase/eoscanada/eos-go/boot/keys.go
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"

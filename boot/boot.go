@@ -17,18 +17,9 @@ import (
 
 type option func(b *Boot) *Boot
 
-
 func WithKeyBag(keyBag *eos.KeyBag) option {
 	return func(b *Boot) *Boot {
 		b.keyBag = keyBag
-		return b
-	}
-}
-
-func WithBootstrapping(genesisPath string, privateKey *nil) option {
-	return func(b *Boot) *Boot {
-		b.bootstrappingEnabled = true
-		b.genesisPath = genesisPath
 		return b
 	}
 }
@@ -45,11 +36,11 @@ type Boot struct {
 	targetNetAPI         *eos.API
 	bootstrappingEnabled bool
 	genesisPath          string
-	genesis              *GenesisJSON
 	cachePath            string // Directory to store downloaded contract and ABI data
 	bootSequence         *BootSeq
 
-	keyBag *eos.KeyBag
+	keyBag      *eos.KeyBag
+	bootseqKeys map[string]*ecc.PrivateKey
 
 	Snapshot           Snapshot
 	WriteActions       bool
@@ -63,6 +54,7 @@ func New(bootSequencePath string, targetAPI *eos.API, opts ...option) *Boot {
 	b := &Boot{
 		targetNetAPI:     targetAPI,
 		bootSequencePath: bootSequencePath,
+		bootseqKeys:      map[string]*ecc.PrivateKey{},
 		cachePath:        "./boot-cache",
 	}
 	for _, opt := range opts {
@@ -71,8 +63,11 @@ func New(bootSequencePath string, targetAPI *eos.API, opts ...option) *Boot {
 	return b
 }
 
-func (b *Boot) getPublicKey() ecc.PublicKey {
-	return b.keyBag.Keys[0].PublicKey()
+func (b *Boot) getBootseqKey(label string) (*ecc.PrivateKey, error) {
+	if _, found := b.bootseqKeys[label]; found {
+		return b.bootseqKeys[label], nil
+	}
+	return nil, fmt.Errorf("bootseq does not contain key with label %q", label)
 }
 
 func (b *Boot) getPrivateKey() *ecc.PrivateKey {
@@ -84,6 +79,11 @@ func (b *Boot) Run() (err error) {
 
 	b.bootSequence, err = ReadBootSeq(b.bootSequencePath)
 	if err != nil {
+		return err
+	}
+
+	zlog.Debug("parsing boot sequence keys")
+	if err := b.parseBootseqKeys(); err != nil {
 		return err
 	}
 
@@ -101,23 +101,9 @@ func (b *Boot) Run() (err error) {
 		return err
 	}
 
-	if b.bootstrappingEnabled {
-f		zlog.Debug("bootstrapping chain")
-		if err := b.runBoostrapping(ctx); err != nil {
-			return err
-		}
-	}
-
 	b.pingTargetNetwork()
 
-	zlog.Info("In-memory keys:")
-	memkeys, _ := b.targetNetAPI.Signer.AvailableKeys(ctx)
-	for _, key := range memkeys {
-		zlog.Info("", zap.String("key", key.String()))
-	}
-
 	//eos.Debug = true
-
 	for _, step := range b.bootSequence.BootSequence {
 		zlog.Info("action", zap.String("label", step.Label), zap.String("op", step.Op))
 
@@ -126,12 +112,42 @@ f		zlog.Debug("bootstrapping chain")
 			return fmt.Errorf("getting actions for step %q: %s", step.Op, err)
 		}
 
+		if step.Signer != "" {
+			zlog.Info("setting required keys", zap.String("signer", step.Signer))
+			b.targetNetAPI.SetCustomGetRequiredKeys(func(ctx context.Context, tx *eos.Transaction) (out []ecc.PublicKey, err error) {
+				privKey, err := b.getBootseqKey(step.Signer)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, privKey.PublicKey())
+				return out, nil
+			})
+		} else {
+			zlog.Info("setting required key to boot/ephemeral key")
+			b.targetNetAPI.SetCustomGetRequiredKeys(func(ctx context.Context, tx *eos.Transaction) (out []ecc.PublicKey, err error) {
+				privKey, err := b.getBootseqKey("boot")
+				if err == nil {
+					out = append(out, privKey.PublicKey())
+					return out, nil
+				}
+
+				privKey, err = b.getBootseqKey("ephemeral")
+				if err == nil {
+					out = append(out, privKey.PublicKey())
+					return out, nil
+				}
+
+				return nil, fmt.Errorf("unable to find boot or ephemeral key in boot seq")
+			})
+		}
+
 		if len(acts) != 0 {
 			for idx, chunk := range ChunkifyActions(acts) {
 				for _, c := range chunk {
 					zlog.Info("processing chunk", zap.String("action", string(c.Name)))
 				}
 				err := Retry(25, time.Second, func() error {
+
 					_, err := b.targetNetAPI.SignPushActions(ctx, chunk...)
 					if err != nil {
 						zlog.Error("error pushing transaction", zap.String("op", step.Op), zap.Int("idx", idx), zap.Error(err))

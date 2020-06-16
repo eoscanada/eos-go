@@ -38,16 +38,18 @@ var operationsRegistry = map[string]Operation{
 }
 
 type OperationType struct {
-	Op    string
-	Label string
-	Data  Operation
+	Op     string
+	Signer string
+	Label  string
+	Data   Operation
 }
 
 func (o *OperationType) UnmarshalJSON(data []byte) error {
 	opData := struct {
-		Op    string
-		Label string
-		Data  json.RawMessage
+		Op     string
+		Signer string
+		Label  string
+		Data   json.RawMessage
 	}{}
 	if err := json.Unmarshal(data, &opData); err != nil {
 		return err
@@ -66,9 +68,7 @@ func (o *OperationType) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return fmt.Errorf("operation type %q invalid, error decoding: %s", opData.Op, err)
 		}
-	} //  else {
-	// 	_ = json.Unmarshal([]byte("{}"), &obj)
-	// }
+	}
 
 	opIface, ok := obj.(Operation)
 	if !ok {
@@ -76,15 +76,14 @@ func (o *OperationType) UnmarshalJSON(data []byte) error {
 	}
 
 	*o = OperationType{
-		Op:    opData.Op,
-		Label: opData.Label,
-		Data:  opIface,
+		Op:     opData.Op,
+		Label:  opData.Label,
+		Signer: opData.Signer,
+		Data:   opIface,
 	}
 
 	return nil
 }
-
-//
 
 type OpSetCode struct {
 	Account         eos.AccountName
@@ -133,14 +132,11 @@ type OpNewAccount struct {
 }
 
 func (op *OpNewAccount) Actions(b *Boot) (out []*eos.Action, err error) {
-	pubKey := b.getPublicKey()
-
-	if op.Pubkey != "ephemeral" {
-		pubKey, err = ecc.NewPublicKey(op.Pubkey)
-		if err != nil {
-			return nil, fmt.Errorf("reading pubkey: %s", err)
-		}
+	pubKey, err := decodeOpPublicKey(b, op.Pubkey)
+	if err != nil {
+		return nil, err
 	}
+
 	out = append(out, system.NewNewAccount(op.Creator, op.NewAccount, pubKey))
 
 	if op.RamBytes > 0 {
@@ -200,13 +196,9 @@ type OpCreateVoters struct {
 }
 
 func (op *OpCreateVoters) Actions(b *Boot) (out []*eos.Action, err error) {
-	pubKey := b.getPublicKey()
-
-	if op.Pubkey != "ephemeral" {
-		pubKey, err = ecc.NewPublicKey(op.Pubkey)
-		if err != nil {
-			return nil, fmt.Errorf("reading pubkey: %s", err)
-		}
+	pubKey, err := decodeOpPublicKey(b, op.Pubkey)
+	if err != nil {
+		return nil, err
 	}
 
 	for i := 0; i < op.Count; i++ {
@@ -414,29 +406,29 @@ type OpSetProds struct {
 }
 
 func (op *OpSetProds) Actions(b *Boot) (out []*eos.Action, err error) {
-
 	var prodKeys []system.ProducerKey
 
 	for _, key := range op.Prods {
 		prodKey := system.ProducerKey{
 			ProducerName: key.ProducerName,
 		}
-		if key.BlockSigningKeyString == "" || key.BlockSigningKeyString == "ephemeral" {
-			prodKey.BlockSigningKey = b.getPublicKey()
-		} else {
-			k, err := ecc.NewPublicKey(key.BlockSigningKeyString)
-			if err != nil {
-				panic(err)
-			}
-			prodKey.BlockSigningKey = k
+		pubKey, err := decodeOpPublicKey(b, key.BlockSigningKeyString)
+		if err != nil {
+			return nil, err
 		}
+		prodKey.BlockSigningKey = pubKey
 		prodKeys = append(prodKeys, prodKey)
+	}
+
+	pubKey, err := getBootKey(b)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(prodKeys) == 0 {
 		prodKeys = []system.ProducerKey{system.ProducerKey{
 			ProducerName:    AN("eosio"),
-			BlockSigningKey: b.getPublicKey(),
+			BlockSigningKey: pubKey,
 		}}
 	}
 
@@ -533,4 +525,32 @@ func (op *OpResignAccounts) Actions(b *Boot) (out []*eos.Action, err error) {
 	out = append(out, nil)
 
 	return
+}
+
+// this is use to support ephemeral key
+func getBootKey(b *Boot) (ecc.PublicKey, error) {
+	privateKey, err := b.getBootseqKey("boot")
+	if err == nil {
+		return privateKey.PublicKey(), nil
+	}
+
+	privateKey, err = b.getBootseqKey("ephemeral")
+	if err == nil {
+		return privateKey.PublicKey(), nil
+	}
+
+	return ecc.PublicKey{}, fmt.Errorf("cannot find boot/ephemeral key")
+}
+
+func decodeOpPublicKey(b *Boot, opPubKey string) (ecc.PublicKey, error) {
+	privateKey, err := b.getBootseqKey(opPubKey)
+	if err == nil {
+		return privateKey.PublicKey(), nil
+	}
+
+	pubKey, err := ecc.NewPublicKey(opPubKey)
+	if err != nil {
+		return ecc.PublicKey{}, fmt.Errorf("reading pubkey: %s", err)
+	}
+	return pubKey, nil
 }
