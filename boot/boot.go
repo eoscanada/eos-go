@@ -45,13 +45,10 @@ type Boot struct {
 	Snapshot           Snapshot
 	WriteActions       bool
 	HackVotingAccounts bool
-
-	//Ephemeral
-	//Ephemeral
 }
 
-func New(bootSequencePath string, targetAPI *eos.API, opts ...option) *Boot {
-	b := &Boot{
+func New(bootSequencePath string, targetAPI *eos.API, opts ...option) (b *Boot, err error) {
+	b = &Boot{
 		targetNetAPI:     targetAPI,
 		bootSequencePath: bootSequencePath,
 		bootseqKeys:      map[string]*ecc.PrivateKey{},
@@ -60,7 +57,17 @@ func New(bootSequencePath string, targetAPI *eos.API, opts ...option) *Boot {
 	for _, opt := range opts {
 		b = opt(b)
 	}
-	return b
+
+	b.bootSequence, err = ReadBootSeq(b.bootSequencePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (b *Boot) BootseqChecksum() string {
+	return b.bootSequence.Checksum
 }
 
 func (b *Boot) getBootseqKey(label string) (*ecc.PrivateKey, error) {
@@ -74,31 +81,26 @@ func (b *Boot) getPrivateKey() *ecc.PrivateKey {
 	return b.keyBag.Keys[0]
 }
 
-func (b *Boot) Run() (err error) {
+func (b *Boot) Run() (checksums string, err error) {
 	ctx := context.Background()
-
-	b.bootSequence, err = ReadBootSeq(b.bootSequencePath)
-	if err != nil {
-		return err
-	}
 
 	zlog.Debug("parsing boot sequence keys")
 	if err := b.parseBootseqKeys(); err != nil {
-		return err
+		return "", err
 	}
 
 	zlog.Debug("downloading references")
 	if err := b.downloadReferences(); err != nil {
-		return err
+		return "", err
 	}
 
 	zlog.Debug("setting boot keys")
 	if err := b.setKeys(); err != nil {
-		return err
+		return "", err
 	}
 
 	if err := b.attachKeysOnTargetNode(ctx); err != nil {
-		return err
+		return "", err
 	}
 
 	b.pingTargetNetwork()
@@ -109,7 +111,7 @@ func (b *Boot) Run() (err error) {
 
 		acts, err := step.Data.Actions(b)
 		if err != nil {
-			return fmt.Errorf("getting actions for step %q: %s", step.Op, err)
+			return "", fmt.Errorf("getting actions for step %q: %s", step.Op, err)
 		}
 
 		if step.Signer != "" {
@@ -157,7 +159,7 @@ func (b *Boot) Run() (err error) {
 				})
 				if err != nil {
 					zlog.Info(" failed")
-					return err
+					return "", err
 				}
 			}
 		}
@@ -169,14 +171,14 @@ func (b *Boot) Run() (err error) {
 	// FIXME: don't do chain validation here..
 	isValid, err := b.RunChainValidation()
 	if err != nil {
-		return fmt.Errorf("chain validation: %s", err)
+		return "", fmt.Errorf("chain validation: %s", err)
 	}
 	if !isValid {
 		zlog.Info("WARNING: chain invalid, destroying network if possible")
 		os.Exit(0)
 	}
 
-	return nil
+	return b.bootSequence.Checksum, nil
 }
 
 func (b *Boot) RunChainValidation() (bool, error) {
