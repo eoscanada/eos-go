@@ -395,6 +395,16 @@ func (e *Encoder) writeUint128(i Uint128) (err error) {
 	return e.toWriter(buf)
 }
 
+func (e *Encoder) writeInt128(i Int128) (err error) {
+	if loggingEnabled {
+		encoderLog.Debug("write int128", zap.Stringer("hex", i), zap.Uint64("lo", i.Lo), zap.Uint64("hi", i.Hi))
+	}
+	buf := make([]byte, TypeSize.Uint128)
+	binary.LittleEndian.PutUint64(buf, i.Lo)
+	binary.LittleEndian.PutUint64(buf[TypeSize.Uint64:], i.Hi)
+	return e.toWriter(buf)
+}
+
 func (e *Encoder) writeFloat32(f float32) (err error) {
 	if loggingEnabled {
 		encoderLog.Debug("write float32", zap.Float32("val", f))

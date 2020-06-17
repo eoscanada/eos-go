@@ -221,17 +221,8 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		}
 		rv.SetString(s)
 		return
-	case *Name, *AccountName, *PermissionName, *ActionName, *TableName, *ScopeName:
-		var n uint64
-		n, err = d.ReadUint64()
-		name := NameToString(n)
-		if loggingEnabled {
-			decoderLog.Debug("read name", zap.String("name", name))
-		}
-		rv.SetString(name)
-		return
-
-	case *byte, *P2PMessageType, *TransactionStatus, *CompressionType, *IDListMode, *GoAwayReason:
+	// A `byte` primitive type also covers `uint8` at the same time
+	case *byte:
 		var n byte
 		n, err = d.ReadByte()
 		rv.SetUint(uint64(n))
@@ -256,11 +247,6 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		n, err = d.ReadInt64()
 		rv.SetInt(int64(n))
 		return
-	case *Int64:
-		var n int64
-		n, err = d.ReadInt64()
-		rv.SetInt(int64(n))
-		return
 
 	// This is so hackish, doing it right now, but the decoder needs to handle those
 	// case (a struct field that is itself a pointer) by itself.
@@ -271,31 +257,6 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 			rv.Set(reflect.ValueOf((Uint64)(n)))
 		}
 
-		return
-	case *Uint64:
-		var n uint64
-		n, err = d.ReadUint64()
-		rv.SetUint(uint64(n))
-		return
-	case *JSONFloat64:
-		var n float64
-		n, err = d.ReadFloat64()
-		rv.SetFloat(n)
-		return
-	case *Uint128:
-		var n Uint128
-		n, err = d.ReadUint128("uint128")
-		rv.Set(reflect.ValueOf(n))
-		return
-	case *Int128:
-		var n Uint128
-		n, err = d.ReadUint128("int128")
-		rv.Set(reflect.ValueOf(Int128(n)))
-		return
-	case *Float128:
-		var n Uint128
-		n, err = d.ReadUint128("float128")
-		rv.Set(reflect.ValueOf(Float128(n)))
 		return
 	case *uint16:
 		var n uint16
@@ -312,35 +273,15 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		n, err = d.ReadUint64()
 		rv.SetUint(n)
 		return
-	case *Varuint32:
-		var r uint64
-		r, err = d.ReadUvarint64()
-		rv.SetUint(r)
-		return
 	case *bool:
 		var r bool
 		r, err = d.ReadBool()
 		rv.SetBool(r)
 		return
-	case *Bool:
-		var r bool
-		r, err = d.ReadBool()
-		rv.SetBool(r)
-		return
-	case *HexBytes:
-		var data []byte
-		data, err = d.ReadByteArray()
-		rv.SetBytes(data)
-		return
 	case *[]byte:
 		var data []byte
 		data, err = d.ReadByteArray()
 		rv.SetBytes(data)
-		return
-	case *Checksum256:
-		var s Checksum256
-		s, err = d.ReadChecksum256()
-		rv.SetBytes(s)
 		return
 	case *ecc.PublicKey:
 		var p ecc.PublicKey
@@ -351,36 +292,6 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		var s ecc.Signature
 		s, err = d.ReadSignature()
 		rv.Set(reflect.ValueOf(s))
-		return
-	case *Tstamp:
-		var ts Tstamp
-		ts, err = d.ReadTstamp()
-		rv.Set(reflect.ValueOf(ts))
-		return
-	case *BlockTimestamp:
-		var bt BlockTimestamp
-		bt, err = d.ReadBlockTimestamp()
-		rv.Set(reflect.ValueOf(bt))
-		return
-	case *JSONTime:
-		var jt JSONTime
-		jt, err = d.ReadJSONTime()
-		rv.Set(reflect.ValueOf(jt))
-		return
-	case *CurrencyName:
-		var cur CurrencyName
-		cur, err = d.ReadCurrencyName()
-		rv.Set(reflect.ValueOf(cur))
-		return
-	case *Symbol:
-		var symbol *Symbol
-		symbol, err = d.ReadSymbol()
-		rv.Set(reflect.ValueOf(*symbol))
-		return
-	case *Asset:
-		var asset Asset
-		asset, err = d.ReadAsset()
-		rv.Set(reflect.ValueOf(asset))
 		return
 	case *TransactionWithID:
 		t, e := d.ReadByte()
@@ -742,7 +653,7 @@ func (d *Decoder) ReadUint64() (out uint64, err error) {
 }
 
 func (d *Decoder) ReadInt128() (out Int128, err error) {
-	v, err := d.ReadUint128("int128")
+	v, err := d.readUint128("int128")
 	if err != nil {
 		return
 	}
@@ -750,9 +661,13 @@ func (d *Decoder) ReadInt128() (out Int128, err error) {
 	return Int128(v), nil
 }
 
-func (d *Decoder) ReadUint128(typeName string) (out Uint128, err error) {
+func (d *Decoder) ReadUint128() (out Uint128, err error) {
+	return d.readUint128("uint128")
+}
+
+func (d *Decoder) readUint128(tag string) (out Uint128, err error) {
 	if d.remaining() < TypeSize.Uint128 {
-		err = fmt.Errorf("%s required [%d] bytes, remaining [%d]", typeName, TypeSize.Uint128, d.remaining())
+		err = fmt.Errorf("%s required [%d] bytes, remaining [%d]", tag, TypeSize.Uint128, d.remaining())
 		return
 	}
 
@@ -810,6 +725,15 @@ func (d *Decoder) ReadFloat64() (out float64, err error) {
 		decoderLog.Debug("read Float64", zap.Float64("val", float64(out)))
 	}
 	return
+}
+
+func (d *Decoder) ReadFloat128() (out Float128, err error) {
+	value, err := d.readUint128("float128")
+	if err != nil {
+		return out, fmt.Errorf("float128: %s", err)
+	}
+
+	return Float128(value), nil
 }
 
 func fixUtf(r rune) rune {
@@ -1098,11 +1022,16 @@ func (d *Decoder) ReadJSONTime() (jsonTime JSONTime, err error) {
 
 func (d *Decoder) ReadName() (out Name, err error) {
 	n, err := d.ReadUint64()
+	if err != nil {
+		return out, fmt.Errorf("name: %s", err)
+	}
+
 	out = Name(NameToString(n))
 	if loggingEnabled {
 		decoderLog.Debug("read name", zap.String("name", string(out)))
 	}
-	return
+
+	return out, nil
 }
 
 func (d *Decoder) ReadCurrencyName() (out CurrencyName, err error) {

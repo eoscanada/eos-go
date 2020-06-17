@@ -28,6 +28,20 @@ const (
 	PackedTransactionMessageType // 8
 )
 
+func (o *P2PMessageType) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadByte()
+	if err != nil {
+		return fmt.Errorf("p2p message: %s", err)
+	}
+
+	*o = P2PMessageType(value)
+	return nil
+}
+
+func (o P2PMessageType) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeByte(byte(o))
+}
+
 type MessageReflectTypes struct {
 	Name        string
 	ReflectType reflect.Type

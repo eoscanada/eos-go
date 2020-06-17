@@ -25,11 +25,55 @@ var symbolCodeRegex = regexp.MustCompile("^[A-Z]{1,7}$")
 // https://github.com/mithrilcoin-io/EosCommander/blob/master/app/src/main/java/io/mithrilcoin/eoscommander/data/remote/model/types/EosByteWriter.java
 
 type Name string
+
+func (o *Name) UnmarshalBinary(decoder *Decoder) error {
+	name, err := decoder.ReadName()
+	if err != nil {
+		return err
+	}
+
+	*o = name
+	return nil
+}
+
+func (o Name) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeName(o)
+}
+
 type AccountName Name
+
+func (o *AccountName) UnmarshalBinary(decoder *Decoder) error {
+	return (*Name)(o).UnmarshalBinary(decoder)
+}
+func (o AccountName) MarshalBinary(encoder *Encoder) error { return encoder.writeName(Name(o)) }
+
 type PermissionName Name
+
+func (o *PermissionName) UnmarshalBinary(decoder *Decoder) error {
+	return (*Name)(o).UnmarshalBinary(decoder)
+}
+func (o PermissionName) MarshalBinary(encoder *Encoder) error { return encoder.writeName(Name(o)) }
+
 type ActionName Name
+
+func (o *ActionName) UnmarshalBinary(decoder *Decoder) error {
+	return (*Name)(o).UnmarshalBinary(decoder)
+}
+func (o ActionName) MarshalBinary(encoder *Encoder) error { return encoder.writeName(Name(o)) }
+
 type TableName Name
+
+func (o *TableName) UnmarshalBinary(decoder *Decoder) error {
+	return (*Name)(o).UnmarshalBinary(decoder)
+}
+func (o TableName) MarshalBinary(encoder *Encoder) error { return encoder.writeName(Name(o)) }
+
 type ScopeName Name
+
+func (o *ScopeName) UnmarshalBinary(decoder *Decoder) error {
+	return (*Name)(o).UnmarshalBinary(decoder)
+}
+func (o ScopeName) MarshalBinary(encoder *Encoder) error { return encoder.writeName(Name(o)) }
 
 func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
@@ -90,6 +134,20 @@ const (
 	CompressionNone = CompressionType(iota)
 	CompressionZlib
 )
+
+func (o *CompressionType) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadByte()
+	if err != nil {
+		return fmt.Errorf("compression type: %s", err)
+	}
+
+	*o = CompressionType(value)
+	return nil
+}
+
+func (o CompressionType) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeByte(byte(o))
+}
 
 func (c CompressionType) String() string {
 	switch c {
@@ -167,6 +225,20 @@ func (c *CompressionType) tryUnmarshalJSONAsUint8(data []byte) (tryNext bool, er
 
 type CurrencyName string
 
+func (o *CurrencyName) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadCurrencyName()
+	if err != nil {
+		return err
+	}
+
+	*o = CurrencyName(value)
+	return nil
+}
+
+func (o CurrencyName) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeCurrencyName(o)
+}
+
 type Bool bool
 
 func (b *Bool) UnmarshalJSON(data []byte) error {
@@ -184,6 +256,20 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 
 	*b = Bool(boolVal)
 	return nil
+}
+
+func (o *Bool) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadBool()
+	if err != nil {
+		return err
+	}
+
+	*o = Bool(value)
+	return nil
+}
+
+func (o Bool) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeBool(bool(o))
 }
 
 // Asset
@@ -206,6 +292,20 @@ func (a Asset) Sub(other Asset) Asset {
 		panic("Sub applies only to assets with the same symbol")
 	}
 	return Asset{Amount: a.Amount - other.Amount, Symbol: a.Symbol}
+}
+
+func (o *Asset) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadAsset()
+	if err != nil {
+		return err
+	}
+
+	*o = Asset(value)
+	return nil
+}
+
+func (o Asset) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeAsset(o)
 }
 
 func (a Asset) String() string {
@@ -235,6 +335,25 @@ func (a Asset) String() string {
 type ExtendedAsset struct {
 	Asset    Asset       `json:"quantity"`
 	Contract AccountName `json:"contract"`
+}
+
+func (o *ExtendedAsset) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadExtendedAsset()
+	if err != nil {
+		return err
+	}
+
+	*o = ExtendedAsset(value)
+	return nil
+}
+
+func (o ExtendedAsset) MarshalBinary(encoder *Encoder) error {
+	err := o.Asset.MarshalBinary(encoder)
+	if err != nil {
+		return fmt.Errorf("asset write: %s", err)
+	}
+
+	return o.Contract.MarshalBinary(encoder)
 }
 
 // NOTE: there's also a new ExtendedSymbol (which includes the contract (as AccountName) on which it is)
@@ -328,6 +447,25 @@ func (s Symbol) ToName() (string, error) {
 		return "", err
 	}
 	return NameToString(u), nil
+}
+
+func (o *Symbol) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadSymbol()
+	if err != nil {
+		return err
+	}
+
+	*o = *value
+	return nil
+}
+
+func (o Symbol) MarshalBinary(encoder *Encoder) error {
+	value, err := o.ToUint64()
+	if err != nil {
+		return fmt.Errorf("invalid symbol: %s", err)
+	}
+
+	return encoder.writeUint64(value)
 }
 
 func (s Symbol) String() string {
@@ -663,6 +801,20 @@ func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
+func (o *JSONTime) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadJSONTime()
+	if err != nil {
+		return err
+	}
+
+	*o = JSONTime(value)
+	return nil
+}
+
+func (o JSONTime) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeJSONTime(o)
+}
+
 // ParseJSONTime will parse a string into a JSONTime object
 func ParseJSONTime(date string) (JSONTime, error) {
 	var t JSONTime
@@ -690,6 +842,20 @@ func (t *HexBytes) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (o *HexBytes) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadByteArray()
+	if err != nil {
+		return fmt.Errorf("hex bytes: %s", err)
+	}
+
+	*o = HexBytes(value)
+	return nil
+}
+
+func (o HexBytes) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeByteArray([]byte(o))
+}
+
 func (t HexBytes) String() string {
 	return hex.EncodeToString(t)
 }
@@ -712,6 +878,20 @@ func (t *Checksum160) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (o *Checksum160) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadChecksum160()
+	if err != nil {
+		return err
+	}
+
+	*o = Checksum160(value)
+	return nil
+}
+
+func (o Checksum160) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeChecksum160(o)
+}
+
 type Checksum256 []byte
 
 func (t Checksum256) MarshalJSON() ([]byte, error) {
@@ -728,6 +908,20 @@ func (t *Checksum256) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (o *Checksum256) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadChecksum256()
+	if err != nil {
+		return err
+	}
+
+	*o = Checksum256(value)
+	return nil
+}
+
+func (o Checksum256) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeChecksum256(o)
+}
+
 func (t Checksum256) String() string {
 	return hex.EncodeToString(t)
 }
@@ -737,6 +931,7 @@ type Checksum512 []byte
 func (t Checksum512) MarshalJSON() ([]byte, error) {
 	return json.Marshal(hex.EncodeToString(t))
 }
+
 func (t *Checksum512) UnmarshalJSON(data []byte) (err error) {
 	var s string
 	err = json.Unmarshal(data, &s)
@@ -748,13 +943,56 @@ func (t *Checksum512) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+func (o *Checksum512) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadChecksum512()
+	if err != nil {
+		return err
+	}
+
+	*o = Checksum512(value)
+	return nil
+}
+
+func (o Checksum512) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeChecksum512(o)
+}
+
 // SHA256Bytes is deprecated and renamed to Checksum256 for
 // consistency. Please update your code as this type will eventually
 // be phased out.
 type SHA256Bytes = Checksum256
 
 type Varuint32 uint32
+
+func (o *Varuint32) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadUvarint64()
+	if err != nil {
+		return fmt.Errorf("varuint32: %s", err)
+	}
+
+	*o = Varuint32(value)
+	return nil
+}
+
+func (o Varuint32) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeUVarInt(int(o))
+}
+
 type Varint32 int32
+
+func (o *Varint32) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadVarint32()
+	if err != nil {
+		return err
+	}
+
+	*o = Varint32(value)
+	return nil
+}
+
+func (o Varint32) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeVarInt(int(o))
+}
 
 // Tstamp
 
@@ -789,6 +1027,20 @@ func (t *Tstamp) UnmarshalJSON(data []byte) (err error) {
 	*t = Tstamp{time.Unix(0, unixNano)}
 
 	return nil
+}
+
+func (o *Tstamp) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadTstamp()
+	if err != nil {
+		return err
+	}
+
+	*o = Tstamp(value)
+	return nil
+}
+
+func (o Tstamp) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeTstamp(o)
 }
 
 // BlockNum extracts the block number (or height) from a hex-encoded block ID.
@@ -829,6 +1081,20 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
+func (o *BlockTimestamp) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadBlockTimestamp()
+	if err != nil {
+		return err
+	}
+
+	*o = BlockTimestamp(value)
+	return nil
+}
+
+func (o BlockTimestamp) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeBlockTimestamp(o)
+}
+
 // TimePoint represents the number of microseconds since EPOCH (Jan 1st 1970)
 type TimePoint uint64
 
@@ -866,6 +1132,20 @@ func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
 	*f = JSONFloat64(fl)
 
 	return nil
+}
+
+func (o *JSONFloat64) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadFloat64()
+	if err != nil {
+		return err
+	}
+
+	*o = JSONFloat64(value)
+	return nil
+}
+
+func (o JSONFloat64) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeFloat64(float64(o))
 }
 
 // JSONInt64 is deprecated in favor of Int64.
@@ -917,6 +1197,20 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (o *Int64) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadInt64()
+	if err != nil {
+		return err
+	}
+
+	*o = Int64(value)
+	return nil
+}
+
+func (o Int64) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeInt64(int64(o))
+}
+
 type Uint64 uint64
 
 func (i Uint64) MarshalJSON() (data []byte, err error) {
@@ -963,8 +1257,18 @@ func (i *Uint64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (i Uint64) MarshalBinary(encoder *Encoder) error {
-	return encoder.writeUint64(uint64(i))
+func (o *Uint64) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadUint64()
+	if err != nil {
+		return err
+	}
+
+	*o = Uint64(value)
+	return nil
+}
+
+func (o Uint64) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeUint64(uint64(o))
 }
 
 // uint128
@@ -1038,6 +1342,20 @@ func (i *Uint128) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (o *Uint128) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadUint128()
+	if err != nil {
+		return err
+	}
+
+	*o = value
+	return nil
+}
+
+func (o Uint128) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeUint128(o)
+}
+
 // Int128
 type Int128 Uint128
 
@@ -1056,6 +1374,10 @@ func (i Int128) BigInt() *big.Int {
 		value = (&big.Int{}).SetBytes(buf)
 	}
 	return value
+}
+
+func (i Int128) String() string {
+	return Uint128(i).String()
 }
 
 func (i Int128) DecimalString() string {
@@ -1078,7 +1400,25 @@ func (i *Int128) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (o *Int128) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadInt128()
+	if err != nil {
+		return err
+	}
+
+	*o = value
+	return nil
+}
+
+func (o Int128) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeInt128(o)
+}
+
 type Float128 Uint128
+
+func (i Float128) HexString() string {
+	return Uint128(i).String()
+}
 
 func (i Float128) MarshalJSON() (data []byte, err error) {
 	return []byte(`"` + Uint128(i).String() + `"`), nil
@@ -1094,6 +1434,20 @@ func (i *Float128) UnmarshalJSON(data []byte) error {
 	*i = out
 
 	return nil
+}
+
+func (o *Float128) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadFloat128()
+	if err != nil {
+		return err
+	}
+
+	*o = Float128(value)
+	return nil
+}
+
+func (o Float128) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeUint128(Uint128(o))
 }
 
 // Blob

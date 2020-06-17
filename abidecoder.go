@@ -289,7 +289,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		}
 		err = e
 	case "uint128":
-		v, e := binaryDecoder.ReadUint128("uint128")
+		v, e := binaryDecoder.ReadUint128()
 		if e == nil {
 			if a.fitNodeos {
 				value = v.DecimalString()
@@ -323,7 +323,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		}
 		err = e
 	case "float128":
-		value, err = binaryDecoder.ReadUint128("float128")
+		value, err = binaryDecoder.ReadFloat128()
 	case "bool":
 		if a.fitNodeos {
 			value, err = binaryDecoder.ReadByte()

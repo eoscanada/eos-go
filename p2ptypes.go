@@ -90,6 +90,20 @@ var goAwayToStringMap = map[GoAwayReason]string{
 	GoAwayBenignOther:    "some other non-fatal condition, possibly unknown block",
 }
 
+func (o *GoAwayReason) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadByte()
+	if err != nil {
+		return fmt.Errorf("go away reason: %s", err)
+	}
+
+	*o = GoAwayReason(value)
+	return nil
+}
+
+func (o GoAwayReason) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeByte(byte(o))
+}
+
 func (r GoAwayReason) String() string {
 	if value, exists := goAwayToStringMap[r]; exists {
 		return value
@@ -175,6 +189,21 @@ func (s TransactionStatus) MarshalJSON() (data []byte, err error) {
 	}
 	return json.Marshal(out)
 }
+
+func (o *TransactionStatus) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadByte()
+	if err != nil {
+		return fmt.Errorf("transaction status: %s", err)
+	}
+
+	*o = TransactionStatus(value)
+	return nil
+}
+
+func (o TransactionStatus) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeByte(byte(o))
+}
+
 func (s TransactionStatus) String() string {
 
 	switch s {
@@ -588,6 +617,20 @@ const (
 	last_irr_catch_up
 	normal
 )
+
+func (o *IDListMode) UnmarshalBinary(decoder *Decoder) error {
+	value, err := decoder.ReadByte()
+	if err != nil {
+		return fmt.Errorf("id list mode: %s", err)
+	}
+
+	*o = IDListMode(value)
+	return nil
+}
+
+func (o IDListMode) MarshalBinary(encoder *Encoder) error {
+	return encoder.writeByte(byte(o))
+}
 
 type OrderedTransactionIDs struct {
 	Mode    [4]byte       `json:"mode"`
