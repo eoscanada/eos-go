@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/eoscanada/eos-go"
@@ -13,6 +14,13 @@ import (
 )
 
 func TestSnapshotRead(t *testing.T) {
+	// "/tmp/0125111385-07750c59b24ed52d2dbf2048b67b58e9c9bd53ff5cc4550277718c1d5d800f73-snapshot.bin"
+	readSnapshotFile := os.Getenv("READ_SNAPSHOT_FILE")
+	if readSnapshotFile == "" || !fileExists(readSnapshotFile) {
+		t.Skipf("Environment varaible 'READ_SNAPSHOT_FILE' not set or value %q is not an exisiting file", readSnapshotFile)
+		return
+	}
+
 	tests := []struct {
 		name   string
 		input  string
@@ -27,9 +35,7 @@ func TestSnapshotRead(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			filename := "/tmp/0125111385-07750c59b24ed52d2dbf2048b67b58e9c9bd53ff5cc4550277718c1d5d800f73-snapshot.bin"
-			r, err := NewReader(filename)
-			fmt.Println("Filename", filename)
+			r, err := NewReader(readSnapshotFile)
 			defer r.Close()
 
 			assert.NoError(t, err)
@@ -93,4 +99,17 @@ func TestSnapshotRead(t *testing.T) {
 			fmt.Println("Done")
 		})
 	}
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	if err != nil {
+		return false
+	}
+
+	return !info.IsDir()
 }

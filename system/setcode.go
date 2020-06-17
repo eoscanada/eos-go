@@ -27,7 +27,30 @@ func NewSetCode(account eos.AccountName, wasmPath string) (out *eos.Action, err 
 	if err != nil {
 		return nil, err
 	}
+	return NewSetCodeContent(account, codeContent), nil
+}
 
+func NewSetABI(account eos.AccountName, abiPath string) (out *eos.Action, err error) {
+	abiContent, err := ioutil.ReadFile(abiPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewSetAbiContent(account, abiContent)
+}
+
+func NewSetContractContent(account eos.AccountName, wasmContent, abiContent []byte) (out []*eos.Action, err error) {
+	codeAction := NewSetCodeContent(account, wasmContent)
+
+	abiAction, err := NewSetAbiContent(account, abiContent)
+	if err != nil {
+		return nil, err
+	}
+
+	return []*eos.Action{codeAction, abiAction}, nil
+}
+
+func NewSetCodeContent(account eos.AccountName, codeContent []byte) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio"),
 		Name:    ActN("setcode"),
@@ -43,15 +66,10 @@ func NewSetCode(account eos.AccountName, wasmPath string) (out *eos.Action, err 
 			VMVersion: 0,
 			Code:      eos.HexBytes(codeContent),
 		}),
-	}, nil
+	}
 }
 
-func NewSetABI(account eos.AccountName, abiPath string) (out *eos.Action, err error) {
-	abiContent, err := ioutil.ReadFile(abiPath)
-	if err != nil {
-		return nil, err
-	}
-
+func NewSetAbiContent(account eos.AccountName, abiContent []byte) (out *eos.Action, err error) {
 	var abiPacked []byte
 	if len(abiContent) > 0 {
 		var abiDef eos.ABI
