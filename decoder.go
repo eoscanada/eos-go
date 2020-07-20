@@ -143,6 +143,10 @@ type optionalFieldType bool
 
 const OptionalField optionalFieldType = true
 
+func (d *Decoder) LastPos() int {
+	return d.pos
+}
+
 func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 	optionalField := false
 	for _, option := range options {
@@ -162,10 +166,13 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 	}
 
 	if optionalField {
-		isPresent, e := d.ReadByte()
-		if e != nil {
-			err = fmt.Errorf("decode: %t isPresent, %s", v, e)
-			return
+		var isPresent byte
+		if d.hasRemaining() {
+			isPresent, err = d.ReadByte()
+			if err != nil {
+				err = fmt.Errorf("decode: %t isPresent, %s", v, err)
+				return
+			}
 		}
 
 		if isPresent == 0 {
@@ -277,7 +284,7 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		n, err = d.ReadUint64()
 		rv.SetUint(uint64(n))
 		return
-	case *JSONFloat64:
+	case *Float64:
 		var n float64
 		n, err = d.ReadFloat64()
 		rv.SetFloat(n)
@@ -356,6 +363,11 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		var ts Tstamp
 		ts, err = d.ReadTstamp()
 		rv.Set(reflect.ValueOf(ts))
+		return
+	case *TimePoint:
+		var tp TimePoint
+		tp, err = d.ReadTimePoint()
+		rv.Set(reflect.ValueOf(tp))
 		return
 	case *BlockTimestamp:
 		var bt BlockTimestamp

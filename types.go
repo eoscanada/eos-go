@@ -72,8 +72,8 @@ type VoterInfo struct {
 	Proxy             AccountName   `json:"proxy"`
 	Producers         []AccountName `json:"producers"`
 	Staked            Int64         `json:"staked"`
-	LastVoteWeight    JSONFloat64   `json:"last_vote_weight"`
-	ProxiedVoteWeight JSONFloat64   `json:"proxied_vote_weight"`
+	LastVoteWeight    Float64       `json:"last_vote_weight"`
+	ProxiedVoteWeight Float64       `json:"proxied_vote_weight"`
 	IsProxy           byte          `json:"is_proxy"`
 }
 
@@ -838,9 +838,11 @@ type TimePoint uint64
 // TimePointSec represents the number of seconds since EPOCH (Jan 1st 1970)
 type TimePointSec uint32
 
-type JSONFloat64 float64
+type JSONFloat64 = Float64
 
-func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
+type Float64 float64
+
+func (f *Float64) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 {
 		return errors.New("empty value")
 	}
@@ -856,7 +858,7 @@ func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
 			return err
 		}
 
-		*f = JSONFloat64(val)
+		*f = Float64(val)
 
 		return nil
 	}
@@ -866,7 +868,7 @@ func (f *JSONFloat64) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*f = JSONFloat64(fl)
+	*f = Float64(fl)
 
 	return nil
 }

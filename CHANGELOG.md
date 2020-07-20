@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unpacking binary `TransactionReceipt` type will now correctly set the inner `TransactionWithID.ID` field correctly.
 - Unpacking binary `BlockState` now correctly works but is restricted to EOSIO 2.0.x version.
 
+### Deprecated
+- Renamed `JSONFloat64` to `Float64`, to follow the same convention that was changed years ago with `Uint64`, etc. Type alias left for backwards compatibility.
+
 ### Changed
 - **BREAKING**: Fixed binary unpacking of `BlockState`, `TransactionTrace`, `SignedTransaction`, `Action` (and some inner types). This required changing a few struct fields to better fit with EOSIO definition, here the full list:
   - `MerkleRoot.ActiveNodes` is now a `[]Checksum256`, was previously `[]string`
