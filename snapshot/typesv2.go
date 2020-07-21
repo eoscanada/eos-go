@@ -32,3 +32,17 @@ type ChainConfig struct {
 	MaxInlineActionDepth        uint16 ///< recursion depth limit on sending inline actions
 	MaxAuthorityDepth           uint16 ///< recursion depth limit for checking if an authority is satisfied
 }
+
+func (section *Section) readGenesisState(f callbackFunc) error {
+	// // THIS SEEMS TO EXIST ONLY IN VERSION 2 OF THE SNAPSHOT FILE FORMAT.
+	// // FOR NOW, WE ARE CONCENTRATING ON VERSION 3 (latest)
+	// cnt := make([]byte, section.BufferSize)
+	// _, err := section.Buffer.Read(cnt)
+	// require.NoError(t, err)
+
+	// var state GenesisState
+	// assert.NoError(t, eos.UnmarshalBinary(cnt, &state))
+	// cnt, _ = json.MarshalIndent(state, "  ", "  ")
+	// fmt.Println(string(cnt))
+	return nil
+}
