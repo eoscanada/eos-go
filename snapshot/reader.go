@@ -1,7 +1,6 @@
 package snapshot
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -15,7 +14,7 @@ type Reader struct {
 
 	filename   string
 	fl         *os.File
-	buf        bufio.Reader
+	buf        io.Reader
 	nextOffset uint64
 }
 
@@ -38,7 +37,6 @@ func NewReader(filename string) (r *Reader, err error) {
 
 	r.Header = h
 	r.nextOffset = uint64(beginOffset)
-	//fmt.Println("Beign offset", r.nextOffset)
 
 	return
 }
@@ -83,8 +81,7 @@ func (r *Reader) Next() (*Section, error) {
 	sectionSize := binary.LittleEndian.Uint64(vals[:8])
 	rowCount := binary.LittleEndian.Uint64(vals[8:16])
 
-	buf := bufio.NewReaderSize(r.fl, int(sectionSize))
-	str, err := buf.ReadString(0x00)
+	str, err := readZeroTerminatedString(r.fl)
 	if err != nil {
 		if err == io.EOF {
 			return nil, fmt.Errorf("EOF while reading string section (partial: %s)", str)
@@ -96,10 +93,11 @@ func (r *Reader) Next() (*Section, error) {
 
 	return &Section{
 		Name:       strings.TrimRight(str, string([]byte{0x00})),
+		Offset:     uint64(beginOffset),
 		Size:       sectionSize,
 		RowCount:   rowCount,
-		BufferSize: sectionSize - uint64(len(str)) - 8,
-		Buffer:     buf,
+		BufferSize: sectionSize - uint64(len(str)) - 1 /* str-pad 0x00 byte */ - 8,
+		Buffer:     r.fl,
 	}, nil
 }
 

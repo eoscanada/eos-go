@@ -33,13 +33,16 @@ func TestSnapshotRead(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, r.Header.Version, uint32(1))
 
+			var totalsize = 0
+
 			for {
 				section, err := r.Next()
 				if err == io.EOF {
 					break
 				}
 				assert.NoError(t, err)
-				fmt.Println("Section", section.Name, "rows", section.RowCount, "bytes", section.BufferSize)
+				fmt.Println("Section", section.Name, "rows", section.RowCount, "bytes", section.BufferSize, "offset", section.Offset)
+				totalsize += int(section.BufferSize)
 
 				switch section.Name {
 				case "eosio::chain::chain_snapshot_header":
@@ -76,19 +79,24 @@ func TestSnapshotRead(t *testing.T) {
 				case "eosio::chain::generated_transaction_object":
 				case "eosio::chain::code_object":
 				case "contract_tables":
-					require.NoError(t, readContractTables(section))
+					// require.NoError(t, readContractTables(section))
 				case "eosio::chain::permission_object":
-					//require.NoError(t, readPermissionObject(section))
+					// require.NoError(t, readPermissionObject(section))
 				case "eosio::chain::permission_link_object":
+					// require.NoError(t, readPermissionLinkObject(section))
 				case "eosio::chain::resource_limits::resource_limits_object":
+					// require.NoError(t, readResourceLimitsObject(section))
 				case "eosio::chain::resource_limits::resource_usage_object":
+					// require.NoError(t, readResourceUsageObject(section))
 				case "eosio::chain::resource_limits::resource_limits_state_object":
+					require.NoError(t, readResourceLimitsStateObject(section))
 				case "eosio::chain::resource_limits::resource_limits_config_object":
+					require.NoError(t, readResourceLimitsConfigObject(section))
 				default:
 					panic("unsupported section: " + section.Name)
 				}
 			}
-			fmt.Println("Done")
+			fmt.Println("Done", totalsize)
 		})
 	}
 }
