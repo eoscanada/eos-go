@@ -863,3 +863,37 @@ func readGeneratedTransactionObject(section *Section) error {
 
 	return nil
 }
+
+////
+
+type TransactionObject struct {
+	Expiration eos.TimePointSec
+	TrxID      eos.Checksum256 //< trx_id shou
+}
+
+func readTransactionObject(section *Section) error {
+	cnt := make([]byte, section.BufferSize)
+	readz, err := section.Buffer.Read(cnt)
+	if err != nil {
+		return err
+	}
+	if readz != len(cnt) {
+		return fmt.Errorf("failed reading the whole code object section: %d of %d", readz, len(cnt))
+	}
+
+	for pos := 0; pos < int(section.BufferSize); {
+		d := eos.NewDecoder(cnt[pos:])
+		var to TransactionObject
+		err = d.Decode(&to)
+		if err != nil {
+			return err
+		}
+
+		out, _ := json.MarshalIndent(to, "", "  ")
+		fmt.Println(string(out))
+
+		pos += d.LastPos()
+	}
+
+	return nil
+}

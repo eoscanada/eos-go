@@ -55,18 +55,6 @@ func TestSnapshotRead(t *testing.T) {
 				switch section.Name {
 				case "eosio::chain::chain_snapshot_header":
 					require.NoError(t, readChainSnapshotHeader(section))
-				case "eosio::chain::genesis_state":
-					// // THIS SEEMS TO EXIST ONLY IN VERSION 2 OF THE SNAPSHOT FILE FORMAT.
-					// // FOR NOW, WE ARE CONCENTRATING ON VERSION 3 (latest)
-					// cnt := make([]byte, section.BufferSize)
-					// _, err := section.Buffer.Read(cnt)
-					// require.NoError(t, err)
-
-					// var state GenesisState
-					// assert.NoError(t, eos.UnmarshalBinary(cnt, &state))
-					// cnt, _ = json.MarshalIndent(state, "  ", "  ")
-					// fmt.Println(string(cnt))
-
 				case "eosio::chain::block_state":
 					// require.NoError(t, readBlockState(section))
 				case "eosio::chain::account_object":
@@ -84,8 +72,9 @@ func TestSnapshotRead(t *testing.T) {
 				case "eosio::chain::block_summary_object":
 					//require.NoError(t, readBlockSummary(section))
 				case "eosio::chain::transaction_object":
+					require.NoError(t, readTransactionObject(section))
 				case "eosio::chain::generated_transaction_object":
-					require.NoError(t, readGeneratedTransactionObject(section))
+					// require.NoError(t, readGeneratedTransactionObject(section))
 				case "eosio::chain::code_object":
 					// require.NoError(t, readCodeObject(section))
 				case "contract_tables":
@@ -102,6 +91,18 @@ func TestSnapshotRead(t *testing.T) {
 					// require.NoError(t, readResourceLimitsStateObject(section))
 				case "eosio::chain::resource_limits::resource_limits_config_object":
 					// require.NoError(t, readResourceLimitsConfigObject(section))
+				case "eosio::chain::genesis_state":
+					// // THIS SEEMS TO EXIST ONLY IN VERSION 2 OF THE SNAPSHOT FILE FORMAT.
+					// // FOR NOW, WE ARE CONCENTRATING ON VERSION 3 (latest)
+					// cnt := make([]byte, section.BufferSize)
+					// _, err := section.Buffer.Read(cnt)
+					// require.NoError(t, err)
+
+					// var state GenesisState
+					// assert.NoError(t, eos.UnmarshalBinary(cnt, &state))
+					// cnt, _ = json.MarshalIndent(state, "  ", "  ")
+					// fmt.Println(string(cnt))
+
 				default:
 					panic("unsupported section: " + section.Name)
 				}

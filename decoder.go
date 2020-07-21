@@ -369,6 +369,11 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		tp, err = d.ReadTimePoint()
 		rv.Set(reflect.ValueOf(tp))
 		return
+	case *TimePointSec:
+		var tp TimePointSec
+		tp, err = d.ReadTimePointSec()
+		rv.Set(reflect.ValueOf(tp))
+		return
 	case *BlockTimestamp:
 		var bt BlockTimestamp
 		bt, err = d.ReadBlockTimestamp()
