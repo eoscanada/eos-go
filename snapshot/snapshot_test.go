@@ -85,7 +85,9 @@ func TestSnapshotRead(t *testing.T) {
 					//require.NoError(t, readBlockSummary(section))
 				case "eosio::chain::transaction_object":
 				case "eosio::chain::generated_transaction_object":
+					require.NoError(t, readGeneratedTransactionObject(section))
 				case "eosio::chain::code_object":
+					// require.NoError(t, readCodeObject(section))
 				case "contract_tables":
 					// require.NoError(t, readContractTables(section))
 				case "eosio::chain::permission_object":
@@ -97,9 +99,9 @@ func TestSnapshotRead(t *testing.T) {
 				case "eosio::chain::resource_limits::resource_usage_object":
 					// require.NoError(t, readResourceUsageObject(section))
 				case "eosio::chain::resource_limits::resource_limits_state_object":
-					require.NoError(t, readResourceLimitsStateObject(section))
+					// require.NoError(t, readResourceLimitsStateObject(section))
 				case "eosio::chain::resource_limits::resource_limits_config_object":
-					require.NoError(t, readResourceLimitsConfigObject(section))
+					// require.NoError(t, readResourceLimitsConfigObject(section))
 				default:
 					panic("unsupported section: " + section.Name)
 				}
