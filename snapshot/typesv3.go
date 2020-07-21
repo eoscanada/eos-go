@@ -785,3 +785,81 @@ func readResourceLimitsConfigObject(section *Section) error {
 
 	return nil
 }
+
+////
+
+type CodeObject struct {
+	CodeHash       eos.Checksum256 //< code_hash should not be changed within a chainbase modifier lambda
+	Code           eos.HexBytes
+	CodeRefCount   eos.Uint64
+	FirstBlockUsed uint32
+	VMType         uint8 //< vm_type should not be changed within a chainbase modifier lambda
+	VMVersion      uint8 //< vm_version should not be changed within a chainbase modifier lambda
+}
+
+func readCodeObject(section *Section) error {
+	cnt := make([]byte, section.BufferSize)
+	readz, err := section.Buffer.Read(cnt)
+	if err != nil {
+		return err
+	}
+	if readz != len(cnt) {
+		return fmt.Errorf("failed reading the whole code object section: %d of %d", readz, len(cnt))
+	}
+
+	for pos := 0; pos < int(section.BufferSize); {
+		d := eos.NewDecoder(cnt[pos:])
+		var co CodeObject
+		err = d.Decode(&co)
+		if err != nil {
+			return err
+		}
+
+		out, _ := json.MarshalIndent(co, "", "  ")
+		fmt.Println(string(out))
+
+		pos += d.LastPos()
+	}
+
+	return nil
+}
+
+////
+
+type GeneratedTransactionObject struct {
+	TrxID      eos.Checksum256 //< trx_id should not be changed within a chainbase modifier lambda
+	Sender     eos.AccountName //< sender should not be changed within a chainbase modifier lambda
+	SenderID   eos.Uint128     /// ID given this transaction by the sender (should not be changed within a chainbase modifier lambda)
+	Payer      eos.AccountName
+	DelayUntil eos.TimePoint /// this generated transaction will not be applied until the specified time
+	Expiration eos.TimePoint /// this generated transaction will not be applied after  time
+	Published  eos.TimePoint
+	PackedTrx  eos.HexBytes
+}
+
+func readGeneratedTransactionObject(section *Section) error {
+	cnt := make([]byte, section.BufferSize)
+	readz, err := section.Buffer.Read(cnt)
+	if err != nil {
+		return err
+	}
+	if readz != len(cnt) {
+		return fmt.Errorf("failed reading the whole code object section: %d of %d", readz, len(cnt))
+	}
+
+	for pos := 0; pos < int(section.BufferSize); {
+		d := eos.NewDecoder(cnt[pos:])
+		var gto GeneratedTransactionObject
+		err = d.Decode(&gto)
+		if err != nil {
+			return err
+		}
+
+		out, _ := json.MarshalIndent(gto, "", "  ")
+		fmt.Println(string(out))
+
+		pos += d.LastPos()
+	}
+
+	return nil
+}
