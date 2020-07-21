@@ -3,6 +3,7 @@ package snapshot
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,60 +12,42 @@ import (
 )
 
 func TestSnapshotRead(t *testing.T) {
-	// "/tmp/0125111385-07750c59b24ed52d2dbf2048b67b58e9c9bd53ff5cc4550277718c1d5d800f73-snapshot.bin"
-	readSnapshotFile := os.Getenv("READ_SNAPSHOT_FILE")
-	if readSnapshotFile == "" || !fileExists(readSnapshotFile) {
-		t.Skipf("Environment varaible 'READ_SNAPSHOT_FILE' not set or value %q is not an exisiting file", readSnapshotFile)
+	// filename := "/tmp/0125111385-07750c59b24ed52d2dbf2048b67b58e9c9bd53ff5cc4550277718c1d5d800f73-snapshot.bin" // mainnet
+	// filename := "/tmp/0003212331-0031042b02b2cf711fee6e1e24da94101fa6c1ea9ece568d5f13232473429db1-snapshot.bin" // kylin
+	filename := os.Getenv("READ_SNAPSHOT_FILE")
+	if filename == "" || !fileExists(filename) {
+		t.Skipf("Environment varaible 'READ_SNAPSHOT_FILE' not set or value %q is not an exisiting file", filename)
 		return
 	}
+	r, err := NewReader(filename)
+	fmt.Println("Filename", filename)
+	defer r.Close()
 
-	tests := []struct {
-		name   string
-		input  string
-		expect string
-	}{
-		{
-			name:   "name",
-			input:  "input",
-			expect: "expect",
-		},
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, r.Header.Version, uint32(1))
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			filename := "/tmp/0125111385-07750c59b24ed52d2dbf2048b67b58e9c9bd53ff5cc4550277718c1d5d800f73-snapshot.bin" // mainnet
-			//filename := "/tmp/0003212331-0031042b02b2cf711fee6e1e24da94101fa6c1ea9ece568d5f13232473429db1-snapshot.bin" // kylin
-			r, err := NewReader(filename)
-			fmt.Println("Filename", filename)
-			defer r.Close()
+	for {
+		section, err := r.Next()
+		if err == io.EOF {
+			break
+		}
+		assert.NoError(t, err)
+		fmt.Println("Section", section.Name, "rows", section.RowCount, "bytes", section.BufferSize, "offset", section.Offset)
 
-			assert.NoError(t, err)
-			assert.Equal(t, r.Header.Version, uint32(1))
-
-			for {
-				section, err := r.Next()
-				if err == io.EOF {
-					break
+		if strings.Contains(section.Name, "contract") {
+			require.NoError(t, section.Process(func(o interface{}) error {
+				switch obj := o.(type) {
+				case *TableIDObject:
+					fmt.Println("Table ID", obj.Code, obj.Scope, obj.TableName)
+				case *KeyValueObject:
+					fmt.Println("KV", obj.PrimKey, obj.Value)
+				default:
+					fmt.Printf("Ignoring row %T\n", obj)
 				}
-				assert.NoError(t, err)
-				fmt.Println("Section", section.Name, "rows", section.RowCount, "bytes", section.BufferSize, "offset", section.Offset)
+				return nil
 
-				if strings.Contains(section.Name, "contract") {
-					require.NoError(t, section.Process(func(o interface{}) error {
-						switch obj := o.(type) {
-						case *TableIDObject:
-							fmt.Println("Table ID", obj.Code, obj.Scope, obj.TableName)
-						case *KeyValueObject:
-							fmt.Println("KV", obj.PrimKey, obj.Value)
-						default:
-							fmt.Printf("Ignoring row %T\n", obj)
-						}
-						return nil
-
-					}))
-				}
-			}
-		})
+			}))
+		}
 	}
 }
 
