@@ -3,10 +3,8 @@ package snapshot
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/eoscanada/eos-go"
 )
@@ -20,6 +18,8 @@ type TableIDObject struct {
 }
 
 type ContractRow struct {
+	TableID *TableIDObject
+
 	PrimKey string
 	Payer   string
 }
@@ -54,7 +54,7 @@ type IndexLongDoubleObject struct {
 	SecondaryKey eos.Float128
 }
 
-func readContractTables(section *Section) error {
+func (section *Section) readContractTables(f callbackFunc) error {
 	fl := section.Buffer
 
 	bufSize := section.BufferSize
@@ -75,12 +75,6 @@ func readContractTables(section *Section) error {
 	buf := bytes.NewBuffer(bytesBuf)
 
 	for {
-		// if allRows > int(section.RowCount) {
-		// 	break
-		// }
-		// if allRows%100000 == 0 {
-		// 	fmt.Println("Rows", allRows, int(section.RowCount), buf.Len(), buf.Cap())
-		// }
 		head := make([]byte, 8+8+8+8+4)
 		readz, err := buf.Read(head)
 		if err == io.EOF {
@@ -93,7 +87,6 @@ func readContractTables(section *Section) error {
 			return fmt.Errorf("incomplete read for table_id_object: %d out of %d", readz, 8+8+8+8+4)
 		}
 
-		// TODO: check the silenced `written` retval, make sure it equals 36
 		t := &TableIDObject{
 			Code:      eos.NameToString(binary.LittleEndian.Uint64(head[0:8])),
 			Scope:     eos.NameToString(binary.LittleEndian.Uint64(head[8:16])),
@@ -102,11 +95,13 @@ func readContractTables(section *Section) error {
 			Count:     binary.LittleEndian.Uint32(head[32:36]),
 		}
 
-		// allRows += int(t.Count)
-
-		if t.Code == "houseaccount" {
-			fmt.Println("Table code", t.Code, "scope", t.Scope, "tablename", t.TableName, "payer", t.Payer, "count", t.Count)
+		if err := f(t); err != nil {
+			return err
 		}
+
+		// if t.Code == "houseaccount" {
+		// 	fmt.Println("Table code", t.Code, "scope", t.Scope, "tablename", t.TableName, "payer", t.Payer, "count", t.Count)
+		// }
 
 		for idxType := 0; idxType < 6; idxType++ {
 
@@ -121,9 +116,9 @@ func readContractTables(section *Section) error {
 			// offset2, _ := buf.(*os.File).Seek(0, os.SEEK_CUR)
 			// fmt.Println("OFFSET n size", offset2, offset2-offset, size)
 
-			if t.Code == "houseaccount" {
-				fmt.Println("  index type", idxType, "index size", size, "code", t.Code, "scope", t.Scope, "tablename", t.TableName, "count", t.Count)
-			}
+			// if t.Code == "houseaccount" {
+			// 	fmt.Println("  index type", idxType, "index size", size, "code", t.Code, "scope", t.Scope, "tablename", t.TableName, "count", t.Count)
+			// }
 
 			for i := 0; i < int(size); i++ {
 				head := make([]byte, 8+8)
@@ -136,6 +131,7 @@ func readContractTables(section *Section) error {
 				}
 
 				contractRow := ContractRow{
+					TableID: t,
 					PrimKey: eos.NameToString(binary.LittleEndian.Uint64(head[0:8])),
 					Payer:   eos.NameToString(binary.LittleEndian.Uint64(head[8:16])),
 				}
@@ -219,11 +215,16 @@ func readContractTables(section *Section) error {
 					row = obj
 				}
 
-				if t.Code == "houseaccount" {
-					out, _ := json.Marshal(row)
-					fmt.Printf("%T: %d. %s seek: %d\n", row, i, string(out), section.BufferSize)
-					//fmt.Printf("Buffer state: size %d buffered %d\n", section.Buffer.Size())
+				// if t.Code == "houseaccount" {
+				// 	out, _ := json.Marshal(row)
+				// 	fmt.Printf("%T: %d. %s seek: %d\n", row, i, string(out), section.BufferSize)
+				// 	//fmt.Printf("Buffer state: size %d buffered %d\n", section.Buffer.Size())
+				// }
+
+				if err := f(row); err != nil {
+					return err
 				}
+
 			}
 
 		}
@@ -284,7 +285,7 @@ type ScheduleInfo struct {
 	Schedule       *eos.ProducerAuthoritySchedule `json:"schedule"`
 }
 
-func readBlockState(section *Section) (err error) {
+func (section *Section) readBlockState(f callbackFunc) (err error) {
 	cnt := make([]byte, section.BufferSize)
 	_, err = section.Buffer.Read(cnt)
 	if err != nil {
@@ -296,13 +297,10 @@ func readBlockState(section *Section) (err error) {
 	if err != nil {
 		return
 	}
-	out, _ := json.MarshalIndent(state, "  ", "  ")
-	fmt.Println(string(out))
 
-	// FIXME: could handle the failed `bool` decoding,
-	// something BlockHeaderState
-	// FC_REFLECT_DERIVED( eosio::chain::block_state, (eosio::chain::block_header_state), (block)(validated) )
-	// and the `BlockState` we have in `eos-go`.
+	if err := f(state); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -315,7 +313,7 @@ type AccountObject struct {
 	RawABI       []byte
 }
 
-func readAccountObjects(section *Section) error {
+func (section *Section) readAccountObjects(f callbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := AccountObject{}
 		cnt := make([]byte, 12)
@@ -339,7 +337,10 @@ func readAccountObjects(section *Section) error {
 
 		a.RawABI = val
 
-		fmt.Println("Account", a.Name, "created", a.CreationDate.Format(time.RFC3339), "abi length", len(val))
+		if err := f(a); err != nil {
+			return err
+		}
+		//fmt.Println("Account", a.Name, "created", a.CreationDate.Format(time.RFC3339), "abi length", len(val))
 	}
 	return nil
 }
@@ -359,7 +360,7 @@ type AccountMetadataObject struct {
 	VMVersion      byte
 }
 
-func readAccountMetadataObjects(section *Section) error {
+func (section *Section) readAccountMetadataObjects(f callbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := AccountMetadataObject{}
 		cnt := make([]byte, 86) // account_metadata_object is fixed size 86 bytes
@@ -372,7 +373,10 @@ func readAccountMetadataObjects(section *Section) error {
 			return err
 		}
 
-		fmt.Println("Account", a.Name, "ast code updatecreated", a.LastCodeUpdate, a.RecvSequence, a.AuthSequence, a.CodeSequence, a.ABISequence, a.VMType, a.VMVersion, "flags", a.Flags)
+		if err := f(a); err != nil {
+			return err
+		}
+		// fmt.Println("Account", a.Name, "ast code updatecreated", a.LastCodeUpdate, a.RecvSequence, a.AuthSequence, a.CodeSequence, a.ABISequence, a.VMType, a.VMVersion, "flags", a.Flags)
 	}
 	return nil
 }
@@ -383,7 +387,7 @@ type ChainSnapshotHeader struct {
 	Version uint32
 }
 
-func readChainSnapshotHeader(section *Section) error {
+func (section *Section) readChainSnapshotHeader(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -396,8 +400,9 @@ func readChainSnapshotHeader(section *Section) error {
 		return err
 	}
 
-	cnt, _ = json.MarshalIndent(header, "  ", "  ")
-	fmt.Println(string(cnt))
+	if err := f(header); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -409,7 +414,7 @@ type GlobalPropertyObject struct {
 	ChainID                  eos.Checksum256
 }
 
-func readGlobalPropertyObject(section *Section) error {
+func (section *Section) readGlobalPropertyObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -422,8 +427,9 @@ func readGlobalPropertyObject(section *Section) error {
 		return err
 	}
 
-	cnt, _ = json.MarshalIndent(obj, "  ", "  ")
-	fmt.Println(string(cnt))
+	if err := f(obj); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -442,7 +448,7 @@ type ActivatedProtocolFeature struct {
 	ActivationBlockNum uint32
 }
 
-func readProtocolStateObject(section *Section) error {
+func (section *Section) readProtocolStateObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -457,8 +463,9 @@ func readProtocolStateObject(section *Section) error {
 		return err
 	}
 
-	cnt, _ = json.MarshalIndent(obj, "  ", "  ")
-	fmt.Println(string(cnt))
+	if err := f(obj); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -469,14 +476,12 @@ type DynamicGlobalPropertyObject struct {
 	GlobalActionSequence eos.Uint64
 }
 
-func readDynamicGlobalPropertyObject(section *Section) error {
+func (section *Section) readDynamicGlobalPropertyObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
 		return err
 	}
-
-	// _ = ioutil.WriteFile("/tmp/test.dat", cnt, 0664)
 
 	var obj DynamicGlobalPropertyObject
 	err = eos.UnmarshalBinary(cnt, &obj)
@@ -484,8 +489,9 @@ func readDynamicGlobalPropertyObject(section *Section) error {
 		return err
 	}
 
-	cnt, _ = json.MarshalIndent(obj, "  ", "  ")
-	fmt.Println(string(cnt))
+	if err := f(obj); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -497,7 +503,7 @@ type AccountRAMCorrectionObject struct {
 	RAMCorrection eos.Uint64
 }
 
-func readAccountRAMCorrectionObject(section *Section) error {
+func (section *Section) readAccountRAMCorrectionObject(f callbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := AccountRAMCorrectionObject{}
 		cnt := make([]byte, 16) // fixed size of account_ram_correction_object
@@ -510,7 +516,9 @@ func readAccountRAMCorrectionObject(section *Section) error {
 			return err
 		}
 
-		fmt.Println("Account", a.Name, a.RAMCorrection)
+		if err := f(a); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -521,7 +529,7 @@ type BlockSummary struct {
 	BlockID eos.Checksum256
 }
 
-func readBlockSummary(section *Section) error {
+func (section *Section) readBlockSummary(f callbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := BlockSummary{}
 		cnt := make([]byte, 32) // fixed size of block_summary
@@ -534,7 +542,9 @@ func readBlockSummary(section *Section) error {
 			return err
 		}
 
-		fmt.Println("Block", a.BlockID)
+		if err := f(a); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -550,7 +560,7 @@ type PermissionObject struct { /* special snapshot version of the object */
 	Auth        eos.Authority      ///< authority required to execute this permission
 }
 
-func readPermissionObject(section *Section) error {
+func (section *Section) readPermissionObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -565,9 +575,9 @@ func readPermissionObject(section *Section) error {
 			return err
 		}
 
-		// out, _ := json.MarshalIndent(po, "", "  ")
-		// fmt.Println(string(out))
-		// fmt.Println("NEXT", d.LastPos())
+		if err := f(po); err != nil {
+			return err
+		}
 
 		pos += d.LastPos()
 	}
@@ -592,7 +602,7 @@ type PermissionLinkObject struct {
 	RequiredPermission eos.PermissionName
 }
 
-func readPermissionLinkObject(section *Section) error {
+func (section *Section) readPermissionLinkObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -607,8 +617,9 @@ func readPermissionLinkObject(section *Section) error {
 			return err
 		}
 
-		out, _ := json.MarshalIndent(po, "", "  ")
-		fmt.Println(string(out))
+		if err := f(po); err != nil {
+			return err
+		}
 
 		pos += d.LastPos()
 	}
@@ -628,7 +639,7 @@ type ResourceLimitsObject struct {
 	RAMBytes  eos.Int64
 }
 
-func readResourceLimitsObject(section *Section) error {
+func (section *Section) readResourceLimitsObject(f callbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := ResourceLimitsObject{}
 		cnt := make([]byte, 8+8+8+8) // fixed size of resource_limits_object
@@ -641,7 +652,9 @@ func readResourceLimitsObject(section *Section) error {
 			return err
 		}
 
-		// fmt.Println("RLO", a.Owner, a.NetWeight, a.CPUWeight, a.RAMBytes)
+		if err := f(a); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -657,7 +670,7 @@ type ResourceUsageObject struct {
 	RAMUsage eos.Uint64
 }
 
-func readResourceUsageObject(section *Section) error {
+func (section *Section) readResourceUsageObject(f callbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := ResourceUsageObject{}
 		cnt := make([]byte, 8+20+20+8) // fixed size of resource_limits_object
@@ -670,7 +683,9 @@ func readResourceUsageObject(section *Section) error {
 			return err
 		}
 
-		// fmt.Println("RUO", a.Owner, a.NetUsage, a.CPUUsage, a.RAMUsage)
+		if err := f(a); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -724,7 +739,7 @@ type UsageAccumulator struct {
 	Consumed    eos.Uint64 ///< The last periods average + the current periods contribution so far
 }
 
-func readResourceLimitsStateObject(section *Section) error {
+func (section *Section) readResourceLimitsStateObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -739,8 +754,9 @@ func readResourceLimitsStateObject(section *Section) error {
 		return err
 	}
 
-	cnt, _ = json.MarshalIndent(obj, "  ", "  ")
-	fmt.Println(string(cnt))
+	if err := f(obj); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -765,7 +781,7 @@ type ElasticLimitParameters struct {
 	ExpandRate    eos.Uint64 // the rate at which an uncongested resource expands its limits
 }
 
-func readResourceLimitsConfigObject(section *Section) error {
+func (section *Section) readResourceLimitsConfigObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -780,8 +796,9 @@ func readResourceLimitsConfigObject(section *Section) error {
 		return err
 	}
 
-	cnt, _ = json.MarshalIndent(obj, "  ", "  ")
-	fmt.Println(string(cnt))
+	if err := f(obj); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -797,7 +814,7 @@ type CodeObject struct {
 	VMVersion      uint8 //< vm_version should not be changed within a chainbase modifier lambda
 }
 
-func readCodeObject(section *Section) error {
+func (section *Section) readCodeObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	readz, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -815,8 +832,9 @@ func readCodeObject(section *Section) error {
 			return err
 		}
 
-		out, _ := json.MarshalIndent(co, "", "  ")
-		fmt.Println(string(out))
+		if err := f(co); err != nil {
+			return err
+		}
 
 		pos += d.LastPos()
 	}
@@ -837,7 +855,7 @@ type GeneratedTransactionObject struct {
 	PackedTrx  eos.HexBytes
 }
 
-func readGeneratedTransactionObject(section *Section) error {
+func (section *Section) readGeneratedTransactionObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	readz, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -855,8 +873,9 @@ func readGeneratedTransactionObject(section *Section) error {
 			return err
 		}
 
-		out, _ := json.MarshalIndent(gto, "", "  ")
-		fmt.Println(string(out))
+		if err := f(gto); err != nil {
+			return err
+		}
 
 		pos += d.LastPos()
 	}
@@ -871,7 +890,7 @@ type TransactionObject struct {
 	TrxID      eos.Checksum256 //< trx_id shou
 }
 
-func readTransactionObject(section *Section) error {
+func (section *Section) readTransactionObject(f callbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	readz, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -889,8 +908,9 @@ func readTransactionObject(section *Section) error {
 			return err
 		}
 
-		out, _ := json.MarshalIndent(to, "", "  ")
-		fmt.Println(string(out))
+		if err := f(to); err != nil {
+			return err
+		}
 
 		pos += d.LastPos()
 	}
