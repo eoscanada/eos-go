@@ -173,6 +173,26 @@ type SequencedTransactionResp struct {
 	TransactionResp
 }
 
+type ProtocolFeature struct {
+	FeatureDigest         Checksum256                    `json:"feature_digest"`
+	SubjectiveRestriction SubjectiveRestriction          `json:"subjective_restrictions"`
+	DescriptionDigest     Checksum256                    `json:"description_digest"`
+	Dependencies          []Checksum256                  `json:"dependencies"`
+	ProtocolFeatureType   string                         `json:"protocol_feature_type"`
+	Specification         []ProtocolFeatureSpecification `json:"specification"`
+}
+
+type SubjectiveRestriction struct {
+	Enabled                       bool     `json:"enabled"`
+	PreactivationRequired         bool     `json:"preactivation_required"`
+	EarliestAllowedActivationTime JSONTime `json:"earliest_allowed_activation_time"`
+}
+
+type ProtocolFeatureSpecification struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type TransactionsResp struct {
 	Transactions []SequencedTransactionResp
 }
