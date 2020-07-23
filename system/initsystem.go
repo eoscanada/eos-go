@@ -9,7 +9,7 @@ import (
 func NewInitSystem(version eos.Varuint32, core eos.Symbol) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio"),
-		Name:    ActN("regproducer"),
+		Name:    ActN("init"),
 		Authorization: []eos.PermissionLevel{
 			{
 				Actor:      AN("eosio"),
