@@ -22,12 +22,26 @@ func NewSetContract(account eos.AccountName, wasmPath, abiPath string) (out []*e
 	return []*eos.Action{codeAction, abiAction}, nil
 }
 
+func NewSetContractContent(account eos.AccountName, wasmContent, abiContent []byte) (out []*eos.Action, err error) {
+	codeAction := NewSetCodeContent(account, wasmContent)
+
+	abiAction, err := NewSetAbiContent(account, abiContent)
+	if err != nil {
+		return nil, err
+	}
+
+	return []*eos.Action{codeAction, abiAction}, nil
+}
+
 func NewSetCode(account eos.AccountName, wasmPath string) (out *eos.Action, err error) {
 	codeContent, err := ioutil.ReadFile(wasmPath)
 	if err != nil {
 		return nil, err
 	}
+	return NewSetCodeContent(account, codeContent), nil
+}
 
+func NewSetCodeContent(account eos.AccountName, codeContent []byte) *eos.Action {
 	return &eos.Action{
 		Account: AN("eosio"),
 		Name:    ActN("setcode"),
@@ -43,7 +57,7 @@ func NewSetCode(account eos.AccountName, wasmPath string) (out *eos.Action, err 
 			VMVersion: 0,
 			Code:      eos.HexBytes(codeContent),
 		}),
-	}, nil
+	}
 }
 
 func NewSetABI(account eos.AccountName, abiPath string) (out *eos.Action, err error) {
@@ -52,6 +66,10 @@ func NewSetABI(account eos.AccountName, abiPath string) (out *eos.Action, err er
 		return nil, err
 	}
 
+	return NewSetAbiContent(account, abiContent)
+}
+
+func NewSetAbiContent(account eos.AccountName, abiContent []byte) (out *eos.Action, err error) {
 	var abiPacked []byte
 	if len(abiContent) > 0 {
 		var abiDef eos.ABI
@@ -63,6 +81,29 @@ func NewSetABI(account eos.AccountName, abiPath string) (out *eos.Action, err er
 		if err != nil {
 			return nil, fmt.Errorf("packing ABI: %s", err)
 		}
+	}
+
+	return &eos.Action{
+		Account: AN("eosio"),
+		Name:    ActN("setabi"),
+		Authorization: []eos.PermissionLevel{
+			{
+				Actor:      account,
+				Permission: eos.PermissionName("active"),
+			},
+		},
+		ActionData: eos.NewActionData(SetABI{
+			Account: account,
+			ABI:     eos.HexBytes(abiPacked),
+		}),
+	}, nil
+}
+
+func NewSetAbiFromAbi(account eos.AccountName, abi eos.ABI) (out *eos.Action, err error) {
+	var abiPacked []byte
+	abiPacked, err = eos.MarshalBinary(abi)
+	if err != nil {
+		return nil, fmt.Errorf("packing ABI: %s", err)
 	}
 
 	return &eos.Action{

@@ -213,18 +213,21 @@ func (a Asset) String() string {
 	if amt < 0 {
 		amt = -amt
 	}
-	strInt := fmt.Sprintf("%d", amt)
-	if len(strInt) < int(a.Symbol.Precision+1) {
+
+	precisionDigitCount := int(a.Symbol.Precision)
+	dotAndPrecisionDigitCount := precisionDigitCount + 1
+
+	strInt := strconv.FormatInt(int64(amt), 10)
+	if len(strInt) < dotAndPrecisionDigitCount {
 		// prepend `0` for the difference:
-		strInt = strings.Repeat("0", int(a.Symbol.Precision+uint8(1))-len(strInt)) + strInt
+		strInt = strings.Repeat("0", dotAndPrecisionDigitCount-len(strInt)) + strInt
 	}
 
-	var result string
-	if a.Symbol.Precision == 0 {
-		result = strInt
-	} else {
-		result = strInt[:len(strInt)-int(a.Symbol.Precision)] + "." + strInt[len(strInt)-int(a.Symbol.Precision):]
+	result := strInt
+	if a.Symbol.Precision > 0 {
+		result = strInt[:len(strInt)-precisionDigitCount] + "." + strInt[len(strInt)-precisionDigitCount:]
 	}
+
 	if a.Amount < 0 {
 		result = "-" + result
 	}

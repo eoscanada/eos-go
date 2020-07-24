@@ -3,17 +3,23 @@ package snapshot
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"go.uber.org/zap"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestSnapshotRead(t *testing.T) {
+
+	if os.Getenv("READ_SNAPSHOT_FILE") != "true" {
+		t.Skipf("Environment varaible 'READ_SNAPSHOT_FILE' not set to true")
+		return
+	}
+
 	logger, _ := zap.NewDevelopment()
 	tests := []struct {
 		name     string
@@ -28,6 +34,12 @@ func TestSnapshotRead(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			testFile := testData(test.testFile)
+
+			if !fileExists(testFile) {
+				logger.Error("test file not found", zap.String("testfile", testFile))
+				return
+			}
+
 			r, err := NewReader(testFile)
 			require.NoError(t, err)
 			defer r.Close()
@@ -73,6 +85,19 @@ func TestSnapshotRead(t *testing.T) {
 			}
 		})
 	}
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	if err != nil {
+		return false
+	}
+
+	return !info.IsDir()
 }
 
 func testData(filename string) string {

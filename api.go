@@ -145,6 +145,15 @@ func (api *API) IsProducerPaused(ctx context.Context) (out bool, err error) {
 	return
 }
 
+func (api *API) GetProducerProtocolFeatures(ctx context.Context) (out []ProtocolFeature, err error) {
+	err = api.call(ctx, "producer", "get_supported_protocol_features", nil, &out)
+	return
+}
+
+func (api *API) ScheduleProducerProtocolFeatureActivations(ctx context.Context, protocolFeaturesToActivate []Checksum256) error {
+	return api.call(ctx, "producer", "schedule_protocol_feature_activations", M{"protocol_features_to_activate": protocolFeaturesToActivate}, nil)
+}
+
 func (api *API) GetAccount(ctx context.Context, name AccountName) (out *AccountResp, err error) {
 	err = api.call(ctx, "chain", "get_account", M{"account_name": name}, &out)
 	return
