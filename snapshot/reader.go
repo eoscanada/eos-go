@@ -92,7 +92,7 @@ func (r *Reader) Next() (*Section, error) {
 	r.nextOffset = uint64(beginOffset) + sectionSize + 8 // well well, sectionSize includes the rowCount I guess?
 
 	return &Section{
-		Name:       strings.TrimRight(str, string([]byte{0x00})),
+		Name:       stringToSectionName(strings.TrimRight(str, string([]byte{0x00}))),
 		Offset:     uint64(beginOffset),
 		Size:       sectionSize,
 		RowCount:   rowCount,
