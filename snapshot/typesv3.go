@@ -14,12 +14,10 @@ type TableIDObject struct {
 	Scope     string
 	TableName string
 	Payer     string
-	Count     uint32
+	Count     uint32 // represents the number of rows & indices for a given table
 }
 
 type ContractRow struct {
-	TableID *TableIDObject
-
 	PrimKey string
 	Payer   string
 }
@@ -131,7 +129,6 @@ func (section *Section) readContractTables(f callbackFunc) error {
 				}
 
 				contractRow := ContractRow{
-					TableID: t,
 					PrimKey: eos.NameToString(binary.LittleEndian.Uint64(head[0:8])),
 					Payer:   eos.NameToString(binary.LittleEndian.Uint64(head[8:16])),
 				}
