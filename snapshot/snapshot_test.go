@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,20 +14,19 @@ import (
 
 func TestSnapshotRead(t *testing.T) {
 
-	if os.Getenv("READ_SNAPSHOT_FILE") != "true" {
-		t.Skipf("Environment varaible 'READ_SNAPSHOT_FILE' not set to true")
-		return
-	}
+	//if os.Getenv("READ_SNAPSHOT_FILE") != "true" {
+	//	t.Skipf("Environment varaible 'READ_SNAPSHOT_FILE' not set to true")
+	//	return
+	//}
 
 	logger, _ := zap.NewDevelopment()
 	tests := []struct {
 		name     string
 		testFile string
-		input    string
-		expect   string
 	}{
-		//{name: "name", testFile: "eos-local_jdev_0000000638-0000027ebcabc3da56aa3c50b76d6ea2b85e0b9ac7c737be7d3e0a8ecc162d8d-snapshot.bin", input: "input", expect: "expect"},/**/
-		{name: "name", testFile: "eos-dev1_ondemand-ffbc-states_0004841949-0049e1ddbc5bdecd37887da27115b65fa9c10b03c802efc0b0a78aece17b236e-snapshot.bin", input: "input", expect: "expect"},
+		{name: "eos-local dev", testFile: "eos-jdev_0000000638.bin"},
+		{name: "eos-dev1", testFile: "eos-dev1_0004841949.bin"},
+		{name: "Battlefield - b8d703ed1", testFile: "battlefield-snapshot.bin"},
 	}
 
 	for _, test := range tests {
@@ -54,18 +52,34 @@ func TestSnapshotRead(t *testing.T) {
 				}
 				assert.NoError(t, err)
 				logger.Info("new section",
-					zap.String("section_name", section.Name),
+					zap.String("section_name", string(section.Name)),
 					zap.Uint64("row_count", section.RowCount),
 					zap.Uint64("bytes_count", section.BufferSize),
 					zap.Uint64("bytes_count", section.Offset),
 				)
-				if strings.Contains(section.Name, "") {
+				switch section.Name {
+				case SectionNameAccountObject:
+					require.NoError(t, section.Process(func(o interface{}) error {
+						acc, ok := o.(AccountObject)
+						if !ok {
+							return fmt.Errorf("process account object: unexpected object type: %T", o)
+						}
+						logger.Info("new account object",
+							zap.String("name", string(acc.Name)),
+						)
+						return nil
+					}))
+				case SectionNameContractTables:
+					var currentTable *TableIDObject
 					require.NoError(t, section.Process(func(o interface{}) error {
 						switch obj := o.(type) {
 						case *TableIDObject:
 							logger.Info("Table ID", zap.Reflect("table_id", obj))
+							currentTable = obj
 						case *KeyValueObject:
-							logger.Info("Key Value Object", zap.Reflect("kv", obj))
+							if currentTable.Count < 20 {
+								logger.Info("Key Value Object", zap.Reflect("kv", obj))
+							}
 						case *Index64Object:
 							logger.Info("Index64Object", zap.Reflect("index_64_object", obj))
 						case *Index128Object:
