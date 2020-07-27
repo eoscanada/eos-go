@@ -2,8 +2,80 @@ package snapshot
 
 import "io"
 
+type SectionName string
+
+const (
+	SectionNameChainSnapshotHeader         SectionName = "eosio::chain::chain_snapshot_header"
+	SectionNameBlockState                  SectionName = "eosio::chain::block_state"
+	SectionNameAccountObject               SectionName = "eosio::chain::account_object"
+	SectionNameAccountMetadataObject       SectionName = "eosio::chain::account_metadata_object"
+	SectionNameAccountRamCorrectionObject  SectionName = "eosio::chain::account_ram_correction_object"
+	SectionNameGlobalPropertyObject        SectionName = "eosio::chain::global_property_object"
+	SectionNameProtocolStateObject         SectionName = "eosio::chain::protocol_state_object"
+	SectionNameDynamicGlobalPropertyObject SectionName = "eosio::chain::dynamic_global_property_object"
+	SectionNameBlockSummaryObject          SectionName = "eosio::chain::block_summary_object"
+	SectionNameTransactionObject           SectionName = "eosio::chain::transaction_object"
+	SectionNameGeneratedTransactionObject  SectionName = "eosio::chain::generated_transaction_object"
+	SectionNameCodeObject                  SectionName = "eosio::chain::code_object"
+	SectionNameContractTables              SectionName = "contract_tables"
+	SectionNamePermissionObject            SectionName = "eosio::chain::permission_object"
+	SectionNamePermissionLinkObject        SectionName = "eosio::chain::permission_link_object"
+	SectionNameResourceLimitsObject        SectionName = "eosio::chain::resource_limits::resource_limits_object"
+	SectionNameResourceUsageObject         SectionName = "eosio::chain::resource_limits::resource_usage_object"
+	SectionNameResourceLimitsStateObject   SectionName = "eosio::chain::resource_limits::resource_limits_state_object"
+	SectionNameResourceLimitsConfigObject  SectionName = "eosio::chain::resource_limits::resource_limits_config_object"
+	SectionNameGenesisState                SectionName = "eosio::chain::genesis_state"
+)
+
+func stringToSectionName(name string) SectionName {
+	switch name {
+	case "eosio::chain::chain_snapshot_header":
+		return SectionNameChainSnapshotHeader
+	case "eosio::chain::block_state":
+		return SectionNameBlockState
+	case "eosio::chain::account_object":
+		return SectionNameAccountObject
+	case "eosio::chain::account_metadata_object":
+		return SectionNameAccountMetadataObject
+	case "eosio::chain::account_ram_correction_object":
+		return SectionNameAccountRamCorrectionObject
+	case "eosio::chain::global_property_object":
+		return SectionNameGlobalPropertyObject
+	case "eosio::chain::protocol_state_object":
+		return SectionNameProtocolStateObject
+	case "eosio::chain::dynamic_global_property_object":
+		return SectionNameDynamicGlobalPropertyObject
+	case "eosio::chain::block_summary_object":
+		return SectionNameBlockSummaryObject
+	case "eosio::chain::transaction_object":
+		return SectionNameTransactionObject
+	case "eosio::chain::generated_transaction_object":
+		return SectionNameGeneratedTransactionObject
+	case "eosio::chain::code_object":
+		return SectionNameCodeObject
+	case "contract_tables":
+		return SectionNameContractTables
+	case "eosio::chain::permission_object":
+		return SectionNamePermissionObject
+	case "eosio::chain::permission_link_object":
+		return SectionNamePermissionLinkObject
+	case "eosio::chain::resource_limits::resource_limits_object":
+		return SectionNameResourceLimitsObject
+	case "eosio::chain::resource_limits::resource_usage_object":
+		return SectionNameResourceUsageObject
+	case "eosio::chain::resource_limits::resource_limits_state_object":
+		return SectionNameResourceLimitsStateObject
+	case "eosio::chain::resource_limits::resource_limits_config_object":
+		return SectionNameResourceLimitsConfigObject
+	case "eosio::chain::genesis_state":
+		return SectionNameGenesisState
+	default:
+		panic("unsupported section name: " + name)
+	}
+}
+
 type Section struct {
-	Name       string
+	Name       SectionName
 	Offset     uint64
 	Size       uint64 // This includes the section name and row count
 	BufferSize uint64 // This represents the bytes that are following the section header
@@ -20,48 +92,46 @@ type callbackFunc func(obj interface{}) error
 
 func (s *Section) Process(f callbackFunc) error {
 	switch s.Name {
-	case "eosio::chain::chain_snapshot_header":
+	case SectionNameChainSnapshotHeader:
 		return s.readChainSnapshotHeader(f)
-	case "eosio::chain::block_state":
+	case SectionNameBlockState:
 		return s.readBlockState(f)
-	case "eosio::chain::account_object":
+	case SectionNameAccountObject:
 		return s.readAccountObjects(f)
-	case "eosio::chain::account_metadata_object":
+	case SectionNameAccountMetadataObject:
 		return s.readAccountMetadataObjects(f)
-	case "eosio::chain::account_ram_correction_object":
+	case SectionNameAccountRamCorrectionObject:
 		return s.readAccountRAMCorrectionObject(f)
-	case "eosio::chain::global_property_object":
+	case SectionNameGlobalPropertyObject:
 		return s.readGlobalPropertyObject(f)
-	case "eosio::chain::protocol_state_object":
+	case SectionNameProtocolStateObject:
 		return s.readProtocolStateObject(f)
-	case "eosio::chain::dynamic_global_property_object":
+	case SectionNameDynamicGlobalPropertyObject:
 		return s.readDynamicGlobalPropertyObject(f)
-	case "eosio::chain::block_summary_object":
+	case SectionNameBlockSummaryObject:
 		return s.readBlockSummary(f)
-	case "eosio::chain::transaction_object":
+	case SectionNameTransactionObject:
 		return s.readTransactionObject(f)
-	case "eosio::chain::generated_transaction_object":
+	case SectionNameGeneratedTransactionObject:
 		return s.readGeneratedTransactionObject(f)
-	case "eosio::chain::code_object":
+	case SectionNameCodeObject:
 		return s.readCodeObject(f)
-	case "contract_tables":
+	case SectionNameContractTables:
 		return s.readContractTables(f)
-	case "eosio::chain::permission_object":
+	case SectionNamePermissionObject:
 		return s.readPermissionObject(f)
-	case "eosio::chain::permission_link_object":
+	case SectionNamePermissionLinkObject:
 		return s.readPermissionLinkObject(f)
-	case "eosio::chain::resource_limits::resource_limits_object":
+	case SectionNameResourceLimitsObject:
 		return s.readResourceLimitsObject(f)
-	case "eosio::chain::resource_limits::resource_usage_object":
+	case SectionNameResourceUsageObject:
 		return s.readResourceUsageObject(f)
-	case "eosio::chain::resource_limits::resource_limits_state_object":
+	case SectionNameResourceLimitsStateObject:
 		return s.readResourceLimitsStateObject(f)
-	case "eosio::chain::resource_limits::resource_limits_config_object":
+	case SectionNameResourceLimitsConfigObject:
 		return s.readResourceLimitsConfigObject(f)
-
-	case "eosio::chain::genesis_state":
+	case SectionNameGenesisState:
 		return s.readGenesisState(f)
-
 	default:
 		panic("unsupported section: " + s.Name)
 	}
