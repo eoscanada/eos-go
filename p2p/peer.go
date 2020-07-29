@@ -1,26 +1,22 @@
 package p2p
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
-	"time"
-
-	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
-
-	"go.uber.org/zap/zapcore"
-
 	"runtime"
-
-	"bufio"
+	"time"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Peer struct {
@@ -32,6 +28,7 @@ type Peer struct {
 	reader                 io.Reader
 	listener               bool
 	handshakeInfo          *HandshakeInfo
+	handshakeGeneration    int64
 	connectionTimeout      time.Duration
 	handshakeTimeout       time.Duration
 	cancelHandshakeTimeout chan bool
@@ -108,9 +105,16 @@ func (p *Peer) Read() (*eos.Packet, error) {
 	return packet, nil
 }
 
-func (p *Peer) SetConnection(conn net.Conn) {
+func (p *Peer) setConnection(conn net.Conn) {
 	p.connection = conn
 	p.reader = bufio.NewReader(p.connection)
+}
+
+func (p *Peer) Close() error {
+	if p.connection == nil {
+		return nil
+	}
+	return p.connection.Close()
 }
 
 func (p *Peer) Connect(errChan chan error) (ready chan bool) {
@@ -144,7 +148,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 			}
 			p2pLog.Debug("Connected on", address2log)
 
-			p.SetConnection(conn)
+			p.setConnection(conn)
 			ready <- true
 
 		} else {
@@ -170,8 +174,9 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				return
 			}
 			p2pLog.Info("Connected to", address2log)
-			p.connection = conn
-			p.reader = bufio.NewReader(conn)
+
+			p.setConnection(conn)
+
 			ready <- true
 		}
 	}()
@@ -180,23 +185,24 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 }
 
 func (p *Peer) Write(bytes []byte) (int, error) {
-
 	return p.connection.Write(bytes)
 }
 
 func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
-
 	packet := &eos.Packet{
 		Type:       message.GetType(),
 		P2PMessage: message,
 	}
 
+	return p.WritePacket(packet)
+}
+func (p *Peer) WritePacket(packet *eos.Packet) error {
 	buff := bytes.NewBuffer(make([]byte, 0, 512))
 
 	encoder := eos.NewEncoder(buff)
-	err = encoder.Encode(packet)
+	err := encoder.Encode(packet)
 	if err != nil {
-		return errors.Wrapf(err, "unable to encode message %s", message)
+		return errors.Wrapf(err, "unable to encode message %s", packet)
 	}
 
 	_, err = p.Write(buff.Bytes())
@@ -227,12 +233,12 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 		zap.Uint32("end", endBlockNumber))
 
 	request := &eos.RequestMessage{
-		ReqTrx: eos.OrderedBlockIDs{
-			Mode:    [4]byte{0, 0, 0, 0},
+		ReqTrx: eos.OrderedSelectIDs{
+			Mode:    0,
 			Pending: startBlockNum,
 		},
-		ReqBlocks: eos.OrderedBlockIDs{
-			Mode:    [4]byte{0, 0, 0, 0},
+		ReqBlocks: eos.OrderedSelectIDs{
+			Mode:    0,
 			Pending: endBlockNumber,
 		},
 	}
@@ -240,25 +246,25 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 	return errors.WithStack(p.WriteP2PMessage(request))
 }
 
-func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
-	p2pLog.Debug("Send Notice",
-		zap.String("peer", p.Address),
-		zap.Uint32("head", headBlockNum),
-		zap.Uint32("lib", libNum),
-		zap.Uint8("type", mode))
+// func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
+// 	p2pLog.Debug("Send Notice",
+// 		zap.String("peer", p.Address),
+// 		zap.Uint32("head", headBlockNum),
+// 		zap.Uint32("lib", libNum),
+// 		zap.Uint8("type", mode))
 
-	notice := &eos.NoticeMessage{
-		KnownTrx: eos.OrderedBlockIDs{
-			Mode:    [4]byte{mode, 0, 0, 0},
-			Pending: headBlockNum,
-		},
-		KnownBlocks: eos.OrderedBlockIDs{
-			Mode:    [4]byte{mode, 0, 0, 0},
-			Pending: libNum,
-		},
-	}
-	return errors.WithStack(p.WriteP2PMessage(notice))
-}
+// 	notice := &eos.NoticeMessage{
+// 		KnownTrx: eos.OrderedSelectIDs{
+// 			Mode:    mode,
+// 			Pending: headBlockNum,
+// 		},
+// 		KnownBlocks: eos.OrderedSelectIDs{
+// 			Mode:    mode,
+// 			Pending: libNum,
+// 		},
+// 	}
+// 	return errors.WithStack(p.WriteP2PMessage(notice))
+// }
 
 func (p *Peer) SendTime() error {
 	p2pLog.Debug("SendTime", zap.String("peer", p.Address))
@@ -268,19 +274,16 @@ func (p *Peer) SendTime() error {
 }
 
 func (p *Peer) SendHandshake(info *HandshakeInfo) error {
-
 	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
 	if err != nil {
 		return errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
 	}
 
-	p2pLog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
-
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	signature := ecc.Signature{
-		Curve:   ecc.CurveK1,
-		Content: make([]byte, 65, 65),
+	signature, err := ecc.NewSignature("SIG_K1_111111111111111111111111111111111111111111111111111111111111111116uk5ne")
+	if err != nil {
+		return err
 	}
 
 	handshake := &eos.HandshakeMessage{
@@ -300,6 +303,11 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 		Agent:                    p.agent,
 		Generation:               int16(1),
 	}
+
+	cnt, _ := json.Marshal(handshake)
+
+	fmt.Println("sending handshake_message", string(cnt))
+	//p2pLog.Debug("sending handshake_message", zap.String("peer", p.Address), zap.Reflect("info", handshake))
 
 	err = p.WriteP2PMessage(handshake)
 	if err != nil {

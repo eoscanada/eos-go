@@ -589,18 +589,13 @@ const (
 	normal
 )
 
-type OrderedTransactionIDs struct {
-	Mode    [4]byte       `json:"mode"`
-	Pending uint32        `json:"pending"`
-	IDs     []Checksum256 `json:"ids"`
-}
-type OrderedBlockIDs struct {
-	Mode    [4]byte       `json:"mode"`
+type OrderedSelectIDs struct {
+	Mode    uint32        `json:"mode"`
 	Pending uint32        `json:"pending"`
 	IDs     []Checksum256 `json:"ids"`
 }
 
-func (o *OrderedBlockIDs) String() string {
+func (o *OrderedSelectIDs) String() string {
 
 	ids := ""
 	for _, id := range o.IDs {
@@ -610,8 +605,8 @@ func (o *OrderedBlockIDs) String() string {
 }
 
 type NoticeMessage struct {
-	KnownTrx    OrderedBlockIDs `json:"known_trx"`
-	KnownBlocks OrderedBlockIDs `json:"known_blocks"`
+	KnownTrx    OrderedSelectIDs `json:"known_trx"`
+	KnownBlocks OrderedSelectIDs `json:"known_blocks"`
 }
 
 func (n *NoticeMessage) String() string {
@@ -635,8 +630,8 @@ func (m *SyncRequestMessage) String() string {
 }
 
 type RequestMessage struct {
-	ReqTrx    OrderedBlockIDs `json:"req_trx"`
-	ReqBlocks OrderedBlockIDs `json:"req_blocks"`
+	ReqTrx    OrderedSelectIDs `json:"req_trx"`
+	ReqBlocks OrderedSelectIDs `json:"req_blocks"`
 }
 
 func (r *RequestMessage) String() string {

@@ -31,7 +31,7 @@ var LoggerHandler = HandlerFunc(func(envelope *Envelope) {
 var StringLoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	name, _ := envelope.Packet.Type.Name()
 	p2pLog.Info(
-		"handler Packet",
+		"handle incoming packet",
 		zap.String("name", name),
 		zap.String("sender", envelope.Sender.Address),
 		zap.String("receiver", envelope.Receiver.Address),
