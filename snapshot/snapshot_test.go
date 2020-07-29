@@ -24,8 +24,6 @@ func TestSnapshotRead(t *testing.T) {
 		name     string
 		testFile string
 	}{
-		{name: "eos-local dev", testFile: "eos-jdev_0000000638.bin"},
-		{name: "eos-dev1", testFile: "eos-dev1_0004841949.bin"},
 		{name: "Battlefield - b8d703ed1", testFile: "battlefield-snapshot.bin"},
 	}
 
