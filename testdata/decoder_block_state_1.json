@@ -8,7 +8,7 @@
       {
         "producer_name": "eosio",
         "authority": [
-          0,
+          "block_signing_authority_v0",
           {
             "threshold": 1,
             "keys": [
@@ -43,7 +43,7 @@
     ]
   ],
   "valid_block_signing_authority": [
-    0,
+    "block_signing_authority_v0",
     {
       "threshold": 1,
       "keys": [

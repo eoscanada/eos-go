@@ -419,11 +419,22 @@ func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArr
 	return fieldType, false, false, false
 }
 
+const standardTimePointFormat = "2006-01-02T15:04:05.999"
+const nodeosTimePointFormat = "2006-01-02T15:04:05.000"
+
 func formatTimePoint(timePoint TimePoint, shouldFitNodeos bool) string {
 	t := time.Unix(0, int64(timePoint*1000))
-	format := "2006-01-02T15:04:05.999"
 	if shouldFitNodeos {
-		format = "2006-01-02T15:04:05.000"
+		return t.UTC().Format(nodeosTimePointFormat)
 	}
-	return t.UTC().Format(format)
+
+	return t.UTC().Format(standardTimePointFormat)
+}
+
+const standardTimePointSecFormat = "2006-01-02T15:04:05"
+
+func formatTimePointSec(timePoint TimePointSec) string {
+	t := time.Unix(int64(timePoint), 0)
+
+	return t.UTC().Format(standardTimePointSecFormat)
 }

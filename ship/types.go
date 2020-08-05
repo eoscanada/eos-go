@@ -132,7 +132,7 @@ type SignedBlockHeader struct {
 
 type TransactionReceipt struct {
 	eos.TransactionReceiptHeader
-	Trx *TransactionVariant
+	Trx *Transaction
 }
 
 //type TransactionID eos.Checksum256

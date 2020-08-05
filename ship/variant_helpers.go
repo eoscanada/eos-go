@@ -5,53 +5,41 @@ import (
 )
 
 // Request
+var RequestVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"get_status_request_v0", (*GetStatusRequestV0)(nil)},
+	{"get_blocks_request_v0", (*GetBlocksRequestV0)(nil)},
+	{"get_blocks_ack_request_v0", (*GetBlocksAckRequestV0)(nil)},
+})
 
 type Request struct {
 	eos.BaseVariant
 }
 
-const (
-	GetStatusRequestV0Type = iota
-	GetBlocksRequestV0Type
-	GetBlocksAckRequestV0Type
-)
-
-var requestVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	GetStatusRequestV0Type:    func() interface{} { return new(GetStatusRequestV0) },
-	GetBlocksRequestV0Type:    func() interface{} { return new(GetBlocksRequestV0) },
-	GetBlocksAckRequestV0Type: func() interface{} { return new(GetBlocksAckRequestV0) },
-}
-
 func (r *Request) UnmarshalBinary(decoder *eos.Decoder) error {
-	return r.BaseVariant.UnmarshalBinaryVariant(decoder, requestVariantFactoryImplMap)
+	return r.BaseVariant.UnmarshalBinaryVariant(decoder, RequestVariant)
 }
 
 // Result
-const (
-	GetStatusResultV0Type = iota
-	GetBlocksResultV0Type
-)
-
-var resultVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	GetStatusResultV0Type: func() interface{} { return new(GetStatusResultV0) },
-	GetBlocksResultV0Type: func() interface{} { return new(GetBlocksResultV0) },
-}
+var ResultVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"get_status_result_v0", (*GetStatusResultV0)(nil)},
+	{"get_blocks_result_v0", (*GetBlocksResultV0)(nil)},
+})
 
 type Result struct {
 	eos.BaseVariant
 }
 
 func (r *Result) UnmarshalBinary(decoder *eos.Decoder) error {
-	return r.BaseVariant.UnmarshalBinaryVariant(decoder, resultVariantFactoryImplMap)
+	return r.BaseVariant.UnmarshalBinaryVariant(decoder, ResultVariant)
 }
 
 // TransactionTrace
-const (
-	TransactionTraceV0Type = iota
-)
+var TransactionTraceVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"transaction_trace_v0", (*TransactionTraceV0)(nil)},
+})
 
-var TransactionTraceVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	TransactionTraceV0Type: func() interface{} { return new(TransactionTraceV0) },
+type TransactionTrace struct {
+	eos.BaseVariant
 }
 
 type TransactionTraceArray struct {
@@ -63,10 +51,13 @@ func (t *TransactionTraceArray) AsTransactionTracesV0() (out []*TransactionTrace
 		return nil
 	}
 	for _, e := range t.Elem {
-		if e.TypeID != TransactionTraceV0Type {
+		switch v := e.Impl.(type) {
+		case *TransactionTraceV0:
+			out = append(out, v)
+
+		default:
 			panic("wrong type for conversion")
 		}
-		out = append(out, e.Impl.(*TransactionTraceV0))
 	}
 	return out
 }
@@ -79,63 +70,47 @@ func (r *TransactionTraceArray) UnmarshalBinary(decoder *eos.Decoder) error {
 	return eos.UnmarshalBinary(data, &r.Elem)
 }
 
-type TransactionTrace struct {
-	eos.BaseVariant
-}
-
 func (r *TransactionTrace) UnmarshalBinary(decoder *eos.Decoder) error {
-	return r.BaseVariant.UnmarshalBinaryVariant(decoder, TransactionTraceVariantFactoryImplMap)
+	return r.BaseVariant.UnmarshalBinaryVariant(decoder, TransactionTraceVariant)
 }
 
 // ActionTrace
-const (
-	ActionTraceV0Type = iota
-)
-
-var ActionTraceVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	ActionTraceV0Type: func() interface{} { return new(ActionTraceV0) },
-}
+var ActionTraceVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"action_trace_v0", (*ActionTraceV0)(nil)},
+})
 
 type ActionTrace struct {
 	eos.BaseVariant
 }
 
 func (r *ActionTrace) UnmarshalBinary(decoder *eos.Decoder) error {
-	return r.BaseVariant.UnmarshalBinaryVariant(decoder, ActionTraceVariantFactoryImplMap)
+	return r.BaseVariant.UnmarshalBinaryVariant(decoder, ActionTraceVariant)
 }
 
 // PartialTransaction
-const (
-	PartialTransactionV0Type = iota
-)
-
-var PartialTransactionVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	PartialTransactionV0Type: func() interface{} { return new(PartialTransactionV0) },
-}
+var PartialTransactionVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"partial_transaction_v0", (*PartialTransactionV0)(nil)},
+})
 
 type PartialTransaction struct {
 	eos.BaseVariant
 }
 
 func (r *PartialTransaction) UnmarshalBinary(decoder *eos.Decoder) error {
-	return r.BaseVariant.UnmarshalBinaryVariant(decoder, PartialTransactionVariantFactoryImplMap)
+	return r.BaseVariant.UnmarshalBinaryVariant(decoder, PartialTransactionVariant)
 }
 
 // TableDelta
-const (
-	TableDeltaV0Type = iota
-)
-
-var TableDeltaVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	TableDeltaV0Type: func() interface{} { return new(TableDeltaV0) },
-}
+var TableDeltaVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"table_delta_v0", (*TableDeltaV0)(nil)},
+})
 
 type TableDelta struct {
 	eos.BaseVariant
 }
 
 func (d *TableDelta) UnmarshalBinary(decoder *eos.Decoder) error {
-	return d.BaseVariant.UnmarshalBinaryVariant(decoder, TableDeltaVariantFactoryImplMap)
+	return d.BaseVariant.UnmarshalBinaryVariant(decoder, TableDeltaVariant)
 }
 
 type TableDeltaArray struct {
@@ -155,46 +130,40 @@ func (t *TableDeltaArray) AsTableDeltasV0() (out []*TableDeltaV0) {
 		return nil
 	}
 	for _, e := range t.Elem {
-		if e.TypeID != TableDeltaV0Type {
+		switch v := e.Impl.(type) {
+		case *TableDeltaV0:
+			out = append(out, v)
+
+		default:
 			panic("wrong type for conversion")
 		}
-		out = append(out, e.Impl.(*TableDeltaV0))
 	}
 	return out
 }
 
-// TransactionVariant
-const (
-	TransactionIDType = iota
-	PackedTransactionType
-)
+// Transaction
+var TransactionVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"transaction_id", (*eos.Checksum256)(nil)},
+	{"packed_transaction", (*eos.PackedTransaction)(nil)},
+})
 
-var TransactionVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	TransactionIDType:     func() interface{} { return new(eos.Checksum256) },
-	PackedTransactionType: func() interface{} { return new(eos.PackedTransaction) },
-}
-
-type TransactionVariant struct {
+type Transaction struct {
 	eos.BaseVariant
 }
 
-func (d *TransactionVariant) UnmarshalBinary(decoder *eos.Decoder) error {
-	return d.BaseVariant.UnmarshalBinaryVariant(decoder, TransactionVariantFactoryImplMap)
+func (d *Transaction) UnmarshalBinary(decoder *eos.Decoder) error {
+	return d.BaseVariant.UnmarshalBinaryVariant(decoder, TransactionVariant)
 }
 
 // ActionReceipt
-const (
-	ActionReceiptV0Type = iota
-)
-
-var ActionReceiptVariantFactoryImplMap = map[uint32]eos.VariantImplFactory{
-	ActionReceiptV0Type: func() interface{} { return new(ActionReceiptV0) },
-}
+var ActionReceiptVariant = eos.NewVariantDefinition([]eos.VariantType{
+	{"action_receipt_v0", (*ActionReceiptV0)(nil)},
+})
 
 type ActionReceipt struct {
 	eos.BaseVariant
 }
 
 func (r *ActionReceipt) UnmarshalBinary(decoder *eos.Decoder) error {
-	return r.BaseVariant.UnmarshalBinaryVariant(decoder, ActionReceiptVariantFactoryImplMap)
+	return r.BaseVariant.UnmarshalBinaryVariant(decoder, ActionReceiptVariant)
 }

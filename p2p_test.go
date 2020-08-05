@@ -277,9 +277,9 @@ func TestBlockState_UnmarshalJSON(t *testing.T) {
 		{
 			"eosio v2.x structure",
 			[]string{
-				`"valid_block_signing_authority": [0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]`,
-				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","authority":[0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}`,
-				`"pending_schedule": {"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","authority":[0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}}`,
+				`"valid_block_signing_authority": ["block_signing_authority_v0",{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]`,
+				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","authority":["block_signing_authority_v0",{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}`,
+				`"pending_schedule": {"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","authority":["block_signing_authority_v0",{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}}`,
 			},
 			func(e *BlockState) {
 				assert.Nil(t, e.BlockSigningKeyV1)
@@ -419,6 +419,7 @@ func checkProducerAuthoritySchedule(t *testing.T, schedule *ProducerAuthoritySch
 
 func checkBlockSigningAuthority(t *testing.T, authority *BlockSigningAuthority) {
 	assert.Equal(t, uint32(0), authority.TypeID)
+
 	switch v0 := authority.Impl.(type) {
 	case *BlockSigningAuthorityV0:
 		assert.Equal(t, uint32(2), v0.Threshold)

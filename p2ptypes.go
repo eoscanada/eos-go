@@ -2,13 +2,12 @@ package eos
 
 import (
 	"crypto/sha256"
-	"errors"
-	"fmt"
-	"strconv"
-
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"strconv"
 
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/tidwall/gjson"
@@ -385,25 +384,25 @@ func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalBinary(decoder *Decoder) 
 
 }
 
-const (
-	BlockSigningAuthorityV0Type = 0
-)
-
 // See libraries/chain/include/eosio/chain/producer_schedule.hpp#L161
+var BlockSigningAuthorityVariant = NewVariantDefinition([]VariantType{
+	{"block_signing_authority_v0", (*BlockSigningAuthorityV0)(nil)},
+})
+
 type BlockSigningAuthority struct {
 	BaseVariant
 }
 
-var blockSigningVariantFactoryImplMap = map[uint32]VariantImplFactory{
-	BlockSigningAuthorityV0Type: func() interface{} { return new(BlockSigningAuthorityV0) },
+func (a *BlockSigningAuthority) MarshalJSON() ([]byte, error) {
+	return a.BaseVariant.MarshalJSON(BlockSigningAuthorityVariant)
 }
 
 func (a *BlockSigningAuthority) UnmarshalJSON(data []byte) error {
-	return a.BaseVariant.UnmarshalJSON(data, blockSigningVariantFactoryImplMap)
+	return a.BaseVariant.UnmarshalJSON(data, BlockSigningAuthorityVariant)
 }
 
 func (a *BlockSigningAuthority) UnmarshalBinary(decoder *Decoder) error {
-	return a.BaseVariant.UnmarshalBinaryVariant(decoder, blockSigningVariantFactoryImplMap)
+	return a.BaseVariant.UnmarshalBinaryVariant(decoder, BlockSigningAuthorityVariant)
 }
 
 // See libraries/chain/include/eosio/chain/producer_schedule.hpp#L100
