@@ -836,6 +836,10 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 // TimePoint represents the number of microseconds since EPOCH (Jan 1st 1970)
 type TimePoint uint64
 
+func (f TimePoint) String() string {
+	return formatTimePoint(f, true)
+}
+
 func (f TimePoint) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + formatTimePoint(f, true) + `"`), nil
 }
@@ -857,6 +861,10 @@ func (f *TimePoint) UnmarshalJSON(data []byte) error {
 
 // TimePointSec represents the number of seconds since EPOCH (Jan 1st 1970)
 type TimePointSec uint32
+
+func (f TimePointSec) String() string {
+	return formatTimePointSec(f)
+}
 
 func (f TimePointSec) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + formatTimePointSec(f) + `"`), nil
