@@ -72,6 +72,7 @@ func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 }
 
 func triggerHandshake(peer *Peer) error {
+	fmt.Println("Sending handshake")
 	return peer.SendHandshake(peer.handshakeInfo)
 }
 

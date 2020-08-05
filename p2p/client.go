@@ -1,15 +1,13 @@
 package p2p
 
 import (
+	"fmt"
 	"math"
-
-	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
-
 	"time"
 
 	"github.com/eoscanada/eos-go"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type Client struct {
@@ -43,7 +41,6 @@ func (c *Client) SetReadTimeout(readTimeout time.Duration) {
 }
 
 func (c *Client) RegisterHandler(handler Handler) {
-
 	c.handlers = append(c.handlers, handler)
 }
 
@@ -60,6 +57,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 			handle.Handle(envelope)
 		}
 
+		fmt.Printf("Incoming message: %T %v\n", packet.P2PMessage, packet.P2PMessage)
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
 			errChannel <- errors.Wrapf(err, "GoAwayMessage reason %s", m.Reason)
@@ -126,6 +124,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 					}
 				}
 			}
+		default:
 		}
 	}
 }

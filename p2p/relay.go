@@ -43,7 +43,7 @@ func (r *Relay) startProxy(conn net.Conn) {
 	select {
 	case <-destinationReadyChannel:
 		remotePeer := newPeer(remoteAddress, fmt.Sprintf("agent-%s", remoteAddress), false, nil)
-		remotePeer.SetConnection(conn)
+		remotePeer.setConnection(conn)
 		proxy := NewProxy(remotePeer, destinationPeer)
 
 		proxy.RegisterHandlers(r.handlers)
