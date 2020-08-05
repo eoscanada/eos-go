@@ -447,7 +447,6 @@ func TestUnpackBinaryTableRows(t *testing.T) {
 	var out []*MyStruct
 	require.NoError(t, resp.BinaryToStructs(&out))
 	assert.Equal(t, "CUR", string(out[0].Currency.Name))
-	//spew.Dump(out)
 }
 
 func TestStringToName(t *testing.T) {

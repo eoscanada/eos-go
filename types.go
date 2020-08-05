@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/tidwall/gjson"
 )
@@ -853,8 +852,6 @@ func (f *TimePoint) UnmarshalJSON(data []byte) error {
 	}
 
 	*f = TimePoint(out.UnixNano() / 1000)
-	spew.Dump(f)
-	spew.Dump(*f)
 	return nil
 }
 
