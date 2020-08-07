@@ -1,7 +1,9 @@
 package ecc
 
 import (
+	"bytes"
 	cryptorand "crypto/rand"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -60,6 +62,11 @@ func NewPrivateKey(wif string) (*PrivateKey, error) {
 			inner := &innerR1PrivateKey{}
 			return &PrivateKey{Curve: CurveR1, inner: inner}, nil
 
+		case "WA_":
+
+			inner := &innerWAPrivateKey{}
+			return &PrivateKey{Curve: CurveWA, inner: inner}, nil
+
 		default:
 			return nil, fmt.Errorf("unsupported curve prefix %q", curvePrefix)
 		}
@@ -73,6 +80,15 @@ func NewPrivateKey(wif string) (*PrivateKey, error) {
 		inner := &innerK1PrivateKey{privKey: wifObj.PrivKey}
 		return &PrivateKey{Curve: CurveK1, inner: inner}, nil
 	}
+}
+
+func NewPrivateKeyFromSeed(seed string) (*PrivateKey, error) {
+	hashByte := sha256.Sum256([]byte(seed))
+	privateKey, err := NewDeterministicPrivateKey(bytes.NewBuffer(hashByte[:]))
+	if err != nil {
+		return nil, err
+	}
+	return privateKey, nil
 }
 
 type innerPrivateKey interface {

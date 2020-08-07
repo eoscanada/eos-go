@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/eoscanada/eos-go/ecc"
 )
@@ -27,14 +28,14 @@ import (
 */
 
 type InfoResp struct {
-	ServerVersion            string      `json:"server_version"` // "2cc40a4e"
-	ChainID                  Checksum256 `json:"chain_id"`
-	HeadBlockNum             uint32      `json:"head_block_num"`              // 2465669,
-	LastIrreversibleBlockNum uint32      `json:"last_irreversible_block_num"` // 2465655
-	LastIrreversibleBlockID  Checksum256 `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
-	HeadBlockID              Checksum256 `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
-	HeadBlockTime            JSONTime    `json:"head_block_time"`             //  "2018-02-02T04:19:32"
-	HeadBlockProducer        AccountName `json:"head_block_producer"`         // "inita"
+	ServerVersion            string         `json:"server_version"` // "2cc40a4e"
+	ChainID                  Checksum256    `json:"chain_id"`
+	HeadBlockNum             uint32         `json:"head_block_num"`              // 2465669,
+	LastIrreversibleBlockNum uint32         `json:"last_irreversible_block_num"` // 2465655
+	LastIrreversibleBlockID  Checksum256    `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
+	HeadBlockID              Checksum256    `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	HeadBlockTime            BlockTimestamp `json:"head_block_time"`             //  "2018-02-02T04:19:32"
+	HeadBlockProducer        AccountName    `json:"head_block_producer"`         // "inita"
 
 	VirtualBlockCPULimit Int64  `json:"virtual_block_cpu_limit"`
 	VirtualBlockNetLimit Int64  `json:"virtual_block_net_limit"`
@@ -81,7 +82,7 @@ type TransactionResp struct {
 		PackedTransaction TransactionWithID `json:"trx"`
 	} `json:"receipt"`
 	Transaction           ProcessedTransaction `json:"trx"`
-	BlockTime             JSONTime             `json:"block_time"`
+	BlockTime             BlockTimestamp       `json:"block_time"`
 	BlockNum              uint32               `json:"block_num"`
 	LastIrreversibleBlock uint32               `json:"last_irreversible_block"`
 	Traces                []ActionTrace        `json:"traces"`
@@ -91,23 +92,39 @@ type ProcessedTransaction struct {
 	Transaction SignedTransaction `json:"trx"`
 }
 
+type ActionTraceReceipt struct {
+	Receiver        AccountName                    `json:"receiver"`
+	ActionDigest    string                         `json:"act_digest"`
+	GlobalSequence  Uint64                         `json:"global_sequence"`
+	ReceiveSequence Uint64                         `json:"recv_sequence"`
+	AuthSequence    []TransactionTraceAuthSequence `json:"auth_sequence"` // [["account", sequence], ["account", sequence]]
+	CodeSequence    Uint64                         `json:"code_sequence"`
+	ABISequence     Uint64                         `json:"abi_sequence"`
+}
+
 type ActionTrace struct {
-	Receipt struct {
-		Receiver        AccountName                    `json:"receiver"`
-		ActionDigest    string                         `json:"act_digest"`
-		GlobalSequence  Uint64                         `json:"global_sequence"`
-		ReceiveSequence Uint64                         `json:"recv_sequence"`
-		AuthSequence    []TransactionTraceAuthSequence `json:"auth_sequence"` // [["account", sequence], ["account", sequence]]
-		CodeSequence    Uint64                         `json:"code_sequence"`
-		ABISequence     Uint64                         `json:"abi_sequence"`
-	} `json:"receipt"`
-	Action        *Action        `json:"act"`
-	Elapsed       int            `json:"elapsed"`
-	CPUUsage      int            `json:"cpu_usage"`
-	Console       string         `json:"console"`
-	TotalCPUUsage int            `json:"total_cpu_usage"`
-	TransactionID Checksum256    `json:"trx_id"`
-	InlineTraces  []*ActionTrace `json:"inline_traces"`
+	Receipt                                *ActionTraceReceipt `json:"receipt,omitempty"`
+	Receiver                               AccountName         `json:"receiver"`
+	Action                                 *Action             `json:"act"`
+	Elapsed                                Int64               `json:"elapsed"`
+	Console                                string              `json:"console"`
+	TransactionID                          Checksum256         `json:"trx_id"`
+	InlineTraces                           []ActionTrace       `json:"inline_traces"`
+	ContextFree                            bool                `json:"context_free"`
+	BlockTime                              BlockTimestamp      `json:"block_time"`
+	BlockNum                               uint32              `json:"block_num"`
+	ProducerBlockID                        Checksum256         `json:"producer_block_id"`
+	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
+	ErrorCode                              *Uint64             `json:"error_code"`
+	Except                                 *Except             `json:"except"`
+	ActionOrdinal                          uint32              `json:"action_ordinal"`
+	CreatorActionOrdinal                   uint32              `json:"creator_action_ordinal"`
+	ClosestUnnotifiedAncestorActionOrdinal uint32              `json:"closest_unnotified_ancestor_action_ordinal"`
+}
+
+type AccountRAMDelta struct {
+	Account AccountName `json:"account"`
+	Delta   Int64       `json:"delta"`
 }
 
 type TransactionTraceAuthSequence struct {
@@ -131,12 +148,23 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("expected 1st item to be a string (account name)")
 	}
 
-	seq, ok := ins[1].(float64)
-	if !ok {
-		return fmt.Errorf("expected 2nd item to be a sequence number (float64)")
+	var seq Uint64
+	switch el := ins[1].(type) {
+	case float64:
+		seq = Uint64(el)
+	case string:
+		seqInt, err := strconv.ParseUint(el, 10, 64)
+		if err != nil {
+			return fmt.Errorf("decoding auth_sequence as string: %s", err)
+		}
+
+		seq = Uint64(seqInt)
+	default:
+
+		return fmt.Errorf("expected 2nd item of auth_sequence to be a sequence number (float64 or string)")
 	}
 
-	*auth = TransactionTraceAuthSequence{AccountName(account), Uint64(seq)}
+	*auth = TransactionTraceAuthSequence{AccountName(account), seq}
 
 	return nil
 }
@@ -192,7 +220,7 @@ type GetTableByScopeRequest struct {
 }
 
 type GetTableByScopeResp struct {
-	More bool            `json:"more"`
+	More string          `json:"more"`
 	Rows json.RawMessage `json:"rows"`
 }
 
@@ -206,6 +234,7 @@ type GetTableRowsRequest struct {
 	KeyType    string `json:"key_type,omitempty"`       // The key type of --index, primary only supports (i64), all others support (i64, i128, i256, float64, float128, ripemd160, sha256). Special type 'name' indicates an account name.
 	Index      string `json:"index_position,omitempty"` // Index number, 1 - primary (first), 2 - secondary index (in order defined by multi_index), 3 - third index, etc. Number or name of index can be specified, e.g. 'secondary' or '2'.
 	EncodeType string `json:"encode_type,omitempty"`    // The encoding type of key_type (i64 , i128 , float64, float128) only support decimal encoding e.g. 'dec'" "i256 - supports both 'dec' and 'hex', ripemd160 and sha256 is 'hex' only
+	Reverse    bool   `json:"reverse,omitempty"`        // Get rows in reverse of the index
 	JSON       bool   `json:"json"`                     // JSON output if true, binary if false
 }
 
@@ -331,7 +360,7 @@ type WalletSignTransactionResp struct {
 
 type MyStruct struct {
 	Currency
-	Balance uint64
+	Balance Uint64
 }
 
 // NetConnectionResp
@@ -371,12 +400,12 @@ type Global struct {
 	TotalRAMBytesReserved          Int64   `json:"total_ram_bytes_reserved"`
 	TotalRAMStake                  Int64   `json:"total_ram_stake"`
 	LastProducerScheduleUpdate     string  `json:"last_producer_schedule_update"`
-	LastPervoteBucketFill          int64   `json:"last_pervote_bucket_fill,string"`
+	LastPervoteBucketFill          Int64   `json:"last_pervote_bucket_fill,string"`
 	PervoteBucket                  int     `json:"pervote_bucket"`
 	PerblockBucket                 int     `json:"perblock_bucket"`
 	TotalUnpaidBlocks              int     `json:"total_unpaid_blocks"`
 	TotalActivatedStake            float64 `json:"total_activated_stake,string"`
-	ThreshActivatedStakeTime       int64   `json:"thresh_activated_stake_time,string"`
+	ThreshActivatedStakeTime       Int64   `json:"thresh_activated_stake_time,string"`
 	LastProducerScheduleSize       int     `json:"last_producer_schedule_size"`
 	TotalProducerVoteWeight        float64 `json:"total_producer_vote_weight,string"`
 	LastNameClose                  string  `json:"last_name_close"`
@@ -397,15 +426,15 @@ type ProducersResp struct {
 }
 type GetActionsRequest struct {
 	AccountName AccountName `json:"account_name"`
-	Pos         int64       `json:"pos"`
-	Offset      int64       `json:"offset"`
+	Pos         Int64       `json:"pos"`
+	Offset      Int64       `json:"offset"`
 }
 type ActionResp struct {
-	GlobalSeq  JSONInt64   `json:"global_action_seq"`
-	AccountSeq JSONInt64   `json:"account_action_seq"`
-	BlockNum   uint32      `json:"block_num"`
-	BlockTime  JSONTime    `json:"block_time"`
-	Trace      ActionTrace `json:"action_trace"`
+	GlobalSeq  JSONInt64      `json:"global_action_seq"`
+	AccountSeq JSONInt64      `json:"account_action_seq"`
+	BlockNum   uint32         `json:"block_num"`
+	BlockTime  BlockTimestamp `json:"block_time"`
+	Trace      ActionTrace    `json:"action_trace"`
 }
 type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
@@ -423,4 +452,29 @@ type GetCurrencyStatsResp struct {
 	Supply    Asset       `json:"supply"`
 	MaxSupply Asset       `json:"max_supply"`
 	Issuer    AccountName `json:"issuer"`
+}
+
+type Except struct {
+	Code    int                 `json:"code"`
+	Name    string              `json:"name"`
+	Message string              `json:"message"`
+	Stack   []*ExceptLogMessage `json:"stack"`
+}
+
+// LogMessage is a line of message in an exception.
+type ExceptLogMessage struct {
+	Context ExceptLogContext `json:"context"`
+	Format  string           `json:"format"`
+	Data    json.RawMessage  `json:"data"`
+}
+
+type ExceptLogContext struct {
+	Level      string            `json:"level"` // "debug", "info", "warn", "error", also: "all", "off"
+	File       string            `json:"file"`
+	Line       int               `json:"line"`
+	Method     string            `json:"method"`
+	Hostname   string            `json:"hostname"`
+	ThreadName string            `json:"thread_name"`
+	Timestamp  JSONTime          `json:"timestamp"`
+	Context    *ExceptLogContext `json:"context,omitempty"`
 }

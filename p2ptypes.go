@@ -2,6 +2,7 @@ package eos
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 
 	"encoding/binary"
@@ -9,6 +10,7 @@ import (
 	"encoding/json"
 
 	"github.com/eoscanada/eos-go/ecc"
+	"github.com/tidwall/gjson"
 )
 
 type P2PMessage interface {
@@ -56,6 +58,7 @@ func (m *HandshakeMessage) String() string {
 
 type GoAwayReason uint8
 
+// See plugins/net_plugin/include/eosio/net_plugin/protocol.hpp#L39
 const (
 	GoAwayNoReason = GoAwayReason(iota)
 	GoAwaySelfConnect
@@ -66,42 +69,32 @@ const (
 	GoAwayUnlinkable
 	GoAwayBadTransaction
 	GoAwayValidation
-	GoAwayAuthentication
-	GoAwayFatalOther
 	GoAwayBenignOther
-	GoAwayCrazy
+	GoAwayFatalOther
+	GoAwayAuthentication
 )
 
+var goAwayToStringMap = map[GoAwayReason]string{
+	GoAwayNoReason:       "no reason",
+	GoAwaySelfConnect:    "self connect",
+	GoAwayDuplicate:      "duplicate",
+	GoAwayWrongChain:     "wrong chain",
+	GoAwayWrongVersion:   "wrong version",
+	GoAwayForked:         "chain is forked",
+	GoAwayUnlinkable:     "unlinkable block received",
+	GoAwayBadTransaction: "bad transaction",
+	GoAwayValidation:     "invalid block",
+	GoAwayAuthentication: "authentication failure",
+	GoAwayFatalOther:     "some other failure",
+	GoAwayBenignOther:    "some other non-fatal condition, possibly unknown block",
+}
+
 func (r GoAwayReason) String() string {
-	switch r {
-	case GoAwayNoReason:
-		return "no reason"
-	case GoAwaySelfConnect:
-		return "self connect"
-	case GoAwayDuplicate:
-		return "duplicate"
-	case GoAwayWrongChain:
-		return "wrong chain"
-	case GoAwayWrongVersion:
-		return "wrong version"
-	case GoAwayForked:
-		return "forked"
-	case GoAwayUnlinkable:
-		return "unlinkable"
-	case GoAwayBadTransaction:
-		return "bad transaction"
-	case GoAwayValidation:
-		return "validation"
-	case GoAwayAuthentication:
-		return "authentication"
-	case GoAwayFatalOther:
-		return "fatal other"
-	case GoAwayBenignOther:
-		return "benign other"
-	case GoAwayCrazy:
-		return "crazy"
+	if value, exists := goAwayToStringMap[r]; exists {
+		return value
 	}
-	return "invalid go away code"
+
+	return "some crazy reason"
 }
 
 type GoAwayMessage struct {
@@ -212,16 +205,155 @@ type ProducerSchedule struct {
 	Producers []ProducerKey `json:"producers"`
 }
 
+type ProducerAuthoritySchedule struct {
+	Version   uint32               `json:"version"`
+	Producers []*ProducerAuthority `json:"producers"`
+}
+
+type ProducerAuthority struct {
+	AccountName           AccountName            `json:"producer_name"`
+	BlockSigningAuthority *BlockSigningAuthority `json:"authority"`
+}
+
+type MerkleRoot struct {
+	ActiveNodes []string `json:"_active_nodes"`
+	NodeCount   uint32   `json:"_node_count"`
+}
+
+type EOSNameOrUint32 interface{}
+
+type BlockState struct {
+	BlockNum                         uint32 `json:"block_num"`
+	DPoSProposedIrreversibleBlockNum uint32 `json:"dpos_proposed_irreversible_blocknum"`
+	DPoSIrreversibleBlockNum         uint32 `json:"dpos_irreversible_blocknum"`
+
+	// Hybrid (dynamic types)
+	ActiveSchedule *ProducerScheduleOrAuthoritySchedule `json:"active_schedule"`
+
+	BlockrootMerkle          *MerkleRoot          `json:"blockroot_merkle,omitempty"`
+	ProducerToLastProduced   [][2]EOSNameOrUint32 `json:"producer_to_last_produced,omitempty"`
+	ProducerToLastImpliedIRB [][2]EOSNameOrUint32 `json:"producer_to_last_implied_irb,omitempty"`
+
+	// EOSIO 1.x
+	BlockSigningKeyV1 *ecc.PublicKey `json:"block_signing_key,omitempty"`
+
+	// EOSIO 2.x
+	ValidBlockSigningAuthorityV2 *BlockSigningAuthority `json:"valid_block_signing_authority,omitempty"`
+
+	ConfirmCount []uint32 `json:"confirm_count,omitempty"`
+
+	BlockID                   string                `json:"id"`
+	PendingSchedule           *PendingSchedule      `json:"pending_schedule"`
+	ActivatedProtocolFeatures map[string][]HexBytes `json:"activated_protocol_features,omitempty"`
+
+	SignedBlock *SignedBlock `json:"block,omitempty"`
+	Validated   bool         `json:"validated"`
+}
+
+type ProducerScheduleOrAuthoritySchedule struct {
+	// EOSIO 1.x
+	V1 *ProducerSchedule
+
+	// EOSIO 2.x
+	V2 *ProducerAuthoritySchedule
+}
+
+func (p *ProducerScheduleOrAuthoritySchedule) MarshalJSON() ([]byte, error) {
+	// In case of ambiguity, which arise only on empty `producers` array, the first one is picked since it does not matter (same JSON output)
+	if p.V1 != nil {
+		return json.Marshal(p.V1)
+	}
+
+	if p.V2 != nil {
+		return json.Marshal(p.V2)
+	}
+
+	return nil, fmt.Errorf("both V1 and V2 were null, this is an error")
+}
+
+func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalJSON(data []byte) error {
+	versionResult := gjson.GetBytes(data, "version")
+	if !versionResult.Exists() || versionResult.Type != gjson.Number {
+		return fmt.Errorf("expected 'version' key of type 'number' to exist in %q", string(data))
+	}
+
+	producersResult := gjson.GetBytes(data, "producers")
+	if !producersResult.Exists() || !producersResult.IsArray() {
+		return fmt.Errorf("expected 'producers' key of type 'number' to exist in %q", string(data))
+	}
+
+	// We cannot infer anything, what should we do exactly? We could populate the two, but
+	// what happens on marshal? Both are defined, that's what we choose for now, `eos-go` user
+	// would then make the choice themselves.
+	if len(producersResult.Array()) == 0 || producersResult.Get("0.block_signing_key").Exists() {
+		p.V1 = new(ProducerSchedule)
+		err := json.Unmarshal(data, p.V1)
+		if err != nil {
+			return fmt.Errorf("unable to unmarshal ProducerSchedule type: %s", err)
+		}
+	}
+
+	if len(producersResult.Array()) == 0 || producersResult.Get("0.authority").Exists() {
+		p.V2 = new(ProducerAuthoritySchedule)
+		err := json.Unmarshal(data, p.V2)
+		if err != nil {
+			return fmt.Errorf("unable to unmarshal ProducerAuthoritySchedule type: %s", err)
+		}
+	}
+
+	if p.V1 == nil && p.V2 == nil {
+		return errors.New("unable to unmarshal producer authority or schedule, no type could be inferred from JSON")
+	}
+
+	return nil
+}
+
+const (
+	BlockSigningAuthorityV0Type = 0
+)
+
+// See libraries/chain/include/eosio/chain/producer_schedule.hpp#L161
+type BlockSigningAuthority struct {
+	BaseVariant
+}
+
+var blockSigningVariantFactoryImplMap = map[uint32]VariantImplFactory{
+	BlockSigningAuthorityV0Type: func() interface{} { return new(BlockSigningAuthorityV0) },
+}
+
+func (a *BlockSigningAuthority) UnmarshalJSON(data []byte) error {
+	return a.BaseVariant.UnmarshalJSON(data, blockSigningVariantFactoryImplMap)
+}
+
+func (a *BlockSigningAuthority) UnmarshalBinary(decoder *Decoder) error {
+	return a.BaseVariant.UnmarshalBinaryVariant(decoder, blockSigningVariantFactoryImplMap)
+}
+
+// See libraries/chain/include/eosio/chain/producer_schedule.hpp#L100
+type BlockSigningAuthorityV0 struct {
+	Threshold uint32       `json:"threshold"`
+	Keys      []*KeyWeight `json:"keys"`
+}
+
+type PendingSchedule struct {
+	ScheduleLIBNum uint32                               `json:"schedule_lib_num"`
+	ScheduleHash   HexBytes                             `json:"schedule_hash"`
+	Schedule       *ProducerScheduleOrAuthoritySchedule `json:"schedule"`
+}
+
 type BlockHeader struct {
-	Timestamp        BlockTimestamp            `json:"timestamp"`
-	Producer         AccountName               `json:"producer"`
-	Confirmed        uint16                    `json:"confirmed"`
-	Previous         Checksum256               `json:"previous"`
-	TransactionMRoot Checksum256               `json:"transaction_mroot"`
-	ActionMRoot      Checksum256               `json:"action_mroot"`
-	ScheduleVersion  uint32                    `json:"schedule_version"`
-	NewProducers     *OptionalProducerSchedule `json:"new_producers" eos:"optional"`
-	HeaderExtensions []*Extension              `json:"header_extensions"`
+	Timestamp        BlockTimestamp `json:"timestamp"`
+	Producer         AccountName    `json:"producer"`
+	Confirmed        uint16         `json:"confirmed"`
+	Previous         Checksum256    `json:"previous"`
+	TransactionMRoot Checksum256    `json:"transaction_mroot"`
+	ActionMRoot      Checksum256    `json:"action_mroot"`
+	ScheduleVersion  uint32         `json:"schedule_version"`
+
+	// EOSIO 1.x
+	NewProducersV1 *ProducerSchedule `json:"new_producers,omitempty" eos:"optional"`
+
+	HeaderExtensions []*Extension `json:"header_extensions"`
 }
 
 func (b *BlockHeader) BlockNumber() uint32 {
@@ -241,10 +373,6 @@ func (b *BlockHeader) BlockID() (Checksum256, error) {
 	binary.BigEndian.PutUint32(hashed, b.BlockNumber())
 
 	return Checksum256(hashed), nil
-}
-
-type OptionalProducerSchedule struct {
-	ProducerSchedule
 }
 
 type SignedBlockHeader struct {

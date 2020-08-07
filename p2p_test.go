@@ -5,9 +5,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os/exec"
+	"strings"
 	"testing"
 
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestP2PMessage_UnmarshalBinaryRead(t *testing.T) {
@@ -141,7 +146,6 @@ func FixmeTestP2PMessage_DecodePayload(t *testing.T) {
 }
 
 func TestMessageType_Name(t *testing.T) {
-
 	type Case struct {
 		Type         P2PMessageType
 		ExpectedName interface{}
@@ -161,7 +165,6 @@ func TestMessageType_Name(t *testing.T) {
 	}
 
 	for _, c := range cases {
-
 		name, ok := c.Type.Name()
 		assert.Equal(t, c.OK, ok)
 		assert.Equal(t, c.ExpectedName, name)
@@ -169,7 +172,6 @@ func TestMessageType_Name(t *testing.T) {
 }
 
 func TestDecoder_P2PMessageEnvelope(t *testing.T) {
-
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 
@@ -194,7 +196,6 @@ func TestDecoder_P2PMessageEnvelope(t *testing.T) {
 }
 
 func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
-
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 
@@ -214,16 +215,7 @@ func TestDecoder_P2PMessageEnvelope_WrongType(t *testing.T) {
 	assert.EqualError(t, err, "decode, unknown p2p message type [99]")
 }
 
-func FixmeTestDecode_OptionalProducerSchedule_Missing_PresentByte(t *testing.T) {
-
-	decoder := NewDecoder([]byte{})
-	err := decoder.Decode(&OptionalProducerSchedule{})
-	assert.EqualError(t, err, "decode: OptionalProducerSchedule isPresent, byte required [1] byte, remaining [0]")
-
-}
-
 func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
-
 	buf := new(bytes.Buffer)
 
 	decoder := NewDecoder([]byte{})
@@ -235,7 +227,7 @@ func TestDecode_P2PMessageEnvelope_bad_data(t *testing.T) {
 
 	decoder = NewDecoder(buf.Bytes())
 	err = decoder.Decode(&Packet{})
-	assert.EqualError(t, err, "decode, p2p envelope type: byte required [1] byte, remaining [0]")
+	assert.EqualError(t, err, "decode, p2p envelope type: required [1] byte, remaining [0]")
 
 	buf = new(bytes.Buffer)
 	encoder = NewEncoder(buf)
@@ -254,6 +246,191 @@ func TestEncode_P2PMessageEnvelope_Error(t *testing.T) {
 	assert.EqualError(t, encoder.writeBlockP2PMessageEnvelope(Packet{}), "error.1")
 }
 
+func TestBlockState_UnmarshalJSON(t *testing.T) {
+	testKeyRaw := ecc.MustNewPublicKey("EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP")
+	testKey := &testKeyRaw
+
+	tests := []struct {
+		name      string
+		fields    []string
+		validator func(e *BlockState)
+	}{
+		{
+			"eosio 1.x structure",
+			[]string{
+				`"block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"`,
+				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"}]}`,
+				`"pending_schedule":{"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"}]}}`,
+			},
+			func(e *BlockState) {
+				assert.NotNil(t, e.BlockSigningKeyV1)
+				assert.Equal(t, testKey, e.BlockSigningKeyV1)
+
+				checkProducerSchedule(t, e.ActiveSchedule.V1)
+				checkProducerSchedule(t, e.PendingSchedule.Schedule.V1)
+
+				assert.Nil(t, e.ValidBlockSigningAuthorityV2)
+				assert.Nil(t, e.ActiveSchedule.V2)
+				assert.Nil(t, e.PendingSchedule.Schedule.V2)
+			},
+		},
+		{
+			"eosio v2.x structure",
+			[]string{
+				`"valid_block_signing_authority": [0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]`,
+				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","authority":[0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}`,
+				`"pending_schedule": {"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","authority":[0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}}`,
+			},
+			func(e *BlockState) {
+				assert.Nil(t, e.BlockSigningKeyV1)
+				assert.Nil(t, e.ActiveSchedule.V1)
+				assert.Nil(t, e.PendingSchedule.Schedule.V1)
+
+				checkBlockSigningAuthority(t, e.ValidBlockSigningAuthorityV2)
+				checkProducerAuthoritySchedule(t, e.ActiveSchedule.V2)
+				checkProducerAuthoritySchedule(t, e.PendingSchedule.Schedule.V2)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			expected := fmt.Sprintf(`{"id":"","block_num":0,"dpos_irreversible_blocknum":0,"dpos_proposed_irreversible_blocknum":0,"validated":false,%s}`, strings.Join(test.fields, ","))
+
+			entity := new(BlockState)
+			err := json.Unmarshal([]byte(expected), entity)
+			require.NoError(t, err)
+
+			test.validator(entity)
+
+			actual, err := json.Marshal(entity)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, expected, string(actual), unifiedDiff(t, []byte(expected), actual))
+		})
+	}
+}
+
+func TestBlockHeader_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name         string
+		inputFields  []string
+		outputFields []string
+		validator    func(e *BlockHeader)
+	}{
+		{
+			"optional not present",
+			[]string{`"new_producers":null`},
+			[]string{},
+			func(e *BlockHeader) {
+				assert.Nil(t, e.NewProducersV1)
+			},
+		},
+		{
+			"eosio 1.x structure",
+			[]string{
+				`"new_producers":{"producers":[{"block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","producer_name":"eosio"}],"version":1}`,
+			},
+			nil,
+			func(e *BlockHeader) {
+				assert.NotNil(t, e.NewProducersV1)
+
+				checkProducerSchedule(t, e.NewProducersV1)
+			},
+		},
+		{
+			"eosio v2.x structure",
+			[]string{
+				`"header_extensions":[[1,"01000000010000000000ea305500020000000100023cd6a339e452311cb809c71d6652f67c388579004128aee87f623d201e61170e0300"]]`,
+			},
+			nil,
+			func(e *BlockHeader) {
+				assert.Nil(t, e.NewProducersV1)
+				assert.Len(t, e.HeaderExtensions, 1)
+
+				extension, err := e.HeaderExtensions[0].AsBlockHeaderExtension("EOS")
+				require.NoError(t, err)
+				assert.NotNil(t, extension)
+				assert.IsType(t, &ProducerScheduleChangeExtension{}, extension)
+
+				newSchedule := extension.(*ProducerScheduleChangeExtension).ProducerAuthoritySchedule
+				checkProducerAuthoritySchedule(t, &newSchedule)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			baseBlockFormat := `{"action_mroot":"","transaction_mroot":"","confirmed":0,"previous":"","producer":"","schedule_version":0,"timestamp":"0001-01-01T00:00:00","header_extensions":null%s}`
+
+			inputFields := strings.Join(test.inputFields, ",")
+			if len(inputFields) > 0 {
+				inputFields = "," + inputFields
+			}
+
+			input := constructJSON(baseBlockFormat, test.inputFields)
+			expected := input
+			if test.outputFields != nil {
+				expected = constructJSON(baseBlockFormat, test.outputFields)
+			}
+
+			entity := new(BlockHeader)
+			err := json.Unmarshal([]byte(input), entity)
+			require.NoError(t, err)
+
+			test.validator(entity)
+
+			actual, err := json.Marshal(entity)
+			require.NoError(t, err)
+
+			// Only check `new_producers` JSON, since it's only this that we provided
+			assert.JSONEq(t, expected, string(actual), unifiedDiff(t, []byte(expected), actual))
+		})
+	}
+}
+
+func constructJSON(baseFormat string, fields []string) string {
+	stringFields := strings.Join(fields, ",")
+	if len(stringFields) > 0 {
+		stringFields = "," + stringFields
+	}
+
+	return fmt.Sprintf(baseFormat, stringFields)
+}
+
+func checkProducerSchedule(t *testing.T, schedule *ProducerSchedule) {
+	assert.NotNil(t, schedule)
+	assert.Equal(t, uint32(1), schedule.Version)
+	assert.Len(t, schedule.Producers, 1)
+	assert.Equal(t, AccountName("eosio"), schedule.Producers[0].AccountName)
+	assert.Equal(t, ecc.MustNewPublicKey("EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"), schedule.Producers[0].BlockSigningKey)
+}
+
+func checkProducerAuthoritySchedule(t *testing.T, schedule *ProducerAuthoritySchedule) {
+	assert.NotNil(t, schedule)
+	assert.Equal(t, uint32(1), schedule.Version)
+
+	producers := schedule.Producers
+	assert.Len(t, producers, 1)
+	assert.Equal(t, AccountName("eosio"), producers[0].AccountName)
+
+	checkBlockSigningAuthority(t, producers[0].BlockSigningAuthority)
+}
+
+func checkBlockSigningAuthority(t *testing.T, authority *BlockSigningAuthority) {
+	assert.Equal(t, uint32(0), authority.TypeID)
+	switch v0 := authority.Impl.(type) {
+	case *BlockSigningAuthorityV0:
+		assert.Equal(t, uint32(2), v0.Threshold)
+		assert.Len(t, v0.Keys, 1)
+		assert.Equal(t, "EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP", v0.Keys[0].PublicKey.String())
+		assert.Equal(t, uint16(3), v0.Keys[0].Weight)
+
+	default:
+		require.Fail(t, "expected typeID 0 to be a BlockSigningAuthorityV0 type")
+	}
+}
+
 func FixmeTestPackedTransaction_Unpack(t *testing.T) {
 	msgHex := "9b0000000901001f66cb0b5dcb12467bdbcc71eec30f3dc241399c7900485b16ffa89a816abd03851777c1d7db60a6f2b9c6ebc6000d6e3965bcb07da61b43a767c7d764daf451b0000054c31be75a00004c599c67143e000000000100a6823403ea3055000000572d3ccdcd010000000000ea305500000000a8ed3232210000000000ea305500000039ab18dd41a08601000000000004454f530000000000"
 
@@ -270,4 +447,39 @@ func FixmeTestPackedTransaction_Unpack(t *testing.T) {
 
 	_, err = json.Marshal(&signedTX)
 	assert.NoError(t, err)
+}
+
+func printJSONDiff(expected string, actual string) string {
+	// Really bad for now, but good enough since strings are rather small in here
+	return fmt.Sprintf("\nActual\n%s\n\nExpected\n%s\n", expected, actual)
+}
+
+func prettifyJSON(cnt []byte) []byte {
+	data := map[string]interface{}{}
+	err := json.Unmarshal(cnt, &data)
+	if err != nil {
+		panic(err)
+	}
+
+	out, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	return out
+}
+
+func unifiedDiff(t *testing.T, cnt1, cnt2 []byte) string {
+	file1 := "/tmp/gotests-evm-executor-linediff-1"
+	file2 := "/tmp/gotests-evm-executor-linediff-2"
+	err := ioutil.WriteFile(file1, prettifyJSON(cnt1), 0600)
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile(file2, prettifyJSON(cnt2), 0600)
+	require.NoError(t, err)
+
+	cmd := exec.Command("diff", "-u", file1, file2)
+	out, _ := cmd.Output()
+
+	return string(out)
 }

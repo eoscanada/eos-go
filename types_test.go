@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -243,7 +244,7 @@ func TestUnpackBinaryTableRows(t *testing.T) {
 		Rows: json.RawMessage(`["044355520000000004435552000000000000000000000000"]`),
 	}
 	var out []*MyStruct
-	assert.NoError(t, resp.BinaryToStructs(&out))
+	require.NoError(t, resp.BinaryToStructs(&out))
 	assert.Equal(t, "CUR", string(out[0].Currency.Name))
 	//spew.Dump(out)
 }
@@ -374,7 +375,7 @@ func TestActionNoData(t *testing.T) {
 	require.NoError(t, err)
 	// account + name + emptylist + emptylist
 	assert.Equal(t,
-		`{"account":"eosio","name":"transfer"}`,
+		`{"account":"eosio","name":"transfer","authorization":[]}`,
 		string(cnt),
 	)
 
@@ -396,91 +397,81 @@ func TestHexBytes(t *testing.T) {
 	assert.Equal(t, a, b)
 }
 
-func TestNewAsset(t *testing.T) {
+func TestNewAssetFromString(t *testing.T) {
+	longDecimals := "." + strings.Repeat("1", math.MaxUint8+1)
 
 	tests := []struct {
-		in        string
-		amount    int64
-		symbol    string
-		precision int
+		in          string
+		amount      int64
+		precision   uint8
+		symbolCode  string
+		expectedErr error
 	}{
-		{
-			"1000.0000 EOS",
-			10000000, "EOS", 4,
-		},
-		{
-			"1000 CUR",
-			1000, "CUR", 0,
-		},
-		{
-			"1000.1 CURRENT",
-			10001, "CURRENT", 1,
-		},
+		{"1000.0000000 TEST", 10000000000, 7, "TEST", nil},
+		{"1000.0000 TEST", 10000000, 4, "TEST", nil},
+		{"1000 TEST", 1000, 0, "TEST", nil},
+		{"1000.1 TEST", 10001, 1, "TEST", nil},
+		{"1000.001 TEST", 1000001, 3, "TEST", nil},
+		{"1.0001 TEST", 10001, 4, "TEST", nil},
+		{"0.1 TEST", 1, 1, "TEST", nil},
+		{".1 TEST", 1, 1, "TEST", nil},
+
+		{"", 0, 0, "", errors.New("input cannot be empty")},
+		{".00.001", 0, 0, "", errors.New(`invalid asset amount ".00.001", expected amount to have at most a single dot`)},
+		{"1 ABCDEFGH", 0, 0, "", errors.New(`invalid asset "1 ABCDEFGH", symbol should have less than 7 characters`)},
+		{"1 A AND B", 0, 0, "", errors.New(`invalid asset "1 A AND B", expecting an amount alone or an amount and a currency symbol`)},
+		{"1 A AND B", 0, 0, "", errors.New(`invalid asset "1 A AND B", expecting an amount alone or an amount and a currency symbol`)},
+		{longDecimals, 0, 0, "", fmt.Errorf(`invalid asset amount precision "%s", should have less than 255 characters`, longDecimals)},
 	}
 
-	for _, test := range tests {
-		asset, err := NewAsset(test.in)
-		require.NoError(t, err)
-		assert.Equal(t, asset.Amount, Int64(test.amount))
-		assert.Equal(t, asset.Symbol.Symbol, test.symbol)
-		assert.Equal(t, asset.Symbol.Precision, uint8(test.precision))
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			asset, err := NewAssetFromString(test.in)
+			require.Equal(t, test.expectedErr, err)
+
+			if test.expectedErr == nil {
+				assert.Equal(t, Int64(test.amount), asset.Amount)
+				assert.Equal(t, int(test.precision), int(asset.Symbol.Precision))
+				assert.Equal(t, test.symbolCode, asset.Symbol.Symbol)
+			}
+		})
 	}
 }
 
-func TestNewEOSAssetFromString(t *testing.T) {
-
+func TestNewFixedSymbolAssetFromString(t *testing.T) {
 	tests := []struct {
-		in     string
-		amount int64
+		in          string
+		amount      int64
+		expectedErr error
 	}{
-		{
-			"1000.0000 EOS",
-			10000000,
-		},
-		{
-			"1000",
-			10000000,
-		},
-		{
-			"1000 EOS",
-			10000000,
-		},
-		{
-			"1000.1 EOS",
-			10001000,
-		},
-		{
-			"1000.1",
-			10001000,
-		},
-		{
-			"1000.01",
-			10000100,
-		},
-		{
-			"1000.001",
-			10000010,
-		},
-		{
-			"1.0001",
-			10001,
-		},
-		{
-			"0.1",
-			1000,
-		},
+		{"1000.0000 SYS", 10000000, nil},
+		{"1000", 10000000, nil},
+		{"1000 SYS", 10000000, nil},
+		{"1000.1 SYS", 10001000, nil},
+		{"1000.1", 10001000, nil},
+		{"1000.01", 10000100, nil},
+		{"1000.001", 10000010, nil},
+		{"1.0001", 10001, nil},
+		{"0.1", 1000, nil},
+		{"0.0001", 1, nil},
+		{".0001", 1, nil},
+
+		{".00001", 1000, errors.New("symbol 4,SYS precision mismatch: expected 4, got 5")},
+		{".0001 BOS", 1000, errors.New("symbol 4,SYS code mismatch: expected SYS, got BOS")},
 	}
 
-	for _, test := range tests {
-		asset, err := NewEOSAssetFromString(test.in)
-		require.NoError(t, err)
-		assert.Equal(t, asset.Amount, Int64(test.amount))
-		assert.Equal(t, asset.Symbol.Symbol, "EOS")
-		assert.Equal(t, asset.Symbol.Precision, uint8(4))
-	}
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			asset, err := NewFixedSymbolAssetFromString(Symbol{Precision: 4, Symbol: "SYS"}, test.in)
+			require.Equal(t, test.expectedErr, err)
 
-	_, err := NewEOSAssetFromString("10.00001")
-	assert.Error(t, err)
+			if test.expectedErr == nil {
+				assert.Equal(t, Int64(test.amount), asset.Amount)
+				assert.Equal(t, "SYS", asset.Symbol.Symbol)
+				assert.Equal(t, 4, int(asset.Symbol.Precision))
+			}
+		})
+	}
 }
 
 func TestNameToSymbol(t *testing.T) {
@@ -489,8 +480,8 @@ func TestNameToSymbol(t *testing.T) {
 		expected    Symbol
 		expectedErr error
 	}{
-		{".....l2nep1k4", Symbol{Precision: 4, Symbol: "CUSD"}, nil},
-		{"......2ndx2k4", Symbol{Precision: 4, Symbol: "EOS"}, nil},
+		{".....l2nep1k4", Symbol{Precision: 4, Symbol: "CUSD", symbolCode: uint64(1146312003)}, nil},
+		{"......2ndx2k4", Symbol{Precision: 4, Symbol: "EOS", symbolCode: uint64(5459781)}, nil},
 	}
 
 	for i, test := range tests {
@@ -502,6 +493,23 @@ func TestNameToSymbol(t *testing.T) {
 			} else {
 				assert.Equal(t, test.expectedErr, err)
 			}
+		})
+	}
+}
+
+func TestNewSymbolFromUint64(t *testing.T) {
+	tests := []struct {
+		in       uint64
+		expected Symbol
+	}{
+		{293455872769, Symbol{Precision: 1, Symbol: "CUSD", symbolCode: uint64(1146312003)}},
+		{5327108, Symbol{Precision: 4, Symbol: "IQ", symbolCode: uint64(20809)}},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			actual := NewSymbolFromUint64(test.in)
+			assert.Equal(t, test.expected, actual)
 		})
 	}
 }

@@ -8,7 +8,25 @@ import (
 	"encoding/json"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestUnmarshalAuthSequenceString(t *testing.T) {
+	resp := &TransactionTraceAuthSequence{}
+
+	err := json.Unmarshal([]byte(`["hello", "123"]`), resp)
+	require.NoError(t, err)
+	assert.Equal(t, AccountName("hello"), resp.Account)
+	assert.Equal(t, Uint64(123), resp.Sequence)
+}
+func TestUnmarshalAuthSequenceFloat64(t *testing.T) {
+	resp := &TransactionTraceAuthSequence{}
+
+	err := json.Unmarshal([]byte(`["hello", 123]`), resp)
+	require.NoError(t, err)
+	assert.Equal(t, AccountName("hello"), resp.Account)
+	assert.Equal(t, Uint64(123), resp.Sequence)
+}
 
 func TestUnmarshalAccountResp(t *testing.T) {
 	resp := &AccountResp{}
@@ -36,7 +54,7 @@ func TestUnmarshalBlockResp(t *testing.T) {
 	assert.Equal(t, hexToChecksum256("f9590621c12ac92b4ab621a30468497918287fd0dd2535907bd85409947f1988"), resp.TransactionMRoot)
 	assert.Equal(t, hexToChecksum256("5827604590c993e2489639b739af79ab12dd0442fee6551e9cd2932a36fa5026"), resp.ActionMRoot)
 	assert.Equal(t, uint32(149), resp.ScheduleVersion)
-	assert.Nil(t, resp.NewProducers)
+	assert.Nil(t, resp.NewProducersV1)
 	assert.Empty(t, resp.HeaderExtensions)
 
 	// Signed Block Header

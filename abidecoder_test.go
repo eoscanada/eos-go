@@ -457,6 +457,141 @@ func TestABI_decode_StructFieldArrayType_HasSjsonPathLikeName(t *testing.T) {
 	assert.JSONEq(t, `{"item.1":[1,10]}`, string(json))
 }
 
+func TestABI_decode_StructVariantField(t *testing.T) {
+	abi := &ABI{
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "variant_"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":100}`, string(json))
+}
+
+func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "name", NewTypeName: "my_name"},
+		},
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"my_name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "variant_"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":100}`, string(json))
+}
+
+func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
+	abi := &ABI{
+		Types: []ABIType{
+			ABIType{Type: "variant_", NewTypeName: "my_variant"},
+		},
+		Variants: []VariantDef{
+			{
+				Name:  "variant_",
+				Types: []string{"name", "uint32"},
+			},
+		},
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "name", Type: "my_variant"},
+				},
+			},
+		},
+	}
+
+	buffer, err := hex.DecodeString("00000050df45e3aec2")
+	require.NoError(t, err)
+
+	json, err := abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":"serialize"}`, string(json))
+
+	buffer, err = hex.DecodeString("0164000000")
+	require.NoError(t, err)
+
+	json, err = abi.decode(NewDecoder(buffer), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"name":100}`, string(json))
+}
+
+func TestABI_decode_BinaryExtension(t *testing.T) {
+	abi := &ABI{
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "id", Type: "uint8"},
+					{Name: "name", Type: "name$"},
+				},
+			},
+		},
+	}
+
+	json, err := abi.decode(NewDecoder(HexString("00")), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"id":0}`, string(json))
+
+	json, err = abi.decode(NewDecoder(HexString("000000000000a0a499")), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"id":0,"name":"name"}`, string(json))
+}
+
 func TestABI_decodeFields(t *testing.T) {
 	types := []ABIType{
 		{NewTypeName: "action.type.1", Type: "name"},
@@ -538,7 +673,7 @@ func TestABI_Read(t *testing.T) {
 	}{}
 
 	testCases := []map[string]interface{}{
-		{"caseName": "string", "typeName": "string", "value": "\"this.is.a.test\"", "encode": "this.is.a.test", "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "string", "typeName": "string", "value": `"this.is.a.test"`, "encode": "this.is.a.test", "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "min int8", "typeName": "int8", "value": "-128", "encode": int8(-128), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "max int8", "typeName": "int8", "value": "127", "encode": int8(127), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "min uint8", "typeName": "uint8", "value": "0", "encode": uint8(0), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
@@ -567,27 +702,34 @@ func TestABI_Read(t *testing.T) {
 		{"caseName": "max float 32", "typeName": "float32", "value": "340282346638528860000000000000000000000", "encode": float32(math.MaxFloat32), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "min float64", "typeName": "float64", "value": "0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005", "encode": math.SmallestNonzeroFloat64, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "max float64", "typeName": "float64", "value": "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "encode": math.MaxFloat64, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "min float64 fit nodeos", "fitNodeos": true, "typeName": "float64", "value": `"0.00000000000000000"`, "encode": math.SmallestNonzeroFloat64, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "max float64 fit nodeos", "fitNodeos": true, "typeName": "float64", "value": `"179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00000000000000000"`, "encode": math.MaxFloat64, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "float128", "typeName": "float128", "value": `"0x01000000000000000200000000000000"`, "encode": Float128{Lo: 1, Hi: 2}, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bool true", "typeName": "bool", "value": "true", "encode": true, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bool false", "typeName": "bool", "value": "false", "encode": false, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "time_point", "typeName": "time_point", "value": "\"2018-11-01T15:13:07.001\"", "encode": TimePoint(1541085187001001), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": "\"2023-04-14T10:55:53\"", "encode": TimePointSec(1681469753), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "value": "\"2018-09-05T12:48:54\"", "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "Name", "typeName": "name", "value": "\"eoscanadacom\"", "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "bytes", "typeName": "bytes", "value": "\"746869732e69732e612e74657374\"", "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "checksum160", "typeName": "checksum160", "value": "\"0000000000000000000000000000000000000000\"", "encode": Checksum160(make([]byte, TypeSize.Checksum160)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "checksum256", "typeName": "checksum256", "value": "\"0000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "checksum512", "typeName": "checksum512", "value": "\"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"", "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "public_key", "typeName": "public_key", "value": "\"EOS1111111111111111111111111111111114T1Anm\"", "encode": ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "signature", "typeName": "signature", "value": "\"SIG_K1_K96L1au4xFJg5edn6qBK6UDbSsC2RKsMs4cXCA2LoCPZxBDMXehdZFWPh1GeRhzGoQjBwNK2eBmUXf4L8SBApL69pGdUJm\"", "encode": ecc.Signature{Curve: ecc.CurveK1, Content: signatureBuffer[1:]}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "symbol", "typeName": "symbol", "value": "\"4,EOS\"", "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "symbol_code", "typeName": "symbol_code", "value": "18446744073709551615", "encode": SymbolCode(18446744073709551615), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "asset", "typeName": "asset", "value": "\"10.0000 EOS\"", "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"asset\":\"0.0010 EOS\",\"Contract\":\"eoscanadacom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "bool true fit nodeos", "fitNodeos": true, "typeName": "bool", "value": "1", "encode": true, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "bool false  fit nodeos", "fitNodeos": true, "typeName": "bool", "value": "0", "encode": false, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "time_point", "typeName": "time_point", "value": `"2018-11-01T15:13:07.001"`, "encode": TimePoint(1541085187001001), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "time_point_sec", "typeName": "time_point_sec", "value": `"2023-04-14T10:55:53"`, "encode": TimePointSec(1681469753), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "value": `"2018-09-05T12:48:54"`, "encode": bt, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "Name", "typeName": "name", "value": `"eoscanadacom"`, "encode": Name("eoscanadacom"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "bytes", "typeName": "bytes", "value": `"746869732e69732e612e74657374"`, "encode": []byte("this.is.a.test"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "checksum160", "typeName": "checksum160", "value": `"0000000000000000000000000000000000000000"`, "encode": Checksum160(make([]byte, TypeSize.Checksum160)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "checksum256", "typeName": "checksum256", "value": `"0000000000000000000000000000000000000000000000000000000000000000"`, "encode": Checksum256(make([]byte, TypeSize.Checksum256)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "checksum512", "typeName": "checksum512", "value": `"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"`, "encode": Checksum512(make([]byte, TypeSize.Checksum512)), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "public_key", "typeName": "public_key", "value": `"EOS1111111111111111111111111111111114T1Anm"`, "encode": ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "public_key_wa", "typeName": "public_key", "value": `"PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"`, "encode": ecc.MustNewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "signature", "typeName": "signature", "value": `"SIG_K1_K96L1au4xFJg5edn6qBK6UDbSsC2RKsMs4cXCA2LoCPZxBDMXehdZFWPh1GeRhzGoQjBwNK2eBmUXf4L8SBApL69pGdUJm"`, "encode": ecc.MustNewSignatureFromData(signatureBuffer), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "signature_wa", "typeName": "signature", "value": `"SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"`, "encode": ecc.MustNewSignature("SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "symbol", "typeName": "symbol", "value": `"4,EOS"`, "encode": EOSSymbol, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "symbol_code", "typeName": "symbol_code", "value": `"BNTDAPP"`, "encode": SymbolCode(22606239386324546), "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "asset", "typeName": "asset", "value": `"10.0000 EOS"`, "encode": Asset{Amount: 100000, Symbol: EOSSymbol}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "extended_asset", "typeName": "extended_asset", "value": "{\"quantity\":\"0.0010 EOS\",\"contract\":\"eoscanadacom\"}", "encode": ExtendedAsset{Asset: Asset{Amount: 10, Symbol: EOSSymbol}, Contract: "eoscanadacom"}, "expectedError": nil, "isOptional": false, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "bad type", "typeName": "bad.type.1", "value": nil, "encode": nil, "expectedError": fmt.Errorf("decoding field [testedField] of type [bad.type.1]: read field of type [bad.type.1]: unknown type"), "isOptional": false, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "optional present", "typeName": "string", "value": "\"value.1\"", "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "optional present", "typeName": "string", "value": `"value.1"`, "encode": optional, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "optional not present", "typeName": "string", "value": "", "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
-		{"caseName": "optional missing flag", "typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("decoding field [testedField] optional flag: byte required [1] byte, remaining [0]"), "isOptional": true, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "optional not present fit nodeos", "fitNodeos": true, "typeName": "string", "value": "null", "encode": optionalNotPresent, "expectedError": nil, "isOptional": true, "isArray": false, "fieldName": "testedField"},
+		{"caseName": "optional missing flag", "typeName": "string", "value": nil, "encode": optionalMissingFlag, "expectedError": fmt.Errorf("decoding field [testedField] optional flag: required [1] byte, remaining [0]"), "isOptional": true, "isArray": false, "fieldName": "testedField"},
 		{"caseName": "array", "typeName": "string", "value": "[\"value.1\",\"value.2\"]", "encode": []string{"value.1", "value.2"}, "expectedError": nil, "isOptional": false, "isArray": true, "fieldName": "testedField"},
 		{"caseName": "array empty", "typeName": "string", "value": "[]", "encode": []string{}, "expectedError": nil, "isOptional": false, "isArray": true, "fieldName": "testedField"},
 		{"caseName": "missing array", "typeName": "string", "value": nil, "encode": nil, "expectedError": fmt.Errorf("reading field [testedField] array length: varint: invalid buffer size"), "isOptional": false, "isArray": true, "fieldName": "testedField"},
@@ -604,6 +746,9 @@ func TestABI_Read(t *testing.T) {
 			require.NoError(t, err, fmt.Sprintf("encoding value %s, of type %s", c["value"], c["typeName"]), c["caseName"])
 
 			abi := ABI{}
+			if v, ok := c["fitNodeos"]; ok {
+				abi.fitNodeos = v.(bool)
+			}
 			json, err := abi.decodeField(NewDecoder(buffer.Bytes()), c["fieldName"].(string), c["typeName"].(string), c["isOptional"].(bool), c["isArray"].(bool), []byte{})
 
 			require.Equal(t, c["expectedError"], err, c["caseName"])
@@ -639,18 +784,46 @@ func TestABI_Read_Symbol(t *testing.T) {
 	assert.Equal(t, `{"name":"4,EOS"}`, string(out))
 }
 
+func TestABI_Read_SymbolCode(t *testing.T) {
+	abi := ABI{}
+	data, err := hex.DecodeString("424e544441505000")
+	require.NoError(t, err)
+
+	out, err := abi.decodeField(NewDecoder(data), "name", "symbol_code", false, false, []byte("{}"))
+	require.NoError(t, err)
+	assert.Equal(t, `{"name":"BNTDAPP"}`, string(out))
+}
+
 func TestABIDecoder_analyseFieldType(t *testing.T) {
-
-	testCases := []map[string]interface{}{
-		{"fieldType": "field.type.1", "expectedName": "field.type.1", "expectedOptional": false, "expectedArray": false},
-		{"fieldType": "field.type.1?", "expectedName": "field.type.1", "expectedOptional": true, "expectedArray": false},
-		{"fieldType": "field.type.1[]", "expectedName": "field.type.1", "expectedOptional": false, "expectedArray": true},
+	testCases := []struct {
+		fieldType               string
+		expectedName            string
+		expectedOptional        bool
+		expectedArray           bool
+		expectedBinaryExtension bool
+	}{
+		{"field.type.1", "field.type.1", false, false, false},
+		{"field.type.1?", "field.type.1", true, false, false},
+		{"field.type.1[]", "field.type.1", false, true, false},
+		{"field.type.1$", "field.type.1", false, false, true},
 	}
 
-	for _, c := range testCases {
-		name, isOption, isArray := analyzeFieldType(c["fieldType"].(string))
-		assert.Equal(t, c["expectedName"], name)
-		assert.Equal(t, c["expectedOptional"], isOption)
-		assert.Equal(t, c["expectedArray"], isArray)
+	for i, test := range testCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			name, isOptional, isArray, isBinaryExtension := analyzeFieldType(test.fieldType)
+			assert.Equal(t, test.expectedName, name)
+			assert.Equal(t, test.expectedOptional, isOptional)
+			assert.Equal(t, test.expectedArray, isArray)
+			assert.Equal(t, test.expectedBinaryExtension, isBinaryExtension)
+		})
 	}
+}
+
+func HexString(input string) []byte {
+	buffer, err := hex.DecodeString(input)
+	if err != nil {
+		panic(err)
+	}
+
+	return buffer
 }

@@ -4,15 +4,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 )
+
+const SignatureK1Prefix = "SIG_K1_"
+const SignatureR1Prefix = "SIG_R1_"
+const SignatureWAPrefix = "SIG_WA_"
+
+var signatureDataSize = new(int)
+
+func init() { *signatureDataSize = 65 }
 
 type innerSignature interface {
 	verify(content []byte, hash []byte, pubKey PublicKey) bool
 	publicKey(content []byte, hash []byte) (out PublicKey, err error)
 	string(content []byte) string
+	signatureMaterialSize() *int
 }
 
 // Signature represents a signature for some hash
@@ -20,40 +28,58 @@ type Signature struct {
 	Curve   CurveID
 	Content []byte // the Compact signature as bytes
 
-	innerSignature innerSignature
+	inner innerSignature
 }
 
 func (s Signature) Verify(hash []byte, pubKey PublicKey) bool {
-	return s.innerSignature.verify(s.Content, hash, pubKey)
+	return s.inner.verify(s.Content, hash, pubKey)
 }
 
 func (s Signature) PublicKey(hash []byte) (out PublicKey, err error) {
-	return s.innerSignature.publicKey(s.Content, hash)
+	return s.inner.publicKey(s.Content, hash)
 }
 
 func (s Signature) String() string {
-	return s.innerSignature.string(s.Content)
+	return s.inner.string(s.Content)
+}
+
+func (s Signature) Validate() error {
+	if s.inner == nil {
+		return fmt.Errorf("the inner signature structure must be present, was nil")
+	}
+
+	if s.Curve == CurveK1 || s.Curve == CurveR1 {
+		size := s.inner.signatureMaterialSize()
+		if size == nil {
+			return fmt.Errorf("R1 & K1 signatures must have a fixed key material size")
+		}
+
+		if len(s.Content) != *size {
+			return fmt.Errorf("signature data must have a length of %d, got %d", *size, len(s.Content))
+		}
+	}
+
+	return nil
 }
 
 func NewSignatureFromData(data []byte) (Signature, error) {
-	if len(data) != 66 {
-		return Signature{}, fmt.Errorf("data length of a signature should be 66, reveived %d", len(data))
-	}
-
 	signature := Signature{
 		Curve:   CurveID(data[0]), // 1 byte
-		Content: data[1:],         // 65 bytes
+		Content: data[1:],         // 65 bytes for K1 and R1, variable length for WA
 	}
 
 	switch signature.Curve {
 	case CurveK1:
-		signature.innerSignature = &innerK1Signature{}
+		signature.inner = &innerK1Signature{}
 	case CurveR1:
-		signature.innerSignature = &innerR1Signature{}
+		signature.inner = &innerR1Signature{}
+	case CurveWA:
+		signature.inner = &innerWASignature{}
 	default:
 		return Signature{}, fmt.Errorf("invalid curve  %q", signature.Curve)
 	}
-	return signature, nil
+
+	return signature, signature.Validate()
 }
 
 func MustNewSignatureFromData(data []byte) Signature {
@@ -64,44 +90,53 @@ func MustNewSignatureFromData(data []byte) Signature {
 	return sig
 }
 
-func NewSignature(fromText string) (Signature, error) {
-	if !strings.HasPrefix(fromText, "SIG_") {
-		return Signature{}, fmt.Errorf("signature should start with SIG_")
+type sigReaderManifest struct {
+	curveID CurveID
+	inner   func() innerSignature
+}
+
+var sigReaderManifests = map[string]sigReaderManifest{
+	SignatureK1Prefix: sigReaderManifest{CurveK1, newInnerK1Signature},
+	SignatureR1Prefix: sigReaderManifest{CurveR1, newInnerR1Signature},
+	SignatureWAPrefix: sigReaderManifest{CurveWA, newInnerWASignature},
+}
+
+func NewSignature(signature string) (out Signature, err error) {
+	if len(signature) < 8 {
+		return out, fmt.Errorf("invalid format")
 	}
-	if len(fromText) < 8 {
-		return Signature{}, fmt.Errorf("invalid signature length")
+
+	prefix := signature[0:7]
+	manifest, found := sigReaderManifests[prefix]
+	if !found {
+		return out, fmt.Errorf("unknown prefix %q", prefix)
 	}
 
-	fromText = fromText[4:] // remove the `SIG_` prefix
-
-	var curvePrefix = fromText[:3]
-	switch curvePrefix {
-	case "K1_":
-
-		fromText = fromText[3:] // strip curve ID
-
-		sigbytes := base58.Decode(fromText)
-
-		content := sigbytes[:len(sigbytes)-4]
-		checksum := sigbytes[len(sigbytes)-4:]
-		verifyChecksum := Ripemd160checksumHashCurve(content, CurveK1)
-		if !bytes.Equal(verifyChecksum, checksum) {
-			return Signature{}, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
-		}
-
-		return Signature{Curve: CurveK1, Content: content, innerSignature: &innerK1Signature{}}, nil
-
-	case "R1_":
-
-		fromText = fromText[3:] // strip R1_
-		content := base58.Decode(fromText)
-		//todo: stuff here
-
-		return Signature{Curve: CurveR1, Content: content, innerSignature: &innerR1Signature{}}, nil
-
-	default:
-		return Signature{}, fmt.Errorf("invalid curve prefix %q", curvePrefix)
+	fromText := signature[7:]
+	decoder := keyMaterialDecoders[manifest.curveID]
+	if decoder == nil {
+		decoder = keyMaterialDecoderFunc(base58.Decode)
 	}
+
+	decoded := decoder.Decode(fromText)
+
+	content := decoded[:len(decoded)-4]
+	checksum := decoded[len(decoded)-4:]
+	verifyChecksum := Ripemd160checksumHashCurve(content, manifest.curveID)
+	if !bytes.Equal(verifyChecksum, checksum) {
+		return Signature{}, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
+	}
+
+	return Signature{Curve: manifest.curveID, Content: content, inner: manifest.inner()}, nil
+}
+
+func MustNewSignature(fromText string) Signature {
+	signature, err := NewSignature(fromText)
+	if err != nil {
+		panic(fmt.Errorf("invalid signature string: %s", err))
+	}
+
+	return signature
 }
 
 func (s Signature) MarshalJSON() ([]byte, error) {

@@ -63,6 +63,10 @@ func TestSignatureMarshalUnmarshal(t *testing.T) {
 			name:      "R1",
 			signature: "SIG_R1_KE33Ucjr5N3GR4ZosFh8KtGMytHHNtnmdUaSoMLJVXpVXoC8B9zfoXYrLiQJZqroe3LKciaP2uJT7Myqqoo4PZH7iSnso8",
 		},
+		{
+			name:      "WA",
+			signature: "SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s",
+		},
 	}
 
 	for _, c := range cases {
@@ -118,6 +122,13 @@ func TestSignaturePublicKeyExtraction(t *testing.T) {
 			payload:             "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
 			chainID:             "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
 			expectedPubKeyError: "R1 not supported",
+		},
+		{
+			name:                "WA",
+			signature:           "SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s",
+			payload:             "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
+			chainID:             "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+			expectedPubKeyError: "WA not supported",
 		},
 	}
 
@@ -194,6 +205,28 @@ func TestSignatureUnmarshalChecksum(t *testing.T) {
 	fromEOSIOC := "SIG_K1_KW4qcHDh6ziqWELRAsFx42sgPuP3VfCpTKX4D5A3uZhFb3fzojTeGohja19g4EJa9Zv7SrGZ47H8apo1sNa2bwPvGwW2bb" // simply checked the last 2 bytes
 	_, err := NewSignature(fromEOSIOC)
 	require.Equal(t, "signature checksum failed, found a9c72981 expected a9c72982", err.Error())
+}
+
+func TestSignatureVerify_WA(t *testing.T) {
+	t.Skip(
+		"Debugging this should probably work, however, it fails. I think I might have the wrong",
+		"hash to check up. The signature extraction of R and S fits with data obtained from the Browser",
+		" while X & Y point of the public key are also correct. And the verify uses a single built-in method",
+		"to call verify, so I'm under the impression that all is good, except I don't use the proper hash",
+		"to verify the signature.",
+	)
+
+	hash, err := hex.DecodeString("dc471f5e1f0022bd4211000000000100a6823403ea3055000000572d3ccdcd014052546ea998b33900000000a8ed3232214052546ea998b3390000000000ea3055102700000000000004454f53000000000000")
+	require.NoError(t, err)
+
+	signature := "SIG_WA_26v1VRi4Jj2XqACtwKbv7V4RoaCsCKqwSEqsyLkjyNXgA4MGzGs27LhBhGXRj3b1oR4fd7FpgK4Dk8QCsj62pCJzAzju9MpDr6ta5GehQ9hEQqwPbZBcpJWS7EYiJ9XpV5Heo5ZxSzzbNwXKEXLGHXpizPpfAt7AafTJvb1PNPbLsnXQHFFQR6ugaunA6QP6KSMcwTSNwv1kSyPkTtqNm15GdEpTRAbCxBk6uM25foADacYNv9bAJh5wWh2hvgsBNAhSEfTLT739dJmGAXVS7e544VmBuwawarVXizJHAbyrVX5HS"
+	sig, err := NewSignature(signature)
+	require.NoError(t, err)
+
+	pubKey, err := NewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj")
+	require.NoError(t, err)
+
+	assert.Equal(t, true, sig.Verify(hash, pubKey))
 }
 
 //to do this here because of a import cycle when use eos.SigDigest

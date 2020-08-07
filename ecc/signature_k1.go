@@ -8,6 +8,10 @@ import (
 type innerK1Signature struct {
 }
 
+func newInnerK1Signature() innerSignature {
+	return &innerK1Signature{}
+}
+
 // verify checks the signature against the pubKey. `hash` is a sha256
 // hash of the payload to verify.
 func (s *innerK1Signature) verify(content []byte, hash []byte, pubKey PublicKey) bool {
@@ -44,4 +48,8 @@ func (s innerK1Signature) string(content []byte) string {
 	checksum := Ripemd160checksumHashCurve(content, CurveK1)
 	buf := append(content[:], checksum...)
 	return "SIG_K1_" + base58.Encode(buf)
+}
+
+func (s innerK1Signature) signatureMaterialSize() *int {
+	return signatureDataSize
 }

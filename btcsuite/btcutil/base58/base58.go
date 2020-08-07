@@ -45,6 +45,45 @@ func Decode(b string) []byte {
 	return val
 }
 
+// DecodeVarSize decode a base58 whose size is not fixed
+//
+// Converted to Golang from Typescript
+// @see https://github.com/EOSIO/eosjs/blob/wa-experiment/src/eosjs-numeric.ts#L127
+func DecodeVarSize(s string) []byte {
+	var result []byte
+	for _, c := range s {
+		carry := b58[int(c)]
+		if carry < 0 {
+			return nil
+		}
+
+		for j, element := range result {
+			x := int(element)*58 + int(carry)
+			result[j] = byte(x & 0xff)
+			carry = byte(x >> 8)
+		}
+
+		if carry > 0 {
+			result = append(result, carry)
+		}
+	}
+
+	for _, c := range s {
+		if c == '1' {
+			result = append(result, 0)
+		} else {
+			break
+		}
+	}
+
+	// Reverse the results array
+	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
+		result[i], result[j] = result[j], result[i]
+	}
+
+	return result
+}
+
 // Encode encodes a byte slice to a modified base58 string.
 func Encode(b []byte) string {
 	x := new(big.Int)

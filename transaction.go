@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/zlib"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -55,6 +56,27 @@ func (tx *Transaction) SetExpiration(in time.Duration) {
 	tx.Expiration = JSONTime{time.Now().UTC().Add(in)}
 }
 
+const (
+	EOS_ProtocolFeatureActivation BlockHeaderExtensionType = iota
+	EOS_ProducerScheduleChangeExtension
+)
+
+type BlockHeaderExtension interface {
+	TypeID() BlockHeaderExtensionType
+}
+
+type BlockHeaderExtensionType uint16
+
+type blockHeaderExtensionMap = map[BlockHeaderExtensionType]newBlockHeaderExtension
+type newBlockHeaderExtension func() BlockHeaderExtension
+
+var blockHeaderExtensions = map[string]blockHeaderExtensionMap{
+	"EOS": blockHeaderExtensionMap{
+		EOS_ProtocolFeatureActivation:       func() BlockHeaderExtension { return new(ProtocolFeatureActivationExtension) },
+		EOS_ProducerScheduleChangeExtension: func() BlockHeaderExtension { return new(ProducerScheduleChangeExtension) },
+	},
+}
+
 type Extension struct {
 	Type uint16
 	Data HexBytes
@@ -99,6 +121,49 @@ func (e *Extension) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// AsBlockHeaderExtension turns the given `Extension` object into one of the known
+// `BlockHeaderExtension` concrete type.
+func (e *Extension) AsBlockHeaderExtension(chain string) (BlockHeaderExtension, error) {
+	knownExtensions := blockHeaderExtensions[chain]
+	if len(knownExtensions) == 0 {
+		return nil, fmt.Errorf("unknown chain identifier: %s", chain)
+	}
+
+	newPointer := knownExtensions[BlockHeaderExtensionType(e.Type)]
+	if newPointer == nil {
+		return nil, fmt.Errorf("unknown block header extension type %d for chain %s", e.Type, chain)
+	}
+
+	element := newPointer()
+	decoder := NewDecoder(e.Data)
+	err := decoder.Decode(element)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode block header extension: %s", err)
+	}
+
+	return element, nil
+}
+
+// ProtocolFeatureActivationExtension is a block header extension present in the signed
+// block when a particular set of protocol features has been activated by this blockl.
+type ProtocolFeatureActivationExtension struct {
+	FeatureDigests []Checksum256 `json:"protocol_features"`
+}
+
+func (e *ProtocolFeatureActivationExtension) TypeID() BlockHeaderExtensionType {
+	return EOS_ProtocolFeatureActivation
+}
+
+// ProducerScheduleChangeExtension is a block header extension present in the signed
+// block when a new producer authority schedule should be applied.
+type ProducerScheduleChangeExtension struct {
+	ProducerAuthoritySchedule
+}
+
+func (e *ProducerScheduleChangeExtension) TypeID() BlockHeaderExtensionType {
+	return EOS_ProducerScheduleChangeExtension
+}
+
 func unmarshalTypeError(value interface{}, reflectTypeHost interface{}, target interface{}, field string) *json.UnmarshalTypeError {
 	return &json.UnmarshalTypeError{
 		Value:  fmt.Sprintf("%T", value),
@@ -132,6 +197,25 @@ func (tx *Transaction) setRefBlock(blockID []byte) {
 	}
 	tx.RefBlockNum = uint16(binary.BigEndian.Uint32(blockID[:4]))
 	tx.RefBlockPrefix = binary.LittleEndian.Uint32(blockID[8:16])
+}
+
+type TransactionTrace struct {
+	ID              Checksum256               `json:"id"`
+	BlockNum        uint32                    `json:"block_num"`
+	BlockTime       BlockTimestamp            `json:"block_time"`
+	ProducerBlockID Checksum256               `json:"producer_block_id"`
+	Receipt         *TransactionReceiptHeader `json:"receipt,omitempty"`
+	Elapsed         Int64                     `json:"elapsed"`
+	NetUsage        Uint64                    `json:"net_usage"`
+	Scheduled       bool                      `json:"scheduled"`
+	ActionTraces    []ActionTrace             `json:"action_traces"`
+	AccountRamDelta *struct {
+		AccountName AccountName `json:"account_name"`
+		Delta       Int64       `json:"delta"`
+	} `json:"account_ram_delta"`
+	Except          *Except           `json:"except"`
+	ErrorCode       *Uint64           `json:"error_code"`
+	FailedDtrxTrace *TransactionTrace `json:"failed_dtrx_trace"`
 }
 
 type SignedTransaction struct {
@@ -370,13 +454,13 @@ type TxOptions struct {
 
 // FillFromChain will load ChainID (for signing transactions) and
 // HeadBlockID (to fill transaction with TaPoS data).
-func (opts *TxOptions) FillFromChain(api *API) error {
+func (opts *TxOptions) FillFromChain(ctx context.Context, api *API) error {
 	if opts == nil {
 		return errors.New("TxOptions should not be nil, send an object")
 	}
 
 	if opts.HeadBlockID == nil || opts.ChainID == nil {
-		info, err := api.cachedGetInfo()
+		info, err := api.cachedGetInfo(ctx)
 		if err != nil {
 			return err
 		}

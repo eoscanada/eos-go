@@ -8,9 +8,7 @@ import (
 
 func init() {
 	if os.Getenv("DEBUG") != "" {
-		encoderLog, _ = zap.NewDevelopment()
-		decoderLog, _ = zap.NewDevelopment()
-		abiEncoderLog, _ = zap.NewDevelopment()
-		abiDecoderLog, _ = zap.NewDevelopment()
+		logger, _ := zap.NewDevelopment()
+		EnableDebugLogging(logger)
 	}
 }

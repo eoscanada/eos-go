@@ -9,6 +9,7 @@ import (
 // see: libraries/chain/contracts/abi_serializer.cpp:53...
 // see: libraries/chain/include/eosio/chain/contracts/types.hpp:100
 type ABI struct {
+	fitNodeos        bool
 	Version          string            `json:"version"`
 	Types            []ABIType         `json:"types,omitempty"`
 	Structs          []StructDef       `json:"structs,omitempty"`
@@ -17,6 +18,7 @@ type ABI struct {
 	RicardianClauses []ClausePair      `json:"ricardian_clauses,omitempty"`
 	ErrorMessages    []ABIErrorMessage `json:"error_messages,omitempty"`
 	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
+	Variants         []VariantDef      `json:"variants,omitempty" eos:"binary_extension"`
 }
 
 func NewABI(r io.Reader) (*ABI, error) {
@@ -28,8 +30,12 @@ func NewABI(r io.Reader) (*ABI, error) {
 	}
 
 	return abi, nil
-
 }
+
+func (a *ABI) SetFitNodeos(v bool) {
+	a.fitNodeos = v
+}
+
 func (a *ABI) ActionForName(name ActionName) *ActionDef {
 	for _, a := range a.Actions {
 		if a.Name == name {
@@ -50,6 +56,15 @@ func (a *ABI) StructForName(name string) *StructDef {
 
 func (a *ABI) TableForName(name TableName) *TableDef {
 	for _, s := range a.Tables {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (a *ABI) VariantForName(name string) *VariantDef {
+	for _, s := range a.Variants {
 		if s.Name == name {
 			return &s
 		}
@@ -95,6 +110,12 @@ type TableDef struct {
 	KeyNames  []string  `json:"key_names,omitempty"`
 	KeyTypes  []string  `json:"key_types,omitempty"`
 	Type      string    `json:"type"`
+}
+
+// VariantDef defines a variant type. See libraries/chain/include/eosio/chain/contracts/types.hpp:78
+type VariantDef struct {
+	Name  string   `json:"name"`
+	Types []string `json:"types,omitempty"`
 }
 
 // ClausePair represents clauses, related to Ricardian Contracts.

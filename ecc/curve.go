@@ -1,10 +1,13 @@
 package ecc
 
+import "runtime/debug"
+
 type CurveID uint8
 
 const (
 	CurveK1 = CurveID(iota)
 	CurveR1
+	CurveWA
 )
 
 func (c CurveID) String() string {
@@ -13,7 +16,10 @@ func (c CurveID) String() string {
 		return "K1"
 	case CurveR1:
 		return "R1"
+	case CurveWA:
+		return "WA"
 	default:
+		debug.PrintStack()
 		return "UN" // unknown
 	}
 }

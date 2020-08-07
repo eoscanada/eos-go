@@ -1,12 +1,10 @@
 package eos
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"testing"
-
-	"bytes"
-
 	"time"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -302,6 +300,22 @@ func TestDecoder_PublicKey_R1(t *testing.T) {
 	assert.Equal(t, 0, d.remaining())
 }
 
+func TestDecoder_PublicKey_WA(t *testing.T) {
+	pk := ecc.MustNewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj")
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	assert.NoError(t, enc.writePublicKey(pk))
+
+	d := NewDecoder(buf.Bytes())
+
+	rpk, err := d.ReadPublicKey()
+	require.NoError(t, err)
+
+	assert.Equal(t, pk, rpk)
+	assert.Equal(t, 0, d.remaining())
+}
+
 func TestDecoder_Empty_PublicKey(t *testing.T) {
 
 	pk := ecc.PublicKey{Curve: ecc.CurveK1, Content: []byte{}}
@@ -312,7 +326,6 @@ func TestDecoder_Empty_PublicKey(t *testing.T) {
 }
 
 func TestDecoder_Signature(t *testing.T) {
-
 	sig := ecc.MustNewSignatureFromData(bytes.Repeat([]byte{0}, 66))
 
 	buf := new(bytes.Buffer)
@@ -323,6 +336,23 @@ func TestDecoder_Signature(t *testing.T) {
 
 	rsig, err := d.ReadSignature()
 	assert.NoError(t, err)
+	assert.Equal(t, sig, rsig)
+	assert.Equal(t, 0, d.remaining())
+}
+
+func TestDecoder_Signature_WA(t *testing.T) {
+	sig := ecc.MustNewSignature("SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s")
+
+	buf := new(bytes.Buffer)
+	enc := NewEncoder(buf)
+	assert.NoError(t, enc.writeSignature(sig))
+
+	d := NewDecoder(buf.Bytes())
+
+	rsig, err := d.ReadSignature()
+
+	require.NoError(t, err)
+
 	assert.Equal(t, sig, rsig)
 	assert.Equal(t, 0, d.remaining())
 }
@@ -415,7 +445,7 @@ func TestDecoder_Encode(t *testing.T) {
 		// maps don't serialize deterministically.. we no want that.
 		//		F8:  map[string]string{"foo": "bar", "hello": "you"},
 		F9:  ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"),
-		F10: ecc.Signature{Curve: ecc.CurveK1, Content: make([]byte, 65)},
+		F10: ecc.MustNewSignatureFromData(make([]byte, 66)),
 		F11: byte(1),
 		F12: uint64(87),
 		F13: []byte{1, 2, 3, 4, 5},
@@ -600,10 +630,56 @@ func TestEncoder_Encode_struct_tag(t *testing.T) {
 
 }
 
+func TestDecoder_Decode_struct_tag_BinaryExtension(t *testing.T) {
+	type BinaryExtensionTestStruct struct {
+		S2 string
+		S1 string `eos:"binary_extension"`
+	}
+
+	var s BinaryExtensionTestStruct
+	err := UnmarshalBinary([]byte{0x3, 0x61, 0x62, 0x63}, &s)
+	require.NoError(t, err)
+
+	assert.Equal(t, "", s.S1)
+	assert.Equal(t, "abc", s.S2)
+
+	err = UnmarshalBinary([]byte{0x3, 0x61, 0x62, 0x63, 0x3, 0x31, 0x32, 0x33}, &s)
+	require.NoError(t, err)
+
+	assert.Equal(t, "123", s.S1)
+	assert.Equal(t, "abc", s.S2)
+}
+
+func TestDecoder_Decode_struct_tag_BinaryExtension_NotGrouped(t *testing.T) {
+	type BinaryExtensionTestStruct struct {
+		S1 string
+		S2 string `eos:"binary_extension"`
+		S3 string
+	}
+
+	require.PanicsWithValue(t, "the `eos: \"binary_extension\"` tags must be packed together at the end of struct fields, problematic field S3", func() {
+		var s BinaryExtensionTestStruct
+		UnmarshalBinary([]byte{0x1, 0x61, 0x01, 0x62, 0x01, 0x63}, &s)
+	})
+}
+
+func TestDecoder_Decode_struct_tag_BinaryExtension_AllAtStart(t *testing.T) {
+	type BinaryExtensionTestStruct struct {
+		S1 string `eos:"binary_extension"`
+		S2 string `eos:"binary_extension"`
+		S3 string
+	}
+
+	require.PanicsWithValue(t, "the `eos: \"binary_extension\"` tags must be packed together at the end of struct fields, problematic field S3", func() {
+		var s BinaryExtensionTestStruct
+		UnmarshalBinary([]byte{0x1, 0x61, 0x01, 0x62, 0x01, 0x63}, &s)
+	})
+}
+
 func TestDecoder_readUint16_missing_data(t *testing.T) {
 
 	_, err := NewDecoder([]byte{}).ReadByte()
-	assert.EqualError(t, err, "byte required [1] byte, remaining [0]")
+	assert.EqualError(t, err, "required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadUint16()
 	assert.EqualError(t, err, "uint16 required [2] bytes, remaining [0]")
@@ -618,10 +694,10 @@ func TestDecoder_readUint16_missing_data(t *testing.T) {
 	assert.EqualError(t, err, "checksum 256 required [32] bytes, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadPublicKey()
-	assert.EqualError(t, err, "publicKey required [34] bytes, remaining [0]")
+	assert.EqualError(t, err, "unable to read public key type: required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadSignature()
-	assert.EqualError(t, err, "signature required [66] bytes, remaining [0]")
+	assert.EqualError(t, err, "unable to read signature type: required [1] byte, remaining [0]")
 
 	_, err = NewDecoder([]byte{}).ReadTstamp()
 	assert.EqualError(t, err, "tstamp required [8] bytes, remaining [0]")
@@ -661,7 +737,7 @@ func TestDecoder_SignedBlock_Full(t *testing.T) {
 	assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", signedBlock.TransactionMRoot.String())
 	assert.Equal(t, "6a46611d7b15f71ff42de916e19f8ed1011096178f81d9b17987637a545b1521", signedBlock.ActionMRoot.String())
 	assert.Equal(t, uint32(0), signedBlock.ScheduleVersion)
-	assert.Equal(t, (*OptionalProducerSchedule)(nil), signedBlock.NewProducers)
+	assert.Equal(t, (*ProducerSchedule)(nil), signedBlock.NewProducersV1)
 	assert.Equal(t, []*Extension{&Extension{uint16(0), expectedHeaderExtension}}, signedBlock.HeaderExtensions)
 	assert.Equal(t, "SIG_K1_K7cBDNuka9kLUNAGaCm4FpNTdJwVKY3rP3v2esU8RGv1KXNNDEEdrWBAJSH3cPB8t1478e4RmhjkP48Sbuaqkf6Z5iDZKW", signedBlock.ProducerSignature.String())
 	assert.Equal(t, []TransactionReceipt{}, signedBlock.Transactions)

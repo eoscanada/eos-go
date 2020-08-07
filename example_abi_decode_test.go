@@ -14,7 +14,7 @@ func ExampleABI_DecodeTableRowTyped() {
 		panic(fmt.Errorf("get ABI: %s", err))
 	}
 
-	tableDef := abi.TableForName(eos.TableName("activebets"))
+	tableDef := abi.TableForName(eos.TableName("votes"))
 	if tableDef == nil {
 		panic(fmt.Errorf("table be should be present"))
 	}
@@ -28,7 +28,7 @@ func ExampleABI_DecodeTableRowTyped() {
 }
 
 func data() []byte {
-	bytes, err := hex.DecodeString(`1358285f09db6dc0`)
+	bytes, err := hex.DecodeString(`424e544441505000`)
 	if err != nil {
 		panic(fmt.Errorf("decode data: %s", err))
 	}
@@ -40,17 +40,17 @@ func abiJSON() string {
 	return `{
 			"structs": [
 				{
-					"name": "bet",
+					"name": "vote_t",
 					"fields": [
-						{ "name": "id", "type": "uint64" }
+						{ "name": "symbl", "type": "symbol_code" }
 					]
 				}
 			],
 			"actions": [],
 			"tables": [
 				{
-					"name": "activebets",
-					"type": "bet"
+					"name": "votes",
+					"type": "vote_t"
 				}
 			]
 	}`
