@@ -5,9 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -106,29 +104,6 @@ func TestABI_DecodeMissingAction(t *testing.T) {
 
 	_, err = abi.DecodeAction(buffer.Bytes(), "bad.action.name")
 	assert.Equal(t, fmt.Errorf("action bad.action.name not found in abi"), err)
-}
-
-func TestABI_DecodeLargeThing(t *testing.T) {
-	cnt, err := ioutil.ReadFile("/tmp/bigfile/justhex")
-	require.NoError(t, err)
-	b, err := hex.DecodeString(strings.TrimSpace(string(cnt)))
-	require.NoError(t, err)
-
-	abiFile, err := os.Open("/tmp/bigfile/abi.json")
-	require.NoError(t, err)
-	defer abiFile.Close()
-
-	abi, err := NewABI(abiFile)
-	require.NoError(t, err)
-
-	// t0 := time.Now()
-	jsonOut, err := abi.DecodeTableRowTyped("a23", b)
-	require.NoError(t, err)
-	_ = jsonOut
-
-	// delta := time.Since(t0)
-	// fmt.Println(string(jsonOut))
-	// fmt.Println("TIMING", delta)
 }
 
 func TestABI_DecodeTable(t *testing.T) {
