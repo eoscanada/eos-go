@@ -36,7 +36,7 @@ func TestSnapshotRead(t *testing.T) {
 				return
 			}
 
-			r, err := NewReader(testFile)
+			r, err := NewDefaultReader(testFile)
 			require.NoError(t, err)
 			defer r.Close()
 
@@ -44,10 +44,11 @@ func TestSnapshotRead(t *testing.T) {
 			assert.Equal(t, r.Header.Version, uint32(1))
 
 			for {
-				section, err := r.Next()
+				err := r.NextSection()
 				if err == io.EOF {
 					break
 				}
+				section := r.CurrentSection
 				assert.NoError(t, err)
 				logger.Info("new section",
 					zap.String("section_name", string(section.Name)),
@@ -57,7 +58,7 @@ func TestSnapshotRead(t *testing.T) {
 				)
 				switch section.Name {
 				case SectionNameAccountObject:
-					require.NoError(t, section.Process(func(o interface{}) error {
+					require.NoError(t, r.ProcessCurrentSection(func(o interface{}) error {
 						acc, ok := o.(AccountObject)
 						if !ok {
 							return fmt.Errorf("process account object: unexpected object type: %T", o)
@@ -69,7 +70,7 @@ func TestSnapshotRead(t *testing.T) {
 					}))
 				case SectionNameContractTables:
 					var currentTable *TableIDObject
-					require.NoError(t, section.Process(func(o interface{}) error {
+					require.NoError(t, r.ProcessCurrentSection(func(o interface{}) error {
 						switch obj := o.(type) {
 						case *TableIDObject:
 							logger.Info("Table ID", zap.Reflect("table_id", obj))

@@ -9,17 +9,53 @@ import (
 	"strings"
 )
 
+var magicNumber = []byte{0x50, 0x05, 0x51, 0x30}
+
 type Reader struct {
-	Header *Header
+	Header         *Header
+	CurrentSection *Section
 
 	filename   string
 	fl         *os.File
 	buf        io.Reader
 	nextOffset uint64
+
+	handlers map[SectionName]sectionHandlerFunc
 }
 
-func NewReader(filename string) (r *Reader, err error) {
-	r = &Reader{filename: filename}
+func NewDefaultReader(filename string) (r *Reader, err error) {
+	reader, err := newReader(filename)
+	if err != nil {
+		return nil, err
+	}
+	reader.RegisterSectionHandler(SectionNameChainSnapshotHeader, readChainSnapshotHeader)
+	reader.RegisterSectionHandler(SectionNameBlockState, readBlockState)
+	reader.RegisterSectionHandler(SectionNameAccountObject, readAccountObjects)
+	reader.RegisterSectionHandler(SectionNameAccountMetadataObject, readAccountMetadataObjects)
+	reader.RegisterSectionHandler(SectionNameAccountRamCorrectionObject, readAccountRAMCorrectionObject)
+	reader.RegisterSectionHandler(SectionNameGlobalPropertyObject, readGlobalPropertyObject)
+	reader.RegisterSectionHandler(SectionNameProtocolStateObject, readProtocolStateObject)
+	reader.RegisterSectionHandler(SectionNameDynamicGlobalPropertyObject, readDynamicGlobalPropertyObject)
+	reader.RegisterSectionHandler(SectionNameBlockSummaryObject, readBlockSummary)
+	reader.RegisterSectionHandler(SectionNameTransactionObject, readTransactionObject)
+	reader.RegisterSectionHandler(SectionNameGeneratedTransactionObject, readGeneratedTransactionObject)
+	reader.RegisterSectionHandler(SectionNameCodeObject, readCodeObject)
+	reader.RegisterSectionHandler(SectionNameContractTables, readContractTables)
+	reader.RegisterSectionHandler(SectionNamePermissionObject, readPermissionObject)
+	reader.RegisterSectionHandler(SectionNamePermissionLinkObject, readPermissionLinkObject)
+	reader.RegisterSectionHandler(SectionNameResourceLimitsObject, readResourceLimitsObject)
+	reader.RegisterSectionHandler(SectionNameResourceUsageObject, readResourceUsageObject)
+	reader.RegisterSectionHandler(SectionNameResourceLimitsStateObject, readResourceLimitsStateObject)
+	reader.RegisterSectionHandler(SectionNameResourceLimitsConfigObject, readResourceLimitsConfigObject)
+	reader.RegisterSectionHandler(SectionNameGenesisState, readGenesisState)
+	return reader, nil
+}
+
+func newReader(filename string) (r *Reader, err error) {
+	r = &Reader{
+		filename: filename,
+		handlers: map[SectionName]sectionHandlerFunc{},
+	}
 	r.fl, err = os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -41,7 +77,9 @@ func NewReader(filename string) (r *Reader, err error) {
 	return
 }
 
-var magicNumber = []byte{0x50, 0x05, 0x51, 0x30}
+func (r *Reader) RegisterSectionHandler(s SectionName, h sectionHandlerFunc) {
+	r.handlers[s] = h
+}
 
 func (r *Reader) readHeader() (*Header, error) {
 	buf := make([]byte, 8)
@@ -60,22 +98,30 @@ func (r *Reader) readHeader() (*Header, error) {
 	return h, nil
 }
 
+func (r *Reader) ProcessCurrentSection(f sectionCallbackFunc) error {
+	h, found := r.handlers[r.CurrentSection.Name]
+	if !found {
+		return fmt.Errorf("section handler not found: %q", r.CurrentSection.Name)
+	}
+	return h(r.CurrentSection, f)
+}
+
 // Next retrieves the next section.
-func (r *Reader) Next() (*Section, error) {
+func (r *Reader) NextSection() error {
 	beginOffset, err := r.fl.Seek(int64(r.nextOffset), os.SEEK_SET)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	vals := make([]byte, 16)
 	bytesRead, err := r.fl.Read(vals)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// end marker
 	if bytesRead == 8 && bytes.Compare(vals[:8], []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}) == 0 {
-		return nil, io.EOF
+		return io.EOF
 	}
 
 	sectionSize := binary.LittleEndian.Uint64(vals[:8])
@@ -84,21 +130,22 @@ func (r *Reader) Next() (*Section, error) {
 	str, err := readZeroTerminatedString(r.fl)
 	if err != nil {
 		if err == io.EOF {
-			return nil, fmt.Errorf("EOF while reading string section (partial: %s)", str)
+			return fmt.Errorf("EOF while reading string section (partial: %s)", str)
 		}
-		return nil, err
+		return err
 	}
 
 	r.nextOffset = uint64(beginOffset) + sectionSize + 8 // well well, sectionSize includes the rowCount I guess?
 
-	return &Section{
-		Name:       stringToSectionName(strings.TrimRight(str, string([]byte{0x00}))),
+	r.CurrentSection = &Section{
+		Name:       SectionName(strings.TrimRight(str, string([]byte{0x00}))),
 		Offset:     uint64(beginOffset),
 		Size:       sectionSize,
 		RowCount:   rowCount,
 		BufferSize: sectionSize - uint64(len(str)) - 1 /* str-pad 0x00 byte */ - 8,
 		Buffer:     r.fl,
-	}, nil
+	}
+	return nil
 }
 
 func (r *Reader) Close() error {

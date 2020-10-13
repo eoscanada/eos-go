@@ -33,7 +33,7 @@ type ChainConfig struct {
 	MaxAuthorityDepth           uint16 ///< recursion depth limit for checking if an authority is satisfied
 }
 
-func (section *Section) readGenesisState(f callbackFunc) error {
+func readGenesisState(section *Section, f sectionCallbackFunc) error {
 	// // THIS SEEMS TO EXIST ONLY IN VERSION 2 OF THE SNAPSHOT FILE FORMAT.
 	// // FOR NOW, WE ARE CONCENTRATING ON VERSION 3 (latest)
 	// cnt := make([]byte, section.BufferSize)

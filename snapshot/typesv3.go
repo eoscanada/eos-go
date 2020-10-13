@@ -52,7 +52,7 @@ type IndexLongDoubleObject struct {
 	SecondaryKey eos.Float128
 }
 
-func (section *Section) readContractTables(f callbackFunc) error {
+func readContractTables(section *Section, f sectionCallbackFunc) error {
 	fl := section.Buffer
 
 	bufSize := section.BufferSize
@@ -282,7 +282,7 @@ type ScheduleInfo struct {
 	Schedule       *eos.ProducerAuthoritySchedule `json:"schedule"`
 }
 
-func (section *Section) readBlockState(f callbackFunc) (err error) {
+func readBlockState(section *Section, f sectionCallbackFunc) (err error) {
 	cnt := make([]byte, section.BufferSize)
 	_, err = section.Buffer.Read(cnt)
 	if err != nil {
@@ -310,7 +310,7 @@ type AccountObject struct {
 	RawABI       []byte
 }
 
-func (section *Section) readAccountObjects(f callbackFunc) error {
+func readAccountObjects(section *Section, f sectionCallbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := AccountObject{}
 		cnt := make([]byte, 12)
@@ -357,7 +357,7 @@ type AccountMetadataObject struct {
 	VMVersion      byte
 }
 
-func (section *Section) readAccountMetadataObjects(f callbackFunc) error {
+func readAccountMetadataObjects(section *Section, f sectionCallbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := AccountMetadataObject{}
 		cnt := make([]byte, 86) // account_metadata_object is fixed size 86 bytes
@@ -384,7 +384,7 @@ type ChainSnapshotHeader struct {
 	Version uint32
 }
 
-func (section *Section) readChainSnapshotHeader(f callbackFunc) error {
+func readChainSnapshotHeader(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -411,7 +411,7 @@ type GlobalPropertyObject struct {
 	ChainID                  eos.Checksum256
 }
 
-func (section *Section) readGlobalPropertyObject(f callbackFunc) error {
+func readGlobalPropertyObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -445,7 +445,7 @@ type ActivatedProtocolFeature struct {
 	ActivationBlockNum uint32
 }
 
-func (section *Section) readProtocolStateObject(f callbackFunc) error {
+func readProtocolStateObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -473,7 +473,7 @@ type DynamicGlobalPropertyObject struct {
 	GlobalActionSequence eos.Uint64
 }
 
-func (section *Section) readDynamicGlobalPropertyObject(f callbackFunc) error {
+func readDynamicGlobalPropertyObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -500,7 +500,7 @@ type AccountRAMCorrectionObject struct {
 	RAMCorrection eos.Uint64
 }
 
-func (section *Section) readAccountRAMCorrectionObject(f callbackFunc) error {
+func readAccountRAMCorrectionObject(section *Section, f sectionCallbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := AccountRAMCorrectionObject{}
 		cnt := make([]byte, 16) // fixed size of account_ram_correction_object
@@ -526,7 +526,7 @@ type BlockSummary struct {
 	BlockID eos.Checksum256
 }
 
-func (section *Section) readBlockSummary(f callbackFunc) error {
+func readBlockSummary(section *Section, f sectionCallbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := BlockSummary{}
 		cnt := make([]byte, 32) // fixed size of block_summary
@@ -557,7 +557,7 @@ type PermissionObject struct { /* special snapshot version of the object */
 	Auth        eos.Authority      ///< authority required to execute this permission
 }
 
-func (section *Section) readPermissionObject(f callbackFunc) error {
+func readPermissionObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -599,7 +599,7 @@ type PermissionLinkObject struct {
 	RequiredPermission eos.PermissionName
 }
 
-func (section *Section) readPermissionLinkObject(f callbackFunc) error {
+func readPermissionLinkObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -636,7 +636,7 @@ type ResourceLimitsObject struct {
 	RAMBytes  eos.Int64
 }
 
-func (section *Section) readResourceLimitsObject(f callbackFunc) error {
+func readResourceLimitsObject(section *Section, f sectionCallbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := ResourceLimitsObject{}
 		cnt := make([]byte, 8+8+8+8) // fixed size of resource_limits_object
@@ -667,7 +667,7 @@ type ResourceUsageObject struct {
 	RAMUsage eos.Uint64
 }
 
-func (section *Section) readResourceUsageObject(f callbackFunc) error {
+func readResourceUsageObject(section *Section, f sectionCallbackFunc) error {
 	for i := uint64(0); i < section.RowCount; i++ {
 		a := ResourceUsageObject{}
 		cnt := make([]byte, 8+20+20+8) // fixed size of resource_limits_object
@@ -736,7 +736,7 @@ type UsageAccumulator struct {
 	Consumed    eos.Uint64 ///< The last periods average + the current periods contribution so far
 }
 
-func (section *Section) readResourceLimitsStateObject(f callbackFunc) error {
+func readResourceLimitsStateObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -778,7 +778,7 @@ type ElasticLimitParameters struct {
 	ExpandRate    eos.Uint64 // the rate at which an uncongested resource expands its limits
 }
 
-func (section *Section) readResourceLimitsConfigObject(f callbackFunc) error {
+func readResourceLimitsConfigObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	_, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -811,7 +811,7 @@ type CodeObject struct {
 	VMVersion      uint8 //< vm_version should not be changed within a chainbase modifier lambda
 }
 
-func (section *Section) readCodeObject(f callbackFunc) error {
+func readCodeObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	readz, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -852,7 +852,7 @@ type GeneratedTransactionObject struct {
 	PackedTrx  eos.HexBytes
 }
 
-func (section *Section) readGeneratedTransactionObject(f callbackFunc) error {
+func readGeneratedTransactionObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	readz, err := section.Buffer.Read(cnt)
 	if err != nil {
@@ -887,7 +887,7 @@ type TransactionObject struct {
 	TrxID      eos.Checksum256 //< trx_id shou
 }
 
-func (section *Section) readTransactionObject(f callbackFunc) error {
+func readTransactionObject(section *Section, f sectionCallbackFunc) error {
 	cnt := make([]byte, section.BufferSize)
 	readz, err := section.Buffer.Read(cnt)
 	if err != nil {
