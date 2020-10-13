@@ -3,6 +3,7 @@ package snapshot
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -98,10 +99,12 @@ func (r *Reader) readHeader() (*Header, error) {
 	return h, nil
 }
 
+var SectionHandlerNotFound = errors.New("section handler not found")
+
 func (r *Reader) ProcessCurrentSection(f sectionCallbackFunc) error {
 	h, found := r.handlers[r.CurrentSection.Name]
 	if !found {
-		return fmt.Errorf("section handler not found: %q", r.CurrentSection.Name)
+		return SectionHandlerNotFound
 	}
 	return h(r.CurrentSection, f)
 }
