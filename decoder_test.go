@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
+	"math"
 	"testing"
 	"time"
 
@@ -151,6 +152,16 @@ func TestDecoder_Uint32(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(100), n)
 	assert.Equal(t, 0, d.remaining())
+}
+
+func TestDecoder_Float64(t *testing.T) {
+	b, err := hex.DecodeString("000000000000f07f")
+	require.NoError(t, err)
+	d := NewDecoder(b)
+
+	f, err := d.ReadFloat64()
+	assert.NoError(t, err)
+	assert.Equal(t, math.Inf(1), f)
 }
 
 func TestDecoder_Int32(t *testing.T) {

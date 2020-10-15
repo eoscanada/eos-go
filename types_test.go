@@ -47,6 +47,22 @@ func TestSafeString(t *testing.T) {
 
 }
 
+func TestFloat64JSON_MarshalUnmarshal(t *testing.T) {
+	f := Float64(math.Inf(1))
+	v, err := f.MarshalJSON()
+	require.NoError(t, err)
+	require.Equal(t, v, []byte("\"+Inf\""))
+
+	var out Float64
+	err = out.UnmarshalJSON([]byte("\"+Inf\""))
+	require.NoError(t, err)
+	assert.Equal(t, out, Float64(math.Inf(1)))
+
+	err = out.UnmarshalJSON([]byte("\"-Inf\""))
+	require.NoError(t, err)
+	assert.Equal(t, out, Float64(math.Inf(-1)))
+}
+
 func TestUint128JSONUnmarshal(t *testing.T) {
 	tests := []struct {
 		name            string

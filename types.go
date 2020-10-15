@@ -889,6 +889,17 @@ type JSONFloat64 = Float64
 
 type Float64 float64
 
+func (f *Float64) MarshalJSON() ([]byte, error) {
+	switch *f {
+	case Float64(math.Inf(1)):
+		return []byte("\"+Inf\""), nil
+	case Float64(math.Inf(-1)):
+		return []byte("\"-Inf\""), nil
+	default:
+	}
+	return json.Marshal(f)
+}
+
 func (f *Float64) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 {
 		return errors.New("empty value")
@@ -898,6 +909,16 @@ func (f *Float64) UnmarshalJSON(data []byte) error {
 		var s string
 		if err := json.Unmarshal(data, &s); err != nil {
 			return err
+		}
+
+		switch s {
+		case "+Inf":
+			*f = Float64(math.Inf(1))
+			return nil
+		case "-Inf":
+			*f = Float64(math.Inf(-1))
+			return nil
+		default:
 		}
 
 		val, err := strconv.ParseFloat(s, 64)
