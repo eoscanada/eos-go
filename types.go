@@ -890,11 +890,13 @@ type JSONFloat64 = Float64
 type Float64 float64
 
 func (f *Float64) MarshalJSON() ([]byte, error) {
-	switch *f {
-	case Float64(math.Inf(1)):
-		return []byte("\"+Inf\""), nil
-	case Float64(math.Inf(-1)):
-		return []byte("\"-Inf\""), nil
+	switch {
+	case math.IsInf(float64(*f), 1):
+		return []byte("\"inf\""), nil
+	case math.IsInf(float64(*f), -1):
+		return []byte("\"-inf\""), nil
+	case math.IsNaN(float64(*f)):
+		return []byte("\"nan\""), nil
 	default:
 	}
 	return json.Marshal(float64(*f))
@@ -912,11 +914,14 @@ func (f *Float64) UnmarshalJSON(data []byte) error {
 		}
 
 		switch s {
-		case "+Inf":
+		case "inf":
 			*f = Float64(math.Inf(1))
 			return nil
-		case "-Inf":
+		case "-inf":
 			*f = Float64(math.Inf(-1))
+			return nil
+		case "nan":
+			*f = Float64(math.NaN())
 			return nil
 		default:
 		}

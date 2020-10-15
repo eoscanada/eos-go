@@ -54,7 +54,7 @@ func TestFloat64JSON_MarshalUnmarshal(t *testing.T) {
 
 	v, err := f.MarshalJSON()
 	require.NoError(t, err)
-	require.Equal(t, v, []byte("\"+Inf\""))
+	require.Equal(t, []byte("\"inf\""), v)
 	err = out.UnmarshalJSON(v)
 	require.NoError(t, err)
 	assert.Equal(t, out, Float64(math.Inf(1)))
@@ -64,7 +64,7 @@ func TestFloat64JSON_MarshalUnmarshal(t *testing.T) {
 	require.NoError(t, err)
 	err = out.UnmarshalJSON(v)
 	require.NoError(t, err)
-	require.Equal(t, out, f)
+	require.Equal(t, f, out)
 
 }
 

@@ -436,12 +436,12 @@ func formatTimePointSec(timePoint TimePointSec) string {
 }
 
 func formatFloat(v float64, fitNodeos bool) interface{} {
-	switch v {
-	case math.Inf(1):
+	switch {
+	case math.IsInf(v, 1):
 		return "inf"
-	case math.Inf(-1):
+	case math.IsInf(v, -1):
 		return "-inf"
-	case math.NaN():
+	case math.IsNaN(v): // cannot check equality on math.NaN()
 		return "nan"
 	default:
 	}
