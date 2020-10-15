@@ -897,7 +897,7 @@ func (f *Float64) MarshalJSON() ([]byte, error) {
 		return []byte("\"-Inf\""), nil
 	default:
 	}
-	return json.Marshal(f)
+	return json.Marshal(float64(*f))
 }
 
 func (f *Float64) UnmarshalJSON(data []byte) error {
