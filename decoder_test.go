@@ -162,6 +162,14 @@ func TestDecoder_Float64(t *testing.T) {
 	f, err := d.ReadFloat64()
 	assert.NoError(t, err)
 	assert.Equal(t, math.Inf(1), f)
+
+	b, err = hex.DecodeString("000000000000f0ff")
+	require.NoError(t, err)
+	d = NewDecoder(b)
+
+	f, err = d.ReadFloat64()
+	assert.NoError(t, err)
+	assert.Equal(t, math.Inf(-1), f)
 }
 
 func TestDecoder_Int32(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -398,6 +399,16 @@ func valueToUint(fieldName string, value gjson.Result, bitSize int) (uint64, err
 }
 
 func valueToFloat(fieldName string, value gjson.Result, bitSize int) (float64, error) {
+	switch value.Raw {
+	case "inf":
+		return math.Inf(1), nil
+	case "-inf":
+		return math.Inf(-1), nil
+	case "nan":
+		return math.NaN(), nil
+	default:
+	}
+
 	f, err := strconv.ParseFloat(value.Raw, bitSize)
 	if err != nil {
 		return f, fmt.Errorf("writing field: [%s] type float%d : %s", fieldName, bitSize, err)

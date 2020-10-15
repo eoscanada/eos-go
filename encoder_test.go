@@ -3,11 +3,32 @@ package eos
 import (
 	"bytes"
 	"encoding/hex"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestEncoder_Float64Inf(t *testing.T) {
+	buffer := bytes.NewBuffer(nil)
+	encoder := NewEncoder(buffer)
+	err := encoder.Encode(math.Inf(-1))
+	require.NoError(t, err)
+
+	out := hex.EncodeToString(buffer.Bytes())
+	require.Equal(t, "000000000000f0ff", out)
+}
+
+func TestEncoder_Float64NaN(t *testing.T) {
+	buffer := bytes.NewBuffer(nil)
+	encoder := NewEncoder(buffer)
+	err := encoder.Encode(math.NaN())
+	require.NoError(t, err)
+
+	out := hex.EncodeToString(buffer.Bytes())
+	require.Equal(t, "010000000000f87f", out)
+}
 
 func TestEncoder_MapStringString(t *testing.T) {
 	buffer := bytes.NewBuffer(nil)

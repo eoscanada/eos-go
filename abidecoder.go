@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -313,11 +314,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 	case "float64":
 		v, e := binaryDecoder.ReadFloat64()
 		if e == nil {
-			if a.fitNodeos {
-				value = strconv.FormatFloat(v, 'f', 17, 64)
-			} else {
-				value = json.RawMessage(strconv.FormatFloat(float64(v), 'f', -1, 64))
-			}
+			value = formatFloat(v, a.fitNodeos)
 		}
 		err = e
 	case "float128":
@@ -436,4 +433,23 @@ func formatTimePointSec(timePoint TimePointSec) string {
 	t := time.Unix(int64(timePoint), 0)
 
 	return t.UTC().Format(standardTimePointSecFormat)
+}
+
+func formatFloat(v float64, fitNodeos bool) interface{} {
+	switch v {
+	case math.Inf(1):
+		return "inf"
+	case math.Inf(-1):
+		return "-inf"
+	case math.NaN():
+		return "nan"
+	default:
+	}
+
+	if fitNodeos {
+		return strconv.FormatFloat(v, 'f', 17, 64)
+	} else {
+		return json.RawMessage(strconv.FormatFloat(float64(v), 'f', -1, 64))
+	}
+
 }
