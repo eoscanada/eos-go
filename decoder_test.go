@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -282,7 +283,7 @@ func TestDecoder_Empty_Checksum256(t *testing.T) {
 
 func TestDecoder_PublicKey(t *testing.T) {
 
-	pk := ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm")
+	pk := ecc.MustNewPublicKey(ecc.PublicKeyPrefixCompat + "1111111111111111111111111111111114T1Anm")
 
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
@@ -398,6 +399,7 @@ func TestDecoder_Empty_Signature(t *testing.T) {
 func TestB(t *testing.T) {
 
 }
+
 func TestDecoder_BlockState(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -426,10 +428,12 @@ func TestDecoder_BlockState(t *testing.T) {
 			json, err := json.MarshalIndent(blockState, "", "  ")
 			require.NoError(t, err)
 
-			expected, err := ioutil.ReadFile(test.expectedJSONFile)
+			expectedFileContent, err := ioutil.ReadFile(test.expectedJSONFile)
 			require.NoError(t, err)
 
-			assert.JSONEq(t, string(expected), string(json), unifiedDiff(t, expected, json))
+			expected := strings.ReplaceAll(string(expectedFileContent), `"EOS`, `"`+ecc.PublicKeyPrefixCompat)
+
+			assert.JSONEq(t, expected, string(json), unifiedDiff(t, []byte(expected), json))
 		})
 	}
 }
@@ -554,7 +558,7 @@ func TestDecoder_Encode(t *testing.T) {
 		F7: [2]string{"foo", "bar"},
 		// maps don't serialize deterministically.. we no want that.
 		//		F8:  map[string]string{"foo": "bar", "hello": "you"},
-		F9:  ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"),
+		F9:  ecc.MustNewPublicKey("PUB_K1_1111111111111111111111111111111114T1Anm"),
 		F10: ecc.MustNewSignatureFromData(make([]byte, 66)),
 		F11: byte(1),
 		F12: uint64(87),

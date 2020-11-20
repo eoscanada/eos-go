@@ -318,7 +318,7 @@ func TestABI_decode_StructFieldTypeTimePoint(t *testing.T) {
 func TestABI_decode_StructHasAliasedBase(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "base", NewTypeName: "aliasbase"},
+			{Type: "base", NewTypeName: "aliasbase"},
 		},
 		Structs: []StructDef{
 			{
@@ -346,7 +346,7 @@ func TestABI_decode_StructHasAliasedBase(t *testing.T) {
 func TestABI_decode_StructFieldTypeHasAliasedBase(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "base", NewTypeName: "aliasbase"},
+			{Type: "base", NewTypeName: "aliasbase"},
 		},
 		Structs: []StructDef{
 			{
@@ -383,7 +383,7 @@ func TestABI_decode_StructFieldTypeHasAliasedBase(t *testing.T) {
 func TestABI_decode_StructFieldTypeHasArrayOfAliasArray(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "string[]", NewTypeName: "vec_string"},
+			{Type: "string[]", NewTypeName: "vec_string"},
 		},
 		Structs: []StructDef{
 			{
@@ -430,7 +430,7 @@ func TestABI_decode_StructFieldWithUint128(t *testing.T) {
 func TestABI_decode_StructFieldTypeHasAlias(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "uint8", NewTypeName: "alias"},
+			{Type: "uint8", NewTypeName: "alias"},
 		},
 		Structs: []StructDef{
 			{
@@ -454,7 +454,7 @@ func TestABI_decode_StructFieldTypeHasAlias(t *testing.T) {
 func TestABI_decode_StructFieldArrayTypeHasAlias(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "uint8", NewTypeName: "alias"},
+			{Type: "uint8", NewTypeName: "alias"},
 		},
 		Structs: []StructDef{
 			{
@@ -478,7 +478,7 @@ func TestABI_decode_StructFieldArrayTypeHasAlias(t *testing.T) {
 func TestABI_decode_StructFieldTypeHasAliasArray(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "uint8[]", NewTypeName: "alias"},
+			{Type: "uint8[]", NewTypeName: "alias"},
 		},
 		Structs: []StructDef{
 			{
@@ -504,7 +504,7 @@ func TestABI_decode_StructFieldHasAliasWithStructType(t *testing.T) {
 	abi := &ABI{
 		fitNodeos: true,
 		Types: []ABIType{
-			ABIType{Type: "collab_data[]", NewTypeName: "approvals_t"},
+			{Type: "collab_data[]", NewTypeName: "approvals_t"},
 		},
 		Structs: []StructDef{
 			{
@@ -539,7 +539,7 @@ func TestABI_decode_StructFieldHasAlias(t *testing.T) {
 
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "name", NewTypeName: "alias"},
+			{Type: "name", NewTypeName: "alias"},
 		},
 		Structs: []StructDef{
 			{
@@ -672,7 +672,7 @@ func TestABI_decode_StructVariantField(t *testing.T) {
 func TestABI_decode_StructArrayOfVariantField_OneOfVariantIsAlias(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "name", NewTypeName: "my_name"},
+			{Type: "name", NewTypeName: "my_name"},
 		},
 		Variants: []VariantDef{
 			{
@@ -702,7 +702,7 @@ func TestABI_decode_StructArrayOfVariantField_OneOfVariantIsAlias(t *testing.T) 
 func TestABI_decode_Struct2DArrayOfVariantField_OneOfVariantIsAlias(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "name", NewTypeName: "my_name"},
+			{Type: "name", NewTypeName: "my_name"},
 		},
 		Variants: []VariantDef{
 			{
@@ -732,7 +732,7 @@ func TestABI_decode_Struct2DArrayOfVariantField_OneOfVariantIsAlias(t *testing.T
 func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "name", NewTypeName: "my_name"},
+			{Type: "name", NewTypeName: "my_name"},
 		},
 		Variants: []VariantDef{
 			{
@@ -770,7 +770,7 @@ func TestABI_decode_StructVariantField_OneOfVariantIsAlias(t *testing.T) {
 func TestABI_decode_StructAliasToAVariantField(t *testing.T) {
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "variant_", NewTypeName: "my_variant"},
+			{Type: "variant_", NewTypeName: "my_variant"},
 		},
 		Variants: []VariantDef{
 			{
@@ -809,7 +809,7 @@ func TestABI_decode_Uint8ArrayVec(t *testing.T) {
 
 	abi := &ABI{
 		Types: []ABIType{
-			ABIType{Type: "name", NewTypeName: "alias"},
+			{Type: "name", NewTypeName: "alias"},
 		},
 		Structs: []StructDef{
 			{
@@ -1088,7 +1088,8 @@ func TestABI_Read(t *testing.T) {
 		{name: "checksum160", typeName: "checksum160", data: Checksum160(make([]byte, TypeSize.Checksum160)), expectedValue: s(`"0000000000000000000000000000000000000000"`)},
 		{name: "checksum256", typeName: "checksum256", data: Checksum256(make([]byte, TypeSize.Checksum256)), expectedValue: s(`"0000000000000000000000000000000000000000000000000000000000000000"`)},
 		{name: "checksum512", typeName: "checksum512", data: Checksum512(make([]byte, TypeSize.Checksum512)), expectedValue: s(`"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"`)},
-		{name: "public_key", typeName: "public_key", data: ecc.MustNewPublicKey("EOS1111111111111111111111111111111114T1Anm"), expectedValue: s(`"EOS1111111111111111111111111111111114T1Anm"`)},
+		{name: "public_key", typeName: "public_key", data: ecc.MustNewPublicKey(ecc.PublicKeyPrefixCompat + "1111111111111111111111111111111114T1Anm"), expectedValue: s(`"` + ecc.PublicKeyPrefixCompat + `1111111111111111111111111111111114T1Anm"`)},
+		{name: "public_key_k1", typeName: "public_key", data: ecc.MustNewPublicKey("PUB_K1_1111111111111111111111111111111114T1Anm"), expectedValue: s(`"` + ecc.PublicKeyPrefixCompat + `1111111111111111111111111111111114T1Anm"`)},
 		{name: "public_key_wa", typeName: "public_key", data: ecc.MustNewPublicKey("PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"), expectedValue: s(`"PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"`)},
 		{name: "signature", typeName: "signature", data: ecc.MustNewSignatureFromData(signatureBuffer), expectedValue: s(`"SIG_K1_K96L1au4xFJg5edn6qBK6UDbSsC2RKsMs4cXCA2LoCPZxBDMXehdZFWPh1GeRhzGoQjBwNK2eBmUXf4L8SBApL69pGdUJm"`)},
 		{name: "signature_wa", typeName: "signature", data: ecc.MustNewSignature("SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"), expectedValue: s(`"SIG_WA_28AzYsRYSSA85Q4Jjp4zkiyBA8G85AcPsHU3HUuqLkY3LooYcFiSMGGxhEQcCzAhaZJqdaUXG16p8t63sDhqh9L4xc24CDxbf81D6FW4SXGjxQSM2D7FAJSSQCogjbqJanTP5CbSF8FWyaD4pVVAs4Z9ubqNhHCkiLDesEukwGYu6ujgwQkFqczow5cSwTqTirdgqCBjkGQLMT3KV2JwjN7b2qPAyDa2vvjsGWFP8HVTw2tctD6FBPHU9nFgtfcztkc3eqxVU9UbvUbKayU62dLZBwNCwHxmyPymH5YfoJLhBkS8s"`)},

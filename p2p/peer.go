@@ -1,26 +1,21 @@
 package p2p
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"net"
-	"time"
-
-	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
-
-	"go.uber.org/zap/zapcore"
-
 	"runtime"
-
-	"bufio"
+	"time"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Peer struct {
@@ -268,8 +263,7 @@ func (p *Peer) SendTime() error {
 }
 
 func (p *Peer) SendHandshake(info *HandshakeInfo) error {
-
-	publicKey, err := ecc.NewPublicKey("EOS1111111111111111111111111111111114T1Anm")
+	publicKey, err := ecc.NewPublicKey("PUB_K1_1111111111111111111111111111111114T1Anm")
 	if err != nil {
 		return errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
 	}

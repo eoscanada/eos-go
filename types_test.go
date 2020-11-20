@@ -582,7 +582,7 @@ func TestPackAccountName(t *testing.T) {
 }
 
 func TestAuthorityBinaryMarshal(t *testing.T) {
-	key, err := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+	key, err := ecc.NewPublicKey(ecc.PublicKeyPrefixCompat + "6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
 	require.NoError(t, err)
 	a := Authority{
 		Threshold: 2,

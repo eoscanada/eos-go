@@ -76,10 +76,10 @@ type pubkeyReaderManifest struct {
 }
 
 var pubKeyReaderManifests = map[string]pubkeyReaderManifest{
-	PublicKeyPrefixCompat: pubkeyReaderManifest{CurveK1, newInnerK1PublicKey},
-	PublicKeyK1Prefix:     pubkeyReaderManifest{CurveK1, newInnerK1PublicKey},
-	PublicKeyR1Prefix:     pubkeyReaderManifest{CurveR1, newInnerR1PublicKey},
-	PublicKeyWAPrefix:     pubkeyReaderManifest{CurveWA, newInnerWAPublicKey},
+	PublicKeyPrefixCompat: {CurveK1, newInnerK1PublicKey},
+	PublicKeyK1Prefix:     {CurveK1, newInnerK1PublicKey},
+	PublicKeyR1Prefix:     {CurveR1, newInnerR1PublicKey},
+	PublicKeyWAPrefix:     {CurveWA, newInnerWAPublicKey},
 }
 
 func NewPublicKey(pubKey string) (out PublicKey, err error) {
