@@ -101,6 +101,8 @@ func NewPublicKey(pubKey string) (out PublicKey, err error) {
 		return out, fmt.Errorf("invalid format")
 	}
 
+	pubKeyReaderManifestsMux.Lock()
+	defer pubKeyReaderManifestsMux.Unlock()
 	for prefix, manifest := range pubKeyReaderManifests {
 		if !strings.HasPrefix(pubKey, prefix) {
 			continue
