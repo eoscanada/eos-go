@@ -16,6 +16,9 @@ var PublicKeyPrefix = "PUB_"
 var PublicKeyK1Prefix = "PUB_K1_"
 var PublicKeyR1Prefix = "PUB_R1_"
 var PublicKeyWAPrefix = "PUB_WA_"
+
+// PublicKeyPrefixCompat holds the current compatible key prefix, for chains other than EOS it can be overridden by
+// calling ecc.SetPublicKeyPrefixCompat
 var PublicKeyPrefixCompat = "EOS"
 
 var publicKeyDataSize = new(int)
