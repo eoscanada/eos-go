@@ -45,6 +45,35 @@ func Test_PublicKeyMarshalUnmarshal(t *testing.T) {
 	}
 }
 
+func Test_PublicKeyMarshalUnmarshalAltPrefix(t *testing.T) {
+	SetPublicKeyPrefixCompat("ABC")
+	defer SetPublicKeyPrefixCompat("EOS")
+	cases := []struct {
+		name        string
+		key         string
+		expectedKey string
+	}{
+		{
+			name:        "K1-ABC",
+			key:         PublicKeyPrefixCompat + "6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+			expectedKey: PublicKeyPrefixCompat + "6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+		},
+		{
+			name:        "K1",
+			key:         "PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+			expectedKey: PublicKeyPrefixCompat + "6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			key, err := NewPublicKey(c.key)
+			require.NoError(t, err)
+			assert.Equal(t, c.expectedKey, key.String())
+		})
+	}
+}
+
 func TestPublicKey_MarshalJSON(t *testing.T) {
 	cases := []struct {
 		name         string
@@ -70,6 +99,39 @@ func TestPublicKey_MarshalJSON(t *testing.T) {
 			name:         "WA",
 			key:          "PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj",
 			expectedJSON: `"PUB_WA_5hyixc7vkMbKiThWi1TnFtXw7HTDcHfjREj2SzxCtgw3jQGepa5T9VHEy1Tunjzzj"`,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			key, err := NewPublicKey(c.key)
+			require.NoError(t, err)
+
+			result, err := key.MarshalJSON()
+			require.NoError(t, err)
+
+			assert.Equal(t, []byte(c.expectedJSON), result)
+		})
+	}
+}
+
+func TestPublicKey_MarshalJSONAltPrefix(t *testing.T) {
+	SetPublicKeyPrefixCompat("ABC")
+	defer SetPublicKeyPrefixCompat("EOS")
+	cases := []struct {
+		name         string
+		key          string
+		expectedJSON string
+	}{
+		{
+			name:         "K1-ABC",
+			key:          PublicKeyPrefixCompat + "6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+			expectedJSON: `"` + PublicKeyPrefixCompat + `6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"`,
+		},
+		{
+			name:         "K1",
+			key:          "PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+			expectedJSON: `"` + PublicKeyPrefixCompat + `6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV"`,
 		},
 	}
 
