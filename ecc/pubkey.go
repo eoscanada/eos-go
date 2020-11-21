@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/eoscanada/eos-go/btcsuite/btcd/btcec"
 	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
@@ -80,6 +81,16 @@ var pubKeyReaderManifests = map[string]pubkeyReaderManifest{
 	PublicKeyK1Prefix:     {CurveK1, newInnerK1PublicKey},
 	PublicKeyR1Prefix:     {CurveR1, newInnerR1PublicKey},
 	PublicKeyWAPrefix:     {CurveWA, newInnerWAPublicKey},
+}
+var pubKeyReaderManifestsMux sync.Mutex
+
+func SetPublicKeyPrefixCompat(prefix string) {
+	pubKeyReaderManifestsMux.Lock()
+	if pubKeyReaderManifests[prefix].inner == nil {
+		pubKeyReaderManifests[prefix] = pubkeyReaderManifest{CurveK1, newInnerK1PublicKey}
+	}
+	pubKeyReaderManifestsMux.Unlock()
+	PublicKeyPrefixCompat = prefix
 }
 
 func NewPublicKey(pubKey string) (out PublicKey, err error) {
