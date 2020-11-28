@@ -22,7 +22,7 @@ func (s *innerR1Signature) publicKey(content []byte, hash []byte) (out PublicKey
 }
 
 func (s innerR1Signature) string(content []byte) string {
-	checksum := Ripemd160checksumHashCurve(content, CurveR1)
+	checksum := ripemd160checksumHashCurve(content, CurveR1)
 	buf := append(content[:], checksum...)
 	return "SIG_R1_" + base58.Encode(buf)
 }

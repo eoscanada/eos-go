@@ -21,8 +21,8 @@ func TestK1PrivateToPublic(t *testing.T) {
 }
 
 func TestR1PrivateToPublic(t *testing.T) {
-	encoded_privKey := "PVT_R1_2o5WfMRU4dTp23pbcbP2yn5MumQzSMy3ayNQ31qi5nUfa2jdWC"
-	_, err := NewPrivateKey(encoded_privKey)
+	encodedPrivKey := "PVT_R1_2o5WfMRU4dTp23pbcbP2yn5MumQzSMy3ayNQ31qi5nUfa2jdWC"
+	_, err := NewPrivateKey(encodedPrivKey)
 	require.NoError(t, err)
 
 	// FIXME: Actual retrieval of publicKey from privateKey for R1 is not done yet, disable this check
@@ -72,8 +72,8 @@ func TestPublicKeyValidity(t *testing.T) {
 		err error
 	}{
 		{PublicKeyPrefixCompat + "859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", nil},
-		{"MMM859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", fmt.Errorf("public key should start with [\"PUB_K1_\" | \"PUB_R1_\" | \"PUB_WA_\"] (or the old \"" + PublicKeyPrefixCompat + "\")")},
-		{PublicKeyPrefixCompat + "859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhTo", fmt.Errorf("checkDecode: invalid checksum")},
+		{"MMM859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", fmt.Errorf(`public key should start with "PUB_K1_", "PUB_R1_", "PUB_WA_" or the old "` + PublicKeyPrefixCompat + `"`)},
+		{PublicKeyPrefixCompat + "859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhTo", fmt.Errorf("public key checksum failed, found 0e2e1094 but expected 169c2652")},
 	}
 
 	for idx, test := range tests {

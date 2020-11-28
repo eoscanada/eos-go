@@ -204,7 +204,7 @@ func TestNodeosSignatureComparison(t *testing.T) {
 func TestSignatureUnmarshalChecksum(t *testing.T) {
 	fromEOSIOC := "SIG_K1_KW4qcHDh6ziqWELRAsFx42sgPuP3VfCpTKX4D5A3uZhFb3fzojTeGohja19g4EJa9Zv7SrGZ47H8apo1sNa2bwPvGwW2bb" // simply checked the last 2 bytes
 	_, err := NewSignature(fromEOSIOC)
-	require.Equal(t, "signature checksum failed, found a9c72981 expected a9c72982", err.Error())
+	require.Equal(t, "signature checksum failed, found a9c72981 but expected a9c72982", err.Error())
 }
 
 func TestSignatureVerify_WA(t *testing.T) {

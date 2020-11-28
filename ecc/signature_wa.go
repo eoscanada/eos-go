@@ -64,7 +64,7 @@ func (s *innerWASignature) publicKey(content []byte, hash []byte) (out PublicKey
 }
 
 func (s innerWASignature) string(content []byte) string {
-	checksum := Ripemd160checksumHashCurve(content, CurveWA)
+	checksum := ripemd160checksumHashCurve(content, CurveWA)
 	buf := append(content[:], checksum...)
 	return "SIG_WA_" + base58.Encode(buf)
 }
