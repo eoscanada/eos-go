@@ -61,8 +61,8 @@ func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 }
 
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]interface{}, error) {
-	if loggingEnabled {
-		abiDecoderLog.Debug("decode struct", zap.String("name", structName))
+	if traceEnabled {
+		zlog.Debug("decode struct", zap.String("name", structName))
 	}
 
 	structure := a.StructForName(structName)
@@ -72,13 +72,13 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]inte
 
 	builtStruct := map[string]interface{}{}
 	if structure.Base != "" {
-		if loggingEnabled {
-			abiDecoderLog.Debug("struct has base struct", zap.String("name", structName), zap.String("base", structure.Base))
+		if traceEnabled {
+			zlog.Debug("struct has base struct", zap.String("name", structName), zap.String("base", structure.Base))
 		}
 
 		baseName, isAlias := a.TypeNameForNewTypeName(structure.Base)
-		if isAlias && loggingEnabled {
-			abiDecoderLog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
+		if isAlias && traceEnabled {
+			zlog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
 		}
 
 		var err error
@@ -122,8 +122,8 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(initialFieldType)
 	//fmt.Println("resolveField", isOptional, isArray, initialFieldType, fieldType)
 
-	if loggingEnabled {
-		abiDecoderLog.Debug("analyzed field",
+	if traceEnabled {
+		zlog.Debug("analyzed field",
 			zap.String("field_type", fieldType),
 			zap.Bool("is_optional", isOptional),
 			zap.Bool("is_array", isArray),
@@ -134,8 +134,8 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 	// check if this field is an alias
 	aliasFieldType, isAlias := a.TypeNameForNewTypeName(fieldType)
 	if isAlias {
-		if loggingEnabled {
-			abiDecoderLog.Debug("type is an alias",
+		if traceEnabled {
+			zlog.Debug("type is an alias",
 				zap.String("from", fieldType),
 				zap.String("to", aliasFieldType),
 			)
@@ -145,8 +145,8 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 
 	// check if the field is a binary extension
 	if isBinaryExtension && !binaryDecoder.hasRemaining() {
-		if loggingEnabled {
-			abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
+		if traceEnabled {
+			zlog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
 		}
 		return skipField, nil
 	}
@@ -159,8 +159,8 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 		}
 
 		if b == 0 {
-			if loggingEnabled {
-				abiDecoderLog.Debug("field is not present")
+			if traceEnabled {
+				zlog.Debug("field is not present")
 			}
 			if !a.fitNodeos {
 				return skipField, nil
@@ -230,13 +230,13 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		}
 
 		variantFieldType := variant.Types[variantIndex]
-		if loggingEnabled {
-			abiDecoderLog.Debug("field is a variant", zap.String("type", variantFieldType))
+		if traceEnabled {
+			zlog.Debug("field is a variant", zap.String("type", variantFieldType))
 		}
 
 		resolvedVariantFieldType, isAlias := a.TypeNameForNewTypeName(variantFieldType)
-		if isAlias && loggingEnabled {
-			abiDecoderLog.Debug("variant type is an alias", zap.String("from", fieldType), zap.String("to", resolvedVariantFieldType))
+		if isAlias && traceEnabled {
+			zlog.Debug("variant type is an alias", zap.String("from", fieldType), zap.String("to", resolvedVariantFieldType))
 		}
 
 		fieldType = resolvedVariantFieldType
@@ -381,8 +381,8 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		return nil, fmt.Errorf("read: %s", err)
 	}
 
-	if loggingEnabled {
-		abiDecoderLog.Debug("set field value",
+	if traceEnabled {
+		zlog.Debug("set field value",
 			zap.Reflect("value", value),
 		)
 	}

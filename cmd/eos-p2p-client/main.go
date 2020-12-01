@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/dfuse-io/logging"
 	"github.com/eoscanada/eos-go/p2p"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	flag.Parse()
 
 	if *showLog {
-		p2p.EnableP2PLogging()
+		logging.Set(logging.MustCreateLogger(), "github.com/eoscanada/eos-go/p2p")
 	}
 	defer p2p.SyncLogger()
 

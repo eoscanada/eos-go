@@ -2,14 +2,11 @@ package p2p
 
 import (
 	"math"
-
-	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
-
 	"time"
 
 	"github.com/eoscanada/eos-go"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type Client struct {
@@ -73,7 +70,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 					errChannel <- errors.Wrap(err, "HandshakeMessage")
 					break
 				}
-				p2pLog.Debug("Handshake resent", zap.String("other", m.P2PAddress))
+				zlog.Debug("Handshake resent", zap.String("other", m.P2PAddress))
 
 			} else {
 
@@ -104,7 +101,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				if c.catchup.requestedEndBlock == blockNum {
 
 					if c.catchup.originHeadBlock <= blockNum {
-						p2pLog.Debug("In sync with last handshake")
+						zlog.Debug("In sync with last handshake")
 						blockID, err := m.BlockID()
 						if err != nil {
 							errChannel <- errors.Wrap(err, "getting block id")
@@ -116,7 +113,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 						if err != nil {
 							errChannel <- errors.Wrap(err, "send handshake")
 						}
-						p2pLog.Debug("Send new handshake",
+						zlog.Debug("Send new handshake",
 							zap.Object("handshakeInfo", peer.handshakeInfo))
 					} else {
 						err = c.catchup.sendSyncRequest(peer)
@@ -131,7 +128,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 }
 
 func (c *Client) Start() error {
-	p2pLog.Info("Starting client")
+	zlog.Info("Starting client")
 
 	errorChannel := make(chan error, 1)
 	readyChannel := c.peer.Connect(errorChannel)
@@ -170,7 +167,7 @@ func (c *Catchup) sendSyncRequest(peer *Peer) error {
 	c.requestedStartBlock = c.headBlock
 	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 100))
 
-	p2pLog.Debug("Sending sync request",
+	zlog.Debug("Sending sync request",
 		zap.Uint32("startBlock", c.requestedStartBlock),
 		zap.Uint32("endBlock", c.requestedEndBlock))
 

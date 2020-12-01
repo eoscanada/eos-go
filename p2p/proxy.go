@@ -3,11 +3,9 @@ package p2p
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
-
 	"github.com/eoscanada/eos-go"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type Proxy struct {
@@ -77,7 +75,7 @@ func triggerHandshake(peer *Peer) error {
 
 func (p *Proxy) ConnectAndStart() error {
 
-	p2pLog.Info("Connecting and starting proxy")
+	zlog.Info("Connecting and starting proxy")
 
 	errorChannel := make(chan error)
 
@@ -106,7 +104,7 @@ func (p *Proxy) ConnectAndStart() error {
 }
 
 func (p *Proxy) Start() error {
-	p2pLog.Info("Starting readers",
+	zlog.Info("Starting readers",
 		zap.String("peer1", p.Peer1.Address),
 		zap.String("peer1", p.Peer2.Address))
 	errorChannel := make(chan error)

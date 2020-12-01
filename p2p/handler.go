@@ -20,21 +20,21 @@ func (f HandlerFunc) Handle(envelope *Envelope) {
 var LoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	data, err := json.Marshal(envelope)
 	if err != nil {
-		logErr("Marshal err", err)
+		zlog.Error("marshal err", zap.Error(err))
 		return
 	}
 
-	p2pLog.Info("handler", zap.String("message", string(data)))
+	zlog.Info("handler", zap.String("message", string(data)))
 })
 
 // StringLoggerHandler simply prints the messages as they go through the client.
 var StringLoggerHandler = HandlerFunc(func(envelope *Envelope) {
 	name, _ := envelope.Packet.Type.Name()
-	p2pLog.Info(
+	zlog.Info(
 		"handler Packet",
 		zap.String("name", name),
 		zap.String("sender", envelope.Sender.Address),
 		zap.String("receiver", envelope.Receiver.Address),
-		zap.Stringer("msg", envelope.Packet.P2PMessage), // this will use by String()
+		zap.Stringer("msg", envelope.Packet.P2PMessage),
 	)
 })

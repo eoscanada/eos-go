@@ -97,7 +97,7 @@ func (p *Peer) Read() (*eos.Packet, error) {
 		p.cancelHandshakeTimeout <- true
 	}
 	if err != nil {
-		p2pLog.Error("Connection Read Err", zap.String("address", p.Address), zap.Error(err))
+		zlog.Error("Connection Read Err", zap.String("address", p.Address), zap.Error(err))
 		return nil, errors.Wrapf(err, "connection: read %s err", p.Address)
 	}
 	return packet, nil
@@ -125,19 +125,19 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 		address2log := zap.String("address", p.Address)
 
 		if p.listener {
-			p2pLog.Debug("Listening on", address2log)
+			zlog.Debug("Listening on", address2log)
 
 			ln, err := net.Listen("tcp", p.Address)
 			if err != nil {
 				errChan <- errors.Wrapf(err, "peer init: listening %s", p.Address)
 			}
 
-			p2pLog.Debug("Accepting connection on", address2log)
+			zlog.Debug("Accepting connection on", address2log)
 			conn, err := ln.Accept()
 			if err != nil {
 				errChan <- errors.Wrapf(err, "peer init: accepting connection on %s", p.Address)
 			}
-			p2pLog.Debug("Connected on", address2log)
+			zlog.Debug("Connected on", address2log)
 
 			p.SetConnection(conn)
 			ready <- true
@@ -147,15 +147,15 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				go func(p *Peer) {
 					select {
 					case <-time.After(p.handshakeTimeout):
-						p2pLog.Warn("handshake took too long", address2log)
+						zlog.Warn("handshake took too long", address2log)
 						errChan <- errors.Wrapf(err, "handshake took too long: %s", p.Address)
 					case <-p.cancelHandshakeTimeout:
-						p2pLog.Warn("cancelHandshakeTimeout canceled", address2log)
+						zlog.Warn("cancelHandshakeTimeout canceled", address2log)
 					}
 				}(p)
 			}
 
-			p2pLog.Info("Dialing", address2log, zap.Duration("timeout", p.connectionTimeout))
+			zlog.Info("Dialing", address2log, zap.Duration("timeout", p.connectionTimeout))
 			conn, err := net.DialTimeout("tcp", p.Address, p.connectionTimeout)
 			if err != nil {
 				if p.handshakeTimeout > 0 {
@@ -164,7 +164,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				errChan <- errors.Wrapf(err, "peer init: dial %s", p.Address)
 				return
 			}
-			p2pLog.Info("Connected to", address2log)
+			zlog.Info("Connected to", address2log)
 			p.connection = conn
 			p.reader = bufio.NewReader(conn)
 			ready <- true
@@ -203,7 +203,7 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 }
 
 func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	p2pLog.Debug("SendSyncRequest",
+	zlog.Debug("SendSyncRequest",
 		zap.String("peer", p.Address),
 		zap.Uint32("start", startBlockNum),
 		zap.Uint32("end", endBlockNumber))
@@ -216,7 +216,7 @@ func (p *Peer) SendSyncRequest(startBlockNum uint32, endBlockNumber uint32) (err
 	return errors.WithStack(p.WriteP2PMessage(syncRequest))
 }
 func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err error) {
-	p2pLog.Debug("SendRequest",
+	zlog.Debug("SendRequest",
 		zap.String("peer", p.Address),
 		zap.Uint32("start", startBlockNum),
 		zap.Uint32("end", endBlockNumber))
@@ -236,7 +236,7 @@ func (p *Peer) SendRequest(startBlockNum uint32, endBlockNumber uint32) (err err
 }
 
 func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
-	p2pLog.Debug("Send Notice",
+	zlog.Debug("Send Notice",
 		zap.String("peer", p.Address),
 		zap.Uint32("head", headBlockNum),
 		zap.Uint32("lib", libNum),
@@ -256,7 +256,7 @@ func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
 }
 
 func (p *Peer) SendTime() error {
-	p2pLog.Debug("SendTime", zap.String("peer", p.Address))
+	zlog.Debug("SendTime", zap.String("peer", p.Address))
 
 	notice := &eos.TimeMessage{}
 	return errors.WithStack(p.WriteP2PMessage(notice))
@@ -268,7 +268,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 		return errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
 	}
 
-	p2pLog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
+	zlog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 

@@ -542,9 +542,6 @@ type EncodeTestStruct struct {
 }
 
 func TestDecoder_Encode(t *testing.T) {
-	//EnableDecoderLogging()
-	//EnableEncoderLogging()
-
 	now := time.Date(2018, time.September, 26, 1, 2, 3, 4, time.UTC)
 	tstamp := Tstamp{Time: time.Unix(0, now.UnixNano())}
 	blockts := BlockTimestamp{time.Unix(now.Unix(), 0)}

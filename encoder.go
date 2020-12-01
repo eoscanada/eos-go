@@ -182,10 +182,10 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Array:
 			l := t.Len()
 
-			if loggingEnabled {
-				defer func(prev *zap.Logger) { encoderLog = prev }(encoderLog)
-				encoderLog = encoderLog.Named("array")
-				encoderLog.Debug("encode: array", zap.Int("length", l), typeField("type", v))
+			if traceEnabled {
+				defer func(prev *zap.Logger) { zlog = prev }(zlog)
+				zlog = zlog.Named("array")
+				zlog.Debug("encode: array", zap.Int("length", l), typeField("type", v))
 			}
 
 			for i := 0; i < l; i++ {
@@ -199,10 +199,10 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 				return
 			}
 
-			if loggingEnabled {
-				defer func(prev *zap.Logger) { encoderLog = prev }(encoderLog)
-				encoderLog = encoderLog.Named("slice")
-				encoderLog.Debug("encode: slice", zap.Int("length", l), typeField("type", v))
+			if traceEnabled {
+				defer func(prev *zap.Logger) { zlog = prev }(zlog)
+				zlog = zlog.Named("slice")
+				zlog.Debug("encode: slice", zap.Int("length", l), typeField("type", v))
 			}
 
 			for i := 0; i < l; i++ {
@@ -213,16 +213,16 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Struct:
 			l := rv.NumField()
 
-			if loggingEnabled {
-				encoderLog.Debug("encode: struct", zap.Int("fields", l), typeField("type", v))
-				defer func(prev *zap.Logger) { encoderLog = prev }(encoderLog)
-				encoderLog = encoderLog.Named("struct")
+			if traceEnabled {
+				zlog.Debug("encode: struct", zap.Int("fields", l), typeField("type", v))
+				defer func(prev *zap.Logger) { zlog = prev }(zlog)
+				zlog = zlog.Named("struct")
 			}
 
 			for i := 0; i < l; i++ {
 				field := t.Field(i)
-				if loggingEnabled {
-					encoderLog.Debug("field", zap.String("field", field.Name))
+				if traceEnabled {
+					zlog.Debug("field", zap.String("field", field.Name))
 				}
 
 				tag := field.Tag.Get("eos")
@@ -250,10 +250,10 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Map:
 			keyCount := len(rv.MapKeys())
 
-			if loggingEnabled {
-				encoderLog.Debug("encode: map", zap.Int("key_count", keyCount), typeField("key_type", t.Key()), typeField("value_type", rv.Elem()))
-				defer func(prev *zap.Logger) { encoderLog = prev }(encoderLog)
-				encoderLog = encoderLog.Named("struct")
+			if traceEnabled {
+				zlog.Debug("encode: map", zap.Int("key_count", keyCount), typeField("key_type", t.Key()), typeField("value_type", rv.Elem()))
+				defer func(prev *zap.Logger) { zlog = prev }(zlog)
+				zlog = zlog.Named("struct")
 			}
 
 			if err = e.writeUVarInt(keyCount); err != nil {
@@ -281,8 +281,8 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 func (e *Encoder) toWriter(bytes []byte) (err error) {
 	e.count += len(bytes)
 
-	if loggingEnabled {
-		encoderLog.Debug("    appending", zap.Stringer("hex", HexBytes(bytes)), zap.Int("pos", e.count))
+	if traceEnabled {
+		zlog.Debug("    appending", zap.Stringer("hex", HexBytes(bytes)), zap.Int("pos", e.count))
 	}
 
 	_, err = e.output.Write(bytes)
@@ -290,8 +290,8 @@ func (e *Encoder) toWriter(bytes []byte) (err error) {
 }
 
 func (e *Encoder) writeByteArray(b []byte) error {
-	if loggingEnabled {
-		encoderLog.Debug("write byte array", zap.Int("len", len(b)))
+	if traceEnabled {
+		zlog.Debug("write byte array", zap.Int("len", len(b)))
 	}
 	if err := e.writeUVarInt(len(b)); err != nil {
 		return err
@@ -300,8 +300,8 @@ func (e *Encoder) writeByteArray(b []byte) error {
 }
 
 func (e *Encoder) writeUVarInt(v int) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write uvarint", zap.Int("val", v))
+	if traceEnabled {
+		zlog.Debug("write uvarint", zap.Int("val", v))
 	}
 
 	buf := make([]byte, 8)
@@ -310,8 +310,8 @@ func (e *Encoder) writeUVarInt(v int) (err error) {
 }
 
 func (e *Encoder) writeVarInt(v int) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write varint", zap.Int("val", v))
+	if traceEnabled {
+		zlog.Debug("write varint", zap.Int("val", v))
 	}
 
 	buf := make([]byte, 8)
@@ -320,15 +320,15 @@ func (e *Encoder) writeVarInt(v int) (err error) {
 }
 
 func (e *Encoder) writeByte(b byte) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write byte", zap.Uint8("val", b))
+	if traceEnabled {
+		zlog.Debug("write byte", zap.Uint8("val", b))
 	}
 	return e.toWriter([]byte{b})
 }
 
 func (e *Encoder) writeBool(b bool) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write bool", zap.Bool("val", b))
+	if traceEnabled {
+		zlog.Debug("write bool", zap.Bool("val", b))
 	}
 	var out byte
 	if b {
@@ -338,8 +338,8 @@ func (e *Encoder) writeBool(b bool) (err error) {
 }
 
 func (e *Encoder) writeUint16(i uint16) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write uint16", zap.Uint16("val", i))
+	if traceEnabled {
+		zlog.Debug("write uint16", zap.Uint16("val", i))
 	}
 	buf := make([]byte, TypeSize.Uint16)
 	binary.LittleEndian.PutUint16(buf, i)
@@ -347,22 +347,22 @@ func (e *Encoder) writeUint16(i uint16) (err error) {
 }
 
 func (e *Encoder) writeInt16(i int16) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write int16", zap.Int16("val", i))
+	if traceEnabled {
+		zlog.Debug("write int16", zap.Int16("val", i))
 	}
 	return e.writeUint16(uint16(i))
 }
 
 func (e *Encoder) writeInt32(i int32) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write int32", zap.Int32("val", i))
+	if traceEnabled {
+		zlog.Debug("write int32", zap.Int32("val", i))
 	}
 	return e.writeUint32(uint32(i))
 }
 
 func (e *Encoder) writeUint32(i uint32) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write uint32", zap.Uint32("val", i))
+	if traceEnabled {
+		zlog.Debug("write uint32", zap.Uint32("val", i))
 	}
 	buf := make([]byte, TypeSize.Uint32)
 	binary.LittleEndian.PutUint32(buf, i)
@@ -370,15 +370,15 @@ func (e *Encoder) writeUint32(i uint32) (err error) {
 }
 
 func (e *Encoder) writeInt64(i int64) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write int64", zap.Int64("val", i))
+	if traceEnabled {
+		zlog.Debug("write int64", zap.Int64("val", i))
 	}
 	return e.writeUint64(uint64(i))
 }
 
 func (e *Encoder) writeUint64(i uint64) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write uint64", zap.Uint64("val", i))
+	if traceEnabled {
+		zlog.Debug("write uint64", zap.Uint64("val", i))
 	}
 	buf := make([]byte, TypeSize.Uint64)
 	binary.LittleEndian.PutUint64(buf, i)
@@ -386,8 +386,8 @@ func (e *Encoder) writeUint64(i uint64) (err error) {
 }
 
 func (e *Encoder) writeUint128(i Uint128) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write uint128", zap.Stringer("hex", i), zap.Uint64("lo", i.Lo), zap.Uint64("hi", i.Hi))
+	if traceEnabled {
+		zlog.Debug("write uint128", zap.Stringer("hex", i), zap.Uint64("lo", i.Lo), zap.Uint64("hi", i.Hi))
 	}
 	buf := make([]byte, TypeSize.Uint128)
 	binary.LittleEndian.PutUint64(buf, i.Lo)
@@ -396,8 +396,8 @@ func (e *Encoder) writeUint128(i Uint128) (err error) {
 }
 
 func (e *Encoder) writeFloat32(f float32) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write float32", zap.Float32("val", f))
+	if traceEnabled {
+		zlog.Debug("write float32", zap.Float32("val", f))
 	}
 	i := math.Float32bits(f)
 	buf := make([]byte, TypeSize.Uint32)
@@ -406,8 +406,8 @@ func (e *Encoder) writeFloat32(f float32) (err error) {
 	return e.toWriter(buf)
 }
 func (e *Encoder) writeFloat64(f float64) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write float64", zap.Float64("val", f))
+	if traceEnabled {
+		zlog.Debug("write float64", zap.Float64("val", f))
 	}
 	i := math.Float64bits(f)
 	buf := make([]byte, TypeSize.Uint64)
@@ -417,15 +417,15 @@ func (e *Encoder) writeFloat64(f float64) (err error) {
 }
 
 func (e *Encoder) writeString(s string) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write string", zap.String("val", s))
+	if traceEnabled {
+		zlog.Debug("write string", zap.String("val", s))
 	}
 	return e.writeByteArray([]byte(s))
 }
 
 func (e *Encoder) writeChecksum160(checksum Checksum160) error {
-	if loggingEnabled {
-		encoderLog.Debug("write Checksum160", zap.Stringer("hex", HexBytes(checksum)))
+	if traceEnabled {
+		zlog.Debug("write Checksum160", zap.Stringer("hex", HexBytes(checksum)))
 	}
 	if len(checksum) == 0 {
 		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Checksum160))
@@ -434,8 +434,8 @@ func (e *Encoder) writeChecksum160(checksum Checksum160) error {
 }
 
 func (e *Encoder) writeChecksum256(checksum Checksum256) error {
-	if loggingEnabled {
-		encoderLog.Debug("write Checksum256", zap.Stringer("hex", HexBytes(checksum)))
+	if traceEnabled {
+		zlog.Debug("write Checksum256", zap.Stringer("hex", HexBytes(checksum)))
 	}
 	if len(checksum) == 0 {
 		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Checksum256))
@@ -444,8 +444,8 @@ func (e *Encoder) writeChecksum256(checksum Checksum256) error {
 }
 
 func (e *Encoder) writeChecksum512(checksum Checksum512) error {
-	if loggingEnabled {
-		encoderLog.Debug("write Checksum512", zap.Stringer("hex", HexBytes(checksum)))
+	if traceEnabled {
+		zlog.Debug("write Checksum512", zap.Stringer("hex", HexBytes(checksum)))
 	}
 	if len(checksum) == 0 {
 		return e.toWriter(bytes.Repeat([]byte{0}, TypeSize.Checksum512))
@@ -454,8 +454,8 @@ func (e *Encoder) writeChecksum512(checksum Checksum512) error {
 }
 
 func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write public key", zap.Stringer("pubkey", pk))
+	if traceEnabled {
+		zlog.Debug("write public key", zap.Stringer("pubkey", pk))
 	}
 
 	err = pk.Validate()
@@ -471,8 +471,8 @@ func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
 }
 
 func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write signature", zap.Stringer("sig", s))
+	if traceEnabled {
+		zlog.Debug("write signature", zap.Stringer("sig", s))
 	}
 
 	err = s.Validate()
@@ -488,16 +488,16 @@ func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
 }
 
 func (e *Encoder) writeTstamp(t Tstamp) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write tstamp", zap.Time("time", t.Time))
+	if traceEnabled {
+		zlog.Debug("write tstamp", zap.Time("time", t.Time))
 	}
 	n := uint64(t.UnixNano())
 	return e.writeUint64(n)
 }
 
 func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write block timestamp", zap.Time("time", bt.Time))
+	if traceEnabled {
+		zlog.Debug("write block timestamp", zap.Time("time", bt.Time))
 	}
 
 	milliseconds := bt.UnixNano() / time.Millisecond.Nanoseconds()
@@ -509,8 +509,8 @@ func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
 func (e *Encoder) writeCurrencyName(currency CurrencyName) (err error) {
 	// FIXME: this isn't really used.. we should implement serialization for the Symbol
 	// type only instead.
-	if loggingEnabled {
-		encoderLog.Debug("write currency", zap.String("name", string(currency)))
+	if traceEnabled {
+		zlog.Debug("write currency", zap.String("name", string(currency)))
 	}
 	out := make([]byte, 7, 7)
 	copy(out, []byte(currency))
@@ -519,8 +519,8 @@ func (e *Encoder) writeCurrencyName(currency CurrencyName) (err error) {
 }
 
 func (e *Encoder) writeAsset(asset Asset) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write asset", zap.Stringer("value", asset))
+	if traceEnabled {
+		zlog.Debug("write asset", zap.Stringer("value", asset))
 	}
 	e.writeUint64(uint64(asset.Amount))
 	e.writeByte(asset.Precision)
@@ -532,15 +532,15 @@ func (e *Encoder) writeAsset(asset Asset) (err error) {
 }
 
 func (e *Encoder) writeJSONTime(tm JSONTime) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("write json time", zap.Time("time", tm.Time))
+	if traceEnabled {
+		zlog.Debug("write json time", zap.Time("time", tm.Time))
 	}
 	return e.writeUint32(uint32(tm.Unix()))
 }
 
 func (e *Encoder) writeBlockP2PMessageEnvelope(envelope Packet) (err error) {
-	if loggingEnabled {
-		encoderLog.Debug("p2p: write message envelope")
+	if traceEnabled {
+		zlog.Debug("p2p: write message envelope")
 	}
 
 	if envelope.P2PMessage != nil {
@@ -556,8 +556,8 @@ func (e *Encoder) writeBlockP2PMessageEnvelope(envelope Packet) (err error) {
 
 	messageLen := uint32(len(envelope.Payload) + 1)
 
-	if loggingEnabled {
-		encoderLog.Debug("p2p: message length", zap.Uint32("len", messageLen))
+	if traceEnabled {
+		zlog.Debug("p2p: message length", zap.Uint32("len", messageLen))
 	}
 
 	err = e.writeUint32(messageLen)
@@ -577,8 +577,8 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 		//	log.Fatal("pas cool")
 		//}
 
-		if loggingEnabled {
-			encoderLog.Debug("entering action data", typeField("type", actionData))
+		if traceEnabled {
+			zlog.Debug("entering action data", typeField("type", actionData))
 		}
 		var d interface{}
 		d = actionData.Data
@@ -596,15 +596,15 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 
 		}
 
-		if loggingEnabled {
-			encoderLog.Debug("encoding action data", typeField("type", d))
+		if traceEnabled {
+			zlog.Debug("encoding action data", typeField("type", d))
 		}
 		raw, err := MarshalBinary(d)
 		if err != nil {
 			return err
 		}
-		if loggingEnabled {
-			encoderLog.Debug("writing action data", typeField("type", d))
+		if traceEnabled {
+			zlog.Debug("writing action data", typeField("type", d))
 		}
 		return e.writeByteArray(raw)
 	}
