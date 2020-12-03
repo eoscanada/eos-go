@@ -326,6 +326,20 @@ type GetRequiredKeysResp struct {
 	RequiredKeys []ecc.PublicKey `json:"required_keys"`
 }
 
+type GetAccountsByAuthorizersResp struct {
+	Accounts []AccountResult `json:"accounts"`
+}
+
+// TODO: what's the name of the struct
+type AccountResult struct {
+	Account            AccountName      `json:"account_name"`
+	Permission         PermissionName   `json:"permission_name"`
+	AuthorizingAccount *PermissionLevel `json:"authorizing_account,omitempty"`
+	AuthorizingKey     *ecc.PublicKey   `json:"authorizing_key,omitempty"`
+	Weight             uint16           `json:"weight"`
+	Threshold          uint32           `json:"threshold"`
+}
+
 // PushTransactionFullResp unwraps the responses from a successful `push_transaction`.
 // FIXME: REVIEW the actual expectOutput, things have moved here.
 type PushTransactionFullResp struct {

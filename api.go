@@ -34,7 +34,8 @@ type API struct {
 	lastGetInfoStamp time.Time
 	lastGetInfoLock  sync.Mutex
 
-	customGetRequiredKeys func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
+	customGetRequiredKeys   func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
+	enablePartialSignatures bool
 }
 
 func New(baseURL string) *API {
@@ -104,6 +105,48 @@ func (api *API) EnableKeepAlives() bool {
 
 func (api *API) SetCustomGetRequiredKeys(f func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)) {
 	api.customGetRequiredKeys = f
+}
+
+func (api *API) UsePartialRequiredKeys() {
+	api.enablePartialSignatures = true
+}
+
+func (api *API) getPartialRequiredKeys(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error) {
+	// loop to get all the authorizers, and dedupe
+	var authorizers []PermissionLevel
+	for _, act := range tx.Actions {
+		for _, pl := range act.Authorization {
+			authorizers = append(authorizers, pl)
+		}
+	}
+
+	ourKeys, err := api.Signer.AvailableKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := api.GetAccountsByAuthorizers(ctx, authorizers, ourKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []ecc.PublicKey
+	seen := make(map[string]bool)
+	for _, acct := range resp.Accounts {
+		if acct.AuthorizingKey == nil {
+			continue
+		}
+
+		stringKey := acct.AuthorizingKey.String()
+		if seen[stringKey] {
+			continue
+		}
+
+		out = append(out, *acct.AuthorizingKey)
+		seen[stringKey] = true
+	}
+
+	return out, nil
 }
 
 func (api *API) SetSigner(s Signer) {
@@ -360,19 +403,26 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 
 	stx := NewSignedTransaction(tx)
 
+	var err error
 	var requiredKeys []ecc.PublicKey
 	if api.customGetRequiredKeys != nil {
-		var err error
 		requiredKeys, err = api.customGetRequiredKeys(ctx, tx)
 		if err != nil {
 			return nil, nil, fmt.Errorf("custom_get_required_keys: %s", err)
 		}
 	} else {
-		resp, err := api.GetRequiredKeys(ctx, tx)
-		if err != nil {
-			return nil, nil, fmt.Errorf("get_required_keys: %s", err)
+		if api.enablePartialSignatures {
+			requiredKeys, err = api.getPartialRequiredKeys(ctx, tx)
+			if err != nil {
+				return nil, nil, fmt.Errorf("get_accounts_by_authorizers: %s", err)
+			}
+		} else {
+			resp, err := api.GetRequiredKeys(ctx, tx)
+			if err != nil {
+				return nil, nil, fmt.Errorf("get_required_keys: %s", err)
+			}
+			requiredKeys = resp.RequiredKeys
 		}
-		requiredKeys = resp.RequiredKeys
 	}
 
 	signedTx, err := api.Signer.Sign(ctx, stx, chainID, requiredKeys...)
@@ -555,6 +605,11 @@ func (api *API) GetRequiredKeys(ctx context.Context, tx *Transaction) (out *GetR
 	}
 
 	err = api.call(ctx, "chain", "get_required_keys", M{"transaction": tx, "available_keys": keys}, &out)
+	return
+}
+
+func (api *API) GetAccountsByAuthorizers(ctx context.Context, authorizations []PermissionLevel, keys []ecc.PublicKey) (out *GetAccountsByAuthorizersResp, err error) {
+	err = api.call(ctx, "chain", "get_accounts_by_authorizers", M{"accounts": authorizations, "keys": keys}, &out)
 	return
 }
 
