@@ -34,8 +34,8 @@ type API struct {
 	lastGetInfoStamp time.Time
 	lastGetInfoLock  sync.Mutex
 
-	customGetRequiredKeys   func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
-	enablePartialSignatures bool
+	customGetRequiredKeys     func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
+	enablePartialRequiredKeys bool
 }
 
 func New(baseURL string) *API {
@@ -108,7 +108,7 @@ func (api *API) SetCustomGetRequiredKeys(f func(ctx context.Context, tx *Transac
 }
 
 func (api *API) UsePartialRequiredKeys() {
-	api.enablePartialSignatures = true
+	api.enablePartialRequiredKeys = true
 }
 
 func (api *API) getPartialRequiredKeys(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error) {
@@ -411,7 +411,7 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 			return nil, nil, fmt.Errorf("custom_get_required_keys: %s", err)
 		}
 	} else {
-		if api.enablePartialSignatures {
+		if api.enablePartialRequiredKeys {
 			requiredKeys, err = api.getPartialRequiredKeys(ctx, tx)
 			if err != nil {
 				return nil, nil, fmt.Errorf("get_accounts_by_authorizers: %s", err)
