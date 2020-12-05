@@ -527,11 +527,9 @@ func TestStringToSymbol(t *testing.T) {
 		{"4,IQ", Symbol{Precision: 4, Symbol: "IQ"}, "........e54k4", nil},
 		{"4,EOS", Symbol{Precision: 4, Symbol: "EOS"}, "......2ndx2k4", nil},
 		{"9,EOSEOSA", Symbol{Precision: 9, Symbol: "EOSEOSA"}, "c5doylendx2kd", nil},
-
+		{"10,EOS", Symbol{Precision: 10, Symbol: "EOS"}, "......2ndx2ke", nil},
 		{"EOS", Symbol{}, "", errors.New("EOS is not a valid symbol")},
 		{",EOS", Symbol{}, "", errors.New(",EOS is not a valid symbol")},
-		{"10,EOS", Symbol{}, "", errors.New("10,EOS is not a valid symbol")},
-		{"10,EOS", Symbol{}, "", errors.New("10,EOS is not a valid symbol")},
 		{"1,EOSEOSEO", Symbol{}, "", errors.New("1,EOSEOSEO is not a valid symbol")},
 	}
 
