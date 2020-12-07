@@ -197,8 +197,29 @@ func (api *API) ScheduleProducerProtocolFeatureActivations(ctx context.Context, 
 	return api.call(ctx, "producer", "schedule_protocol_feature_activations", M{"protocol_features_to_activate": protocolFeaturesToActivate}, nil)
 }
 
-func (api *API) GetAccount(ctx context.Context, name AccountName) (out *AccountResp, err error) {
-	err = api.call(ctx, "chain", "get_account", M{"account_name": name}, &out)
+type GetAccountOption interface {
+	apply(body M)
+}
+
+type getAccountOptionFunc func(body M)
+
+func (f getAccountOptionFunc) apply(body M) {
+	f(body)
+}
+
+func WithCoreSymbol(symbol Symbol) GetAccountOption {
+	return getAccountOptionFunc(func(body M) {
+		body["expected_core_symbol"] = symbol.String()
+	})
+}
+
+func (api *API) GetAccount(ctx context.Context, name AccountName, opts ...GetAccountOption) (out *AccountResp, err error) {
+	body := M{"account_name": name}
+	for _, opt := range opts {
+		opt.apply(body)
+	}
+
+	err = api.call(ctx, "chain", "get_account", body, &out)
 	return
 }
 
