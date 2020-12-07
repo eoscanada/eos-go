@@ -289,7 +289,7 @@ func StringToSymbol(str string) (Symbol, error) {
 func MustStringToSymbol(str string) Symbol {
 	symbol, err := StringToSymbol(str)
 	if err != nil {
-		panic("invalid symbol " + str)
+		panic(fmt.Errorf("invalid symbol %q: %w", str, err))
 	}
 
 	return symbol
