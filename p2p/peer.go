@@ -278,9 +278,13 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	signature := ecc.Signature{
-		Curve:   ecc.CurveK1,
-		Content: make([]byte, 65, 65),
+	data := []byte{
+		byte(ecc.CurveK1),
+	}
+	data = append(data, make([]byte, 65, 65)...)
+	signature, err := ecc.NewSignatureFromData(data)
+	if err != nil {
+		return errors.Wrapf(err, "handshake signature from data")
 	}
 
 	handshake := &eos.HandshakeMessage{
@@ -303,7 +307,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 
 	err = p.WriteP2PMessage(handshake)
 	if err != nil {
-		err = errors.Wrapf(err, "sending handshake to %s", p.Address)
+		return errors.Wrapf(err, "sending handshake to %s", p.Address)
 	}
 
 	return nil
