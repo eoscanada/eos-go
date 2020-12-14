@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -80,7 +81,16 @@ func (b *KeyBag) Add(wifKey string) error {
 	if err != nil {
 		return err
 	}
-	b.Keys = append(b.Keys, privKey)
+
+	return b.Append(privKey)
+}
+
+func (b *KeyBag) Append(privateKey *ecc.PrivateKey) error {
+	if privateKey == nil {
+		return errors.New("appending a nil private key is forbidden")
+	}
+
+	b.Keys = append(b.Keys, privateKey)
 	return nil
 }
 
