@@ -36,6 +36,13 @@ func AN(in string) AccountName    { return AccountName(in) }
 func ActN(in string) ActionName   { return ActionName(in) }
 func PN(in string) PermissionName { return PermissionName(in) }
 
+func (n Name) String() string           { return string(n) }
+func (n AccountName) String() string    { return string(n) }
+func (n PermissionName) String() string { return string(n) }
+func (n ActionName) String() string     { return string(n) }
+func (n TableName) String() string      { return string(n) }
+func (n ScopeName) String() string      { return string(n) }
+
 type SafeString string
 
 func (ss *SafeString) UnmarshalBinary(d *Decoder) error {
