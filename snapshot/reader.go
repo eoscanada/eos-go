@@ -25,7 +25,7 @@ type Reader struct {
 }
 
 func NewDefaultReader(filename string) (r *Reader, err error) {
-	reader, err := newReader(filename)
+	reader, err := NewReader(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func NewDefaultReader(filename string) (r *Reader, err error) {
 	return reader, nil
 }
 
-func newReader(filename string) (r *Reader, err error) {
+func NewReader(filename string) (r *Reader, err error) {
 	r = &Reader{
 		filename: filename,
 		handlers: map[SectionName]sectionHandlerFunc{},
