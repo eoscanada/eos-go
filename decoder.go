@@ -402,7 +402,7 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 	case *TransactionWithID:
 		t, e := d.ReadByte()
 		if err != nil {
-			err = fmt.Errorf("failed to read TransactionWithID type byte: %s", e)
+			err = fmt.Errorf("failed to read TransactionWithID type byte: %w", e)
 			return
 		}
 
@@ -413,7 +413,7 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		if t == 0 {
 			id, e := d.ReadChecksum256()
 			if err != nil {
-				err = fmt.Errorf("failed to read TransactionWithID id: %s", e)
+				err = fmt.Errorf("failed to read TransactionWithID id: %w", e)
 				return
 			}
 
@@ -424,12 +424,12 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		} else {
 			packedTrx := &PackedTransaction{}
 			if err := d.Decode(packedTrx); err != nil {
-				return fmt.Errorf("packed transaction: %s", err)
+				return fmt.Errorf("packed transaction: %w", err)
 			}
 
 			id, err := packedTrx.ID()
 			if err != nil {
-				return fmt.Errorf("packed transaction id: %s", err)
+				return fmt.Errorf("packed transaction id: %w", err)
 			}
 
 			trx := TransactionWithID{ID: id, Packed: packedTrx}
@@ -901,7 +901,7 @@ func (d *Decoder) ReadChecksum512() (out Checksum512, err error) {
 func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
 	typeID, err := d.ReadUint8()
 	if err != nil {
-		return out, fmt.Errorf("unable to read public key type: %s", err)
+		return out, fmt.Errorf("unable to read public key type: %w", err)
 	}
 
 	curveID := ecc.CurveID(typeID)
@@ -913,17 +913,17 @@ func (d *Decoder) ReadPublicKey() (out ecc.PublicKey, err error) {
 	} else if curveID == ecc.CurveWA {
 		keyMaterial, err = d.readWAPublicKeyMaterial()
 	} else {
-		err = fmt.Errorf("unsupported curve ID: %s", curveID)
+		err = fmt.Errorf("unsupported curve ID %d (%s)", uint8(curveID), curveID)
 	}
 
 	if err != nil {
-		return out, fmt.Errorf("unable to read public key material for curve %s: %s", curveID, err)
+		return out, fmt.Errorf("unable to read public key material for curve %s: %w", curveID, err)
 	}
 
 	data := append([]byte{byte(curveID)}, keyMaterial...)
 	out, err = ecc.NewPublicKeyFromData(data)
 	if err != nil {
-		return out, fmt.Errorf("new public key from data: %s", err)
+		return out, fmt.Errorf("new public key from data: %w", err)
 	}
 
 	if traceEnabled {
@@ -956,7 +956,7 @@ func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
 	d.pos += 34
 	remainderDataSize, err := d.ReadUvarint32()
 	if err != nil {
-		return out, fmt.Errorf("unable to read public key WA key material size: %s", err)
+		return out, fmt.Errorf("unable to read public key WA key material size: %w", err)
 	}
 
 	if d.remaining() < int(remainderDataSize) {
@@ -976,7 +976,7 @@ func (d *Decoder) readWAPublicKeyMaterial() (out []byte, err error) {
 func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 	typeID, err := d.ReadUint8()
 	if err != nil {
-		return out, fmt.Errorf("unable to read signature type: %s", err)
+		return out, fmt.Errorf("unable to read signature type: %w", err)
 	}
 
 	curveID := ecc.CurveID(typeID)
@@ -1002,15 +1002,15 @@ func (d *Decoder) ReadSignature() (out ecc.Signature, err error) {
 	} else if curveID == ecc.CurveWA {
 		data, err = d.readWASignatureData()
 		if err != nil {
-			return out, fmt.Errorf("unable to read WA signature: %s", err)
+			return out, fmt.Errorf("unable to read WA signature: %w", err)
 		}
 	} else {
-		return out, fmt.Errorf("unsupported curve ID: %s", curveID)
+		return out, fmt.Errorf("unsupported curve ID %d (%s)", uint8(curveID), curveID)
 	}
 
 	out, err = ecc.NewSignatureFromData(data)
 	if err != nil {
-		return out, fmt.Errorf("new signature: %s", err)
+		return out, fmt.Errorf("new signature: %w", err)
 	}
 
 	if traceEnabled {
@@ -1031,7 +1031,7 @@ func (d *Decoder) readWASignatureData() (out []byte, err error) {
 	d.pos += 65
 	authenticatorDataSize, err := d.ReadUvarint32()
 	if err != nil {
-		return out, fmt.Errorf("unable to read signature WA authenticator data size: %s", err)
+		return out, fmt.Errorf("unable to read signature WA authenticator data size: %w", err)
 	}
 
 	if d.remaining() < int(authenticatorDataSize) {
@@ -1042,7 +1042,7 @@ func (d *Decoder) readWASignatureData() (out []byte, err error) {
 
 	clientDataJSONSize, err := d.ReadUvarint32()
 	if err != nil {
-		return out, fmt.Errorf("unable to read signature WA client data JSON size: %s", err)
+		return out, fmt.Errorf("unable to read signature WA client data JSON size: %w", err)
 	}
 
 	if d.remaining() < int(clientDataJSONSize) {
@@ -1171,12 +1171,12 @@ func (d *Decoder) ReadAsset() (out Asset, err error) {
 func (d *Decoder) ReadExtendedAsset() (out ExtendedAsset, err error) {
 	asset, err := d.ReadAsset()
 	if err != nil {
-		return out, fmt.Errorf("read extended asset: read asset: %s", err)
+		return out, fmt.Errorf("read extended asset: read asset: %w", err)
 	}
 
 	contract, err := d.ReadName()
 	if err != nil {
-		return out, fmt.Errorf("read extended asset: read name: %s", err)
+		return out, fmt.Errorf("read extended asset: read name: %w", err)
 	}
 
 	extendedAsset := ExtendedAsset{
@@ -1194,7 +1194,7 @@ func (d *Decoder) ReadExtendedAsset() (out ExtendedAsset, err error) {
 func (d *Decoder) ReadSymbol() (out *Symbol, err error) {
 	rawValue, err := d.ReadUint64()
 	if err != nil {
-		return out, fmt.Errorf("read symbol: %s", err)
+		return out, fmt.Errorf("read symbol: %w", err)
 	}
 
 	precision := uint8(rawValue & 0xFF)
@@ -1262,13 +1262,13 @@ func (d *Decoder) ReadP2PMessageEnvelope() (out *Packet, err error) {
 	out = &Packet{}
 	l, err := d.ReadUint32()
 	if err != nil {
-		err = fmt.Errorf("p2p envelope length: %s", err)
+		err = fmt.Errorf("p2p envelope length: %w", err)
 		return
 	}
 	out.Length = l
 	b, err := d.ReadByte()
 	if err != nil {
-		err = fmt.Errorf("p2p envelope type: %s", err)
+		err = fmt.Errorf("p2p envelope type: %w", err)
 		return
 	}
 	out.Type = P2PMessageType(b)

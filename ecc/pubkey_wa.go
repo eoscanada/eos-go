@@ -27,7 +27,7 @@ func (p *innerWAPublicKey) key(content []byte) (*btcec.PublicKey, error) {
 	X := new(big.Int).SetBytes(x)
 	Y, err := decompressPoint(X, ySign == 1)
 	if err != nil {
-		return nil, fmt.Errorf("unable to decompress compressed publick key material: %s", err)
+		return nil, fmt.Errorf("unable to decompress compressed publick key material: %w", err)
 	}
 
 	return &btcec.PublicKey{

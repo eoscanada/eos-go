@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eoscanada/eos-go"
 )
 
@@ -29,5 +29,10 @@ func main() {
 		log.Fatalln("error decoding:", err)
 	}
 
-	spew.Dump(tx)
+	out, err := json.MarshalIndent(tx, "", " ")
+	if err != nil {
+		log.Fatalln("error marshaling:", err)
+	}
+
+	fmt.Println(string(out))
 }

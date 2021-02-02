@@ -343,7 +343,7 @@ func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalJSON(data []byte) error {
 		p.V1 = new(ProducerSchedule)
 		err := json.Unmarshal(data, p.V1)
 		if err != nil {
-			return fmt.Errorf("unable to unmarshal ProducerSchedule type: %s", err)
+			return fmt.Errorf("unable to unmarshal ProducerSchedule type: %w", err)
 		}
 	}
 
@@ -351,7 +351,7 @@ func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalJSON(data []byte) error {
 		p.V2 = new(ProducerAuthoritySchedule)
 		err := json.Unmarshal(data, p.V2)
 		if err != nil {
-			return fmt.Errorf("unable to unmarshal ProducerAuthoritySchedule type: %s", err)
+			return fmt.Errorf("unable to unmarshal ProducerAuthoritySchedule type: %w", err)
 		}
 	}
 
@@ -506,7 +506,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 
 		id, err := packed.ID()
 		if err != nil {
-			return fmt.Errorf("get id: %s", err)
+			return fmt.Errorf("get id: %w", err)
 		}
 
 		*t = TransactionWithID{
@@ -524,7 +524,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 
 		shaID, err := hex.DecodeString(id)
 		if err != nil {
-			return fmt.Errorf("decoding id in trx: %s", err)
+			return fmt.Errorf("decoding id in trx: %w", err)
 		}
 
 		*t = TransactionWithID{
@@ -566,7 +566,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 
 		id, err := packed.ID()
 		if err != nil {
-			return fmt.Errorf("get id: %s", err)
+			return fmt.Errorf("get id: %w", err)
 		}
 
 		*t = TransactionWithID{

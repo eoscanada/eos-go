@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -73,7 +72,7 @@ func (r *Relay) Start() error {
 	for {
 		ln, err := net.Listen("tcp", r.listeningAddress)
 		if err != nil {
-			return errors.Wrapf(err, "peer init: listening %s", r.listeningAddress)
+			return fmt.Errorf("peer init: listening %s: %w", r.listeningAddress, err)
 		}
 
 		zlog.Info("Accepting connection", zap.String("listen", r.listeningAddress))

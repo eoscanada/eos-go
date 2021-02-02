@@ -16,7 +16,7 @@ func newInnerR1PublicKey() innerPublicKey {
 func (p *innerR1PublicKey) key(content []byte) (*btcec.PublicKey, error) {
 	key, err := btcec.ParsePubKey(content, btcec.S256())
 	if err != nil {
-		return nil, fmt.Errorf("parsePubKey: %s", err)
+		return nil, fmt.Errorf("parsePubKey: %w", err)
 	}
 
 	return key, nil

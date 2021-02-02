@@ -429,18 +429,18 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 	if api.customGetRequiredKeys != nil {
 		requiredKeys, err = api.customGetRequiredKeys(ctx, tx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("custom_get_required_keys: %s", err)
+			return nil, nil, fmt.Errorf("custom_get_required_keys: %w", err)
 		}
 	} else {
 		if api.enablePartialRequiredKeys {
 			requiredKeys, err = api.getPartialRequiredKeys(ctx, tx)
 			if err != nil {
-				return nil, nil, fmt.Errorf("get_accounts_by_authorizers: %s", err)
+				return nil, nil, fmt.Errorf("get_accounts_by_authorizers: %w", err)
 			}
 		} else {
 			resp, err := api.GetRequiredKeys(ctx, tx)
 			if err != nil {
-				return nil, nil, fmt.Errorf("get_required_keys: %s", err)
+				return nil, nil, fmt.Errorf("get_required_keys: %w", err)
 			}
 			requiredKeys = resp.RequiredKeys
 		}
@@ -448,7 +448,7 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 
 	signedTx, err := api.Signer.Sign(ctx, stx, chainID, requiredKeys...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("signing through wallet: %s", err)
+		return nil, nil, fmt.Errorf("signing through wallet: %w", err)
 	}
 
 	packed, err := signedTx.Pack(compression)
@@ -664,7 +664,7 @@ func (api *API) call(ctx context.Context, baseAPI string, endpoint string, body 
 	targetURL := fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint)
 	req, err := http.NewRequest("POST", targetURL, jsonBody)
 	if err != nil {
-		return fmt.Errorf("NewRequest: %s", err)
+		return fmt.Errorf("NewRequest: %w", err)
 	}
 
 	for k, v := range api.Header {
@@ -687,14 +687,14 @@ func (api *API) call(ctx context.Context, baseAPI string, endpoint string, body 
 
 	resp, err := api.HttpClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return fmt.Errorf("%s: %s", req.URL.String(), err)
+		return fmt.Errorf("%s: %w", req.URL.String(), err)
 	}
 	defer resp.Body.Close()
 
 	var cnt bytes.Buffer
 	_, err = io.Copy(&cnt, resp.Body)
 	if err != nil {
-		return fmt.Errorf("Copy: %s", err)
+		return fmt.Errorf("Copy: %w", err)
 	}
 
 	if resp.StatusCode == 404 {
@@ -734,7 +734,7 @@ func (api *API) call(ctx context.Context, baseAPI string, endpoint string, body 
 	}
 
 	if err := json.Unmarshal(cnt.Bytes(), &out); err != nil {
-		return fmt.Errorf("Unmarshal: %s", err)
+		return fmt.Errorf("Unmarshal: %w", err)
 	}
 
 	return nil

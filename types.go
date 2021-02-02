@@ -187,7 +187,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 
 	var boolVal bool
 	if err := json.Unmarshal(data, &boolVal); err != nil {
-		return fmt.Errorf("couldn't unmarshal bool as int or true/false: %s", err)
+		return fmt.Errorf("couldn't unmarshal bool as int or true/false: %w", err)
 	}
 
 	*b = Bool(boolVal)
@@ -269,7 +269,7 @@ func NameToSymbol(name Name) (Symbol, error) {
 	symbol := Symbol{}
 	value, err := StringToName(string(name))
 	if err != nil {
-		return symbol, fmt.Errorf("name %s is invalid: %s", name, err)
+		return symbol, fmt.Errorf("name %s is invalid: %w", name, err)
 	}
 
 	symbol.Precision = uint8(value & 0xFF)
@@ -327,7 +327,7 @@ func (s Symbol) MustSymbolCode() SymbolCode {
 func (s Symbol) ToUint64() (uint64, error) {
 	symbolCode, err := s.SymbolCode()
 	if err != nil {
-		return 0, fmt.Errorf("symbol %s is not a valid symbol code: %s", s.Symbol, err)
+		return 0, fmt.Errorf("symbol %s is not a valid symbol code: %w", s.Symbol, err)
 	}
 
 	return uint64(symbolCode)<<8 | uint64(s.Precision), nil
@@ -350,7 +350,7 @@ type SymbolCode uint64
 func NameToSymbolCode(name Name) (SymbolCode, error) {
 	value, err := StringToName(string(name))
 	if err != nil {
-		return 0, fmt.Errorf("name %s is invalid: %s", name, err)
+		return 0, fmt.Errorf("name %s is invalid: %w", name, err)
 	}
 
 	return SymbolCode(value), nil
@@ -1363,7 +1363,7 @@ func ptr(v reflect.Value) reflect.Value {
 func (a *BaseVariant) UnmarshalBinaryVariant(decoder *Decoder, def *VariantDefinition) error {
 	typeID, err := decoder.ReadUvarint32()
 	if err != nil {
-		return fmt.Errorf("unable to read variant type id: %s", err)
+		return fmt.Errorf("unable to read variant type id: %w", err)
 	}
 
 	a.TypeID = uint32(typeID)
@@ -1375,7 +1375,7 @@ func (a *BaseVariant) UnmarshalBinaryVariant(decoder *Decoder, def *VariantDefin
 	if typeGo.Kind() == reflect.Ptr {
 		a.Impl = reflect.New(typeGo.Elem()).Interface()
 		if err = decoder.Decode(a.Impl); err != nil {
-			return fmt.Errorf("unable to decode variant type %d: %s", typeID, err)
+			return fmt.Errorf("unable to decode variant type %d: %w", typeID, err)
 		}
 	} else {
 		// This is not the most optimal way of doing things for "value"
@@ -1401,7 +1401,7 @@ func (a *BaseVariant) UnmarshalBinaryVariant(decoder *Decoder, def *VariantDefin
 		// an unsafe pointer and play with it.
 		value := reflect.New(typeGo)
 		if err = decoder.Decode(value.Interface()); err != nil {
-			return fmt.Errorf("unable to decode variant type %d: %s", typeID, err)
+			return fmt.Errorf("unable to decode variant type %d: %w", typeID, err)
 		}
 
 		a.Impl = value.Elem().Interface()
@@ -1522,7 +1522,7 @@ func (a fcVariant) MustAsObject() fcVariantObject {
 func (a *fcVariant) UnmarshalBinary(decoder *Decoder) error {
 	typeID, err := decoder.ReadUvarint32()
 	if err != nil {
-		return fmt.Errorf("unable to read fc variant type ID: %s", err)
+		return fmt.Errorf("unable to read fc variant type ID: %w", err)
 	}
 
 	if typeID > uint32(fcVariantBlobType) {
@@ -1538,41 +1538,41 @@ func (a *fcVariant) UnmarshalBinary(decoder *Decoder) error {
 
 	if a.TypeID == fcVariantInt64Type {
 		if a.Impl, err = decoder.ReadInt64(); err != nil {
-			return fmt.Errorf("unable to read int64 fc variant: %s", err)
+			return fmt.Errorf("unable to read int64 fc variant: %w", err)
 		}
 	} else if a.TypeID == fcVariantUint64Type {
 		if a.Impl, err = decoder.ReadUint64(); err != nil {
-			return fmt.Errorf("unable to read uint64 fc variant: %s", err)
+			return fmt.Errorf("unable to read uint64 fc variant: %w", err)
 		}
 	} else if a.TypeID == fcVariantDoubleType {
 		if a.Impl, err = decoder.ReadFloat64(); err != nil {
-			return fmt.Errorf("unable to read double fc variant: %s", err)
+			return fmt.Errorf("unable to read double fc variant: %w", err)
 		}
 	} else if a.TypeID == fcVariantBoolType {
 		if a.Impl, err = decoder.ReadBool(); err != nil {
-			return fmt.Errorf("unable to read bool fc variant: %s", err)
+			return fmt.Errorf("unable to read bool fc variant: %w", err)
 		}
 	} else if a.TypeID == fcVariantStringType {
 		if a.Impl, err = decoder.ReadString(); err != nil {
-			return fmt.Errorf("unable to read string fc variant: %s", err)
+			return fmt.Errorf("unable to read string fc variant: %w", err)
 		}
 	} else if a.TypeID == fcVariantArrayType {
 		out := fcVariantArray(nil)
 		if err = decoder.Decode(&out); err != nil {
-			return fmt.Errorf("unable to read fc array variant: %s", err)
+			return fmt.Errorf("unable to read fc array variant: %w", err)
 		}
 		a.Impl = out
 	} else if a.TypeID == fcVariantObjectType {
 		out := fcVariantObject{}
 		if err = decoder.Decode(&out); err != nil {
-			return fmt.Errorf("unable to read fc object variant: %s", err)
+			return fmt.Errorf("unable to read fc object variant: %w", err)
 		}
 		a.Impl = out
 	} else if a.TypeID == fcVariantBlobType {
 		// FIXME: This one is really not clear what the output format looks like, do we even need an object for it?
 		var out fcVariantBlob
 		if err = decoder.Decode(&out); err != nil {
-			return fmt.Errorf("unable to read fc blob variant: %s", err)
+			return fmt.Errorf("unable to read fc blob variant: %w", err)
 		}
 		a.Impl = out
 	}
@@ -1594,14 +1594,14 @@ func (o fcVariantArray) ToNative() interface{} {
 func (o *fcVariantArray) UnmarshalBinary(decoder *Decoder) error {
 	elementCount, err := decoder.ReadUvarint64()
 	if err != nil {
-		return fmt.Errorf("unable to read length: %s", err)
+		return fmt.Errorf("unable to read length: %w", err)
 	}
 
 	array := make([]fcVariant, elementCount)
 	for i := uint64(0); i < elementCount; i++ {
 		err := decoder.Decode(&array[i])
 		if err != nil {
-			return fmt.Errorf("unable to read elememt at index %d: %s", i, err)
+			return fmt.Errorf("unable to read elememt at index %d: %w", i, err)
 		}
 	}
 
@@ -1652,20 +1652,20 @@ func (o fcVariantObject) validateFields(nameToType map[string]fcVariantType) err
 func (o *fcVariantObject) UnmarshalBinary(decoder *Decoder) error {
 	elementCount, err := decoder.ReadUvarint64()
 	if err != nil {
-		return fmt.Errorf("unable to read length: %s", err)
+		return fmt.Errorf("unable to read length: %w", err)
 	}
 
 	mappings := make(map[string]fcVariant, elementCount)
 	for i := uint64(0); i < elementCount; i++ {
 		key, err := decoder.ReadString()
 		if err != nil {
-			return fmt.Errorf("unable to read key of elememt at index %d: %s", i, err)
+			return fmt.Errorf("unable to read key of elememt at index %d: %w", i, err)
 		}
 
 		variant := fcVariant{}
 		err = decoder.Decode(&variant)
 		if err != nil {
-			return fmt.Errorf("unable to read value of elememt with key %s at index %d: %s", key, i, err)
+			return fmt.Errorf("unable to read value of elememt with key %s at index %d: %w", key, i, err)
 		}
 
 		mappings[key] = variant

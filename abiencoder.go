@@ -35,7 +35,7 @@ func (a *ABI) EncodeAction(actionName ActionName, json []byte) ([]byte, error) {
 
 	err := a.encode(encoder, action.Type, json)
 	if err != nil {
-		return nil, fmt.Errorf("encode action: %s", err)
+		return nil, fmt.Errorf("encode action: %w", err)
 	}
 	return buffer.Bytes(), nil
 }
@@ -51,7 +51,7 @@ func (a *ABI) EncodeTable(tableName TableName, json []byte) ([]byte, error) {
 
 	err := a.encode(encoder, table.Type, json)
 	if err != nil {
-		return nil, fmt.Errorf("encode table: %s", err)
+		return nil, fmt.Errorf("encode table: %w", err)
 	}
 	return buffer.Bytes(), nil
 }
@@ -62,7 +62,7 @@ func (a *ABI) EncodeStruct(structName string, json []byte) ([]byte, error) {
 
 	err := a.encode(encoder, structName, json)
 	if err != nil {
-		return nil, fmt.Errorf("encode: %s", err)
+		return nil, fmt.Errorf("encode: %w", err)
 	}
 	return buffer.Bytes(), nil
 }
@@ -83,7 +83,7 @@ func (a *ABI) encode(binaryEncoder *Encoder, structName string, json []byte) err
 		}
 		err := a.encode(binaryEncoder, structure.Base, json)
 		if err != nil {
-			return fmt.Errorf("encode base [%s]: %s", structName, err)
+			return fmt.Errorf("encode base [%s]: %w", structName, err)
 		}
 	}
 	err := a.encodeFields(binaryEncoder, structure.Fields, json)
@@ -113,7 +113,7 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 
 		err := a.encodeField(binaryEncoder, fieldName, typeName, isOptional, isArray, json)
 		if err != nil {
-			return fmt.Errorf("encoding fields: %s", err)
+			return fmt.Errorf("encoding fields: %w", err)
 		}
 	}
 	return nil
@@ -227,13 +227,13 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 	case "int64":
 		var in Int64
 		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
-			return fmt.Errorf("encoding int64: %s", err)
+			return fmt.Errorf("encoding int64: %w", err)
 		}
 		object = in
 	case "uint64":
 		var in Uint64
 		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
-			return fmt.Errorf("encoding uint64: %s", err)
+			return fmt.Errorf("encoding uint64: %w", err)
 		}
 		object = in
 	case "int128":
@@ -271,19 +271,19 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 	case "time_point_sec":
 		t, err := time.Parse("2006-01-02T15:04:05", value.Str)
 		if err != nil {
-			return fmt.Errorf("writing field: time_point_sec: %s", err)
+			return fmt.Errorf("writing field: time_point_sec: %w", err)
 		}
 		object = TimePointSec(t.UTC().Second())
 	case "time_point":
 		t, err := time.Parse("2006-01-02T15:04:05.999", value.Str)
 		if err != nil {
-			return fmt.Errorf("writing field: time_point: %s", err)
+			return fmt.Errorf("writing field: time_point: %w", err)
 		}
 		object = TimePoint(t.UTC().Nanosecond() / int(time.Millisecond))
 	case "block_timestamp_type":
 		t, err := time.Parse("2006-01-02T15:04:05.999999-07:00", value.Str)
 		if err != nil {
-			return fmt.Errorf("writing field: block_timestamp_type: %s", err)
+			return fmt.Errorf("writing field: block_timestamp_type: %w", err)
 		}
 		object = BlockTimestamp{
 			Time: t,
@@ -296,7 +296,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 	case "bytes":
 		data, err := hex.DecodeString(value.String())
 		if err != nil {
-			return fmt.Errorf("writing field: bytes: %s", err)
+			return fmt.Errorf("writing field: bytes: %w", err)
 		}
 		object = data
 
@@ -308,7 +308,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		data, err := hex.DecodeString(value.Str)
 		if err != nil {
-			return fmt.Errorf("writing field: checksum160: %s", err)
+			return fmt.Errorf("writing field: checksum160: %w", err)
 		}
 		object = Checksum160(data)
 	case "checksum256":
@@ -317,7 +317,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		data, err := hex.DecodeString(value.Str)
 		if err != nil {
-			return fmt.Errorf("writing field: checksum256: %s", err)
+			return fmt.Errorf("writing field: checksum256: %w", err)
 		}
 		object = Checksum256(data)
 	case "checksum512":
@@ -326,19 +326,19 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		data, err := hex.DecodeString(value.String())
 		if err != nil {
-			return fmt.Errorf("writing field: checksum512: %s", err)
+			return fmt.Errorf("writing field: checksum512: %w", err)
 		}
 		object = Checksum512(data)
 	case "public_key":
 		pk, err := ecc.NewPublicKey(value.String())
 		if err != nil {
-			return fmt.Errorf("writing field: public_key: %s", err)
+			return fmt.Errorf("writing field: public_key: %w", err)
 		}
 		object = pk
 	case "signature":
 		signature, err := ecc.NewSignature(value.String())
 		if err != nil {
-			return fmt.Errorf("writing field: public_key: %s", err)
+			return fmt.Errorf("writing field: public_key: %w", err)
 		}
 		object = signature
 	case "symbol":
@@ -349,7 +349,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 
 		i, err := strconv.ParseUint(parts[0], 10, 8)
 		if err != nil {
-			return fmt.Errorf("writing field: symbol: %s", err)
+			return fmt.Errorf("writing field: symbol: %w", err)
 		}
 		object = Symbol{
 			Precision: uint8(i),
@@ -361,14 +361,14 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 	case "asset":
 		asset, err := NewAsset(value.String())
 		if err != nil {
-			return fmt.Errorf("writing field: asset: %s", err)
+			return fmt.Errorf("writing field: asset: %w", err)
 		}
 		object = asset
 	case "extended_asset":
 		var extendedAsset ExtendedAsset
 		err := json.Unmarshal([]byte(value.Raw), &extendedAsset)
 		if err != nil {
-			return fmt.Errorf("writing field: extended_asset: %s", err)
+			return fmt.Errorf("writing field: extended_asset: %w", err)
 		}
 		object = extendedAsset
 	default:
@@ -385,7 +385,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error) {
 	i, err := strconv.ParseInt(value.Raw, 10, bitSize)
 	if err != nil {
-		return i, fmt.Errorf("writing field: [%s] type int%d : %s", fieldName, bitSize, err)
+		return i, fmt.Errorf("writing field: [%s] type int%d : %w", fieldName, bitSize, err)
 	}
 	return i, nil
 }
@@ -393,7 +393,7 @@ func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error
 func valueToUint(fieldName string, value gjson.Result, bitSize int) (uint64, error) {
 	i, err := strconv.ParseUint(value.Raw, 10, bitSize)
 	if err != nil {
-		return i, fmt.Errorf("writing field: [%s] type uint%d : %s", fieldName, bitSize, err)
+		return i, fmt.Errorf("writing field: [%s] type uint%d : %w", fieldName, bitSize, err)
 	}
 	return i, nil
 }
@@ -411,7 +411,7 @@ func valueToFloat(fieldName string, value gjson.Result, bitSize int) (float64, e
 
 	f, err := strconv.ParseFloat(value.Raw, bitSize)
 	if err != nil {
-		return f, fmt.Errorf("writing field: [%s] type float%d : %s", fieldName, bitSize, err)
+		return f, fmt.Errorf("writing field: [%s] type float%d : %w", fieldName, bitSize, err)
 	}
 	return f, nil
 }

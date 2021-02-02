@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/eoscanada/eos-go"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +37,7 @@ func (p *Proxy) read(sender *Peer, receiver *Peer, errChannel chan error) {
 		packet, err := sender.Read()
 		//p2pLog.Debug("Received for packet")
 		if err != nil {
-			errChannel <- errors.Wrapf(err, "read message from %s", sender.Address)
+			errChannel <- fmt.Errorf("read message from %s: %w", sender.Address, err)
 			return
 		}
 		err = p.handle(packet, sender, receiver)
@@ -52,12 +51,12 @@ func (p *Proxy) handle(packet *eos.Packet, sender *Peer, receiver *Peer) error {
 
 	_, err := receiver.Write(packet.Raw)
 	if err != nil {
-		return errors.Wrapf(err, "handleDefault")
+		return fmt.Errorf("handleDefault: %w", err)
 	}
 
 	switch m := packet.P2PMessage.(type) {
 	case *eos.GoAwayMessage:
-		return errors.Errorf("handling message: go away: reason [%d]", m.Reason)
+		return fmt.Errorf("handling message: go away: reason [%d]", m.Reason)
 	}
 
 	envelope := NewEnvelope(sender, receiver, packet)
@@ -114,11 +113,10 @@ func (p *Proxy) Start() error {
 	if p.Peer2.handshakeInfo != nil {
 		err := triggerHandshake(p.Peer2)
 		if err != nil {
-			return fmt.Errorf("connect and start: trigger handshake: %s", err)
+			return fmt.Errorf("connect and start: trigger handshake: %w", err)
 		}
 
-		return errors.Wrap(triggerHandshake(p.Peer2),
-			"connect and start: trigger handshake")
+		return nil
 	}
 
 	//p2pLog.Info("Started")

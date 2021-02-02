@@ -150,7 +150,7 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 	case string:
 		seqInt, err := strconv.ParseUint(el, 10, 64)
 		if err != nil {
-			return fmt.Errorf("decoding auth_sequence as string: %s", err)
+			return fmt.Errorf("decoding auth_sequence as string: %w", err)
 		}
 
 		seq = Uint64(seqInt)
@@ -506,7 +506,7 @@ func (m *ExceptLogMessage) UnmarshalBinary(decoder *Decoder) error {
 	variant := fcVariant{}
 	err := decoder.Decode(&variant)
 	if err != nil {
-		return fmt.Errorf("unable to decode except log message: %s", err)
+		return fmt.Errorf("unable to decode except log message: %w", err)
 	}
 
 	if variant.TypeID != fcVariantObjectType {
@@ -516,18 +516,18 @@ func (m *ExceptLogMessage) UnmarshalBinary(decoder *Decoder) error {
 	object := variant.MustAsObject()
 
 	if err := object.validateFields(exceptLogMessageTypes); err != nil {
-		return fmt.Errorf("invalid log message object: %s", err)
+		return fmt.Errorf("invalid log message object: %w", err)
 	}
 
 	if err = m.Context.fromObject(object["context"].MustAsObject()); err != nil {
-		return fmt.Errorf("unable to assign context: %s", err)
+		return fmt.Errorf("unable to assign context: %w", err)
 	}
 
 	m.Format = object["format"].MustAsString()
 
 	if dataVariant := object["data"]; !dataVariant.IsNil() {
 		if m.Data, err = json.Marshal(dataVariant.ToNative()); err != nil {
-			return fmt.Errorf("unable to assign data: %s", err)
+			return fmt.Errorf("unable to assign data: %w", err)
 		}
 	}
 
@@ -558,7 +558,7 @@ var exceptLogContextTypes = map[string]fcVariantType{
 
 func (c *ExceptLogContext) fromObject(object fcVariantObject) error {
 	if err := object.validateFields(exceptLogContextTypes); err != nil {
-		return fmt.Errorf("invalid log context: %s", err)
+		return fmt.Errorf("invalid log context: %w", err)
 	}
 
 	c.Level.FromString(object["level"].MustAsString())
@@ -570,14 +570,14 @@ func (c *ExceptLogContext) fromObject(object fcVariantObject) error {
 
 	var err error
 	if c.Timestamp, err = ParseJSONTime(object["timestamp"].MustAsString()); err != nil {
-		return fmt.Errorf("invalid log context timestamp: %s", err)
+		return fmt.Errorf("invalid log context timestamp: %w", err)
 	}
 
 	contextVariant := object["context"]
 	if contextVariant.TypeID != fcVariantNullType {
 		c.Context = new(ExceptLogContext)
 		if err := c.Context.fromObject(contextVariant.MustAsObject()); err != nil {
-			return fmt.Errorf("unable to assign nested context: %s", err)
+			return fmt.Errorf("unable to assign nested context: %w", err)
 		}
 	}
 

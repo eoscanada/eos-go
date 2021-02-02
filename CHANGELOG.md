@@ -59,3 +59,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: The serialization for `ExtendedAsset` was aligned with the `eos` codebase.  Beforehand, it would serialize the field name `"Contract"` with a capital `C`, and the `Asset` field as `"asset"` where it should have been `"quantity"`.
 
 - **BREAKING**: We started adding an initial `context.Context` to all interruptible functions. All method performing an HTTP call have the new parameter as well as a bunch of other method. We cannot list all of them. If the caller already have a `context.Context` value, pass it to the function that now require one. Otherwise, simply pass `context.Background()`.
+
+- All errors are wrapped using `fmt.Errorf("...: %w", ..., err)` which is standard now in Go.

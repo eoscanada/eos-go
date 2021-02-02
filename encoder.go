@@ -50,7 +50,7 @@ func NewEncoder(w io.Writer) *Encoder {
 func (e *Encoder) writeName(name Name) error {
 	val, err := StringToName(string(name))
 	if err != nil {
-		return fmt.Errorf("writeName: %s", err)
+		return fmt.Errorf("writeName: %w", err)
 	}
 	return e.writeUint64(val)
 }
@@ -153,7 +153,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case Symbol:
 		value, err := cv.ToUint64()
 		if err != nil {
-			return fmt.Errorf("encoding symbol: %s", err)
+			return fmt.Errorf("encoding symbol: %w", err)
 		}
 
 		return e.writeUint64(value)
@@ -460,7 +460,7 @@ func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
 
 	err = pk.Validate()
 	if err != nil {
-		return fmt.Errorf("invalid public key: %s", err)
+		return fmt.Errorf("invalid public key: %w", err)
 	}
 
 	if err = e.writeByte(byte(pk.Curve)); err != nil {
@@ -477,7 +477,7 @@ func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
 
 	err = s.Validate()
 	if err != nil {
-		return fmt.Errorf("invalid signature: %s", err)
+		return fmt.Errorf("invalid signature: %w", err)
 	}
 
 	if err = e.writeByte(byte(s.Curve)); err != nil {

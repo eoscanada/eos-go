@@ -137,7 +137,7 @@ func TestABIEncoder_encodeMissingActionStruct(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
-	assert.Equal(t, fmt.Errorf("encode action: encode struct [struct.name.1] not found in abi"), err)
+	assert.Equal(t, "encode action: encode struct [struct.name.1] not found in abi", err.Error())
 }
 
 func TestABIEncoder_encodeErrorInBase(t *testing.T) {
@@ -170,7 +170,7 @@ func TestABIEncoder_encodeErrorInBase(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
-	assert.Equal(t, fmt.Errorf("encode action: encode base [struct.name.1]: encode struct [struct.name.2] not found in abi"), err)
+	assert.Equal(t, "encode action: encode base [struct.name.1]: encode struct [struct.name.2] not found in abi", err.Error())
 }
 
 func TestABIEncoder_encodeField(t *testing.T) {
@@ -198,15 +198,16 @@ func TestABIEncoder_encodeField(t *testing.T) {
 			fieldType := c["fieldType"].(string)
 			isOptional := c["isOptional"].(bool)
 			isArray := c["isArray"].(bool)
-			expectedError := c["expectedError"]
 
 			err := abi.encodeField(encoder, fieldName, fieldType, isOptional, isArray, []byte(json))
-			assert.Equal(t, expectedError, err, caseName)
 
 			if c["expectedError"] == nil {
+				require.Nil(t, err)
 				assert.Equal(t, c["expectedValue"], hex.EncodeToString(buf.Bytes()), c["caseName"])
+			} else {
+				expectedError := c["expectedError"].(error)
+				require.Equal(t, expectedError.Error(), err.Error(), c["caseName"])
 			}
-
 		})
 
 	}
@@ -318,10 +319,12 @@ func TestABI_Write(t *testing.T) {
 			result := gjson.Get(c["json"].(string), "testField")
 			err := abi.writeField(encoder, fieldName, c["typeName"].(string), result)
 
-			require.Equal(t, c["expectedError"], err, c["caseName"])
-
 			if c["expectedError"] == nil {
+				require.Nil(t, err, c["caseName"])
 				assert.Equal(t, c["expectedValue"], hex.EncodeToString(buffer.Bytes()), c["caseName"])
+			} else {
+				expectedError := c["expectedError"].(error)
+				require.Equal(t, expectedError.Error(), err.Error(), c["caseName"])
 			}
 		})
 	}

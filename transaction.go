@@ -142,7 +142,7 @@ func (e *Extension) UnmarshalBinary(decoder *Decoder) error {
 func (e *Extension) AsBlockHeaderExtension(chain string) (BlockHeaderExtension, error) {
 	knownExtensions := blockHeaderExtensions[chain]
 	if len(knownExtensions) == 0 {
-		return nil, fmt.Errorf("unknown chain identifier: %s", chain)
+		return nil, fmt.Errorf("unknown chain identifier %q", chain)
 	}
 
 	newPointer := knownExtensions[BlockHeaderExtensionType(e.Type)]
@@ -154,7 +154,7 @@ func (e *Extension) AsBlockHeaderExtension(chain string) (BlockHeaderExtension, 
 	decoder := NewDecoder(e.Data)
 	err := decoder.Decode(element)
 	if err != nil {
-		return nil, fmt.Errorf("unable to decode block header extension: %s", err)
+		return nil, fmt.Errorf("unable to decode block header extension: %w", err)
 	}
 
 	return element, nil

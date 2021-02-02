@@ -98,7 +98,7 @@ func (p *Peer) Read() (*eos.Packet, error) {
 	}
 	if err != nil {
 		zlog.Error("Connection Read Err", zap.String("address", p.Address), zap.Error(err))
-		return nil, errors.Wrapf(err, "connection: read %s err", p.Address)
+		return nil, fmt.Errorf("connection: read %s err: %w", p.Address, err)
 	}
 	return packet, nil
 }
@@ -113,7 +113,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 	nodeID := make([]byte, 32)
 	_, err := rand.Read(nodeID)
 	if err != nil {
-		errChan <- errors.Wrap(err, "generating random node id")
+		errChan <- fmt.Errorf("generating random node id: %w", err)
 	}
 
 	p.NodeID = nodeID
@@ -129,13 +129,13 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 
 			ln, err := net.Listen("tcp", p.Address)
 			if err != nil {
-				errChan <- errors.Wrapf(err, "peer init: listening %s", p.Address)
+				errChan <- fmt.Errorf("peer init: listening %s: %w", p.Address, err)
 			}
 
 			zlog.Debug("Accepting connection on", address2log)
 			conn, err := ln.Accept()
 			if err != nil {
-				errChan <- errors.Wrapf(err, "peer init: accepting connection on %s", p.Address)
+				errChan <- fmt.Errorf("peer init: accepting connection on %s: %w", p.Address, err)
 			}
 			zlog.Debug("Connected on", address2log)
 
@@ -148,7 +148,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 					select {
 					case <-time.After(p.handshakeTimeout):
 						zlog.Warn("handshake took too long", address2log)
-						errChan <- errors.Wrapf(err, "handshake took too long: %s", p.Address)
+						errChan <- fmt.Errorf("handshake took too long: %s: %w", p.Address, err)
 					case <-p.cancelHandshakeTimeout:
 						zlog.Warn("cancelHandshakeTimeout canceled", address2log)
 					}
@@ -161,7 +161,7 @@ func (p *Peer) Connect(errChan chan error) (ready chan bool) {
 				if p.handshakeTimeout > 0 {
 					p.cancelHandshakeTimeout <- true
 				}
-				errChan <- errors.Wrapf(err, "peer init: dial %s", p.Address)
+				errChan <- fmt.Errorf("peer init: dial %s: %w", p.Address, err)
 				return
 			}
 			zlog.Info("Connected to", address2log)
@@ -191,12 +191,12 @@ func (p *Peer) WriteP2PMessage(message eos.P2PMessage) (err error) {
 	encoder := eos.NewEncoder(buff)
 	err = encoder.Encode(packet)
 	if err != nil {
-		return errors.Wrapf(err, "unable to encode message %s", message)
+		return fmt.Errorf("unable to encode message %s: %w", message, err)
 	}
 
 	_, err = p.Write(buff.Bytes())
 	if err != nil {
-		return errors.Wrapf(err, "write msg to %s", p.Address)
+		return fmt.Errorf("write msg to %s: %w", p.Address, err)
 	}
 
 	return nil
@@ -252,6 +252,7 @@ func (p *Peer) SendNotice(headBlockNum uint32, libNum uint32, mode byte) error {
 			Pending: libNum,
 		},
 	}
+
 	return errors.WithStack(p.WriteP2PMessage(notice))
 }
 
@@ -265,7 +266,7 @@ func (p *Peer) SendTime() error {
 func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 	publicKey, err := ecc.NewPublicKey("PUB_K1_1111111111111111111111111111111114T1Anm")
 	if err != nil {
-		return errors.Wrapf(err, "sending handshake to %s: create public key", p.Address)
+		return fmt.Errorf("sending handshake to %s: create public key: %w", p.Address, err)
 	}
 
 	zlog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
@@ -297,7 +298,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 
 	err = p.WriteP2PMessage(handshake)
 	if err != nil {
-		err = errors.Wrapf(err, "sending handshake to %s", p.Address)
+		return fmt.Errorf("sending handshake to %s: %w", p.Address, err)
 	}
 
 	return nil

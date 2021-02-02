@@ -103,7 +103,7 @@ func TestABI_DecodeMissingAction(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = abi.DecodeAction(buffer.Bytes(), "bad.action.name")
-	assert.Equal(t, fmt.Errorf("action bad.action.name not found in abi"), err)
+	assert.Equal(t, "action bad.action.name not found in abi", err.Error())
 }
 
 func TestABI_DecodeTable(t *testing.T) {
@@ -178,7 +178,7 @@ func TestABI_DecodeBadABI(t *testing.T) {
 
 	abiReader := strings.NewReader("{")
 	_, err := NewABI(abiReader)
-	assert.Equal(t, fmt.Errorf("read abi: unexpected EOF"), err)
+	assert.Equal(t, fmt.Errorf("read abi: unexpected EOF").Error(), err.Error())
 }
 
 func TestABI_decode(t *testing.T) {
@@ -614,7 +614,7 @@ func TestABI_decode_StructBaseNotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = abi.Decode(NewDecoder(buffer), "struct.1")
-	assert.Equal(t, fmt.Errorf("decode base [struct.1]: structure [struct.base.1] not found in abi"), err)
+	assert.Equal(t, "decode base [struct.1]: structure [struct.base.1] not found in abi", err.Error())
 }
 
 func TestABI_decode_StructFieldArrayType_HasSjsonPathLikeName(t *testing.T) {

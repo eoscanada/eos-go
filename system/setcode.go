@@ -74,12 +74,12 @@ func NewSetAbiContent(account eos.AccountName, abiContent []byte) (out *eos.Acti
 	if len(abiContent) > 0 {
 		var abiDef eos.ABI
 		if err := json.Unmarshal(abiContent, &abiDef); err != nil {
-			return nil, fmt.Errorf("unmarshal ABI file: %s", err)
+			return nil, fmt.Errorf("unmarshal ABI file: %w", err)
 		}
 
 		abiPacked, err = eos.MarshalBinary(abiDef)
 		if err != nil {
-			return nil, fmt.Errorf("packing ABI: %s", err)
+			return nil, fmt.Errorf("packing ABI: %w", err)
 		}
 	}
 
@@ -103,7 +103,7 @@ func NewSetAbiFromAbi(account eos.AccountName, abi eos.ABI) (out *eos.Action, er
 	var abiPacked []byte
 	abiPacked, err = eos.MarshalBinary(abi)
 	if err != nil {
-		return nil, fmt.Errorf("packing ABI: %s", err)
+		return nil, fmt.Errorf("packing ABI: %w", err)
 	}
 
 	return &eos.Action{

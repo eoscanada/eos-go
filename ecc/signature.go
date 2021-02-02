@@ -91,7 +91,7 @@ func MustNewSignatureFromData(data []byte) Signature {
 func MustNewSignature(fromText string) Signature {
 	signature, err := NewSignature(fromText)
 	if err != nil {
-		panic(fmt.Errorf("invalid signature string: %s", err))
+		panic(fmt.Errorf("invalid signature string: %w", err))
 	}
 
 	return signature

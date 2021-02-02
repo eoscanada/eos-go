@@ -27,7 +27,7 @@ func newRandomPrivateKey(randSource io.Reader) (*PrivateKey, error) {
 	rawPrivKey := make([]byte, 32)
 	written, err := io.ReadFull(randSource, rawPrivKey)
 	if err != nil {
-		return nil, fmt.Errorf("error feeding crypto-rand numbers to seed ephemeral private key: %s", err)
+		return nil, fmt.Errorf("error feeding crypto-rand numbers to seed ephemeral private key: %w", err)
 	}
 	if written != 32 {
 		return nil, fmt.Errorf("couldn't write 32 bytes of randomness to seed ephemeral private key")

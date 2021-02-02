@@ -84,7 +84,7 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]inte
 		var err error
 		builtStruct, err = a.decode(binaryDecoder, baseName)
 		if err != nil {
-			return nil, fmt.Errorf("decode base [%s]: %s", structName, err)
+			return nil, fmt.Errorf("decode base [%s]: %w", structName, err)
 		}
 	}
 
@@ -155,7 +155,7 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 	if isOptional {
 		b, err := binaryDecoder.ReadByte()
 		if err != nil {
-			return nil, fmt.Errorf("reading optional flag: %s", err)
+			return nil, fmt.Errorf("reading optional flag: %w", err)
 		}
 
 		if b == 0 {
@@ -192,7 +192,7 @@ func (a *ABI) readArray(binaryDecoder *Decoder, fieldType string) ([]interface{}
 	//fmt.Println("Read array", fieldType)
 	length, err := binaryDecoder.ReadUvarint64()
 	if err != nil {
-		return nil, fmt.Errorf("reading array length: %s", err)
+		return nil, fmt.Errorf("reading array length: %w", err)
 	}
 
 	if length == 0 {
@@ -205,7 +205,7 @@ func (a *ABI) readArray(binaryDecoder *Decoder, fieldType string) ([]interface{}
 		//fmt.Println("Field type", fieldType)
 		retVal, err := a.resolveField(binaryDecoder, fieldType)
 		if err != nil {
-			return nil, fmt.Errorf("resolve array index [%d]: %s", i, err)
+			return nil, fmt.Errorf("resolve array index [%d]: %w", i, err)
 		}
 
 		if retVal != skipField {
@@ -222,7 +222,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 	if variant != nil {
 		variantIndex, err := binaryDecoder.ReadUvarint32()
 		if err != nil {
-			return nil, fmt.Errorf("unable to read variant type index: %s", err)
+			return nil, fmt.Errorf("unable to read variant type index: %w", err)
 		}
 
 		if int(variantIndex) >= len(variant.Types) {
@@ -378,7 +378,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		return nil, fmt.Errorf("read field of type [%s]: unknown type", fieldType)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read: %s", err)
+		return nil, fmt.Errorf("read: %w", err)
 	}
 
 	if traceEnabled {
