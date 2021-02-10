@@ -837,6 +837,30 @@ func TestABI_decode_BinaryExtension(t *testing.T) {
 	assert.JSONEq(t, `{"id":0,"name":"name"}`, string(json))
 }
 
+func TestABI_decode_BinaryExtensionArray(t *testing.T) {
+	abi := &ABI{
+		Structs: []StructDef{
+			{
+				Name: "root",
+				Fields: []FieldDef{
+					{Name: "id", Type: "uint8"},
+					{Name: "name", Type: "name[]$"},
+				},
+			},
+		},
+	}
+
+	json, err := abi.Decode(NewDecoder(HexString("00")), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"id":0}`, string(json))
+
+	json, err = abi.Decode(NewDecoder(HexString("00010000000000a0a499")), "root")
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"id":0,"name":["name"]}`, string(json))
+}
+
 func TestABI_decodeFields(t *testing.T) {
 	types := []ABIType{
 		{NewTypeName: "action.type.1", Type: "name"},

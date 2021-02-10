@@ -404,6 +404,10 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 }
 
 func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArray bool, isBinaryExtension bool) {
+	if strings.HasSuffix(fieldType, "[]$") {
+		return fieldType[0 : len(fieldType)-3], false, true, true
+	}
+
 	if strings.HasSuffix(fieldType, "?") {
 		return fieldType[0 : len(fieldType)-1], true, false, false
 	}
