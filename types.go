@@ -115,19 +115,24 @@ func (c CompressionType) MarshalJSON() ([]byte, error) {
 }
 
 func (c *CompressionType) UnmarshalJSON(data []byte) error {
-	tryNext, err := c.tryUnmarshalJSONAsString(data)
+	tryNext, err := c.tryUnmarshalJSONAsBool(data)
 	if err != nil && !tryNext {
 		return err
 	}
-
-	if tryNext {
-		_, err := c.tryUnmarshalJSONAsUint8(data)
-		if err != nil {
-			return err
-		}
+	if !tryNext {
+		return nil
 	}
 
-	return nil
+	tryNext, err = c.tryUnmarshalJSONAsString(data)
+	if err != nil && !tryNext {
+		return err
+	}
+	if !tryNext {
+		return nil
+	}
+
+	_, err = c.tryUnmarshalJSONAsUint8(data)
+	return err
 }
 
 func (c *CompressionType) tryUnmarshalJSONAsString(data []byte) (tryNext bool, err error) {
@@ -149,6 +154,24 @@ func (c *CompressionType) tryUnmarshalJSONAsString(data []byte) (tryNext bool, e
 		return false, fmt.Errorf("unknown compression type %s", s)
 	}
 
+	return false, nil
+}
+
+func (c *CompressionType) tryUnmarshalJSONAsBool(data []byte) (tryNext bool, err error) {
+	var b bool
+	err = json.Unmarshal(data, &b)
+	if err != nil {
+		_, isTypeError := err.(*json.UnmarshalTypeError)
+
+		// Let's continue with next handler is we hit a type error, might be an integer...
+		return isTypeError, err
+	}
+
+	if b {
+		*c = CompressionZlib
+	} else {
+		*c = CompressionNone
+	}
 	return false, nil
 }
 
