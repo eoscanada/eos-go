@@ -170,7 +170,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case TimePoint:
 		return e.writeUint64(uint64(cv))
 	case TimePointSec:
-		return e.writeUint64(uint64(cv))
+		return e.writeUint32(uint32(cv))
 	case nil:
 	default:
 
