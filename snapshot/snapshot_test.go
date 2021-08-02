@@ -25,6 +25,7 @@ func TestSnapshotRead(t *testing.T) {
 		testFile string
 	}{
 		{name: "Battlefield - b8d703ed1", testFile: "battlefield-snapshot.bin"},
+		{name: "Ultra - Testnet", testFile: "ultra-testnet-snapshot.bin"},
 	}
 
 	for _, test := range tests {
@@ -53,8 +54,9 @@ func TestSnapshotRead(t *testing.T) {
 				logger.Info("new section",
 					zap.String("section_name", string(section.Name)),
 					zap.Uint64("row_count", section.RowCount),
-					zap.Uint64("bytes_count", section.BufferSize),
-					zap.Uint64("bytes_count", section.Offset),
+					zap.Uint64("buffer_size", section.BufferSize),
+					zap.Uint64("offset", section.Offset),
+					zap.Bool("has_handler", r.HasSectionHandler(section)),
 				)
 				switch section.Name {
 				case SectionNameAccountObject:
@@ -94,6 +96,19 @@ func TestSnapshotRead(t *testing.T) {
 						}
 						return nil
 					}))
+
+				case SectionAccountFreeActionsObject:
+					require.NoError(t, r.ProcessCurrentSection(func(o interface{}) error {
+						acc, ok := o.(AccountFreeActionsObject)
+						if !ok {
+							return fmt.Errorf("process account free actopms object: unexpected object type: %T", o)
+						}
+						logger.Info("new account free actions object",
+							zap.String("name", string(acc.Name)),
+							zap.Reflect("object", acc),
+						)
+						return nil
+					}))
 				}
 			}
 		})
@@ -114,5 +129,5 @@ func fileExists(path string) bool {
 }
 
 func testData(filename string) string {
-	return filepath.Join("test-data", filename)
+	return filepath.Join("testdata", filename)
 }

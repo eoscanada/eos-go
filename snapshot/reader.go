@@ -18,7 +18,6 @@ type Reader struct {
 
 	filename   string
 	fl         *os.File
-	buf        io.Reader
 	nextOffset uint64
 
 	handlers map[SectionName]sectionHandlerFunc
@@ -49,6 +48,10 @@ func NewDefaultReader(filename string) (r *Reader, err error) {
 	reader.RegisterSectionHandler(SectionNameResourceLimitsStateObject, readResourceLimitsStateObject)
 	reader.RegisterSectionHandler(SectionNameResourceLimitsConfigObject, readResourceLimitsConfigObject)
 	reader.RegisterSectionHandler(SectionNameGenesisState, readGenesisState)
+
+	// Ultra Specific
+	reader.RegisterSectionHandler(SectionAccountFreeActionsObject, readAccountFreeActionsObject)
+
 	return reader, nil
 }
 
@@ -67,7 +70,7 @@ func NewReader(filename string) (r *Reader, err error) {
 		return nil, err
 	}
 
-	beginOffset, err := r.fl.Seek(0, os.SEEK_CUR)
+	beginOffset, err := r.fl.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +91,7 @@ func (r *Reader) readHeader() (*Header, error) {
 		return nil, err
 	}
 
-	if bytes.Compare(buf[:4], magicNumber) != 0 {
+	if !bytes.Equal(buf[:4], magicNumber) {
 		return nil, fmt.Errorf("invalid magic number (first 4 bytes): %v, expected %v", buf[:4], magicNumber)
 	}
 
@@ -99,19 +102,27 @@ func (r *Reader) readHeader() (*Header, error) {
 	return h, nil
 }
 
-var SectionHandlerNotFound = errors.New("section handler not found")
+var ErrSectionHandlerNotFound = errors.New("section handler not found")
+
+// Deprecated: Use ErrSectionHandlerNotFound instead
+var SectionHandlerNotFound = ErrSectionHandlerNotFound
+
+func (r *Reader) HasSectionHandler(s *Section) bool {
+	_, found := r.handlers[r.CurrentSection.Name]
+	return found
+}
 
 func (r *Reader) ProcessCurrentSection(f sectionCallbackFunc) error {
 	h, found := r.handlers[r.CurrentSection.Name]
 	if !found {
-		return SectionHandlerNotFound
+		return ErrSectionHandlerNotFound
 	}
 	return h(r.CurrentSection, f)
 }
 
 // Next retrieves the next section.
 func (r *Reader) NextSection() error {
-	beginOffset, err := r.fl.Seek(int64(r.nextOffset), os.SEEK_SET)
+	beginOffset, err := r.fl.Seek(int64(r.nextOffset), io.SeekStart)
 	if err != nil {
 		return err
 	}
@@ -123,7 +134,7 @@ func (r *Reader) NextSection() error {
 	}
 
 	// end marker
-	if bytesRead == 8 && bytes.Compare(vals[:8], []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}) == 0 {
+	if bytesRead == 8 && bytes.Equal(vals[:8], []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}) {
 		return io.EOF
 	}
 

@@ -25,6 +25,9 @@ const (
 	SectionNameResourceLimitsStateObject   SectionName = "eosio::chain::resource_limits::resource_limits_state_object"
 	SectionNameResourceLimitsConfigObject  SectionName = "eosio::chain::resource_limits::resource_limits_config_object"
 	SectionNameGenesisState                SectionName = "eosio::chain::genesis_state"
+
+	// Ultra Specific
+	SectionAccountFreeActionsObject SectionName = "eosio::chain::account_free_actions_object"
 )
 
 type Section struct {

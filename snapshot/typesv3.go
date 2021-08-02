@@ -914,3 +914,41 @@ func readTransactionObject(section *Section, f sectionCallbackFunc) error {
 
 	return nil
 }
+
+/// Ultra Specific
+
+type FreeObjectUsage struct {
+	UserSize   eos.Uint64
+	UserCount  eos.Uint64
+	UltraSize  eos.Uint64
+	UltraCount eos.Uint64
+}
+
+type AccountFreeActionsObject struct {
+	Name                 eos.AccountName
+	PermissionObject     FreeObjectUsage
+	SharedKey            FreeObjectUsage
+	PermissionLevel      FreeObjectUsage
+	Wait                 FreeObjectUsage
+	PermissionLinkObject FreeObjectUsage
+}
+
+func readAccountFreeActionsObject(section *Section, f sectionCallbackFunc) error {
+	for i := uint64(0); i < section.RowCount; i++ {
+		a := AccountFreeActionsObject{}
+		cnt := make([]byte, 8+(8*4)*5) // fixed size of resource_limits_object
+		_, err := section.Buffer.Read(cnt)
+		if err != nil {
+			return err
+		}
+
+		if err := eos.UnmarshalBinary(cnt, &a); err != nil {
+			return err
+		}
+
+		if err := f(a); err != nil {
+			return err
+		}
+	}
+	return nil
+}
