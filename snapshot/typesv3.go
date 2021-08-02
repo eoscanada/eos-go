@@ -97,26 +97,11 @@ func readContractTables(section *Section, f sectionCallbackFunc) error {
 			return err
 		}
 
-		// if t.Code == "houseaccount" {
-		// 	fmt.Println("Table code", t.Code, "scope", t.Scope, "tablename", t.TableName, "payer", t.Payer, "count", t.Count)
-		// }
-
 		for idxType := 0; idxType < 6; idxType++ {
-
-			// offset, _ := buf.(*os.File).Seek(0, os.SEEK_CUR)
-			// fmt.Println("OFFSET", offset)
-
 			size, err := readUvarint(buf)
 			if err != nil {
 				return fmt.Errorf("reading index type size: %w", err)
 			}
-
-			// offset2, _ := buf.(*os.File).Seek(0, os.SEEK_CUR)
-			// fmt.Println("OFFSET n size", offset2, offset2-offset, size)
-
-			// if t.Code == "houseaccount" {
-			// 	fmt.Println("  index type", idxType, "index size", size, "code", t.Code, "scope", t.Scope, "tablename", t.TableName, "count", t.Count)
-			// }
 
 			for i := 0; i < int(size); i++ {
 				head := make([]byte, 8+8)
@@ -212,50 +197,15 @@ func readContractTables(section *Section, f sectionCallbackFunc) error {
 					row = obj
 				}
 
-				// if t.Code == "houseaccount" {
-				// 	out, _ := json.Marshal(row)
-				// 	fmt.Printf("%T: %d. %s seek: %d\n", row, i, string(out), section.BufferSize)
-				// 	//fmt.Printf("Buffer state: size %d buffered %d\n", section.Buffer.Size())
-				// }
-
 				if err := f(row); err != nil {
 					return err
 				}
-
 			}
-
 		}
 	}
 
 	return nil
 }
-
-// type TableIDObject struct {
-//    class table_id_object : public chainbase::object<table_id_object_type, table_id_object> {
-//       OBJECT_CTOR(table_id_object)
-
-//       id_type        id;
-//       account_name   code;  //< code should not be changed within a chainbase modifier lambda
-//       scope_name     scope; //< scope should not be changed within a chainbase modifier lambda
-//       table_name     table; //< table should not be changed within a chainbase modifier lambda
-//       account_name   payer;
-//       uint32_t       count = 0; /// the number of elements in the table
-//    };
-// }
-// type KeyValueObject struct {
-// 	   struct key_value_object : public chainbase::object<key_value_object_type, key_value_object> {
-//       OBJECT_CTOR(key_value_object, (value))
-
-//       typedef uint64_t key_type;
-//       static const int number_of_keys = 1;
-
-//       id_type               id;
-//       table_id              t_id; //< t_id should not be changed within a chainbase modifier lambda
-//       uint64_t              primary_key; //< primary_key should not be changed within a chainbase modifier lambda
-//       account_name          payer;
-//       shared_blob           value;
-//    };
-// }
 
 type BlockState struct {
 	/// from block_header_state_common
@@ -337,7 +287,6 @@ func readAccountObjects(section *Section, f sectionCallbackFunc) error {
 		if err := f(a); err != nil {
 			return err
 		}
-		//fmt.Println("Account", a.Name, "created", a.CreationDate.Format(time.RFC3339), "abi length", len(val))
 	}
 	return nil
 }
@@ -373,7 +322,6 @@ func readAccountMetadataObjects(section *Section, f sectionCallbackFunc) error {
 		if err := f(a); err != nil {
 			return err
 		}
-		// fmt.Println("Account", a.Name, "ast code updatecreated", a.LastCodeUpdate, a.RecvSequence, a.AuthSequence, a.CodeSequence, a.ABISequence, a.VMType, a.VMVersion, "flags", a.Flags)
 	}
 	return nil
 }
@@ -451,8 +399,6 @@ func readProtocolStateObject(section *Section, f sectionCallbackFunc) error {
 	if err != nil {
 		return err
 	}
-
-	// _ = ioutil.WriteFile("/tmp/test.dat", cnt, 0664)
 
 	var obj ProtocolStateObject
 	err = eos.UnmarshalBinary(cnt, &obj)
@@ -621,8 +567,6 @@ func readPermissionLinkObject(section *Section, f sectionCallbackFunc) error {
 		pos += d.LastPos()
 	}
 
-	// _ = ioutil.WriteFile("/tmp/test.dat", cnt, 0664)
-
 	return nil
 }
 
@@ -743,19 +687,12 @@ func readResourceLimitsStateObject(section *Section, f sectionCallbackFunc) erro
 		return err
 	}
 
-	// _ = ioutil.WriteFile("/tmp/test.dat", cnt, 0664)
-
 	var obj ResourceLimitsStateObject
-	err = eos.UnmarshalBinary(cnt, &obj)
-	if err != nil {
-		return err
+	if err = eos.UnmarshalBinary(cnt, &obj); err != nil {
+		return fmt.Errorf("unmarshal binary: %w", err)
 	}
 
-	if err := f(obj); err != nil {
-		return err
-	}
-
-	return nil
+	return f(obj)
 }
 
 ////
@@ -785,19 +722,12 @@ func readResourceLimitsConfigObject(section *Section, f sectionCallbackFunc) err
 		return err
 	}
 
-	// _ = ioutil.WriteFile("/tmp/test.dat", cnt, 0664)
-
 	var obj ResourceLimitsConfigObject
-	err = eos.UnmarshalBinary(cnt, &obj)
-	if err != nil {
-		return err
+	if err = eos.UnmarshalBinary(cnt, &obj); err != nil {
+		return fmt.Errorf("unmarshal binary: %w", err)
 	}
 
-	if err := f(obj); err != nil {
-		return err
-	}
-
-	return nil
+	return f(obj)
 }
 
 ////
