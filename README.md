@@ -58,7 +58,7 @@ The easiest way to see the actual output for a given example is to add a line
 
 ```
     if err != nil {
-        panic(fmt.Errorf("json marshal response: %s", err))
+        panic(fmt.Errorf("json marshal response: %w", err))
     }
 
     fmt.Println(string(bytes))

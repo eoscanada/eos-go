@@ -11,13 +11,13 @@ func ExamplePackedTransaction_Unpack() {
 	var packedTrx *eos.PackedTransaction
 	err := json.Unmarshal(packedTrxData(), &packedTrx)
 	if err != nil {
-		panic(fmt.Errorf("unmarshaling to PackedTransaction: %s", err))
+		panic(fmt.Errorf("unmarshaling to PackedTransaction: %w", err))
 	}
 
 	var signedTrx *eos.SignedTransaction
 	signedTrx, err = packedTrx.Unpack()
 	if err != nil {
-		panic(fmt.Errorf("unpacking transaction: %s", err))
+		panic(fmt.Errorf("unpacking transaction: %w", err))
 	}
 
 	fmt.Printf("%#v\n", signedTrx.Actions)

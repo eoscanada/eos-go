@@ -26,7 +26,7 @@ func NewABI(r io.Reader) (*ABI, error) {
 	abiDecoder := json.NewDecoder(r)
 	err := abiDecoder.Decode(abi)
 	if err != nil {
-		return nil, fmt.Errorf("read abi: %s", err)
+		return nil, fmt.Errorf("read abi: %w", err)
 	}
 
 	return abi, nil

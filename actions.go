@@ -163,11 +163,11 @@ func (a *Action) MapToRegisteredAction() error {
 
 	cnt, err := json.Marshal(src)
 	if err != nil {
-		return fmt.Errorf("marshaling data: %s", err)
+		return fmt.Errorf("marshaling data: %w", err)
 	}
 	err = json.Unmarshal(cnt, objIface)
 	if err != nil {
-		return fmt.Errorf("json unmarshal into registered actions: %s", err)
+		return fmt.Errorf("json unmarshal into registered actions: %w", err)
 	}
 
 	a.ActionData.Data = objIface

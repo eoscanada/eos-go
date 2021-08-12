@@ -7,8 +7,6 @@ package btcec
 import (
 	"bytes"
 	"testing"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 type pubKeyTest struct {
@@ -239,10 +237,7 @@ func TestPubKeys(t *testing.T) {
 			pkStr = (*PublicKey)(pk).SerializeHybrid()
 		}
 		if !bytes.Equal(test.key, pkStr) {
-			t.Errorf("%s pubkey: serialized keys do not match.",
-				test.name)
-			spew.Dump(test.key)
-			spew.Dump(pkStr)
+			t.Errorf("%s pubkey: serialized keys do not match.", test.name)
 		}
 	}
 }

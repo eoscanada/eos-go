@@ -77,7 +77,19 @@ func charToSymbol(c byte) byte {
 
 var base32Alphabet = []byte(".12345abcdefghijklmnopqrstuvwxyz")
 
+var eosioNameUint64 = uint64(6138663577826885632)
+var eosioTokenNameUint64 = uint64(6138663591592764928)
+var cachedNames = map[uint64]string{
+	6138663577826885632: "eosio",
+	6138663591592764928: "eosio.token",
+}
+
 func NameToString(in uint64) string {
+	// Some particularly used name are pre-cached, so we avoid the transformation altogether, and reduce memory usage
+	if name, found := cachedNames[in]; found {
+		return name
+	}
+
 	// ported from libraries/chain/name.cpp in eosio
 	a := []byte{'.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'}
 
@@ -99,5 +111,25 @@ func NameToString(in uint64) string {
 		tmp >>= shift
 	}
 
-	return strings.TrimRight(string(a), ".")
+	// We had a call to `strings.TrimRight` before, but that was causing lots of
+	// allocation and lost CPU cycles. We now have our own cutting method that
+	// improves performance a lot.
+	return trimRightDots(a)
+}
+
+func trimRightDots(bytes []byte) string {
+	trimUpTo := -1
+	for i := 12; i >= 0; i-- {
+		if bytes[i] == '.' {
+			trimUpTo = i
+		} else {
+			break
+		}
+	}
+
+	if trimUpTo == -1 {
+		return string(bytes)
+	}
+
+	return string(bytes[0:trimUpTo])
 }

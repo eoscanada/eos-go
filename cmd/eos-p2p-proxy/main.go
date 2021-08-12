@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/eoscanada/eos-go/p2p"
+	"github.com/streamingfast/logging"
 )
 
 var peer1 = flag.String("peer1", "localhost:9876", "peer 1")
@@ -20,7 +21,7 @@ func main() {
 	fmt.Println("P2P Proxy")
 
 	if *showLog {
-		p2p.EnableP2PLogging()
+		logging.Set(logging.MustCreateLogger(), "github.com/eoscanada/eos-go/p2p")
 	}
 	defer p2p.SyncLogger()
 

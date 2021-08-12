@@ -2,11 +2,13 @@ package eos
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
 
 	"encoding/json"
 
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -117,7 +119,7 @@ func TestUnmarshalBlockResp(t *testing.T) {
 	assert.Equal(t, "", transfer.Memo)
 }
 
-var accountResponseJSONData = `{
+var accountResponseJSONData = fmt.Sprintf(`{
 	"account_name": "eosriobrazil",
 	"head_block_num": 5264738,
 	"head_block_time": "2018-07-11T04:29:16.500",
@@ -147,7 +149,7 @@ var accountResponseJSONData = `{
 			"threshold": 1,
 			"keys": [
 			{
-				"key": "EOS6HSE9SVvNmGF4Dv8cHLUjF8BigorYykUG2z8UbHZd1BQ9qF88r",
+				"key": "%[1]s6HSE9SVvNmGF4Dv8cHLUjF8BigorYykUG2z8UbHZd1BQ9qF88r",
 				"weight": 1
 			}
 			],
@@ -162,7 +164,7 @@ var accountResponseJSONData = `{
 			"threshold": 1,
 			"keys": [
 			{
-				"key": "EOS7FJJ7igorHoTq6y6yd7GmRei9cc6CRhR7L2TXP6H9UFEP49jNc",
+				"key": "%[1]s7FJJ7igorHoTq6y6yd7GmRei9cc6CRhR7L2TXP6H9UFEP49jNc",
 				"weight": 1
 			}
 			],
@@ -177,7 +179,7 @@ var accountResponseJSONData = `{
 			"threshold": 1,
 			"keys": [
 			{
-				"key": "EOS5UhWBMYKPPzb4tigorbnrH9Ft7mogW1MmvViaHJkBif2kSa1f4",
+				"key": "%[1]s5UhWBMYKPPzb4tigorbnrH9Ft7mogW1MmvViaHJkBif2kSa1f4",
 				"weight": 1
 			}
 			],
@@ -213,7 +215,7 @@ var accountResponseJSONData = `{
 		"proxied_vote_weight": "0.00000000000000000",
 		"is_proxy": 0
 	}
-}`
+}`, ecc.PublicKeyPrefixCompat)
 
 type Transfer struct {
 	From     AccountName `json:"from"`

@@ -13,12 +13,12 @@ func ExampleAPI_GetInfo() {
 
 	info, err := api.GetInfo(context.Background())
 	if err != nil {
-		panic(fmt.Errorf("get info: %s", err))
+		panic(fmt.Errorf("get info: %w", err))
 	}
 
 	bytes, err := json.Marshal(info)
 	if err != nil {
-		panic(fmt.Errorf("json marshal response: %s", err))
+		panic(fmt.Errorf("json marshal response: %w", err))
 	}
 
 	fmt.Println(string(bytes))

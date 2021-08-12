@@ -1,15 +1,12 @@
 package p2p
 
 import (
+	"fmt"
 	"math"
-
-	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
-
 	"time"
 
 	"github.com/eoscanada/eos-go"
+	"go.uber.org/zap"
 )
 
 type Client struct {
@@ -51,7 +48,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 	for {
 		packet, err := peer.Read()
 		if err != nil {
-			errChannel <- errors.Wrapf(err, "read message from %s", peer.Address)
+			errChannel <- fmt.Errorf("read message from %s: %w", peer.Address, err)
 			break
 		}
 
@@ -62,7 +59,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 
 		switch m := packet.P2PMessage.(type) {
 		case *eos.GoAwayMessage:
-			errChannel <- errors.Wrapf(err, "GoAwayMessage reason %s", m.Reason)
+			errChannel <- fmt.Errorf("GoAwayMessage reason %s: %w", m.Reason, err)
 
 		case *eos.HandshakeMessage:
 			if c.catchup == nil {
@@ -70,17 +67,17 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				m.P2PAddress = peer.Name
 				err = peer.WriteP2PMessage(m)
 				if err != nil {
-					errChannel <- errors.Wrap(err, "HandshakeMessage")
+					errChannel <- fmt.Errorf("HandshakeMessage: %w", err)
 					break
 				}
-				p2pLog.Debug("Handshake resent", zap.String("other", m.P2PAddress))
+				zlog.Debug("Handshake resent", zap.String("other", m.P2PAddress))
 
 			} else {
 
 				c.catchup.originHeadBlock = m.HeadNum
 				err = c.catchup.sendSyncRequest(peer)
 				if err != nil {
-					errChannel <- errors.Wrap(err, "handshake: sending sync request")
+					errChannel <- fmt.Errorf("handshake: sending sync request: %w", err)
 				}
 				c.catchup.IsCatchingUp = true
 			}
@@ -91,7 +88,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 					c.catchup.originHeadBlock = pendingNum
 					err = c.catchup.sendSyncRequest(peer)
 					if err != nil {
-						errChannel <- errors.Wrap(err, "noticeMessage: sending sync request")
+						errChannel <- fmt.Errorf("noticeMessage: sending sync request: %w", err)
 					}
 				}
 			}
@@ -104,24 +101,24 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 				if c.catchup.requestedEndBlock == blockNum {
 
 					if c.catchup.originHeadBlock <= blockNum {
-						p2pLog.Debug("In sync with last handshake")
+						zlog.Debug("In sync with last handshake")
 						blockID, err := m.BlockID()
 						if err != nil {
-							errChannel <- errors.Wrap(err, "getting block id")
+							errChannel <- fmt.Errorf("getting block id: %w", err)
 						}
 						peer.handshakeInfo.HeadBlockNum = blockNum
 						peer.handshakeInfo.HeadBlockID = blockID
 						peer.handshakeInfo.HeadBlockTime = m.SignedBlockHeader.Timestamp.Time
 						err = peer.SendHandshake(peer.handshakeInfo)
 						if err != nil {
-							errChannel <- errors.Wrap(err, "send handshake")
+							errChannel <- fmt.Errorf("send handshake: %w", err)
 						}
-						p2pLog.Debug("Send new handshake",
+						zlog.Debug("Send new handshake",
 							zap.Object("handshakeInfo", peer.handshakeInfo))
 					} else {
 						err = c.catchup.sendSyncRequest(peer)
 						if err != nil {
-							errChannel <- errors.Wrap(err, "signed block: sending sync request")
+							errChannel <- fmt.Errorf("signed block: sending sync request: %w", err)
 						}
 					}
 				}
@@ -131,7 +128,7 @@ func (c *Client) read(peer *Peer, errChannel chan error) {
 }
 
 func (c *Client) Start() error {
-	p2pLog.Info("Starting client")
+	zlog.Info("Starting client")
 
 	errorChannel := make(chan error, 1)
 	readyChannel := c.peer.Connect(errorChannel)
@@ -144,11 +141,11 @@ func (c *Client) Start() error {
 
 				err := triggerHandshake(c.peer)
 				if err != nil {
-					return errors.Wrap(err, "connect and start: trigger handshake")
+					return fmt.Errorf("connect and start: trigger handshake: %w", err)
 				}
 			}
 		case err := <-errorChannel:
-			return errors.Wrap(err, "start client")
+			return fmt.Errorf("start client: %w", err)
 		}
 	}
 }
@@ -170,13 +167,13 @@ func (c *Catchup) sendSyncRequest(peer *Peer) error {
 	c.requestedStartBlock = c.headBlock
 	c.requestedEndBlock = c.headBlock + uint32(math.Min(float64(delta), 100))
 
-	p2pLog.Debug("Sending sync request",
+	zlog.Debug("Sending sync request",
 		zap.Uint32("startBlock", c.requestedStartBlock),
 		zap.Uint32("endBlock", c.requestedEndBlock))
 
 	err := peer.SendSyncRequest(c.requestedStartBlock, c.requestedEndBlock+1)
 	if err != nil {
-		return errors.Wrapf(err, "send sync request to %s", peer.Address)
+		return fmt.Errorf("send sync request to %s: %w", peer.Address, err)
 	}
 
 	return nil

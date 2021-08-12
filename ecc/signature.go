@@ -1,11 +1,8 @@
 package ecc
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-
-	"github.com/eoscanada/eos-go/btcsuite/btcutil/base58"
 )
 
 const SignatureK1Prefix = "SIG_K1_"
@@ -87,18 +84,17 @@ func MustNewSignatureFromData(data []byte) Signature {
 	if err != nil {
 		panic(err.Error())
 	}
+
 	return sig
 }
 
-type sigReaderManifest struct {
-	curveID CurveID
-	inner   func() innerSignature
-}
+func MustNewSignature(fromText string) Signature {
+	signature, err := NewSignature(fromText)
+	if err != nil {
+		panic(fmt.Errorf("invalid signature string: %w", err))
+	}
 
-var sigReaderManifests = map[string]sigReaderManifest{
-	SignatureK1Prefix: sigReaderManifest{CurveK1, newInnerK1Signature},
-	SignatureR1Prefix: sigReaderManifest{CurveR1, newInnerR1Signature},
-	SignatureWAPrefix: sigReaderManifest{CurveWA, newInnerWASignature},
+	return signature
 }
 
 func NewSignature(signature string) (out Signature, err error) {
@@ -106,37 +102,36 @@ func NewSignature(signature string) (out Signature, err error) {
 		return out, fmt.Errorf("invalid format")
 	}
 
+	// We had a for/loop using a map before, this a disavantadge. The ordering was
+	// not constant so we were not optimizing for the fact that compat keys appears way more
+	// often than all others.
+	//
+	// We now have an unrolled for/loop specially ordered so that the most occurring prefix
+	// is checked first.
+
 	prefix := signature[0:7]
-	manifest, found := sigReaderManifests[prefix]
-	if !found {
-		return out, fmt.Errorf("unknown prefix %q", prefix)
+	if prefix == SignatureK1Prefix {
+		return newSignature(CurveK1, signature[7:], newInnerK1Signature)
 	}
 
-	fromText := signature[7:]
-	decoder := keyMaterialDecoders[manifest.curveID]
-	if decoder == nil {
-		decoder = keyMaterialDecoderFunc(base58.Decode)
+	if prefix == SignatureR1Prefix {
+		return newSignature(CurveR1, signature[7:], newInnerR1Signature)
 	}
 
-	decoded := decoder.Decode(fromText)
-
-	content := decoded[:len(decoded)-4]
-	checksum := decoded[len(decoded)-4:]
-	verifyChecksum := Ripemd160checksumHashCurve(content, manifest.curveID)
-	if !bytes.Equal(verifyChecksum, checksum) {
-		return Signature{}, fmt.Errorf("signature checksum failed, found %x expected %x", verifyChecksum, checksum)
+	if prefix == SignatureWAPrefix {
+		return newSignature(CurveWA, signature[7:], newInnerWASignature)
 	}
 
-	return Signature{Curve: manifest.curveID, Content: content, inner: manifest.inner()}, nil
+	return out, fmt.Errorf("unknown prefix %q", prefix)
 }
 
-func MustNewSignature(fromText string) Signature {
-	signature, err := NewSignature(fromText)
+func newSignature(curveID CurveID, in string, innerFactory func() innerSignature) (out Signature, err error) {
+	payload, err := decodeSignatureMaterial(in, curveID)
 	if err != nil {
-		panic(fmt.Errorf("invalid signature string: %s", err))
+		return out, err
 	}
 
-	return signature
+	return Signature{Curve: curveID, Content: payload, inner: innerFactory()}, nil
 }
 
 func (s Signature) MarshalJSON() ([]byte, error) {

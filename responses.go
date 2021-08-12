@@ -56,13 +56,6 @@ type ScheduledTransactionsResp struct {
 	More         string                 `json:"more"`
 }
 
-// type BlockTransaction struct {
-// 	Status        string            `json:"status"`
-// 	CPUUsageUS    int               `json:"cpu_usage_us"`
-// 	NetUsageWords int               `json:"net_usage_words"`
-// 	Trx           []json.RawMessage `json:"trx"`
-// }
-
 type DBSizeResp struct {
 	FreeBytes Int64 `json:"free_bytes"`
 	UsedBytes Int64 `json:"used_bytes"`
@@ -94,32 +87,34 @@ type ProcessedTransaction struct {
 
 type ActionTraceReceipt struct {
 	Receiver        AccountName                    `json:"receiver"`
-	ActionDigest    string                         `json:"act_digest"`
+	ActionDigest    Checksum256                    `json:"act_digest"`
 	GlobalSequence  Uint64                         `json:"global_sequence"`
 	ReceiveSequence Uint64                         `json:"recv_sequence"`
 	AuthSequence    []TransactionTraceAuthSequence `json:"auth_sequence"` // [["account", sequence], ["account", sequence]]
-	CodeSequence    Uint64                         `json:"code_sequence"`
-	ABISequence     Uint64                         `json:"abi_sequence"`
+	CodeSequence    Varuint32                      `json:"code_sequence"`
+	ABISequence     Varuint32                      `json:"abi_sequence"`
 }
 
 type ActionTrace struct {
-	Receipt                                *ActionTraceReceipt `json:"receipt,omitempty"`
+	ActionOrdinal                          Varuint32           `json:"action_ordinal"`
+	CreatorActionOrdinal                   Varuint32           `json:"creator_action_ordinal"`
+	ClosestUnnotifiedAncestorActionOrdinal Varuint32           `json:"closest_unnotified_ancestor_action_ordinal"`
+	Receipt                                *ActionTraceReceipt `json:"receipt,omitempty" eos:"optional"`
 	Receiver                               AccountName         `json:"receiver"`
 	Action                                 *Action             `json:"act"`
-	Elapsed                                Int64               `json:"elapsed"`
-	Console                                string              `json:"console"`
-	TransactionID                          Checksum256         `json:"trx_id"`
-	InlineTraces                           []ActionTrace       `json:"inline_traces"`
 	ContextFree                            bool                `json:"context_free"`
-	BlockTime                              BlockTimestamp      `json:"block_time"`
+	Elapsed                                Int64               `json:"elapsed"`
+	Console                                SafeString          `json:"console"`
+	TransactionID                          Checksum256         `json:"trx_id"`
 	BlockNum                               uint32              `json:"block_num"`
-	ProducerBlockID                        Checksum256         `json:"producer_block_id"`
+	BlockTime                              BlockTimestamp      `json:"block_time"`
+	ProducerBlockID                        Checksum256         `json:"producer_block_id" eos:"optional"`
 	AccountRAMDeltas                       []*AccountRAMDelta  `json:"account_ram_deltas"`
-	ErrorCode                              *Uint64             `json:"error_code"`
-	Except                                 *Except             `json:"except"`
-	ActionOrdinal                          uint32              `json:"action_ordinal"`
-	CreatorActionOrdinal                   uint32              `json:"creator_action_ordinal"`
-	ClosestUnnotifiedAncestorActionOrdinal uint32              `json:"closest_unnotified_ancestor_action_ordinal"`
+	Except                                 *Except             `json:"except,omitempty" eos:"optional"`
+	ErrorCode                              *Uint64             `json:"error_code,omitempty" eos:"optional"`
+
+	// Not present in EOSIO >= 1.8.x
+	InlineTraces []ActionTrace `json:"inline_traces,omitempty" eos:"-"`
 }
 
 type AccountRAMDelta struct {
@@ -155,7 +150,7 @@ func (auth *TransactionTraceAuthSequence) UnmarshalJSON(data []byte) error {
 	case string:
 		seqInt, err := strconv.ParseUint(el, 10, 64)
 		if err != nil {
-			return fmt.Errorf("decoding auth_sequence as string: %s", err)
+			return fmt.Errorf("decoding auth_sequence as string: %w", err)
 		}
 
 		seq = Uint64(seqInt)
@@ -176,6 +171,26 @@ func (auth TransactionTraceAuthSequence) MarshalJSON() (data []byte, err error) 
 type SequencedTransactionResp struct {
 	SeqNum int `json:"seq_num"`
 	TransactionResp
+}
+
+type ProtocolFeature struct {
+	FeatureDigest         Checksum256                    `json:"feature_digest"`
+	SubjectiveRestriction SubjectiveRestriction          `json:"subjective_restrictions"`
+	DescriptionDigest     Checksum256                    `json:"description_digest"`
+	Dependencies          []Checksum256                  `json:"dependencies"`
+	ProtocolFeatureType   string                         `json:"protocol_feature_type"`
+	Specification         []ProtocolFeatureSpecification `json:"specification"`
+}
+
+type SubjectiveRestriction struct {
+	Enabled                       bool     `json:"enabled"`
+	PreactivationRequired         bool     `json:"preactivation_required"`
+	EarliestAllowedActivationTime JSONTime `json:"earliest_allowed_activation_time"`
+}
+
+type ProtocolFeatureSpecification struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type TransactionsResp struct {
@@ -235,7 +250,7 @@ type GetTableRowsRequest struct {
 	Index      string `json:"index_position,omitempty"` // Index number, 1 - primary (first), 2 - secondary index (in order defined by multi_index), 3 - third index, etc. Number or name of index can be specified, e.g. 'secondary' or '2'.
 	EncodeType string `json:"encode_type,omitempty"`    // The encoding type of key_type (i64 , i128 , float64, float128) only support decimal encoding e.g. 'dec'" "i256 - supports both 'dec' and 'hex', ripemd160 and sha256 is 'hex' only
 	Reverse    bool   `json:"reverse,omitempty"`        // Get rows in reverse of the index
-	JSON       bool   `json:"json"`                     // JSON output if true, binary if false
+	JSON       bool   `json:"json"`                     // JSON expectOutput if true, binary if false
 }
 
 type GetTableRowsResp struct {
@@ -311,8 +326,22 @@ type GetRequiredKeysResp struct {
 	RequiredKeys []ecc.PublicKey `json:"required_keys"`
 }
 
+type GetAccountsByAuthorizersResp struct {
+	Accounts []AccountResult `json:"accounts"`
+}
+
+// TODO: what's the name of the struct
+type AccountResult struct {
+	Account            AccountName      `json:"account_name"`
+	Permission         PermissionName   `json:"permission_name"`
+	AuthorizingAccount *PermissionLevel `json:"authorizing_account,omitempty"`
+	AuthorizingKey     *ecc.PublicKey   `json:"authorizing_key,omitempty"`
+	Weight             uint16           `json:"weight"`
+	Threshold          uint32           `json:"threshold"`
+}
+
 // PushTransactionFullResp unwraps the responses from a successful `push_transaction`.
-// FIXME: REVIEW the actual output, things have moved here.
+// FIXME: REVIEW the actual expectOutput, things have moved here.
 type PushTransactionFullResp struct {
 	StatusCode    string
 	TransactionID string               `json:"transaction_id"`
@@ -418,14 +447,14 @@ type Global struct {
 }
 
 type Producer struct {
-	Owner         string      `json:"owner"`
-	TotalVotes    float64     `json:"total_votes,string"`
-	ProducerKey   string      `json:"producer_key"`
-	IsActive      int         `json:"is_active"`
-	URL           string      `json:"url"`
-	UnpaidBlocks  int         `json:"unpaid_blocks"`
-	LastClaimTime JSONFloat64 `json:"last_claim_time"`
-	Location      int         `json:"location"`
+	Owner         string  `json:"owner"`
+	TotalVotes    float64 `json:"total_votes,string"`
+	ProducerKey   string  `json:"producer_key"`
+	IsActive      int     `json:"is_active"`
+	URL           string  `json:"url"`
+	UnpaidBlocks  int     `json:"unpaid_blocks"`
+	LastClaimTime Float64 `json:"last_claim_time"`
+	Location      int     `json:"location"`
 }
 type ProducersResp struct {
 	Producers []Producer `json:"producers"`
@@ -461,7 +490,7 @@ type GetCurrencyStatsResp struct {
 }
 
 type Except struct {
-	Code    int                 `json:"code"`
+	Code    Int64               `json:"code"`
 	Name    string              `json:"name"`
 	Message string              `json:"message"`
 	Stack   []*ExceptLogMessage `json:"stack"`
@@ -474,13 +503,167 @@ type ExceptLogMessage struct {
 	Data    json.RawMessage  `json:"data"`
 }
 
+var exceptLogMessageTypes = map[string]fcVariantType{
+	"context": fcVariantObjectType,
+	"format":  fcVariantStringType,
+}
+
+func (m *ExceptLogMessage) UnmarshalBinary(decoder *Decoder) error {
+	variant := fcVariant{}
+	err := decoder.Decode(&variant)
+	if err != nil {
+		return fmt.Errorf("unable to decode except log message: %w", err)
+	}
+
+	if variant.TypeID != fcVariantObjectType {
+		return fmt.Errorf("invalid log message, expected type %s, got %s", fcVariantObjectType, variant.TypeID)
+	}
+
+	object := variant.MustAsObject()
+
+	if err := object.validateFields(exceptLogMessageTypes); err != nil {
+		return fmt.Errorf("invalid log message object: %w", err)
+	}
+
+	if err = m.Context.fromObject(object["context"].MustAsObject()); err != nil {
+		return fmt.Errorf("unable to assign context: %w", err)
+	}
+
+	m.Format = object["format"].MustAsString()
+
+	if dataVariant := object["data"]; !dataVariant.IsNil() {
+		if m.Data, err = json.Marshal(dataVariant.ToNative()); err != nil {
+			return fmt.Errorf("unable to assign data: %w", err)
+		}
+	}
+
+	return nil
+}
+
 type ExceptLogContext struct {
-	Level      string            `json:"level"` // "debug", "info", "warn", "error", also: "all", "off"
+	Level      ExceptLogLevel    `json:"level"`
 	File       string            `json:"file"`
-	Line       int               `json:"line"`
+	Line       uint64            `json:"line"`
 	Method     string            `json:"method"`
 	Hostname   string            `json:"hostname"`
 	ThreadName string            `json:"thread_name"`
 	Timestamp  JSONTime          `json:"timestamp"`
 	Context    *ExceptLogContext `json:"context,omitempty"`
+}
+
+var exceptLogContextTypes = map[string]fcVariantType{
+	"level":       fcVariantStringType,
+	"file":        fcVariantStringType,
+	"line":        fcVariantUint64Type,
+	"method":      fcVariantStringType,
+	"hostname":    fcVariantStringType,
+	"thread_name": fcVariantStringType,
+	"timestamp":   fcVariantStringType,
+	"?context":    fcVariantObjectType,
+}
+
+func (c *ExceptLogContext) fromObject(object fcVariantObject) error {
+	if err := object.validateFields(exceptLogContextTypes); err != nil {
+		return fmt.Errorf("invalid log context: %w", err)
+	}
+
+	c.Level.FromString(object["level"].MustAsString())
+	c.File = object["file"].MustAsString()
+	c.Line = object["line"].MustAsUint64()
+	c.Method = object["method"].MustAsString()
+	c.Hostname = object["hostname"].MustAsString()
+	c.ThreadName = object["thread_name"].MustAsString()
+
+	var err error
+	if c.Timestamp, err = ParseJSONTime(object["timestamp"].MustAsString()); err != nil {
+		return fmt.Errorf("invalid log context timestamp: %w", err)
+	}
+
+	contextVariant := object["context"]
+	if contextVariant.TypeID != fcVariantNullType {
+		c.Context = new(ExceptLogContext)
+		if err := c.Context.fromObject(contextVariant.MustAsObject()); err != nil {
+			return fmt.Errorf("unable to assign nested context: %w", err)
+		}
+	}
+
+	return nil
+}
+
+type ExceptLogLevel uint8
+
+const (
+	ExceptLogLevelAll ExceptLogLevel = iota
+	ExceptLogLevelDebug
+	ExceptLogLevelInfo
+	ExceptLogLevelWarn
+	ExceptLogLevelError
+	ExceptLogLevelOff
+)
+
+func (s *ExceptLogLevel) FromString(input string) {
+	switch input {
+	case "all":
+		*s = ExceptLogLevelAll
+	case "debug":
+		*s = ExceptLogLevelDebug
+	case "info":
+		*s = ExceptLogLevelInfo
+	case "warn":
+		*s = ExceptLogLevelWarn
+	case "error":
+		*s = ExceptLogLevelError
+	case "off":
+		*s = ExceptLogLevelOff
+	default:
+		*s = ExceptLogLevelOff
+	}
+}
+
+func (s *ExceptLogLevel) UnmarshalJSON(data []byte) error {
+	var decoded string
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+
+	s.FromString(decoded)
+	return nil
+}
+
+func (s ExceptLogLevel) MarshalJSON() (data []byte, err error) {
+	out := "off"
+	switch s {
+	case ExceptLogLevelAll:
+		out = "all"
+	case ExceptLogLevelDebug:
+		out = "debug"
+	case ExceptLogLevelInfo:
+		out = "info"
+	case ExceptLogLevelWarn:
+		out = "warn"
+	case ExceptLogLevelError:
+		out = "error"
+	case ExceptLogLevelOff:
+		out = "off"
+	}
+	return json.Marshal(out)
+}
+
+func (s ExceptLogLevel) String() string {
+	switch s {
+	case ExceptLogLevelAll:
+		return "all"
+	case ExceptLogLevelDebug:
+		return "debug"
+	case ExceptLogLevelInfo:
+		return "info"
+	case ExceptLogLevelWarn:
+		return "warn"
+	case ExceptLogLevelError:
+		return "error"
+	case ExceptLogLevelOff:
+		return "off"
+	}
+
+	return "off"
 }

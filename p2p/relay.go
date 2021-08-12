@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
-
 	"go.uber.org/zap"
 )
 
@@ -31,7 +29,7 @@ func (r *Relay) startProxy(conn net.Conn) {
 
 	remoteAddress := conn.RemoteAddr().String()
 
-	p2pLog.Info("Initiating proxy",
+	zlog.Info("Initiating proxy",
 		zap.String("peer1", remoteAddress),
 		zap.String("peer2", r.destinationPeerAddress))
 
@@ -49,7 +47,7 @@ func (r *Relay) startProxy(conn net.Conn) {
 		proxy.RegisterHandlers(r.handlers)
 
 		err := proxy.Start()
-		p2pLog.Error("Started proxy error",
+		zlog.Error("Started proxy error",
 			zap.String("peer1", remoteAddress),
 			zap.String("peer2", r.destinationPeerAddress),
 			zap.Error(err))
@@ -57,12 +55,12 @@ func (r *Relay) startProxy(conn net.Conn) {
 		destinationPeer.connection.Close()
 		remotePeer.connection.Close()
 
-		p2pLog.Warn("Closing connection",
+		zlog.Warn("Closing connection",
 			zap.String("peer1", remoteAddress),
 			zap.String("peer2", r.destinationPeerAddress))
 		break
 	case err := <-errorChannel:
-		p2pLog.Error("Proxy error between %s and %s : %s",
+		zlog.Error("Proxy error between %s and %s : %s",
 			zap.Stringer("peer1", conn.RemoteAddr()),
 			zap.String("peer2", r.destinationPeerAddress),
 			zap.Error(err))
@@ -74,18 +72,18 @@ func (r *Relay) Start() error {
 	for {
 		ln, err := net.Listen("tcp", r.listeningAddress)
 		if err != nil {
-			return errors.Wrapf(err, "peer init: listening %s", r.listeningAddress)
+			return fmt.Errorf("peer init: listening %s: %w", r.listeningAddress, err)
 		}
 
-		p2pLog.Info("Accepting connection", zap.String("listen", r.listeningAddress))
+		zlog.Info("Accepting connection", zap.String("listen", r.listeningAddress))
 
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				logErr("lost listening connection", err)
+				zlog.Error("lost listening connection", zap.Error(err))
 				break
 			}
-			p2pLog.Info("Connected to", zap.Stringer("remote", conn.RemoteAddr()))
+			zlog.Info("Connected to", zap.Stringer("remote", conn.RemoteAddr()))
 			go r.startProxy(conn)
 		}
 	}

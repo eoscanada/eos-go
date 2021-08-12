@@ -1,14 +1,9 @@
 package eos
 
 import (
-	"os"
-
-	"go.uber.org/zap"
+	"github.com/streamingfast/logging"
 )
 
 func init() {
-	if os.Getenv("DEBUG") != "" {
-		logger, _ := zap.NewDevelopment()
-		EnableDebugLogging(logger)
-	}
+	logging.TestingOverride()
 }

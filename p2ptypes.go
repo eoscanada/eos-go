@@ -2,12 +2,12 @@ package eos
 
 import (
 	"crypto/sha256"
-	"errors"
-	"fmt"
-
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"strconv"
 
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/tidwall/gjson"
@@ -216,12 +216,64 @@ type ProducerAuthority struct {
 }
 
 type MerkleRoot struct {
-	ActiveNodes []string `json:"_active_nodes"`
-	NodeCount   uint32   `json:"_node_count"`
+	ActiveNodes []Checksum256 `json:"_active_nodes"`
+	NodeCount   uint64        `json:"_node_count"`
 }
 
-type EOSNameOrUint32 interface{}
+type PairAccountNameBlockNum struct {
+	AccountName AccountName
+	BlockNum    uint32
+}
 
+func (c PairAccountNameBlockNum) MarshalJSON() ([]byte, error) {
+	return []byte(`["` + string(c.AccountName) + `",` + strconv.FormatUint(uint64(c.BlockNum), 10) + `]`), nil
+}
+
+func (c *PairAccountNameBlockNum) UnmarshalJSON(data []byte) error {
+	var object [2]interface{}
+	err := json.Unmarshal(data, &object)
+	if err != nil {
+		return nil
+	}
+
+	accountName, ok := object[0].(string)
+	if !ok {
+		return fmt.Errorf("expecting first element to be a string, got %T", object[0])
+	}
+
+	blockNum, ok := object[1].(float64)
+	if !ok {
+		return fmt.Errorf("expecting second element to be a float64, got %T", object[1])
+	}
+
+	c.AccountName = AN(accountName)
+	c.BlockNum = uint32(blockNum)
+
+	return nil
+}
+
+func (c *PairAccountNameBlockNum) UnmarshalBinary(decoder *Decoder) error {
+	accountName, err := decoder.ReadName()
+	if err != nil {
+		return fmt.Errorf("unable to read pair account name: %w", err)
+	}
+
+	blockNum, err := decoder.ReadUint32()
+	if err != nil {
+		return fmt.Errorf("unable to read pair block num: %w", err)
+	}
+
+	c.AccountName = AccountName(accountName)
+	c.BlockNum = blockNum
+	return nil
+}
+
+// FIXME: This structure supports both EOS 1.8.x as well as EOS 2.0.x. However, the binary encoding
+//        format does only support the 2.0.x version for now. It's not clear how we would do thing
+//        to propagate the information that encoding/decoding of binary should be performed with one
+//        variant or the other. When this comment was added, the binary encoding/decoding was not
+//        working for either version, so supporting EOS 2.0.x only is a fair improvements. Will need
+//        to understand better if this is required for other chains for example.
 type BlockState struct {
 	BlockNum                         uint32 `json:"block_num"`
 	DPoSProposedIrreversibleBlockNum uint32 `json:"dpos_proposed_irreversible_blocknum"`
@@ -230,24 +282,26 @@ type BlockState struct {
 	// Hybrid (dynamic types)
 	ActiveSchedule *ProducerScheduleOrAuthoritySchedule `json:"active_schedule"`
 
-	BlockrootMerkle          *MerkleRoot          `json:"blockroot_merkle,omitempty"`
-	ProducerToLastProduced   [][2]EOSNameOrUint32 `json:"producer_to_last_produced,omitempty"`
-	ProducerToLastImpliedIRB [][2]EOSNameOrUint32 `json:"producer_to_last_implied_irb,omitempty"`
-
-	// EOSIO 1.x
-	BlockSigningKeyV1 *ecc.PublicKey `json:"block_signing_key,omitempty"`
+	BlockrootMerkle          *MerkleRoot               `json:"blockroot_merkle,omitempty"`
+	ProducerToLastProduced   []PairAccountNameBlockNum `json:"producer_to_last_produced,omitempty"`
+	ProducerToLastImpliedIRB []PairAccountNameBlockNum `json:"producer_to_last_implied_irb,omitempty"`
 
 	// EOSIO 2.x
 	ValidBlockSigningAuthorityV2 *BlockSigningAuthority `json:"valid_block_signing_authority,omitempty"`
 
-	ConfirmCount []uint32 `json:"confirm_count,omitempty"`
+	ConfirmCount []uint8 `json:"confirm_count,omitempty"`
 
-	BlockID                   string                `json:"id"`
-	PendingSchedule           *PendingSchedule      `json:"pending_schedule"`
-	ActivatedProtocolFeatures map[string][]HexBytes `json:"activated_protocol_features,omitempty"`
+	BlockID                   Checksum256                   `json:"id"`
+	Header                    *SignedBlockHeader            `json:"header,omitempty"`
+	PendingSchedule           *PendingSchedule              `json:"pending_schedule"`
+	ActivatedProtocolFeatures *ProtocolFeatureActivationSet `json:"activated_protocol_features,omitempty" eos:"optional"`
+	AdditionalSignatures      []ecc.Signature               `json:"additional_signatures"`
 
-	SignedBlock *SignedBlock `json:"block,omitempty"`
+	SignedBlock *SignedBlock `json:"block,omitempty" eos:"optional"`
 	Validated   bool         `json:"validated"`
+
+	// EOSIO 1.x
+	BlockSigningKeyV1 *ecc.PublicKey `json:"block_signing_key,omitempty" eos:"-"`
 }
 
 type ProducerScheduleOrAuthoritySchedule struct {
@@ -259,7 +313,7 @@ type ProducerScheduleOrAuthoritySchedule struct {
 }
 
 func (p *ProducerScheduleOrAuthoritySchedule) MarshalJSON() ([]byte, error) {
-	// In case of ambiguity, which arise only on empty `producers` array, the first one is picked since it does not matter (same JSON output)
+	// In case of ambiguity, which arise only on empty `producers` array, the first one is picked since it does not matter (same JSON expectOutput)
 	if p.V1 != nil {
 		return json.Marshal(p.V1)
 	}
@@ -289,7 +343,7 @@ func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalJSON(data []byte) error {
 		p.V1 = new(ProducerSchedule)
 		err := json.Unmarshal(data, p.V1)
 		if err != nil {
-			return fmt.Errorf("unable to unmarshal ProducerSchedule type: %s", err)
+			return fmt.Errorf("unable to unmarshal ProducerSchedule type: %w", err)
 		}
 	}
 
@@ -297,7 +351,7 @@ func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalJSON(data []byte) error {
 		p.V2 = new(ProducerAuthoritySchedule)
 		err := json.Unmarshal(data, p.V2)
 		if err != nil {
-			return fmt.Errorf("unable to unmarshal ProducerAuthoritySchedule type: %s", err)
+			return fmt.Errorf("unable to unmarshal ProducerAuthoritySchedule type: %w", err)
 		}
 	}
 
@@ -308,25 +362,47 @@ func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-const (
-	BlockSigningAuthorityV0Type = 0
-)
+func (p *ProducerScheduleOrAuthoritySchedule) UnmarshalBinary(decoder *Decoder) error {
+	// FIXME: For now, we assume all blocks are in 2.0 format, so with V2 set. However,
+	//        it's not really clear for me yet how is the versionning being handled by
+	//        `nodeos` at the binary level. In the block header, there is some header
+	//        extensions that can be used to determined if the WTMSIG protocol feature
+	//        has been activated or not. But I'm not even sure the binary format changes
+	//        or not (most probably that it does). Anyway, this compatibility stuff between
+	//        1.8 and 2.0 with WTMSIG protocol feature needs to be researched and handled
+	//        correctly everywhere in the library.
+	if p.V2 == nil {
+		p.V2 = new(ProducerAuthoritySchedule)
+	}
+
+	err := decoder.Decode(p.V2)
+	if err != nil {
+		return fmt.Errorf("unable to decode producer authority schedule (V2): %w", err)
+	}
+
+	return nil
+
+}
 
 // See libraries/chain/include/eosio/chain/producer_schedule.hpp#L161
+var BlockSigningAuthorityVariant = NewVariantDefinition([]VariantType{
+	{"block_signing_authority_v0", (*BlockSigningAuthorityV0)(nil)},
+})
+
 type BlockSigningAuthority struct {
 	BaseVariant
 }
 
-var blockSigningVariantFactoryImplMap = map[uint32]VariantImplFactory{
-	BlockSigningAuthorityV0Type: func() interface{} { return new(BlockSigningAuthorityV0) },
+func (a *BlockSigningAuthority) MarshalJSON() ([]byte, error) {
+	return a.BaseVariant.MarshalJSON(BlockSigningAuthorityVariant)
 }
 
 func (a *BlockSigningAuthority) UnmarshalJSON(data []byte) error {
-	return a.BaseVariant.UnmarshalJSON(data, blockSigningVariantFactoryImplMap)
+	return a.BaseVariant.UnmarshalJSON(data, BlockSigningAuthorityVariant)
 }
 
 func (a *BlockSigningAuthority) UnmarshalBinary(decoder *Decoder) error {
-	return a.BaseVariant.UnmarshalBinaryVariant(decoder, blockSigningVariantFactoryImplMap)
+	return a.BaseVariant.UnmarshalBinaryVariant(decoder, BlockSigningAuthorityVariant)
 }
 
 // See libraries/chain/include/eosio/chain/producer_schedule.hpp#L100
@@ -337,8 +413,12 @@ type BlockSigningAuthorityV0 struct {
 
 type PendingSchedule struct {
 	ScheduleLIBNum uint32                               `json:"schedule_lib_num"`
-	ScheduleHash   HexBytes                             `json:"schedule_hash"`
+	ScheduleHash   Checksum256                          `json:"schedule_hash"`
 	Schedule       *ProducerScheduleOrAuthoritySchedule `json:"schedule"`
+}
+
+type ProtocolFeatureActivationSet struct {
+	ProtocolFeatures []Checksum256 `json:"protocol_features"`
 }
 
 type BlockHeader struct {
@@ -426,7 +506,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 
 		id, err := packed.ID()
 		if err != nil {
-			return fmt.Errorf("get id: %s", err)
+			return fmt.Errorf("get id: %w", err)
 		}
 
 		*t = TransactionWithID{
@@ -444,7 +524,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 
 		shaID, err := hex.DecodeString(id)
 		if err != nil {
-			return fmt.Errorf("decoding id in trx: %s", err)
+			return fmt.Errorf("decoding id in trx: %w", err)
 		}
 
 		*t = TransactionWithID{
@@ -486,7 +566,7 @@ func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
 
 		id, err := packed.ID()
 		if err != nil {
-			return fmt.Errorf("get id: %s", err)
+			return fmt.Errorf("get id: %w", err)
 		}
 
 		*t = TransactionWithID{
