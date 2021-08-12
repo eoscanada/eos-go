@@ -331,14 +331,9 @@ type TransactionProcessed struct {
 type Trace struct {
 	Receiver AccountName `json:"receiver"`
 	// Action     Action       `json:"act"` // FIXME: how do we unpack that ? what's on the other side anyway?
-	Console         string       `json:"console"`
-	DataAccess      []DataAccess `json:"data_access"`
-	ReturnValueData ReturnValue  `json:"return_value_data"`
-}
-
-type ReturnValue struct {
-	Id      Int64  `json:"first"`
-	Message string `json:"second"`
+	Console         string          `json:"console"`
+	DataAccess      []DataAccess    `json:"data_access"`
+	ReturnValueData ReturnValueData `json:"return_value_data"`
 }
 
 type DataAccess struct {
@@ -346,6 +341,11 @@ type DataAccess struct {
 	Code     AccountName `json:"code"`
 	Scope    AccountName `json:"scope"`
 	Sequence int         `json:"sequence"`
+}
+
+type ReturnValueData struct {
+	Id      Int64  `json:"first"`
+	Message string `json:"second"`
 }
 
 type PushTransactionShortResp struct {
