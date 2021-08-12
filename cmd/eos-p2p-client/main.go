@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dfuse-io/logging"
 	"github.com/eoscanada/eos-go/p2p"
+	"github.com/streamingfast/logging"
 )
 
 var peer = flag.String("peer", "localhost:9876", "peer to connect to")

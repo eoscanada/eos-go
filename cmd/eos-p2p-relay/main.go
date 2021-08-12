@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/dfuse-io/logging"
 	"github.com/eoscanada/eos-go/p2p"
+	"github.com/streamingfast/logging"
 )
 
 var peer = flag.String("peer", "", "peer")
