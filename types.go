@@ -19,7 +19,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var symbolRegex = regexp.MustCompile("^[0-9]{1,2},[A-Z]{1,7}$")
+var symbolRegex = regexp.MustCompile("^[0-9],[A-Z]{1,7}$")
 var symbolCodeRegex = regexp.MustCompile("^[A-Z]{1,7}$")
 
 // For reference:
@@ -307,11 +307,11 @@ func StringToSymbol(str string) (Symbol, error) {
 	if !symbolRegex.MatchString(str) {
 		return symbol, fmt.Errorf("%s is not a valid symbol", str)
 	}
-	arrs := strings.Split(str, ",")
-	precision, _ := strconv.ParseUint(string(arrs[0]), 10, 8)
+
+	precision, _ := strconv.ParseUint(string(str[0]), 10, 8)
 
 	symbol.Precision = uint8(precision)
-	symbol.Symbol = arrs[1]
+	symbol.Symbol = str[2:]
 
 	return symbol, nil
 }
