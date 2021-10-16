@@ -115,8 +115,8 @@ and follow these steps:
 
 - Dry run release process first with `goreleaser release --skip-publish --skip-validate --rm-dist`
 - Publish **draft** release with `goreleaser release --rm-dist`
-- Open GitHub's release and check that the release messages are all good
-- Once everything is good, publish release
+- Open GitHub's release and check that the release is all good
+- Once everything is good, publish release, this will now also push the tag.
 
 ### Contributing
 
