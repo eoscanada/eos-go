@@ -117,6 +117,14 @@ type ActionTrace struct {
 	InlineTraces []ActionTrace `json:"inline_traces,omitempty" eos:"-"`
 }
 
+type AccountDelta struct {
+	Account AccountName `json:"account"`
+	Delta   Int64       `json:"delta"`
+}
+
+// AccountRAMDelta
+//
+// Deprecated: Use AccountDelta instead which is the struct name used in EOSIO
 type AccountRAMDelta struct {
 	Account AccountName `json:"account"`
 	Delta   Int64       `json:"delta"`
