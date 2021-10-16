@@ -11,7 +11,7 @@ import (
 func ExampleABI_DecodeTableRowTyped() {
 	abi, err := eos.NewABI(strings.NewReader(abiJSON()))
 	if err != nil {
-		panic(fmt.Errorf("get ABI: %s", err))
+		panic(fmt.Errorf("get ABI: %w", err))
 	}
 
 	tableDef := abi.TableForName(eos.TableName("votes"))
@@ -21,7 +21,7 @@ func ExampleABI_DecodeTableRowTyped() {
 
 	bytes, err := abi.DecodeTableRowTyped(tableDef.Type, data())
 	if err != nil {
-		panic(fmt.Errorf("decode row: %s", err))
+		panic(fmt.Errorf("decode row: %w", err))
 	}
 
 	fmt.Println(string(bytes))
@@ -30,7 +30,7 @@ func ExampleABI_DecodeTableRowTyped() {
 func data() []byte {
 	bytes, err := hex.DecodeString(`424e544441505000`)
 	if err != nil {
-		panic(fmt.Errorf("decode data: %s", err))
+		panic(fmt.Errorf("decode data: %w", err))
 	}
 
 	return bytes

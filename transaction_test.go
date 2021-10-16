@@ -47,6 +47,8 @@ func TestTransaction_UnmarshalPacked_Compression(t *testing.T) {
 		{"string/none", `{"compression": "none"}`, CompressionNone, nil},
 		{"string/zlib", `{"compression": "zlib"}`, CompressionZlib, nil},
 		{"string/unknown", `{"compression": "random"}`, 0, errors.New("unknown compression type random")},
+		{"bool/true", `{"compression": true}`, CompressionZlib, nil},
+		{"bool/false", `{"compression": false}`, CompressionNone, nil},
 
 		{"int/none", `{"compression": 0}`, CompressionNone, nil},
 		{"int/zlib", `{"compression": 1}`, CompressionZlib, nil},

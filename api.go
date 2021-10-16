@@ -34,7 +34,8 @@ type API struct {
 	lastGetInfoStamp time.Time
 	lastGetInfoLock  sync.Mutex
 
-	customGetRequiredKeys func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
+	customGetRequiredKeys     func(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error)
+	enablePartialRequiredKeys bool
 }
 
 func New(baseURL string) *API {
@@ -106,6 +107,48 @@ func (api *API) SetCustomGetRequiredKeys(f func(ctx context.Context, tx *Transac
 	api.customGetRequiredKeys = f
 }
 
+func (api *API) UsePartialRequiredKeys() {
+	api.enablePartialRequiredKeys = true
+}
+
+func (api *API) getPartialRequiredKeys(ctx context.Context, tx *Transaction) ([]ecc.PublicKey, error) {
+	// loop to get all the authorizers, and dedupe
+	var authorizers []PermissionLevel
+	for _, act := range tx.Actions {
+		for _, pl := range act.Authorization {
+			authorizers = append(authorizers, pl)
+		}
+	}
+
+	ourKeys, err := api.Signer.AvailableKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := api.GetAccountsByAuthorizers(ctx, authorizers, ourKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []ecc.PublicKey
+	seen := make(map[string]bool)
+	for _, acct := range resp.Accounts {
+		if acct.AuthorizingKey == nil {
+			continue
+		}
+
+		stringKey := acct.AuthorizingKey.String()
+		if seen[stringKey] {
+			continue
+		}
+
+		out = append(out, *acct.AuthorizingKey)
+		seen[stringKey] = true
+	}
+
+	return out, nil
+}
+
 func (api *API) SetSigner(s Signer) {
 	api.Signer = s
 }
@@ -145,8 +188,38 @@ func (api *API) IsProducerPaused(ctx context.Context) (out bool, err error) {
 	return
 }
 
-func (api *API) GetAccount(ctx context.Context, name AccountName) (out *AccountResp, err error) {
-	err = api.call(ctx, "chain", "get_account", M{"account_name": name}, &out)
+func (api *API) GetProducerProtocolFeatures(ctx context.Context) (out []ProtocolFeature, err error) {
+	err = api.call(ctx, "producer", "get_supported_protocol_features", nil, &out)
+	return
+}
+
+func (api *API) ScheduleProducerProtocolFeatureActivations(ctx context.Context, protocolFeaturesToActivate []Checksum256) error {
+	return api.call(ctx, "producer", "schedule_protocol_feature_activations", M{"protocol_features_to_activate": protocolFeaturesToActivate}, nil)
+}
+
+type GetAccountOption interface {
+	apply(body M)
+}
+
+type getAccountOptionFunc func(body M)
+
+func (f getAccountOptionFunc) apply(body M) {
+	f(body)
+}
+
+func WithCoreSymbol(symbol Symbol) GetAccountOption {
+	return getAccountOptionFunc(func(body M) {
+		body["expected_core_symbol"] = symbol.String()
+	})
+}
+
+func (api *API) GetAccount(ctx context.Context, name AccountName, opts ...GetAccountOption) (out *AccountResp, err error) {
+	body := M{"account_name": name}
+	for _, opt := range opts {
+		opt.apply(body)
+	}
+
+	err = api.call(ctx, "chain", "get_account", body, &out)
 	return
 }
 
@@ -351,24 +424,31 @@ func (api *API) SignTransaction(ctx context.Context, tx *Transaction, chainID Ch
 
 	stx := NewSignedTransaction(tx)
 
+	var err error
 	var requiredKeys []ecc.PublicKey
 	if api.customGetRequiredKeys != nil {
-		var err error
 		requiredKeys, err = api.customGetRequiredKeys(ctx, tx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("custom_get_required_keys: %s", err)
+			return nil, nil, fmt.Errorf("custom_get_required_keys: %w", err)
 		}
 	} else {
-		resp, err := api.GetRequiredKeys(ctx, tx)
-		if err != nil {
-			return nil, nil, fmt.Errorf("get_required_keys: %s", err)
+		if api.enablePartialRequiredKeys {
+			requiredKeys, err = api.getPartialRequiredKeys(ctx, tx)
+			if err != nil {
+				return nil, nil, fmt.Errorf("get_accounts_by_authorizers: %w", err)
+			}
+		} else {
+			resp, err := api.GetRequiredKeys(ctx, tx)
+			if err != nil {
+				return nil, nil, fmt.Errorf("get_required_keys: %w", err)
+			}
+			requiredKeys = resp.RequiredKeys
 		}
-		requiredKeys = resp.RequiredKeys
 	}
 
 	signedTx, err := api.Signer.Sign(ctx, stx, chainID, requiredKeys...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("signing through wallet: %s", err)
+		return nil, nil, fmt.Errorf("signing through wallet: %w", err)
 	}
 
 	packed, err := signedTx.Pack(compression)
@@ -386,8 +466,17 @@ func (api *API) PushTransaction(ctx context.Context, tx *PackedTransaction) (out
 	return
 }
 
+func (api *API) SendTransaction(ctx context.Context, tx *PackedTransaction) (out *PushTransactionFullResp, err error) {
+	err = api.call(ctx, "chain", "send_transaction", tx, &out)
+	return
+}
+
 func (api *API) PushTransactionRaw(ctx context.Context, tx *PackedTransaction) (out json.RawMessage, err error) {
 	err = api.call(ctx, "chain", "push_transaction", tx, &out)
+	return
+}
+func (api *API) SendTransactionRaw(ctx context.Context, tx *PackedTransaction) (out json.RawMessage, err error) {
+	err = api.call(ctx, "chain", "send_transaction", tx, &out)
 	return
 }
 
@@ -540,6 +629,11 @@ func (api *API) GetRequiredKeys(ctx context.Context, tx *Transaction) (out *GetR
 	return
 }
 
+func (api *API) GetAccountsByAuthorizers(ctx context.Context, authorizations []PermissionLevel, keys []ecc.PublicKey) (out *GetAccountsByAuthorizersResp, err error) {
+	err = api.call(ctx, "chain", "get_accounts_by_authorizers", M{"accounts": authorizations, "keys": keys}, &out)
+	return
+}
+
 func (api *API) GetCurrencyBalance(ctx context.Context, account AccountName, symbol string, code AccountName) (out []Asset, err error) {
 	params := M{"account": account, "code": code}
 	if symbol != "" {
@@ -570,7 +664,7 @@ func (api *API) call(ctx context.Context, baseAPI string, endpoint string, body 
 	targetURL := fmt.Sprintf("%s/v1/%s/%s", api.BaseURL, baseAPI, endpoint)
 	req, err := http.NewRequest("POST", targetURL, jsonBody)
 	if err != nil {
-		return fmt.Errorf("NewRequest: %s", err)
+		return fmt.Errorf("NewRequest: %w", err)
 	}
 
 	for k, v := range api.Header {
@@ -593,14 +687,14 @@ func (api *API) call(ctx context.Context, baseAPI string, endpoint string, body 
 
 	resp, err := api.HttpClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return fmt.Errorf("%s: %s", req.URL.String(), err)
+		return fmt.Errorf("%s: %w", req.URL.String(), err)
 	}
 	defer resp.Body.Close()
 
 	var cnt bytes.Buffer
 	_, err = io.Copy(&cnt, resp.Body)
 	if err != nil {
-		return fmt.Errorf("Copy: %s", err)
+		return fmt.Errorf("Copy: %w", err)
 	}
 
 	if resp.StatusCode == 404 {
@@ -640,7 +734,7 @@ func (api *API) call(ctx context.Context, baseAPI string, endpoint string, body 
 	}
 
 	if err := json.Unmarshal(cnt.Bytes(), &out); err != nil {
-		return fmt.Errorf("Unmarshal: %s", err)
+		return fmt.Errorf("Unmarshal: %w", err)
 	}
 
 	return nil

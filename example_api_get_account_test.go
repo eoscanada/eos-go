@@ -19,12 +19,12 @@ func ExampleAPI_GetAccount() {
 			return
 		}
 
-		panic(fmt.Errorf("get account: %s", err))
+		panic(fmt.Errorf("get account: %w", err))
 	}
 
 	bytes, err := json.Marshal(info)
 	if err != nil {
-		panic(fmt.Errorf("json marshal response: %s", err))
+		panic(fmt.Errorf("json marshal response: %w", err))
 	}
 
 	fmt.Println(string(bytes))

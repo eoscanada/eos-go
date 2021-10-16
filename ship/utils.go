@@ -9,7 +9,7 @@ import (
 func NewGetBlocksAck(num uint32) []byte {
 	myReq := &Request{
 		BaseVariant: eos.BaseVariant{
-			TypeID: GetBlocksAckRequestV0Type,
+			TypeID: RequestVariant.TypeID("get_blocks_ack_request_v0"),
 			Impl: &GetBlocksAckRequestV0{
 				NumMessages: num,
 			},
@@ -26,7 +26,7 @@ func NewGetBlocksAck(num uint32) []byte {
 func NewRequest(req *GetBlocksRequestV0) []byte {
 	myReq := &Request{
 		BaseVariant: eos.BaseVariant{
-			TypeID: GetBlocksRequestV0Type,
+			TypeID: RequestVariant.TypeID("get_blocks_request_v0"),
 			Impl:   req,
 		},
 	}
@@ -43,8 +43,10 @@ func ParseGetBlockResultV0(in []byte) (*GetBlocksResultV0, error) {
 	if err := eos.UnmarshalBinary(in, &variant); err != nil {
 		return nil, err
 	}
-	if variant.TypeID != GetBlocksResultV0Type {
+
+	v, ok := variant.Impl.(*GetBlocksResultV0)
+	if !ok {
 		return nil, fmt.Errorf("invalid response type: %d", variant.TypeID)
 	}
-	return variant.Impl.(*GetBlocksResultV0), nil
+	return v, nil
 }

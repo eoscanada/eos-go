@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -136,7 +137,7 @@ func TestABIEncoder_encodeMissingActionStruct(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
-	assert.Equal(t, fmt.Errorf("encode action: encode struct [struct.name.1] not found in abi"), err)
+	assert.Equal(t, "encode action: encode struct [struct.name.1] not found in abi", err.Error())
 }
 
 func TestABIEncoder_encodeErrorInBase(t *testing.T) {
@@ -169,7 +170,7 @@ func TestABIEncoder_encodeErrorInBase(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = abi.EncodeAction(ActionName("action.name.1"), abiData)
-	assert.Equal(t, fmt.Errorf("encode action: encode base [struct.name.1]: encode struct [struct.name.2] not found in abi"), err)
+	assert.Equal(t, "encode action: encode base [struct.name.1]: encode struct [struct.name.2] not found in abi", err.Error())
 }
 
 func TestABIEncoder_encodeField(t *testing.T) {
@@ -197,15 +198,16 @@ func TestABIEncoder_encodeField(t *testing.T) {
 			fieldType := c["fieldType"].(string)
 			isOptional := c["isOptional"].(bool)
 			isArray := c["isArray"].(bool)
-			expectedError := c["expectedError"]
 
 			err := abi.encodeField(encoder, fieldName, fieldType, isOptional, isArray, []byte(json))
-			assert.Equal(t, expectedError, err, caseName)
 
 			if c["expectedError"] == nil {
+				require.Nil(t, err)
 				assert.Equal(t, c["expectedValue"], hex.EncodeToString(buf.Bytes()), c["caseName"])
+			} else {
+				expectedError := c["expectedError"].(error)
+				require.Equal(t, expectedError.Error(), err.Error(), c["caseName"])
 			}
-
 		})
 
 	}
@@ -263,8 +265,8 @@ func TestABI_Write(t *testing.T) {
 		{"caseName": "bool false", "typeName": "bool", "expectedValue": "00", "json": "{\"testField\":false}", "expectedError": nil},
 		{"caseName": "time_point", "typeName": "time_point", "expectedValue": "0100000000000000", "json": "{\"testField\":\"1970-01-01T00:00:00.001\"", "expectedError": nil},
 		{"caseName": "time_point err", "typeName": "time_point", "expectedValue": "0100000000000000", "json": "{\"testField\":\"bad.date\"", "expectedError": fmt.Errorf("writing field: time_point: parsing time \"bad.date\" as \"2006-01-02T15:04:05.999\": cannot parse \"bad.date\" as \"2006\"")},
-		{"caseName": "time_point_sec", "typeName": "time_point_sec", "expectedValue": "0100000000000000", "json": "{\"testField\":\"1970-01-01T00:00:01\"", "expectedError": nil},
-		{"caseName": "time_point_sec err", "typeName": "time_point_sec", "expectedValue": "0100000000000000", "json": "{\"testField\":\"bad date\"", "expectedError": fmt.Errorf("writing field: time_point_sec: parsing time \"bad date\" as \"2006-01-02T15:04:05\": cannot parse \"bad date\" as \"2006\"")},
+		{"caseName": "time_point_sec", "typeName": "time_point_sec", "expectedValue": "01000000", "json": "{\"testField\":\"1970-01-01T00:00:01\"", "expectedError": nil},
+		{"caseName": "time_point_sec err", "typeName": "time_point_sec", "expectedValue": "01000000g", "json": "{\"testField\":\"bad date\"", "expectedError": fmt.Errorf("writing field: time_point_sec: parsing time \"bad date\" as \"2006-01-02T15:04:05\": cannot parse \"bad date\" as \"2006\"")},
 		{"caseName": "block_timestamp_type", "typeName": "block_timestamp_type", "expectedValue": "ec8a4546", "json": "{\"testField\":\"2018-09-05T12:48:54-04:00\"}", "expectedError": nil},
 		{"caseName": "block_timestamp_type err", "typeName": "block_timestamp_type", "expectedValue": "ec8a4546", "json": "{\"testField\":\"this is not a date\"}", "expectedError": fmt.Errorf("writing field: block_timestamp_type: parsing time \"this is not a date\" as \"2006-01-02T15:04:05.999999-07:00\": cannot parse \"this is not a date\" as \"2006\"")},
 		{"caseName": "Name", "typeName": "name", "expectedValue": "0000000000ea3055", "json": "{\"testField\":\"eosio\"}", "expectedError": nil},
@@ -280,10 +282,10 @@ func TestABI_Write(t *testing.T) {
 		{"caseName": "checksum160 hex err", "typeName": "checksum160", "expectedValue": "", "json": "{\"testField\":\"BADX000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum160: encoding/hex: invalid byte: U+0058 'X'")},
 		{"caseName": "checksum256 hex err", "typeName": "checksum256", "expectedValue": "", "json": "{\"testField\":\"BADX000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum256: encoding/hex: invalid byte: U+0058 'X'")},
 		{"caseName": "checksum512 hex err", "typeName": "checksum512", "expectedValue": "", "json": "{\"testField\":\"BADX0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"}", "expectedError": fmt.Errorf("writing field: checksum512: encoding/hex: invalid byte: U+0058 'X'")},
-		{"caseName": "public_key", "typeName": "public_key", "expectedValue": "00000000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"EOS1111111111111111111111111111111114T1Anm\"}", "expectedError": nil},
-		{"caseName": "public_key err", "typeName": "public_key", "expectedValue": "", "json": "{\"testField\":\"EOS1111111111111111111111114T1Anm\"}", "expectedError": fmt.Errorf("writing field: public_key: checkDecode: invalid checksum")},
+		{"caseName": "public_key", "typeName": "public_key", "expectedValue": "00000000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"" + ecc.PublicKeyPrefixCompat + "1111111111111111111111111111111114T1Anm\"}", "expectedError": nil},
+		{"caseName": "public_key err", "typeName": "public_key", "expectedValue": "", "json": "{\"testField\":\"" + ecc.PublicKeyPrefixCompat + "1111111111111111111111114T1Anm\"}", "expectedError": fmt.Errorf("writing field: public_key: public key checksum failed, found f9246dd2 but expected 86e7b522")},
 		{"caseName": "signature", "typeName": "signature", "expectedValue": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "json": "{\"testField\":\"SIG_K1_111111111111111111111111111111111111111111111111111111111111111116uk5ne\"}", "expectedError": nil},
-		{"caseName": "signature err", "typeName": "signature", "expectedValue": "", "json": "{\"testField\":\"SIG_K1_BADX11111111111111111111111111111111111111111111111111111111111116uk5ne\"}", "expectedError": fmt.Errorf("writing field: public_key: signature checksum failed, found 3aea1e96 expected e72f76ff")},
+		{"caseName": "signature err", "typeName": "signature", "expectedValue": "", "json": "{\"testField\":\"SIG_K1_BADX11111111111111111111111111111111111111111111111111111111111116uk5ne\"}", "expectedError": fmt.Errorf("writing field: public_key: signature checksum failed, found 3aea1e96 but expected e72f76ff")},
 		{"caseName": "symbol", "typeName": "symbol", "expectedValue": "04454f5300000000", "json": "{\"testField\":\"4,EOS\"}", "expectedError": nil},
 		{"caseName": "symbol format error", "typeName": "symbol", "expectedValue": "", "json": "{\"testField\":\"4EOS\"}", "expectedError": fmt.Errorf("writing field: symbol: symbol should be of format '4,EOS'")},
 		{"caseName": "symbol format error", "typeName": "symbol", "expectedValue": "", "json": "{\"testField\":\"abc,EOS\"}", "expectedError": fmt.Errorf("writing field: symbol: strconv.ParseUint: parsing \"abc\": invalid syntax")},
@@ -317,10 +319,12 @@ func TestABI_Write(t *testing.T) {
 			result := gjson.Get(c["json"].(string), "testField")
 			err := abi.writeField(encoder, fieldName, c["typeName"].(string), result)
 
-			require.Equal(t, c["expectedError"], err, c["caseName"])
-
 			if c["expectedError"] == nil {
+				require.Nil(t, err, c["caseName"])
 				assert.Equal(t, c["expectedValue"], hex.EncodeToString(buffer.Bytes()), c["caseName"])
+			} else {
+				expectedError := c["expectedError"].(error)
+				require.Equal(t, expectedError.Error(), err.Error(), c["caseName"])
 			}
 		})
 	}

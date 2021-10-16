@@ -21,7 +21,7 @@ func TestSignatureSerialization(t *testing.T) {
 	require.NoError(t, err)
 	pubKey, err := sig.PublicKey(digest)
 	require.NoError(t, err)
-	assert.Equal(t, `EOS5jSQLpKBHLaMtuzkftnYE6bCMA5Jxso8f22uZyKj6cDEp32eSj`, pubKey.String()) // not checked after..
+	assert.Equal(t, PublicKeyPrefixCompat+`5jSQLpKBHLaMtuzkftnYE6bCMA5Jxso8f22uZyKj6cDEp32eSj`, pubKey.String()) // not checked after..
 	assert.True(t, isCanonical([]byte(sig.Content)))
 }
 
@@ -114,7 +114,7 @@ func TestSignaturePublicKeyExtraction(t *testing.T) {
 			signature:      "SIG_K1_KW4qcHDh6ziqWELRAsFx42sgPuP3VfCpTKX4D5A3uZhFb3fzojTeGohja19g4EJa9Zv7SrGZ47H8apo1sNa2bwPvGwW2ba",
 			payload:        "45e2ea5b22f87c6f74430000000001a0904b1822f330550040346aabab904b01a0904b1822f3305500000000a8ed32329d01fb5f27000000000027e2ea5b0000000082b4c2a389d911f1cef87b3f10dc38e8f5118ce5b83e160c5813447db849ea89c1d910841a3662747dd0e6e0040b1317be571384054a30f7e6851ebda9adab9c0a9394a5bb26479b697937fbe8b4a9d2780bee68334b2800000000000004454f5300000000000000000000000004454f53000000000000000000000000000000000000000004454f530000000000",
 			chainID:        "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
-			expectedPubKey: "EOS7KtnQUSGVf4vbFE2eQsWmDp4iV93jVcSmdQXtRdRRnWj2ubbFW",
+			expectedPubKey: PublicKeyPrefixCompat + "7KtnQUSGVf4vbFE2eQsWmDp4iV93jVcSmdQXtRdRRnWj2ubbFW",
 		},
 		{
 			name:                "R1",
@@ -179,7 +179,7 @@ func TestEOSIOCSigningComparison(t *testing.T) {
 	pubKey, err := sig.PublicKey(digest)
 	require.NoError(t, err)
 
-	assert.Equal(t, "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
+	assert.Equal(t, PublicKeyPrefixCompat+"6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
 }
 
 func TestNodeosSignatureComparison(t *testing.T) {
@@ -198,13 +198,13 @@ func TestNodeosSignatureComparison(t *testing.T) {
 
 	pubKey, err := sig.PublicKey(digest)
 
-	assert.Equal(t, "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
+	assert.Equal(t, PublicKeyPrefixCompat+"6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV", pubKey.String())
 }
 
 func TestSignatureUnmarshalChecksum(t *testing.T) {
 	fromEOSIOC := "SIG_K1_KW4qcHDh6ziqWELRAsFx42sgPuP3VfCpTKX4D5A3uZhFb3fzojTeGohja19g4EJa9Zv7SrGZ47H8apo1sNa2bwPvGwW2bb" // simply checked the last 2 bytes
 	_, err := NewSignature(fromEOSIOC)
-	require.Equal(t, "signature checksum failed, found a9c72981 expected a9c72982", err.Error())
+	require.Equal(t, "signature checksum failed, found a9c72981 but expected a9c72982", err.Error())
 }
 
 func TestSignatureVerify_WA(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 // TODO: Move this test to the `system` contract.. and take out
 // `NewAccount` from this package.
 func TestActionNewAccount(t *testing.T) {
-	pubKey, err := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+	pubKey, err := ecc.NewPublicKey(ecc.PublicKeyPrefixCompat + "6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
 	require.NoError(t, err)
 	a := &eos.Action{
 		Account: eos.AccountName("eosio"),
@@ -32,7 +32,7 @@ func TestActionNewAccount(t *testing.T) {
 			Owner: eos.Authority{
 				Threshold: 1,
 				Keys: []eos.KeyWeight{
-					eos.KeyWeight{
+					{
 						PublicKey: pubKey,
 						Weight:    1,
 					},
@@ -41,7 +41,7 @@ func TestActionNewAccount(t *testing.T) {
 			Active: eos.Authority{
 				Threshold: 1,
 				Keys: []eos.KeyWeight{
-					eos.KeyWeight{
+					{
 						PublicKey: pubKey,
 						Weight:    1,
 					},
@@ -66,7 +66,7 @@ func TestActionNewAccount(t *testing.T) {
 	buf, err = json.Marshal(a.ActionData.Data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}]},\"active\":{\"threshold\":1,\"keys\":[{\"key\":\"EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}]}}", string(buf))
+	assert.Equal(t, "{\"creator\":\"eosio\",\"name\":\"abourget\",\"owner\":{\"threshold\":1,\"keys\":[{\"key\":\""+ecc.PublicKeyPrefixCompat+"6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}]},\"active\":{\"threshold\":1,\"keys\":[{\"key\":\""+ecc.PublicKeyPrefixCompat+"6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV\",\"weight\":1}]}}", string(buf))
 	// 00096e88 0000 0000 00000000 00 00 00 00 01 0000000000ea3055
 
 	// WUTz that ?

@@ -2,12 +2,13 @@ package eos
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +19,11 @@ func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
 		return nil, fmt.Errorf("action %s not found in abi", actionName)
 	}
 
-	return a.decode(binaryDecoder, action.Type)
+	builtStruct, err := a.decode(binaryDecoder, action.Type)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(builtStruct)
 
 }
 
@@ -29,22 +34,35 @@ func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("table name %s not found in abi", tableName)
 	}
 
-	return a.decode(binaryDecoder, tbl.Type)
+	builtStruct, err := a.decode(binaryDecoder, tbl.Type)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(builtStruct)
 
 }
 
 func (a *ABI) DecodeTableRowTyped(tableType string, data []byte) ([]byte, error) {
 	binaryDecoder := NewDecoder(data)
-	return a.decode(binaryDecoder, tableType)
+	builtStruct, err := a.decode(binaryDecoder, tableType)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(builtStruct)
+
 }
 
 func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
-	return a.decode(binaryDecoder, structName)
+	builtStruct, err := a.decode(binaryDecoder, structName)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(builtStruct)
 }
 
-func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
-	if loggingEnabled {
-		abiDecoderLog.Debug("decode struct", zap.String("name", structName))
+func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]interface{}, error) {
+	if traceEnabled {
+		zlog.Debug("decode struct", zap.String("name", structName))
 	}
 
 	structure := a.StructForName(structName)
@@ -52,124 +70,159 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 		return nil, fmt.Errorf("structure [%s] not found in abi", structName)
 	}
 
-	resultingJSON := make([]byte, 0)
+	builtStruct := map[string]interface{}{}
 	if structure.Base != "" {
-		if loggingEnabled {
-			abiDecoderLog.Debug("struct has base struct", zap.String("name", structName), zap.String("base", structure.Base))
+		if traceEnabled {
+			zlog.Debug("struct has base struct", zap.String("name", structName), zap.String("base", structure.Base))
 		}
 
 		baseName, isAlias := a.TypeNameForNewTypeName(structure.Base)
-		if isAlias && loggingEnabled {
-			abiDecoderLog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
+		if isAlias && traceEnabled {
+			zlog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
 		}
 
 		var err error
-		resultingJSON, err = a.decode(binaryDecoder, baseName)
+		builtStruct, err = a.decode(binaryDecoder, baseName)
 		if err != nil {
-			return nil, fmt.Errorf("decode base [%s]: %s", structName, err)
+			return nil, fmt.Errorf("decode base [%s]: %w", structName, err)
 		}
 	}
 
-	return a.decodeFields(binaryDecoder, structure.Fields, resultingJSON)
+	return a.decodeFields(binaryDecoder, structure.Fields, builtStruct)
 }
 
-func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, json []byte) ([]byte, error) {
-	resultingJSON := json
+func (a *ABI) decodeFields(binaryDecoder *Decoder, fields []FieldDef, builtStruct map[string]interface{}) (out map[string]interface{}, err error) {
+	out = builtStruct
+
 	for _, field := range fields {
-		fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(field.Type)
-		if isBinaryExtension && !binaryDecoder.hasRemaining() {
-			if loggingEnabled {
-				abiDecoderLog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", field.Type))
-			}
-			continue
-		}
-
-		typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
-		if isAlias {
-			if loggingEnabled {
-				abiDecoderLog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
-			}
-		}
-
-		var err error
-		resultingJSON, err = a.decodeField(binaryDecoder, field.Name, typeName, isOptional, isArray, resultingJSON)
+		resultingValue, err := a.resolveField(binaryDecoder, field.Type)
 		if err != nil {
-			return nil, fmt.Errorf("decoding fields: %s", err)
+			return nil, fmt.Errorf("decoding field %s: %w", field.Name, err)
+		}
+
+		if resultingValue != skipField {
+			out[field.Name] = resultingValue
 		}
 	}
 
-	return resultingJSON, nil
+	return
 }
 
-func (a *ABI) decodeField(binaryDecoder *Decoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) ([]byte, error) {
-	if loggingEnabled {
-		abiDecoderLog.Debug("decoding field", zap.String("name", fieldName), zap.String("type", fieldType), zap.Bool("is_optional", isOptional), zap.Bool("is_array", isArray))
+type skipFieldType int
+
+var skipField = skipFieldType(0)
+
+type field struct {
+	name  string
+	value interface{}
+}
+
+func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out interface{}, err error) {
+	// retrieve the fields characteristics, note we can be a few depth down here....
+	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(initialFieldType)
+	//fmt.Println("resolveField", isOptional, isArray, initialFieldType, fieldType)
+
+	if traceEnabled {
+		zlog.Debug("analyzed field",
+			zap.String("field_type", fieldType),
+			zap.Bool("is_optional", isOptional),
+			zap.Bool("is_array", isArray),
+			zap.Bool("is_binaryExtension", isBinaryExtension),
+		)
 	}
 
-	resultingJSON := json
-	if isOptional {
-
-		if loggingEnabled {
-			abiDecoderLog.Debug("field is optional", zap.String("name", fieldName))
+	// check if this field is an alias
+	aliasFieldType, isAlias := a.TypeNameForNewTypeName(fieldType)
+	if isAlias {
+		if traceEnabled {
+			zlog.Debug("type is an alias",
+				zap.String("from", fieldType),
+				zap.String("to", aliasFieldType),
+			)
 		}
+		fieldType = aliasFieldType
+	}
+
+	// check if the field is a binary extension
+	if isBinaryExtension && !binaryDecoder.hasRemaining() {
+		if traceEnabled {
+			zlog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
+		}
+		return skipField, nil
+	}
+
+	// check if the field is optional
+	if isOptional {
 		b, err := binaryDecoder.ReadByte()
 		if err != nil {
-			return nil, fmt.Errorf("decoding field [%s] optional flag: %s", fieldName, err)
+			return nil, fmt.Errorf("reading optional flag: %w", err)
 		}
 
 		if b == 0 {
-			if loggingEnabled {
-				abiDecoderLog.Debug("field is not present", zap.String("name", fieldName))
+			if traceEnabled {
+				zlog.Debug("field is not present")
 			}
 			if !a.fitNodeos {
-				return resultingJSON, nil
+				return skipField, nil
 			}
+
+			// TODO: Not sure about this right now
 			fieldType = "null"
 		}
 	}
 
+	// if we have an array, we will loop in it and handle the subField (note that if we have an array of ALIAS we would loop here)
 	if isArray {
-		length, err := binaryDecoder.ReadUvarint64()
+		retVal, err := a.readArray(binaryDecoder, fieldType)
 		if err != nil {
-			return nil, fmt.Errorf("reading field [%s] array length: %s", fieldName, err)
+			return nil, err
 		}
-
-		if length == 0 {
-			resultingJSON, _ = sjson.SetBytes(resultingJSON, fieldName, []interface{}{})
-			//ignoring err because there is a bug in sjson. sjson shadow the err in case of a default type ...
-			//if err != nil {
-			//	return nil, fmt.Errorf("reading field [%s] setting empty array: %s", fieldName, err)
-			//}
-		}
-
-		for i := uint64(0); i < length; i++ {
-			if loggingEnabled {
-				abiDecoderLog.Debug("adding value for field", zap.String("name", fieldName), zap.Uint64("index", i))
-			}
-			indexedFieldName := fmt.Sprintf("%s.%d", fieldName, i)
-			resultingJSON, err = a.read(binaryDecoder, indexedFieldName, fieldType, resultingJSON)
-			if err != nil {
-				return nil, fmt.Errorf("reading field [%s] index [%d]: %s", fieldName, i, err)
-			}
-		}
-
-		return resultingJSON, nil
+		return retVal, nil
 	}
 
-	resultingJSON, err := a.read(binaryDecoder, fieldName, fieldType, resultingJSON)
-	if err != nil {
-		return nil, fmt.Errorf("decoding field [%s] of type [%s]: %s", fieldName, fieldType, err)
+	// if the fiels is not an array, but is an alias we need to re-resolve the field again
+	if isAlias {
+		return a.resolveField(binaryDecoder, fieldType)
 	}
 
-	return resultingJSON, nil
+	return a.read(binaryDecoder, fieldType)
 }
 
-func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, json []byte) ([]byte, error) {
+func (a *ABI) readArray(binaryDecoder *Decoder, fieldType string) ([]interface{}, error) {
+	//fmt.Println("Read array", fieldType)
+	length, err := binaryDecoder.ReadUvarint64()
+	if err != nil {
+		return nil, fmt.Errorf("reading array length: %w", err)
+	}
+
+	if length == 0 {
+		return []interface{}{}, nil // we just want "[]" in the final output
+	}
+
+	var elements []interface{}
+	for i := uint64(0); i < length; i++ {
+
+		//fmt.Println("Field type", fieldType)
+		retVal, err := a.resolveField(binaryDecoder, fieldType)
+		if err != nil {
+			return nil, fmt.Errorf("resolve array index [%d]: %w", i, err)
+		}
+
+		if retVal != skipField {
+			elements = append(elements, retVal)
+		}
+	}
+
+	return elements, nil
+}
+
+// Decodes the EOS ABIs built-in types
+func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error) {
 	variant := a.VariantForName(fieldType)
 	if variant != nil {
 		variantIndex, err := binaryDecoder.ReadUvarint32()
 		if err != nil {
-			return nil, fmt.Errorf("unable to read variant type index: %s", err)
+			return nil, fmt.Errorf("unable to read variant type index: %w", err)
 		}
 
 		if int(variantIndex) >= len(variant.Types) {
@@ -177,60 +230,26 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		}
 
 		variantFieldType := variant.Types[variantIndex]
-		if loggingEnabled {
-			abiDecoderLog.Debug("field is a variant", zap.String("type", variantFieldType))
+		if traceEnabled {
+			zlog.Debug("field is a variant", zap.String("type", variantFieldType))
 		}
 
 		resolvedVariantFieldType, isAlias := a.TypeNameForNewTypeName(variantFieldType)
-		if isAlias && loggingEnabled {
-			abiDecoderLog.Debug("variant type is an alias", zap.String("from", fieldType), zap.String("to", resolvedVariantFieldType))
+		if isAlias && traceEnabled {
+			zlog.Debug("variant type is an alias", zap.String("from", fieldType), zap.String("to", resolvedVariantFieldType))
 		}
 
 		fieldType = resolvedVariantFieldType
 	}
 
 	structure := a.StructForName(fieldType)
-
 	if structure != nil {
-		if loggingEnabled {
-			abiDecoderLog.Debug("field is a struct", zap.String("name", fieldName))
-		}
-
-		structureJSON := []byte{}
-		if structure.Base != "" {
-			if loggingEnabled {
-				abiDecoderLog.Debug("field's struct has base struct", zap.String("name", fieldName), zap.String("struct", structure.Name), zap.String("base", structure.Base))
-			}
-
-			baseName, isAlias := a.TypeNameForNewTypeName(structure.Base)
-			if isAlias {
-				if loggingEnabled {
-					abiDecoderLog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
-				}
-			}
-
-			baseStructure := a.StructForName(baseName)
-			if baseStructure == nil {
-				return nil, fmt.Errorf("base structure [%s] not found in abi", baseName)
-			}
-
-			var err error
-			structureJSON, err = a.decodeFields(binaryDecoder, baseStructure.Fields, structureJSON)
-			if err != nil {
-				return nil, fmt.Errorf("decoding field [%s] struct [%s] base [%s]: %s", fieldName, structure.Name, baseName, err)
-			}
-		}
-
-		var err error
-		structureJSON, err = a.decodeFields(binaryDecoder, structure.Fields, structureJSON)
+		builtStruct, err := a.decode(binaryDecoder, fieldType)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("decoding [%s]: %w", fieldType, err)
 		}
 
-		if loggingEnabled {
-			abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.ByteString("json", structureJSON))
-		}
-		return sjson.SetRawBytes(json, fieldName, structureJSON)
+		return builtStruct, nil
 	}
 
 	var value interface{}
@@ -259,38 +278,57 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 		val, err = binaryDecoder.ReadUint64()
 		value = Uint64(val)
 	case "int128":
-		value, err = binaryDecoder.ReadUint128("int128")
+		v, e := binaryDecoder.ReadInt128()
+		if e == nil {
+			if a.fitNodeos {
+				value = v.DecimalString()
+			} else {
+				value = v
+			}
+		}
+		err = e
 	case "uint128":
-		value, err = binaryDecoder.ReadUint128("uint128")
+		v, e := binaryDecoder.ReadUint128("uint128")
+		if e == nil {
+			if a.fitNodeos {
+				value = v.DecimalString()
+			} else {
+				value = v
+			}
+		}
+		err = e
 	case "varint32":
 		value, err = binaryDecoder.ReadVarint32()
 	case "varuint32":
 		value, err = binaryDecoder.ReadUvarint32()
 	case "float32":
-		value, err = binaryDecoder.ReadFloat32()
+		v, e := binaryDecoder.ReadFloat32()
+		if e == nil {
+			if a.fitNodeos {
+				value = strconv.FormatFloat(float64(v), 'f', 17, 32)
+			} else {
+				value = json.RawMessage(strconv.FormatFloat(float64(v), 'f', -1, 64)) // as sjson does
+			}
+		}
+		err = e
 	case "float64":
 		v, e := binaryDecoder.ReadFloat64()
 		if e == nil {
-			if a.fitNodeos {
-				value = strconv.FormatFloat(v, 'f', 17, 64)
-				break
-			}
+			value = formatFloat(v, a.fitNodeos)
 		}
-		value = v
 		err = e
 	case "float128":
 		value, err = binaryDecoder.ReadUint128("float128")
 	case "bool":
 		if a.fitNodeos {
 			value, err = binaryDecoder.ReadByte()
-			break
+		} else {
+			value, err = binaryDecoder.ReadBool()
 		}
-		value, err = binaryDecoder.ReadBool()
 	case "time_point":
 		timePoint, e := binaryDecoder.ReadTimePoint() //todo double check
 		if e == nil {
-			t := time.Unix(0, int64(timePoint*1000))
-			value = t.UTC().Format("2006-01-02T15:04:05.999")
+			value = formatTimePoint(timePoint, a.fitNodeos)
 		}
 		err = e
 	case "time_point_sec":
@@ -325,13 +363,11 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	case "signature":
 		value, err = binaryDecoder.ReadSignature()
 	case "symbol":
-
 		symbol, e := binaryDecoder.ReadSymbol()
 		err = e
 		if err == nil {
 			value = fmt.Sprintf("%d,%s", symbol.Precision, symbol.Symbol)
 		}
-
 	case "symbol_code":
 		value, err = binaryDecoder.ReadSymbolCode()
 	case "asset":
@@ -341,19 +377,33 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldName string, fieldType string, j
 	default:
 		return nil, fmt.Errorf("read field of type [%s]: unknown type", fieldType)
 	}
-
 	if err != nil {
-		return nil, fmt.Errorf("read: %s", err)
+		return nil, fmt.Errorf("read: %w", err)
 	}
 
-	if loggingEnabled {
-		abiDecoderLog.Debug("set field value", zap.String("name", fieldName), zap.Reflect("value", value))
+	if traceEnabled {
+		zlog.Debug("set field value",
+			zap.Reflect("value", value),
+		)
 	}
 
-	return sjson.SetBytes(json, fieldName, value)
+	if variant != nil {
+		// As a variant we need to include the field type in the json
+		return []interface{}{fieldType, value}, nil
+	}
+
+	// t0 := time.Now()
+	// defer func() {
+	// 	//fmt.Println("Doing field", fieldName, value, time.Since(t0))
+	// }()
+	return value, nil
 }
 
 func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArray bool, isBinaryExtension bool) {
+	if strings.HasSuffix(fieldType, "[]$") {
+		return fieldType[0 : len(fieldType)-3], false, true, true
+	}
+
 	if strings.HasSuffix(fieldType, "?") {
 		return fieldType[0 : len(fieldType)-1], true, false, false
 	}
@@ -367,4 +417,43 @@ func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArr
 	}
 
 	return fieldType, false, false, false
+}
+
+const standardTimePointFormat = "2006-01-02T15:04:05.999"
+const nodeosTimePointFormat = "2006-01-02T15:04:05.000"
+
+func formatTimePoint(timePoint TimePoint, shouldFitNodeos bool) string {
+	t := time.Unix(0, int64(timePoint*1000))
+	if shouldFitNodeos {
+		return t.UTC().Format(nodeosTimePointFormat)
+	}
+
+	return t.UTC().Format(standardTimePointFormat)
+}
+
+const standardTimePointSecFormat = "2006-01-02T15:04:05"
+
+func formatTimePointSec(timePoint TimePointSec) string {
+	t := time.Unix(int64(timePoint), 0)
+
+	return t.UTC().Format(standardTimePointSecFormat)
+}
+
+func formatFloat(v float64, fitNodeos bool) interface{} {
+	switch {
+	case math.IsInf(v, 1):
+		return "inf"
+	case math.IsInf(v, -1):
+		return "-inf"
+	case math.IsNaN(v): // cannot check equality on math.NaN()
+		return "nan"
+	default:
+	}
+
+	if fitNodeos {
+		return strconv.FormatFloat(v, 'f', 17, 64)
+	} else {
+		return json.RawMessage(strconv.FormatFloat(float64(v), 'f', -1, 64))
+	}
+
 }

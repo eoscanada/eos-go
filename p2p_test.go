@@ -247,7 +247,7 @@ func TestEncode_P2PMessageEnvelope_Error(t *testing.T) {
 }
 
 func TestBlockState_UnmarshalJSON(t *testing.T) {
-	testKeyRaw := ecc.MustNewPublicKey("EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP")
+	testKeyRaw := ecc.MustNewPublicKey(ecc.PublicKeyPrefixCompat + "5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP")
 	testKey := &testKeyRaw
 
 	tests := []struct {
@@ -258,9 +258,9 @@ func TestBlockState_UnmarshalJSON(t *testing.T) {
 		{
 			"eosio 1.x structure",
 			[]string{
-				`"block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"`,
-				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"}]}`,
-				`"pending_schedule":{"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"}]}}`,
+				`"block_signing_key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"`,
+				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","block_signing_key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"}]}`,
+				`"pending_schedule":{"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","block_signing_key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"}]}}`,
 			},
 			func(e *BlockState) {
 				assert.NotNil(t, e.BlockSigningKeyV1)
@@ -277,9 +277,9 @@ func TestBlockState_UnmarshalJSON(t *testing.T) {
 		{
 			"eosio v2.x structure",
 			[]string{
-				`"valid_block_signing_authority": [0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]`,
-				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","authority":[0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}`,
-				`"pending_schedule": {"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","authority":[0,{"threshold":2,"keys":[{"key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}}`,
+				`"valid_block_signing_authority": ["block_signing_authority_v0",{"threshold":2,"keys":[{"key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]`,
+				`"active_schedule": {"version":1,"producers":[{"producer_name":"eosio","authority":["block_signing_authority_v0",{"threshold":2,"keys":[{"key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}`,
+				`"pending_schedule": {"schedule_lib_num":0,"schedule_hash":"","schedule":{"version":1,"producers":[{"producer_name":"eosio","authority":["block_signing_authority_v0",{"threshold":2,"keys":[{"key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","weight":3}]}]}]}}`,
 			},
 			func(e *BlockState) {
 				assert.Nil(t, e.BlockSigningKeyV1)
@@ -295,7 +295,7 @@ func TestBlockState_UnmarshalJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			expected := fmt.Sprintf(`{"id":"","block_num":0,"dpos_irreversible_blocknum":0,"dpos_proposed_irreversible_blocknum":0,"validated":false,%s}`, strings.Join(test.fields, ","))
+			expected := fmt.Sprintf(`{"id":"","block_num":0,"dpos_irreversible_blocknum":0,"dpos_proposed_irreversible_blocknum":0,"validated":false,"additional_signatures": null,%s}`, strings.Join(test.fields, ","))
 
 			entity := new(BlockState)
 			err := json.Unmarshal([]byte(expected), entity)
@@ -329,7 +329,7 @@ func TestBlockHeader_UnmarshalJSON(t *testing.T) {
 		{
 			"eosio 1.x structure",
 			[]string{
-				`"new_producers":{"producers":[{"block_signing_key":"EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","producer_name":"eosio"}],"version":1}`,
+				`"new_producers":{"producers":[{"block_signing_key":"` + ecc.PublicKeyPrefixCompat + `5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP","producer_name":"eosio"}],"version":1}`,
 			},
 			nil,
 			func(e *BlockHeader) {
@@ -403,7 +403,7 @@ func checkProducerSchedule(t *testing.T, schedule *ProducerSchedule) {
 	assert.Equal(t, uint32(1), schedule.Version)
 	assert.Len(t, schedule.Producers, 1)
 	assert.Equal(t, AccountName("eosio"), schedule.Producers[0].AccountName)
-	assert.Equal(t, ecc.MustNewPublicKey("EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"), schedule.Producers[0].BlockSigningKey)
+	assert.Equal(t, ecc.MustNewPublicKey("PUB_K1_5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP"), schedule.Producers[0].BlockSigningKey)
 }
 
 func checkProducerAuthoritySchedule(t *testing.T, schedule *ProducerAuthoritySchedule) {
@@ -419,11 +419,12 @@ func checkProducerAuthoritySchedule(t *testing.T, schedule *ProducerAuthoritySch
 
 func checkBlockSigningAuthority(t *testing.T, authority *BlockSigningAuthority) {
 	assert.Equal(t, uint32(0), authority.TypeID)
+
 	switch v0 := authority.Impl.(type) {
 	case *BlockSigningAuthorityV0:
 		assert.Equal(t, uint32(2), v0.Threshold)
 		assert.Len(t, v0.Keys, 1)
-		assert.Equal(t, "EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP", v0.Keys[0].PublicKey.String())
+		assert.Equal(t, ecc.PublicKeyPrefixCompat+"5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP", v0.Keys[0].PublicKey.String())
 		assert.Equal(t, uint16(3), v0.Keys[0].Weight)
 
 	default:
@@ -449,9 +450,19 @@ func FixmeTestPackedTransaction_Unpack(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func printJSONDiff(expected string, actual string) string {
-	// Really bad for now, but good enough since strings are rather small in here
-	return fmt.Sprintf("\nActual\n%s\n\nExpected\n%s\n", expected, actual)
+func unifiedDiff(t *testing.T, expectedContent, actualContent []byte) string {
+	file1 := "/tmp/eos-go-tests-expected"
+	file2 := "/tmp/eos-go-tests-actual"
+	err := ioutil.WriteFile(file1, prettifyJSON(expectedContent), 0600)
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile(file2, prettifyJSON(actualContent), 0600)
+	require.NoError(t, err)
+
+	cmd := exec.Command("diff", "-u", file1, file2)
+	out, _ := cmd.Output()
+
+	return string(out)
 }
 
 func prettifyJSON(cnt []byte) []byte {
@@ -467,19 +478,4 @@ func prettifyJSON(cnt []byte) []byte {
 	}
 
 	return out
-}
-
-func unifiedDiff(t *testing.T, cnt1, cnt2 []byte) string {
-	file1 := "/tmp/gotests-evm-executor-linediff-1"
-	file2 := "/tmp/gotests-evm-executor-linediff-2"
-	err := ioutil.WriteFile(file1, prettifyJSON(cnt1), 0600)
-	require.NoError(t, err)
-
-	err = ioutil.WriteFile(file2, prettifyJSON(cnt2), 0600)
-	require.NoError(t, err)
-
-	cmd := exec.Command("diff", "-u", file1, file2)
-	out, _ := cmd.Output()
-
-	return string(out)
 }

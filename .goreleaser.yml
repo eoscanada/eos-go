@@ -1,0 +1,31 @@
+project_name: eos-go
+
+env_files:
+  github_token: ~/.config/goreleaser/github_token
+
+release:
+  github:
+    owner: eoscanada
+    name: eos-go
+  draft: true
+  name_template: '{{.Tag}}'
+  extra_files:
+    - glob: ./release/**/*
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+
+builds:
+- skip: true
+
+archives:
+- files:
+  - LICENSE
+  - README.md
+
+snapshot:
+  name_template: "{{ .Tag }}-next"

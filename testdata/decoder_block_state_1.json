@@ -1,0 +1,112 @@
+{
+  "block_num": 18,
+  "dpos_proposed_irreversible_blocknum": 18,
+  "dpos_irreversible_blocknum": 17,
+  "active_schedule": {
+    "version": 0,
+    "producers": [
+      {
+        "producer_name": "eosio",
+        "authority": [
+          "block_signing_authority_v0",
+          {
+            "threshold": 1,
+            "keys": [
+              {
+                "key": "EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP",
+                "weight": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "blockroot_merkle": {
+    "_active_nodes": [
+      "0000001104f2e04ac6caf545add296c46d6adfac2ac96190fe4b04f8bbec6a52",
+      "5f62ff1fce4412629c25e9eed6c7a235202f6666c1062e62559af5b0d9442d6a",
+      "6f1ab6bd9ace48d4a174bf44582d64e738c7cc9f94573628f023c9791be41875"
+    ],
+    "_node_count": 17
+  },
+  "producer_to_last_produced": [
+    [
+      "eosio",
+      18
+    ]
+  ],
+  "producer_to_last_implied_irb": [
+    [
+      "eosio",
+      17
+    ]
+  ],
+  "valid_block_signing_authority": [
+    "block_signing_authority_v0",
+    {
+      "threshold": 1,
+      "keys": [
+        {
+          "key": "EOS5MHPYyhjBjnQZejzZHqHewPWhGTfQWSVTWYEhDmJu4SXkzgweP",
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "id": "00000012b518a7d08697f9b5a3899d549d0393331c83a91af5c3ab362254c174",
+  "header": {
+    "timestamp": "2020-01-28T11:14:54.500",
+    "producer": "eosio",
+    "confirmed": 0,
+    "previous": "0000001104f2e04ac6caf545add296c46d6adfac2ac96190fe4b04f8bbec6a52",
+    "transaction_mroot": "9070367f85cb9bf5144da126a59b13822df98aec0b8df5b41d9117d04f871dc5",
+    "action_mroot": "2b09133824ea7518fedfd10cbebe38a79c0bc1f2752ca0d2e93319c88813f999",
+    "schedule_version": 0,
+    "header_extensions": [],
+    "producer_signature": "SIG_K1_JzVvVbwXtY9nMRoGCvpn8K1yKXv8XbPzcmpYruKBhbAarFtPUYGu478eF8gkwnuByHFjspCunTKaanSm7nhMB5bGVdgyx4"
+  },
+  "pending_schedule": {
+    "schedule_lib_num": 0,
+    "schedule_hash": "2f74e78d3382fdadcbbdb7b111ca91efeea4109d59ac94945951fca6c498aef6",
+    "schedule": {
+      "version": 0,
+      "producers": []
+    }
+  },
+  "activated_protocol_features": {
+    "protocol_features": []
+  },
+  "additional_signatures": [],
+  "block": {
+    "timestamp": "2020-01-28T11:14:54.500",
+    "producer": "eosio",
+    "confirmed": 0,
+    "previous": "0000001104f2e04ac6caf545add296c46d6adfac2ac96190fe4b04f8bbec6a52",
+    "transaction_mroot": "9070367f85cb9bf5144da126a59b13822df98aec0b8df5b41d9117d04f871dc5",
+    "action_mroot": "2b09133824ea7518fedfd10cbebe38a79c0bc1f2752ca0d2e93319c88813f999",
+    "schedule_version": 0,
+    "header_extensions": [],
+    "producer_signature": "SIG_K1_JzVvVbwXtY9nMRoGCvpn8K1yKXv8XbPzcmpYruKBhbAarFtPUYGu478eF8gkwnuByHFjspCunTKaanSm7nhMB5bGVdgyx4",
+    "transactions": [
+      {
+        "status": "executed",
+        "cpu_usage_us": 17385,
+        "net_usage_words": 42,
+        "trx": [
+          "6fe4fe251041d16e4e872f7fd4ed38466b00455d2777dc661b15478b6390339a",
+          {
+            "signatures": [
+              "SIG_K1_KY5wfbH2n9mBdyyj5NBb8PRZDHJyeBYCZEG4M2CrDLrGLuNYNxUQPw3Nt3dyGVpUkHcKrhGA2RpyozCP3gjYktStdZQWxE"
+            ],
+            "compression": "none",
+            "packed_context_free_data": "",
+            "packed_trx": "1b5e305e1000dc1f790300000000030000000000ea305500409e9a2264b89a011052546ea998b33900000000a8ed3232661052546ea998b3392052546ea998b339010000000100023cd6a339e452311cb809c71d6652f67c388579004128aee87f623d201e61170e01000000010000000100023cd6a339e452311cb809c71d6652f67c388579004128aee87f623d201e61170e010000000000000000ea305500003f2a1ba6a24a011052546ea998b33900000000a8ed3232311052546ea998b3392052546ea998b339102700000000000004454f5300000000102700000000000004454f5300000000010000000000ea305500b0cafe4873bd3e011052546ea998b33900000000a8ed3232141052546ea998b3392052546ea998b3390020000000"
+          }
+        ]
+      }
+    ],
+    "block_extensions": []
+  },
+  "validated": false
+}
