@@ -108,6 +108,16 @@ HTTP communication and `peering.eosn.io` for P2P communication.
 They can respectively be overridden by specifying environment variable
 `EOS_GO_API_URL` and `EOS_GO_P2P_ENDPOINT` respectively.
 
+### Release
+
+We are using [Goreleaser](https://goreleaser.com/) to perform releases. Install the `goreleaser` binary ([instructions](https://goreleaser.com/install/))
+and follow these steps:
+
+- Dry run release process first with `goreleaser release --skip-publish --skip-validate --rm-dist`
+- Publish **draft** release with `goreleaser release --rm-dist`
+- Open GitHub's release and check that the release messages are all good
+- Once everything is good, publish release
+
 ### Contributing
 
 Any contributions are welcome, use your standard GitHub-fu to pitch in and improve.
