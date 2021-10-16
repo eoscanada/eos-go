@@ -1,5 +1,4 @@
-EOS.IO API library for Go
-=========================
+## EOS.IO API library for Go
 
 [点击查看中文版](./README-cn.md)
 
@@ -19,30 +18,44 @@ This library is the basis for the `eos-bios` launch orchestrator tool
 at https://github.com/eoscanada/eos-bios
 
 
-Basic usage
------------
+### Basic usage
 
 ```go
-api := eos.New("http://testnet1.eos.io")
+package main
 
-infoResp, _ := api.GetInfo(ctx)
-accountResp, _ := api.GetAccount(ctx, "initn")
-fmt.Println("Permission for initn:", accountResp.Permissions[0].RequiredAuth.Keys)
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	eos "github.com/eoscanada/eos-go"
+	cli "github.com/streamingfast/cli"
+)
+
+func main() {
+	api := eos.New("https://api.eosn.io")
+	ctx := context.Background()
+
+	infoResp, err := api.GetInfo(ctx)
+	cli.NoError(err, "unable to get chain info")
+
+	fmt.Println("Chain Info", toJson(infoResp))
+
+	accountResp, _ := api.GetAccount(ctx, "eosio")
+	fmt.Println("Account Info", toJson(accountResp))
+}
+
+func toJson(v interface{}) string {
+	out, err := json.MarshalIndent(v, "", "  ")
+	cli.NoError(err, "unable to marshal json")
+
+	return string(out)
+}
 ```
 
-`eosio.system` and `eosio.token` contract _Actions_ are respectively in:
-* https://github.com/eoscanada/eos-go/tree/master/system ([godocs](https://godoc.org/github.com/eoscanada/eos-go/system))
-* https://github.com/eoscanada/eos-go/tree/master/token ([godocs](https://godoc.org/github.com/eoscanada/eos-go/token))
+### Examples
 
-Binaries
---------
-
-There is some binaries in `main` packages under `cmd/`, mainly around P2P communication.
-
-Example
--------
-
-### Reference
+#### Reference
 
  * API
     * [Get Chain Information](./example_api_get_info_test.go)
@@ -50,7 +63,7 @@ Example
  * Decoding/Encoding
     * [Decode Table Row](./example_abi_decode_test.go)
 
-### Running
+#### Running
 
 The easiest way to see the actual output for a given example is to add a line
 `// Output: any` at the very end of the test, looks like this for
@@ -84,20 +97,21 @@ requires having the authorizations and balance necessary to perform the
 transaction. It's quite possible to run them through a development environment
 however.
 
-#### Environment Variables
+### Binaries
 
-All examples uses by default the `https://mainnet.eos.dfuse.io` API endpoint for all
-HTTP communication and `peering.mainnet.eoscanada.com` for P2P communication.
+There is some binaries in `main` packages under `cmd/`, mainly around P2P communication.
+
+### Environment Variables
+
+All examples uses by default the `https://api.eosn.io` API endpoint for all
+HTTP communication and `peering.eosn.io` for P2P communication.
 They can respectively be overridden by specifying environment variable
 `EOS_GO_API_URL` and `EOS_GO_P2P_ENDPOINT` respectively.
 
-Contributing
-------------
+### Contributing
 
 Any contributions are welcome, use your standard GitHub-fu to pitch in and improve.
 
-
-License
--------
+### License
 
 MIT
