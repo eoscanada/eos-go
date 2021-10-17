@@ -108,6 +108,18 @@ HTTP communication and `peering.eosn.io` for P2P communication.
 They can respectively be overridden by specifying environment variable
 `EOS_GO_API_URL` and `EOS_GO_P2P_ENDPOINT` respectively.
 
+### Tests
+
+Some of our tests renders dates in the timezone of the OS. As such, if you have a bunch of
+failures around dates and times, it's probably because your timezone is not aligned with
+those in the tests.
+
+Run the tests with this to be in the same timezone as the expected one in golden files:
+
+```bash
+TZ=UTC go test ./...
+```
+
 ### Release
 
 We are using [Goreleaser](https://goreleaser.com/) to perform releases. Install the `goreleaser` binary ([instructions](https://goreleaser.com/install/))

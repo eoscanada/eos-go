@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Breaking Changes
 
+* Renamed [`BlockTimestampFormat`](https://github.com/eoscanada/eos-go/blob/a1623cc5a2223005a4dc7d4dec972d6119de42ff/types.go#L844) to `blockTimestampFormat` making it private.
+
 #### Added
 
 #### Changed
@@ -15,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Deprecated
 
-### [0.10] (October 16th, 2021)
+### [**0.10**](https://github.com/eoscanada/eos-go/releases/tag/v0.10.0) (October 16th, 2021)
 
 #### Breaking Changes
 - **BREAKING**: We started adding an initial `context.Context` to all interruptible functions. All method performing an HTTP call have the new parameter as well as a bunch of other method. We cannot list all of them. If the caller already have a `context.Context` value, pass it to the function that now require one. Otherwise, simply pass `context.Background()`.

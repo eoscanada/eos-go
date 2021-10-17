@@ -841,14 +841,19 @@ type BlockTimestamp struct {
 	time.Time
 }
 
-const BlockTimestampFormat = "2006-01-02T15:04:05.999"
+// blockTimestampFormat
+//
+// We deal with timezone in a conditional matter so we allowed for example the
+// unmarshalling to accept with and without timezone specifier.
+const blockTimestampFormat = "2006-01-02T15:04:05.999"
 
 func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
-	strTime := t.Format(BlockTimestampFormat)
+	strTime := t.Format(blockTimestampFormat)
 	if len(strTime) == len("2006-01-02T15:04:05.5") {
 		strTime += "00"
 	}
-	return []byte(fmt.Sprintf("%q", strTime)), nil
+
+	return []byte(`"` + strTime + `"`), nil
 }
 
 func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
@@ -856,10 +861,11 @@ func (t *BlockTimestamp) UnmarshalJSON(data []byte) (err error) {
 		return nil
 	}
 
-	t.Time, err = time.Parse(`"`+BlockTimestampFormat+`"`, string(data))
+	t.Time, err = time.Parse(`"`+blockTimestampFormat+`"`, string(data))
 	if err != nil {
-		t.Time, err = time.Parse(`"`+BlockTimestampFormat+`Z07:00"`, string(data))
+		t.Time, err = time.Parse(`"`+blockTimestampFormat+`Z07:00"`, string(data))
 	}
+
 	return err
 }
 
