@@ -429,6 +429,11 @@ var EOSSymbol = Symbol{Precision: 4, Symbol: "EOS"}
 // here just to speed up things.
 var REXSymbol = Symbol{Precision: 4, Symbol: "REX"}
 
+// TNTSymbol represents the standard EOSIO Testnet symbol on the testnet chain.
+// Temporary Network Token (TNT) is the native token of the EOSIO Testnet.
+// It's here just to speed up things.
+var TNTSymbol = Symbol{Precision: 4, Symbol: "TNT"}
+
 func NewEOSAsset(amount int64) Asset {
 	return Asset{Amount: Int64(amount), Symbol: EOSSymbol}
 }
@@ -463,6 +468,10 @@ func NewEOSAssetFromString(input string) (Asset, error) {
 
 func NewREXAssetFromString(input string) (Asset, error) {
 	return NewFixedSymbolAssetFromString(REXSymbol, input)
+}
+
+func NewTNTAssetFromString(input string) (Asset, error) {
+	return NewFixedSymbolAssetFromString(TNTSymbol, input)
 }
 
 func NewFixedSymbolAssetFromString(symbol Symbol, input string) (out Asset, err error) {
