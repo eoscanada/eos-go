@@ -467,11 +467,12 @@ type GetActionsRequest struct {
 	Offset      Int64       `json:"offset"`
 }
 type ActionResp struct {
-	GlobalSeq  JSONInt64      `json:"global_action_seq"`
-	AccountSeq JSONInt64      `json:"account_action_seq"`
-	BlockNum   uint32         `json:"block_num"`
-	BlockTime  BlockTimestamp `json:"block_time"`
-	Trace      ActionTrace    `json:"action_trace"`
+	GlobalSeq    JSONInt64      `json:"global_action_seq"`
+	AccountSeq   JSONInt64      `json:"account_action_seq"`
+	BlockNum     uint32         `json:"block_num"`
+	BlockTime    BlockTimestamp `json:"block_time"`
+	Trace        ActionTrace    `json:"action_trace"`
+	Irreversible bool           `json:"irreversible"`
 }
 type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
