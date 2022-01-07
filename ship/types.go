@@ -158,7 +158,7 @@ func (s *SignedBlockBytes) UnmarshalBinary(decoder *eos.Decoder) error {
 	if err != nil {
 		return err
 	}
-	return eos.UnmarshalBinary(data, s)
+	return eos.UnmarshalBinary(data, (*SignedBlock)(s))
 }
 
 type Extension struct {
