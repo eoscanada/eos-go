@@ -7,22 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Breaking Changes
 
-* Fixed [`Producer`](https://github.com/eoscanada/eos-go/blob/2a749436dd9f3e993fd9262fc5c1e28255625994/responses.go#L451) to use more standard `eos-go` types.
-* Fixed [ProducersResp](https://github.com/eoscanada/eos-go/blob/2a749436dd9f3e993fd9262fc5c1e28255625994/responses.go#L462) to fit with actual EOSIO API.
-
 #### Added
-
-* Add EOSIO Testnet symbol (#165)
-* Update ActionResp (#166)
 
 #### Changed
 
 #### Fixed
 
-* Bugfix StringToSymbol (44b6fbd)
-* Fixed built-in examples (pointing by default to EOS Nation API nodes) (36114bd)
-
 #### Deprecated
+
+### [**0.10.2**](https://github.com/eoscanada/eos-go/releases/tag/v0.10.2) (January 19th, 2022)
+
+#### Changed
+
+* Changed ABI encoder `varuint32` to re-use existing encoder.
+
+#### Fixed
+
+* Fixed ABI encoder `varint32` types.
 
 ### [**0.10.1**](https://github.com/eoscanada/eos-go/releases/tag/v0.10.1) (January 19th, 2022)
 
