@@ -20,6 +20,17 @@ func TestK1PrivateToPublic(t *testing.T) {
 	assert.Equal(t, PublicKeyPrefixCompat+"859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", pubKeyString)
 }
 
+func TestPrefixedK1PrivateToPublic(t *testing.T) {
+	wif := "PVT_K1_5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"
+	privKey, err := NewPrivateKey(wif)
+	require.NoError(t, err)
+
+	pubKey := privKey.PublicKey()
+
+	pubKeyString := pubKey.String()
+	assert.Equal(t, PublicKeyPrefixCompat+"859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", pubKeyString)
+}
+
 func TestR1PrivateToPublic(t *testing.T) {
 	encodedPrivKey := "PVT_R1_2o5WfMRU4dTp23pbcbP2yn5MumQzSMy3ayNQ31qi5nUfa2jdWC"
 	_, err := NewPrivateKey(encodedPrivKey)
