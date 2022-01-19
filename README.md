@@ -58,21 +58,21 @@ func toJson(v interface{}) string {
 #### Reference
 
  * API
-    * [Get Chain Information](./example_api_get_info_test.go)
-    * [Transfer Token](./example_api_transfer_eos_test.go)
+	* [Get Account](./example_api_get_account_test.go)
+	* [Get Chain Information](./example_api_get_info_test.go)
+	* [Transfer Token](./example_api_transfer_eos_test.go)
  * Decoding/Encoding
-    * [Decode Table Row](./example_abi_decode_test.go)
+	* [Decode Table Row](./example_abi_decode_test.go)
+	* [Transaction Unpack](./example_trx_unpack_test.go)
 
 #### Running
 
 The easiest way to see the actual output for a given example is to add a line
 `// Output: any` at the very end of the test, looks like this for
-`ExampleAPI_GetInfo` file ([examples_api_get_info.go](./examples_api_get_info.go)):
+`ExampleAPI_GetInfo` file ([examples_api_get_info.go](./example_api_get_info_test.go)):
 
 ```
-    if err != nil {
-        panic(fmt.Errorf("json marshal response: %w", err))
-    }
+	...
 
     fmt.Println(string(bytes))
     // Output: any
