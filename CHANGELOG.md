@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Breaking Changes
 
-* Fixed [`Producer`](https://github.com/eoscanada/eos-go/blob/c56c2f318d421cbc9d49d9094ea3732ddb94969a/responses.go#L451) to use more standard `eos-go` types.
-* Fixed [ProducersResp](https://github.com/eoscanada/eos-go/blob/c56c2f318d421cbc9d49d9094ea3732ddb94969a/responses.go#L462) to fit with actual EOSIO API.
+* Fixed [`Producer`](https://github.com/eoscanada/eos-go/blob/2a749436dd9f3e993fd9262fc5c1e28255625994/responses.go#L451) to use more standard `eos-go` types.
+* Fixed [ProducersResp](https://github.com/eoscanada/eos-go/blob/2a749436dd9f3e993fd9262fc5c1e28255625994/responses.go#L462) to fit with actual EOSIO API.
 
 #### Added
 
