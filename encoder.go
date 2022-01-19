@@ -115,7 +115,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case float64:
 		return e.writeFloat64(cv)
 	case Varint32:
-		return e.writeVarInt(int(cv))
+		return e.writeVarInt32(int32(cv))
 	case Uint128:
 		return e.writeUint128(cv)
 	case Int128:
@@ -123,7 +123,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 	case Float128:
 		return e.writeUint128(Uint128(cv))
 	case Varuint32:
-		return e.writeUVarInt(int(cv))
+		return e.writeUVarInt32(uint32(cv))
 	case bool:
 		return e.writeBool(cv)
 	case Bool:
@@ -309,12 +309,32 @@ func (e *Encoder) writeUVarInt(v int) (err error) {
 	return e.toWriter(buf[:l])
 }
 
+func (e *Encoder) writeUVarInt32(v uint32) (err error) {
+	if traceEnabled {
+		zlog.Debug("write varuint32", zap.Uint32("val", v))
+	}
+
+	buf := make([]byte, binary.MaxVarintLen32)
+	l := binary.PutUvarint(buf, uint64(v))
+	return e.toWriter(buf[:l])
+}
+
 func (e *Encoder) writeVarInt(v int) (err error) {
 	if traceEnabled {
 		zlog.Debug("write varint", zap.Int("val", v))
 	}
 
 	buf := make([]byte, 8)
+	l := binary.PutVarint(buf, int64(v))
+	return e.toWriter(buf[:l])
+}
+
+func (e *Encoder) writeVarInt32(v int32) (err error) {
+	if traceEnabled {
+		zlog.Debug("write varint32", zap.Int32("val", v))
+	}
+
+	buf := make([]byte, binary.MaxVarintLen32)
 	l := binary.PutVarint(buf, int64(v))
 	return e.toWriter(buf[:l])
 }

@@ -219,18 +219,13 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		object = int32(i)
 	case "varint32":
-		v, _ := strconv.ParseUint(value.Raw, 10, 32)
-		v = (v << 1) ^ (v >> 31)
-		for true {
-			if (v >> 7) > 0 {
-				binaryEncoder.writeByte(byte(0x80 | (v & 0x7f)))
-				v = v >> 7
-			} else {
-				binaryEncoder.writeByte(byte(v))
-				break
-			}
+		v, err := strconv.ParseInt(value.Raw, 10, 32)
+		if err != nil {
+			return fmt.Errorf("invalid int32 value %q", value.Raw)
 		}
-		return nil
+
+		object = Varint32(v)
+
 	case "uint32":
 		i, err := valueToUint(fieldName, value, 32)
 		if err != nil {
@@ -238,17 +233,13 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		}
 		object = uint32(i)
 	case "varuint32":
-		v, _ := strconv.ParseUint(value.Raw, 10, 32)
-		for true {
-			if (v >> 7) > 0 {
-				binaryEncoder.writeByte(byte(0x80 | (v & 0x7f)))
-				v = v >> 7
-			} else {
-				binaryEncoder.writeByte(byte(v))
-				break
-			}
+		v, err := strconv.ParseUint(value.Raw, 10, 32)
+		if err != nil {
+			return fmt.Errorf("invalid uint32 value %q", value.Raw)
 		}
-		return nil
+
+		object = Varuint32(v)
+
 	case "int64":
 		var in Int64
 		if err := json.Unmarshal([]byte(value.Raw), &in); err != nil {
