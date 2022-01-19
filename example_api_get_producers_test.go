@@ -30,5 +30,4 @@ func ExampleAPI_GetProducers() {
 
 	fmt.Printf("Total Vote Weight: %.4f\n", resp.TotalProducerVoteWeight)
 	fmt.Printf("More: %s\n", resp.More)
-	// Output: any
 }

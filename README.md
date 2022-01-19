@@ -60,6 +60,7 @@ func toJson(v interface{}) string {
  * API
 	* [Get Account](./example_api_get_account_test.go)
 	* [Get Chain Information](./example_api_get_info_test.go)
+	* [Get Producers](./example_api_get_producers_test.go)
 	* [Transfer Token](./example_api_transfer_eos_test.go)
  * Decoding/Encoding
 	* [Decode Table Row](./example_abi_decode_test.go)
