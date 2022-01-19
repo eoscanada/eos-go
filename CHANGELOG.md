@@ -7,13 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Breaking Changes
 
-* Renamed [`BlockTimestampFormat`](https://github.com/eoscanada/eos-go/blob/a1623cc5a2223005a4dc7d4dec972d6119de42ff/types.go#L844) to `blockTimestampFormat` making it private.
+* Fixed [`Producer`](https://github.com/eoscanada/eos-go/blob/c56c2f318d421cbc9d49d9094ea3732ddb94969a/responses.go#L451) to use more standard `eos-go` types.
+* Fixed [ProducersResp](https://github.com/eoscanada/eos-go/blob/c56c2f318d421cbc9d49d9094ea3732ddb94969a/responses.go#L462) to fit with actual EOSIO API.
 
 #### Added
+
+* Add EOSIO Testnet symbol (#165)
+* Update ActionResp (#166)
 
 #### Changed
 
 #### Fixed
+
+* Bugfix StringToSymbol (44b6fbd)
+* Fixed built-in examples (pointing by default to EOS Nation API nodes) (36114bd)
+
+#### Deprecated
+
+### [**0.10.1**](https://github.com/eoscanada/eos-go/releases/tag/v0.10.1) (January 19th, 2022)
+
+#### Breaking Changes
+
+* Renamed [`BlockTimestampFormat`](https://github.com/eoscanada/eos-go/blob/a1623cc5a2223005a4dc7d4dec972d6119de42ff/types.go#L844) to `blockTimestampFormat` making it private.
+
+#### Added
+
+* Add EOSIO Testnet symbol (#165)
+* Update ActionResp (#166)
+
+#### Changed
+
+#### Fixed
+
+* Bugfix StringToSymbol (44b6fbd)
+* Fixed built-in examples (pointing by default to EOS Nation API nodes) (36114bd)
 
 #### Deprecated
 

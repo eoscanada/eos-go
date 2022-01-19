@@ -449,23 +449,28 @@ type Global struct {
 }
 
 type Producer struct {
-	Owner         string  `json:"owner"`
-	TotalVotes    float64 `json:"total_votes,string"`
-	ProducerKey   string  `json:"producer_key"`
-	IsActive      int     `json:"is_active"`
-	URL           string  `json:"url"`
-	UnpaidBlocks  int     `json:"unpaid_blocks"`
-	LastClaimTime Float64 `json:"last_claim_time"`
-	Location      int     `json:"location"`
+	Owner         Name          `json:"owner"`
+	TotalVotes    Float64       `json:"total_votes,string"`
+	ProducerKey   ecc.PublicKey `json:"producer_key"`
+	IsActive      Bool          `json:"is_active"`
+	URL           string        `json:"url"`
+	UnpaidBlocks  int           `json:"unpaid_blocks"`
+	LastClaimTime JSONTime      `json:"last_claim_time"`
+	Location      int           `json:"location"`
 }
+
 type ProducersResp struct {
-	Producers []Producer `json:"producers"`
+	Producers               []Producer `json:"rows"`
+	TotalProducerVoteWeight Float64    `json:"total_producer_vote_weight"`
+	More                    Name       `json:"more"`
 }
+
 type GetActionsRequest struct {
 	AccountName AccountName `json:"account_name"`
 	Pos         Int64       `json:"pos"`
 	Offset      Int64       `json:"offset"`
 }
+
 type ActionResp struct {
 	GlobalSeq    JSONInt64      `json:"global_action_seq"`
 	AccountSeq   JSONInt64      `json:"account_action_seq"`
@@ -474,10 +479,12 @@ type ActionResp struct {
 	Trace        ActionTrace    `json:"action_trace"`
 	Irreversible bool           `json:"irreversible"`
 }
+
 type ActionsResp struct {
 	Actions               []ActionResp `json:"actions"`
 	LastIrreversibleBlock uint32       `json:"last_irreversible_block"`
 }
+
 type KeyAccountsResp struct {
 	AccountNames []string `json:"account_names"`
 }
