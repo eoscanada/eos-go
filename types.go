@@ -64,14 +64,16 @@ type AccountResourceLimit struct {
 type DelegatedBandwidth struct {
 	From      AccountName `json:"from"`
 	To        AccountName `json:"to"`
-	NetWeight Asset       `json:"net_weight"`
-	CPUWeight Asset       `json:"cpu_weight"`
+//	NetWeight Asset       `json:"net_weight"`
+//	CPUWeight Asset       `json:"cpu_weight"`
+	PowerWeight Asset     `json:"power_weight"`
 }
 
 type TotalResources struct {
 	Owner     AccountName `json:"owner"`
-	NetWeight Asset       `json:"net_weight"`
-	CPUWeight Asset       `json:"cpu_weight"`
+//	NetWeight Asset       `json:"net_weight"`
+//	CPUWeight Asset       `json:"cpu_weight"`
+	PowerWeight Asset     `json:"power_weight"`
 	RAMBytes  Int64       `json:"ram_bytes"`
 }
 
