@@ -64,15 +64,21 @@ type AccountResourceLimit struct {
 type DelegatedBandwidth struct {
 	From      AccountName `json:"from"`
 	To        AccountName `json:"to"`
+//ultra-andrey-bezrukov --- BLOCK-80 Integrate ultra power into dfuse and remove rex related tables
+//NetWeight and CPUWeight are left inplace (moved to bottom) in order to avoid unimportant changes in eosc and bringing in a new repo
+	PowerWeight Asset     `json:"power_weight"`
 	NetWeight Asset       `json:"net_weight"`
 	CPUWeight Asset       `json:"cpu_weight"`
 }
 
 type TotalResources struct {
 	Owner     AccountName `json:"owner"`
+//ultra-andrey-bezrukov --- BLOCK-80 Integrate ultra power into dfuse and remove rex related tables
+//NetWeight and CPUWeight are left inplace (moved to bottom) in order to avoid unimportant changes in eosc and bringing in a new repo
+	PowerWeight Asset     `json:"power_weight"`
+	RAMBytes  Int64       `json:"ram_bytes"`
 	NetWeight Asset       `json:"net_weight"`
 	CPUWeight Asset       `json:"cpu_weight"`
-	RAMBytes  Int64       `json:"ram_bytes"`
 }
 
 type VoterInfo struct {
