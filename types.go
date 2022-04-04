@@ -368,6 +368,23 @@ func (s Symbol) String() string {
 	return fmt.Sprintf("%d,%s", s.Precision, s.Symbol)
 }
 
+func (s *Symbol) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	
+	sym, err := StringToSymbol(str)
+	if err != nil {
+		return err
+	}
+	
+	*s = sym
+	
+	return nil
+}
+
 type SymbolCode uint64
 
 func NameToSymbolCode(name Name) (SymbolCode, error) {
