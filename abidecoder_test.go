@@ -1197,6 +1197,8 @@ func TestABIDecoder_analyseFieldType(t *testing.T) {
 		{"field.type.1?", "field.type.1", true, false, false},
 		{"field.type.1[]", "field.type.1", false, true, false},
 		{"field.type.1$", "field.type.1", false, false, true},
+		//ultra-andrey-bezrukov --- BLOCK-178 Dfuse cannot produce JSON data for migration
+		{"field.type.1?$", "field.type.1", true, true, true},
 	}
 
 	for i, test := range testCases {

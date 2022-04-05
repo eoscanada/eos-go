@@ -404,6 +404,11 @@ func analyzeFieldType(fieldType string) (typeName string, isOptional bool, isArr
 		return fieldType[0 : len(fieldType)-3], false, true, true
 	}
 
+	//ultra-andrey-bezrukov --- BLOCK-178 Dfuse cannot produce JSON data for migration
+	if strings.HasSuffix(fieldType, "?$") {
+		return fieldType[0 : len(fieldType)-2], true, true, true
+	}
+
 	if strings.HasSuffix(fieldType, "?") {
 		return fieldType[0 : len(fieldType)-1], true, false, false
 	}
