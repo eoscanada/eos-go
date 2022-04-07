@@ -273,13 +273,13 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		if err != nil {
 			return fmt.Errorf("writing field: time_point_sec: %w", err)
 		}
-		object = TimePointSec(t.UTC().Second())
+		object = TimePointSec(t.UTC().Unix())
 	case "time_point":
 		t, err := time.Parse("2006-01-02T15:04:05.999", value.Str)
 		if err != nil {
 			return fmt.Errorf("writing field: time_point: %w", err)
 		}
-		object = TimePoint(t.UTC().Nanosecond() / int(time.Millisecond))
+		object = TimePoint(t.UTC().UnixNano() / int64(time.Millisecond))
 	case "block_timestamp_type":
 		t, err := time.Parse("2006-01-02T15:04:05.999999-07:00", value.Str)
 		if err != nil {
