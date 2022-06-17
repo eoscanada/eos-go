@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
+Fix NewPrivateKey correctly working with PVT_K1 keys (#177)
+
 #### Deprecated
 
 ### [**0.10.2**](https://github.com/eoscanada/eos-go/releases/tag/v0.10.2) (January 19th, 2022)
