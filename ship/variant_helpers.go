@@ -77,6 +77,7 @@ func (r *TransactionTrace) UnmarshalBinary(decoder *eos.Decoder) error {
 // ActionTrace
 var ActionTraceVariant = eos.NewVariantDefinition([]eos.VariantType{
 	{"action_trace_v0", (*ActionTraceV0)(nil)},
+	{"action_trace_v1", (*ActionTraceV1)(nil)},
 })
 
 type ActionTrace struct {
