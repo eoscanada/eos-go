@@ -21,14 +21,14 @@ func TestK1PrivateToPublic(t *testing.T) {
 }
 
 func TestPrefixedK1PrivateToPublic(t *testing.T) {
-	wif := "PVT_K1_5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss"
+	wif := "PVT_K1_9FN3K4JhzaMsw2Duzr1ijHzVecHtqg1QG4ZCX9udh69Z7QGTk"
 	privKey, err := NewPrivateKey(wif)
 	require.NoError(t, err)
 
 	pubKey := privKey.PublicKey()
 
 	pubKeyString := pubKey.String()
-	assert.Equal(t, PublicKeyPrefixCompat+"859gxfnXyUriMgUeThh1fWv3oqcpLFyHa3TfFYC4PK2HqhToVM", pubKeyString)
+	assert.Equal(t, PublicKeyPrefixCompat+"7LrH8N3f3BTCLRHQWeo9gVfuBB6XgEqtjksKoN9jhjFjbaGQES", pubKeyString)
 }
 
 func TestR1PrivateToPublic(t *testing.T) {
@@ -39,8 +39,8 @@ func TestR1PrivateToPublic(t *testing.T) {
 	// FIXME: Actual retrieval of publicKey from privateKey for R1 is not done yet, disable this check
 	// pubKey := privKey.PublicKey()
 
-	//pubKeyString := pubKey.String()
-	//assert.Equal(t, "PUB_R1_0000000000000000000000000000000000000000000000", pubKeyString)
+	// pubKeyString := pubKey.String()
+	// assert.Equal(t, "PUB_R1_0000000000000000000000000000000000000000000000", pubKeyString)
 }
 
 func TestNewPublicKeyAndSerializeCompress(t *testing.T) {
