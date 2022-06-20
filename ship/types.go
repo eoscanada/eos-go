@@ -65,9 +65,24 @@ type ActionTraceV0 struct {
 	ContextFree          bool
 	Elapsed              int64
 	Console              eos.SafeString
-	AccountRamDeltas     []*eos.AccountRAMDelta
+	AccountRamDeltas     []*eos.AccountDelta
 	Except               string `eos:"optional"`
 	ErrorCode            uint64 `eos:"optional"`
+}
+
+type ActionTraceV1 struct {
+	ActionOrdinal        eos.Varuint32
+	CreatorActionOrdinal eos.Varuint32
+	Receipt              *ActionReceipt `eos:"optional"`
+	Receiver             eos.Name
+	Act                  *Action
+	ContextFree          bool
+	Elapsed              int64
+	Console              eos.SafeString
+	AccountRamDeltas     []*eos.AccountDelta
+	Except               string `eos:"optional"`
+	ErrorCode            uint64 `eos:"optional"`
+	ReturnValue          []byte
 }
 
 type Action struct {
