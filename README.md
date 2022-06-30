@@ -64,6 +64,8 @@ func toJson(v interface{}) string {
 	* [Transfer Token](./example_api_transfer_eos_test.go)
  * Decoding/Encoding
 	* [Decode Table Row](./example_abi_decode_test.go)
+ * Transaction
+	* [Transaction Sign & Pack](./example_trx_pack_test.go)
 	* [Transaction Unpack](./example_trx_unpack_test.go)
 
 #### Running
