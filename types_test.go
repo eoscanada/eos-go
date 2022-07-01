@@ -921,3 +921,61 @@ func TestBlob(t *testing.T) {
 		assert.Empty(tt, data)
 	})
 }
+
+func TestTimePoint_AsTime(t *testing.T) {
+	tests := []struct {
+		name string
+		f    string
+		tp   TimePoint
+		want time.Time
+	}{
+		{
+			name: "converts timestamp to the correct time",
+			f:    "\"2022-06-30T09:46:14.500\"",
+			want: time.Date(2022, time.June, 30, 9, 46, 14, 500000000, time.UTC),
+		},
+		{
+			name: "converts zero value to correct time",
+			want: time.Unix(0, 0).UTC(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if len(tt.f) > 0 {
+				err := tt.tp.UnmarshalJSON([]byte(tt.f))
+				require.NoError(t, err)
+			}
+
+			assert.Equalf(t, tt.want, tt.tp.AsTime(), "AsTime()")
+		})
+	}
+}
+
+func TestTimePointSec_AsTime(t *testing.T) {
+	tests := []struct {
+		name string
+		f    string
+		tp   TimePointSec
+		want time.Time
+	}{
+		{
+			name: "converts timestamp to the correct time",
+			f:    "\"2022-07-01T06:40:10\"",
+			want: time.Date(2022, time.July, 1, 6, 40, 10, 0, time.UTC),
+		},
+		{
+			name: "converts zero value to correct time",
+			want: time.Unix(0, 0).UTC(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if len(tt.f) > 0 {
+				err := tt.tp.UnmarshalJSON([]byte(tt.f))
+				require.NoError(t, err)
+			}
+
+			assert.Equalf(t, tt.want, tt.tp.AsTime(), "AsTime()")
+		})
+	}
+}
