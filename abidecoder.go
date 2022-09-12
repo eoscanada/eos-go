@@ -13,6 +13,7 @@ import (
 )
 
 func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
+
 	binaryDecoder := NewDecoder(data)
 	action := a.ActionForName(actionName)
 	if action == nil {
@@ -24,7 +25,22 @@ func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
 		return nil, err
 	}
 	return json.Marshal(builtStruct)
+}
 
+func (a *ABI) DecodeActionResult(data []byte, actionName ActionName) ([]byte, error) {
+
+	binaryDecoder := NewDecoder(data)
+	actionResult := a.ActionResultForName(actionName)
+	if actionResult == nil {
+		return nil, fmt.Errorf("action_result %s not found in abi", actionName)
+	}
+
+	res, err := a.resolveField(binaryDecoder, actionResult.ResultType)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(res)
 }
 
 func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
@@ -49,7 +65,6 @@ func (a *ABI) DecodeTableRowTyped(tableType string, data []byte) ([]byte, error)
 		return nil, err
 	}
 	return json.Marshal(builtStruct)
-
 }
 
 func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) {
