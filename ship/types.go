@@ -82,7 +82,7 @@ type ActionTraceV1 struct {
 	AccountRamDeltas     []*eos.AccountDelta
 	Except               string `eos:"optional"`
 	ErrorCode            uint64 `eos:"optional"`
-	ActionResult         []byte
+	ReturnValue          []byte
 }
 
 type Action struct {
