@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Unreleased
 
 * Added `action_trace_v1` field
+* Added `AsTime` helper functions to convert `TimePoint` and `TimePointSec` to `time.Time`
 
 #### Breaking Changes
 

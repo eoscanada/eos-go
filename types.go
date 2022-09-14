@@ -921,6 +921,12 @@ func (f *TimePoint) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// AsTime returns the TimePoint as time.Time in UTC
+func (f TimePoint) AsTime() time.Time {
+	// copied from time.UnixMicro, the latter was added in 1.17
+	return time.Unix(int64(f)/1e6, (int64(f)%1e6)*1e3).UTC()
+}
+
 // TimePointSec represents the number of seconds since EPOCH (Jan 1st 1970)
 type TimePointSec uint32
 
@@ -945,6 +951,11 @@ func (f *TimePointSec) UnmarshalJSON(data []byte) error {
 
 	*f = TimePointSec(out.Unix())
 	return nil
+}
+
+// AsTime returns the TimePointSec as time.Time in UTC
+func (f TimePointSec) AsTime() time.Time {
+	return time.Unix(int64(f), 0).UTC()
 }
 
 type JSONFloat64 = Float64
