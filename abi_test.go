@@ -102,7 +102,10 @@ func TestABI_ReadPacked_V1_2(t *testing.T) {
 	systemABIV1_2 = strings.Replace(systemABIV1_2, "__VARIANTS__", "", -1)
 
 	// Here we remove the last byte (in hex so 2 characeters) since variants are always serialized, but we want a test where they are not there
-	buffer, err := hex.DecodeString(systemABIGeneratedV1_2[0 : len(systemABIGeneratedV1_2)-2])
+	// buffer, err := hex.DecodeString(systemABIGeneratedV1_2[0 : len(systemABIGeneratedV1_2)-2])
+	// require.NoError(t, err)
+
+	buffer, err := hex.DecodeString(systemABIGeneratedV1_2)
 	require.NoError(t, err)
 
 	var abiDef ABI
