@@ -11,15 +11,15 @@ import (
 type ABI struct {
 	fitNodeos        bool
 	Version          string            `json:"version"`
-	Types            []ABIType         `json:"types"`
-	Structs          []StructDef       `json:"structs"`
-	Actions          []ActionDef       `json:"actions"`
-	Tables           []TableDef        `json:"tables"`
-	RicardianClauses []ClausePair      `json:"ricardian_clauses"`
-	ErrorMessages    []ABIErrorMessage `json:"error_messages"`
-	Extensions       []Extension       `json:"abi_extensions"`
-	Variants         []VariantDef      `json:"variants" eos:"binary_extension"`
-	ActionResults    []ActionResultDef `json:"action_results" eos:"binary_extension"`
+	Types            []ABIType         `json:"types,omitempty"`
+	Structs          []StructDef       `json:"structs,omitempty"`
+	Actions          []ActionDef       `json:"actions,omitempty"`
+	Tables           []TableDef        `json:"tables,omitempty"`
+	RicardianClauses []ClausePair      `json:"ricardian_clauses,omitempty"`
+	ErrorMessages    []ABIErrorMessage `json:"error_messages,omitempty"`
+	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
+	Variants         []VariantDef      `json:"variants,omitempty" eos:"binary_extension"`
+	ActionResults    []ActionResultDef `json:"action_results,omitempty" eos:"binary_extension"`
 }
 
 func NewABI(r io.Reader) (*ABI, error) {
