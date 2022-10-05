@@ -19,6 +19,7 @@ type ABI struct {
 	ErrorMessages    []ABIErrorMessage `json:"error_messages,omitempty"`
 	Extensions       []*Extension      `json:"abi_extensions,omitempty"`
 	Variants         []VariantDef      `json:"variants,omitempty" eos:"binary_extension"`
+	ActionResults    []ActionResultDef `json:"action_results,omitempty" eos:"binary_extension"`
 }
 
 func NewABI(r io.Reader) (*ABI, error) {
@@ -65,6 +66,15 @@ func (a *ABI) TableForName(name TableName) *TableDef {
 
 func (a *ABI) VariantForName(name string) *VariantDef {
 	for _, s := range a.Variants {
+		if s.Name == name {
+			return &s
+		}
+	}
+	return nil
+}
+
+func (a *ABI) ActionResultForName(name ActionName) *ActionResultDef {
+	for _, s := range a.ActionResults {
 		if s.Name == name {
 			return &s
 		}
@@ -127,4 +137,9 @@ type ClausePair struct {
 type ABIErrorMessage struct {
 	Code    Uint64 `json:"error_code"`
 	Message string `json:"error_msg"`
+}
+
+type ActionResultDef struct {
+	Name       ActionName `json:"name"`
+	ResultType string     `json:"result_type"`
 }

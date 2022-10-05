@@ -374,14 +374,14 @@ func (s *Symbol) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	
+
 	sym, err := StringToSymbol(str)
 	if err != nil {
 		return err
 	}
-	
+
 	*s = sym
-	
+
 	return nil
 }
 
@@ -1527,8 +1527,9 @@ func (t fcVariantType) String() string {
 }
 
 // FIXME: Ideally, we would re-use `BaseVariant` but that requires some
-//        re-thinking of the decoder to make it efficient to read FCVariant types. For now,
-//        let's re-code it a bit to make it as efficient as possible.
+//
+//	re-thinking of the decoder to make it efficient to read FCVariant types. For now,
+//	let's re-code it a bit to make it as efficient as possible.
 type fcVariant struct {
 	TypeID fcVariantType
 	Impl   interface{}
@@ -1542,7 +1543,8 @@ func (a fcVariant) IsNil() bool {
 // and object, turning everything along the way in Go primitives types.
 //
 // **Note** For `Int64` and `Uint64`, we return `eos.Int64` and `eos.Uint64` types
-//          so that JSON marshalling is done correctly for large numbers
+//
+//	so that JSON marshalling is done correctly for large numbers
 func (a fcVariant) ToNative() interface{} {
 	if a.TypeID == fcVariantNullType ||
 		a.TypeID == fcVariantDoubleType ||
