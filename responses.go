@@ -381,7 +381,7 @@ type PushTransactionFullResp struct {
 type TransactionProcessed struct {
 	Status               string      `json:"status"`
 	ID                   Checksum256 `json:"id"`
-        BlockNum             uint32      `json:"block_num"`
+	BlockNum             uint32      `json:"block_num"`
 	ActionTraces         []Trace     `json:"action_traces"`
 	DeferredTransactions []string    `json:"deferred_transactions"` // that's not right... dig to find what's there..
 }

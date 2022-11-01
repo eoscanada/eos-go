@@ -731,7 +731,7 @@ type JSONTime struct {
 	time.Time
 }
 
-const JSONTimeFormat = "2006-01-02T15:04:05"
+const JSONTimeFormat = "2006-01-02T15:04:05.000"
 
 func (t JSONTime) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf("%q", t.Format(JSONTimeFormat))), nil

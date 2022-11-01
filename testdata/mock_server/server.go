@@ -3,11 +3,7 @@ package mockServer
 import (
 	"net/http"
 	"os"
-<<<<<<< HEAD
 	"path/filepath"
-=======
-	"strings"
->>>>>>> a60cfd4 (test: added api mock test & get_info)
 
 	"github.com/jarcoal/httpmock"
 )
