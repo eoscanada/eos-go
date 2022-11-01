@@ -1,0 +1,248 @@
+{
+    "account_name": "tippedtipped",
+    "abi": {
+        "version": "eosio::abi/1.1",
+        "types": [],
+        "structs": [
+            {
+                "name": "account",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "owner",
+                        "type": "uint64"
+                    },
+                    {
+                        "name": "balances",
+                        "type": "pair_extended_symbol_int64[]"
+                    }
+                ]
+            },
+            {
+                "name": "clrone",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "uint64"
+                    }
+                ]
+            },
+            {
+                "name": "clronesym",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "uint64"
+                    },
+                    {
+                        "name": "sym",
+                        "type": "symbol"
+                    },
+                    {
+                        "name": "con",
+                        "type": "name"
+                    }
+                ]
+            },
+            {
+                "name": "extended_symbol",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "symbol",
+                        "type": "symbol"
+                    },
+                    {
+                        "name": "contract",
+                        "type": "name"
+                    }
+                ]
+            },
+            {
+                "name": "pair_extended_symbol_int64",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "key",
+                        "type": "extended_symbol"
+                    },
+                    {
+                        "name": "value",
+                        "type": "int64"
+                    }
+                ]
+            },
+            {
+                "name": "payforcpu",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "user",
+                        "type": "name"
+                    }
+                ]
+            },
+            {
+                "name": "rex",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "type",
+                        "type": "string"
+                    },
+                    {
+                        "name": "from",
+                        "type": "uint64"
+                    },
+                    {
+                        "name": "to",
+                        "type": "name"
+                    },
+                    {
+                        "name": "quantity",
+                        "type": "asset"
+                    }
+                ]
+            },
+            {
+                "name": "tip",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "contract",
+                        "type": "name"
+                    },
+                    {
+                        "name": "from",
+                        "type": "uint64"
+                    },
+                    {
+                        "name": "to",
+                        "type": "uint64"
+                    },
+                    {
+                        "name": "from_username",
+                        "type": "string"
+                    },
+                    {
+                        "name": "to_username",
+                        "type": "string"
+                    },
+                    {
+                        "name": "quantity",
+                        "type": "asset"
+                    },
+                    {
+                        "name": "memo",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "name": "transfer",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "from",
+                        "type": "name"
+                    },
+                    {
+                        "name": "to",
+                        "type": "name"
+                    },
+                    {
+                        "name": "quantity",
+                        "type": "asset"
+                    },
+                    {
+                        "name": "memo",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "name": "withdraw",
+                "base": "",
+                "fields": [
+                    {
+                        "name": "contract",
+                        "type": "name"
+                    },
+                    {
+                        "name": "from",
+                        "type": "uint64"
+                    },
+                    {
+                        "name": "from_username",
+                        "type": "string"
+                    },
+                    {
+                        "name": "to",
+                        "type": "name"
+                    },
+                    {
+                        "name": "quantity",
+                        "type": "asset"
+                    },
+                    {
+                        "name": "memo",
+                        "type": "string"
+                    }
+                ]
+            }
+        ],
+        "actions": [
+            {
+                "name": "clrone",
+                "type": "clrone",
+                "ricardian_contract": ""
+            },
+            {
+                "name": "clronesym",
+                "type": "clronesym",
+                "ricardian_contract": ""
+            },
+            {
+                "name": "payforcpu",
+                "type": "payforcpu",
+                "ricardian_contract": ""
+            },
+            {
+                "name": "rex",
+                "type": "rex",
+                "ricardian_contract": ""
+            },
+            {
+                "name": "tip",
+                "type": "tip",
+                "ricardian_contract": ""
+            },
+            {
+                "name": "transfer",
+                "type": "transfer",
+                "ricardian_contract": ""
+            },
+            {
+                "name": "withdraw",
+                "type": "withdraw",
+                "ricardian_contract": ""
+            }
+        ],
+        "tables": [
+            {
+                "name": "accounts",
+                "index_type": "i64",
+                "key_names": [],
+                "key_types": [],
+                "type": "account"
+            }
+        ],
+        "ricardian_clauses": [],
+        "error_messages": [],
+        "abi_extensions": [],
+        "variants": [],
+        "action_results": []
+    }
+}
