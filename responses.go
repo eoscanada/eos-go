@@ -12,17 +12,26 @@ import (
 
 /*
 {
-  "server_version": "f537bc50",
-  "head_block_num": 9,
-  "last_irreversible_block_num": 8,
-  "last_irreversible_block_id": "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084",
-  "head_block_id": "00000009ecd0e9fb5719431f4b86f5c9ca1887f6b6f73e5a301aaff740fd6bd3",
-  "head_block_time": "2018-05-19T07:47:31",
-  "head_block_producer": "eosio",
-  "virtual_block_cpu_limit": 100800,
-  "virtual_block_net_limit": 1056996,
-  "block_cpu_limit": 99900,
-  "block_net_limit": 1048576
+    "server_version": "3c9661e6",
+    "chain_id": "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+    "head_block_num": 272466135,
+    "last_irreversible_block_num": 272465804,
+    "last_irreversible_block_id": "103d7f8c633f49f92e7758a41dbe59ea3cb0aca556794b9eb4aeeb9b9d0855ce",
+    "head_block_id": "103d80d744fe357bbb3263289bc85a326d16909d4473a3639b576c035b4bfa5b",
+    "head_block_time": "2022-10-10T13:34:03.500",
+    "head_block_producer": "aus1genereos",
+    "virtual_block_cpu_limit": 200000,
+    "virtual_block_net_limit": 1048576000,
+    "block_cpu_limit": 199001,
+    "block_net_limit": 1048328,
+    "server_version_string": "v3.1.0",
+    "fork_db_head_block_num": 272466135,
+    "fork_db_head_block_id": "103d80d744fe357bbb3263289bc85a326d16909d4473a3639b576c035b4bfa5b",
+    "server_full_version_string": "v3.1.0-3c9661e67e5f66234871f967f28d1662bf1905b6",
+    "total_cpu_weight": "383788472311608",
+    "total_net_weight": "96298870176056",
+    "earliest_available_block_num": 264601643,
+    "last_irreversible_block_time": "2022-10-10T13:31:17.500"
 }
 
 */
@@ -42,6 +51,14 @@ type InfoResp struct {
 	BlockCPULimit        Int64  `json:"block_cpu_limit"`
 	BlockNetLimit        Int64  `json:"block_net_limit"`
 	ServerVersionString  string `json:"server_version_string"`
+
+	EarliestAvailableBlockNum uint64         `json:"earliest_available_block_num"`
+	ServerFullVersionString   string         `json:"server_full_version_string"`
+	ForkDbHeadBlockNum        uint64         `json:"fork_db_head_block_num"`
+	ForkDbHeadBlockId         string         `json:"fork_db_head_block_id"`
+	LastIrreversibleBlockTime BlockTimestamp `json:"last_irreversible_block_time"`
+	TotalCpuWeight            Int64          `json:"total_cpu_weight"`
+	TotalNetWeight            Int64          `json:"total_net_weight"`
 }
 
 type BlockResp struct {
