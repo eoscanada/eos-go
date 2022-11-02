@@ -249,7 +249,14 @@
         "reserved2": 0,
         "reserved3": "0.0000 EOS"
     },
-    "rex_info": null,
+    "rex_info": {
+        "version": 0,
+        "owner": "teamgreymass",
+        "vote_stake": "0.0000 EOS",
+        "rex_balance": "0.1768 REX",
+        "matured_rex": 1768,
+        "rex_maturities": []
+    },
     "subjective_cpu_bill_limit": {
         "used": 0,
         "available": 0,
