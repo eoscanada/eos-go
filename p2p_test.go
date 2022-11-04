@@ -361,7 +361,7 @@ func TestBlockHeader_UnmarshalJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			baseBlockFormat := `{"action_mroot":"","transaction_mroot":"","confirmed":0,"previous":"","producer":"","schedule_version":0,"timestamp":"0001-01-01T00:00:00","header_extensions":null%s}`
+			baseBlockFormat := `{"action_mroot":"","transaction_mroot":"","confirmed":0,"previous":"","producer":"","schedule_version":0,"timestamp":"0001-01-01T00:00:00.000","header_extensions":null%s}`
 
 			inputFields := strings.Join(test.inputFields, ",")
 			if len(inputFields) > 0 {
