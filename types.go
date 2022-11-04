@@ -1,6 +1,7 @@
 package eos
 
 import (
+	"encoding"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -80,9 +81,14 @@ type VoterInfo struct {
 	Proxy             AccountName   `json:"proxy"`
 	Producers         []AccountName `json:"producers"`
 	Staked            Int64         `json:"staked"`
-	LastVoteWeight    Float64       `json:"last_vote_weight"`
-	ProxiedVoteWeight Float64       `json:"proxied_vote_weight"`
+	LastVoteWeight    Decimal       `json:"last_vote_weight"`
+	ProxiedVoteWeight Decimal       `json:"proxied_vote_weight"`
 	IsProxy           byte          `json:"is_proxy"`
+
+	// added 2022-11-02
+	Flags1    int64 `json:"flags1"`
+	Reserved2 int64 `json:"reserved2"`
+	Reserved3 Asset `json:"reserved3"`
 }
 
 type RefundRequest struct {
@@ -610,10 +616,32 @@ func (a Asset) MarshalJSON() (data []byte, err error) {
 	return json.Marshal(a.String())
 }
 
+// added 2022-11-02
+type RexInfo struct {
+	Version    uint32      `json:"version"`
+	Owner      AccountName `json:"owner"`
+	VoteStake  Asset       `json:"vote_stake"`
+	RexBalance Asset       `json:"rex_balance"`
+	MaturedRex uint64      `json:"matured_rex"`
+
+	// TODO: set the exact type
+	RexMaturities []interface{} `json:"rex_maturities"`
+}
+
+// added 2022-11-02
+type SimpleAction struct {
+	Account AccountName `json:"account"`
+	Action  ActionName  `json:"action,omitempty"`
+}
+
 type Permission struct {
 	PermName     string    `json:"perm_name"`
 	Parent       string    `json:"parent"`
 	RequiredAuth Authority `json:"required_auth"`
+
+	// added 2022-11-02
+	// TODO: set the exact type
+	LinkedActions []SimpleAction `json:"linked_actions"`
 }
 
 type PermissionLevel struct {
@@ -656,9 +684,9 @@ type PermissionLevelWeight struct {
 
 type Authority struct {
 	Threshold uint32                  `json:"threshold"`
-	Keys      []KeyWeight             `json:"keys,omitempty"`
-	Accounts  []PermissionLevelWeight `json:"accounts,omitempty"`
-	Waits     []WaitWeight            `json:"waits,omitempty"`
+	Keys      []KeyWeight             `json:"keys"`
+	Accounts  []PermissionLevelWeight `json:"accounts"`
+	Waits     []WaitWeight            `json:"waits"`
 }
 
 type KeyWeight struct {
@@ -877,6 +905,9 @@ func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
 	strTime := t.Format(blockTimestampFormat)
 	if len(strTime) == len("2006-01-02T15:04:05.5") {
 		strTime += "00"
+	} else if len(strTime) == len("2006-01-02T15:04:05") {
+		// added 2022-11-02
+		strTime += ".000"
 	}
 
 	return []byte(`"` + strTime + `"`), nil
@@ -1243,6 +1274,185 @@ func (i *Float128) UnmarshalJSON(data []byte) error {
 
 	out := Float128(el)
 	*i = out
+
+	return nil
+}
+
+// added 2022-11-02
+
+// Int
+// Experimental implementation
+
+// used big.Int
+// experimental type, and will replace or be replaced with previous Int implementation
+type Int struct {
+	i *big.Int
+}
+
+const maxBitLen = 256
+
+func NewIntFromString(amt string) (*Int, error) {
+	ret := &Int{}
+	if intAmt, ok := new(big.Int).SetString(amt, 0); ok {
+		ret.i = intAmt
+		return ret, nil
+	} else {
+		return nil, fmt.Errorf("cannot parse into big/Int Input : %s", amt)
+	}
+}
+
+func NewIntFromInt64(amt int64) *Int {
+	newInt := &Int{}
+	newInt.i = big.NewInt(amt)
+
+	return newInt
+}
+
+func (i Int) MarshalJSON() ([]byte, error) {
+	if i.i == nil { // Necessary since default Uint initialization has i.i as nil
+		i.i = new(big.Int)
+	}
+	return marshalJSON(i.i)
+}
+
+// UnmarshalJSON defines custom decoding scheme
+func (i *Int) UnmarshalJSON(bz []byte) error {
+	if i.i == nil { // Necessary since default Int initialization has i.i as nil
+		i.i = new(big.Int)
+	}
+	return unmarshalJSON(i.i, bz)
+}
+
+func (i Int) String() string {
+	return i.i.String()
+}
+
+// MarshalJSON for custom encoding scheme
+// Must be encoded as a string for JSON precision
+func marshalJSON(i encoding.TextMarshaler) ([]byte, error) {
+	text, err := i.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(string(text))
+}
+
+// UnmarshalJSON for custom decoding scheme
+// Must be encoded as a string for JSON precision
+func unmarshalJSON(i *big.Int, bz []byte) error {
+	var text string
+	if err := json.Unmarshal(bz, &text); err != nil {
+		return err
+	}
+
+	return unmarshalText(i, text)
+}
+
+func unmarshalText(i *big.Int, text string) error {
+	if err := i.UnmarshalText([]byte(text)); err != nil {
+		return err
+	}
+
+	if i.BitLen() > maxBitLen {
+		return fmt.Errorf("integer out of range: %s", text)
+	}
+
+	return nil
+}
+
+// added 2022-11-02
+// Decimal
+
+// keep all precision of the number, even trailing zeros even like "0.000000"
+// used the implementation of Int above
+type Decimal struct {
+	Amount  Int
+	Decimal uint
+}
+
+func NewDecimalFromInt64(amt int64, decimal uint) (*Decimal, error) {
+	newDecimal := &Decimal{
+		Amount:  *NewIntFromInt64(amt),
+		Decimal: decimal,
+	}
+
+	return newDecimal, nil
+}
+
+func (d Decimal) String() string {
+	strAmt := d.Amount.String()
+
+	// decimal point
+	var strDecimal string
+	if len(strAmt) > int(d.Decimal) && d.Decimal > 0 {
+		strDecimal = fmt.Sprintf("%s.%s", strAmt[:len(strAmt)-int(d.Decimal)], strAmt[len(strAmt)-int(d.Decimal):])
+	} else if len(strAmt) <= int(d.Decimal) && d.Decimal > 0 {
+		zero := strings.Repeat("0", int(d.Decimal)-len(strAmt))
+		strDecimal = fmt.Sprintf("0.%s%s", zero, strAmt)
+	} else {
+		strDecimal = strAmt
+	}
+
+	return strDecimal
+}
+
+func (d Decimal) MarshalJSON() ([]byte, error) {
+	strDecimal := d.String()
+
+	return []byte(fmt.Sprintf(`"%s"`, strDecimal)), nil
+}
+
+// UnmarshalJSON defines custom decoding scheme
+func (d *Decimal) UnmarshalJSON(bz []byte) error {
+	in := string(bz)
+	in = strings.ReplaceAll(in, `"`, "")
+
+	decimalParts := strings.Split(in, ".")
+	if len(decimalParts) == 1 {
+		d.Decimal = 0
+
+		newInt, err := NewIntFromString(decimalParts[0])
+		if err != nil {
+			return err
+		}
+
+		d.Amount = *newInt
+	} else {
+		d.Decimal = uint(len(decimalParts[1]))
+
+		strAmt := strings.Join(decimalParts, "")
+
+		breakPoint := 0
+		for idx, val := range strAmt {
+			if fmt.Sprintf("%c", val) == "0" && idx == 0 {
+				breakPoint = idx
+			} else if fmt.Sprintf("%c", val) != "0" && idx == 0 {
+				breakPoint = -1
+				break
+			} else if fmt.Sprintf("%c", val) == "0" && idx > 0 {
+				breakPoint = idx
+			} else if fmt.Sprintf("%c", val) != "0" && idx > 0 {
+				break
+			}
+		}
+
+		if breakPoint >= 0 {
+			strAmt = strAmt[breakPoint+1:]
+		}
+
+		// to prevent all number is zero and strAmt goes nil value
+		if strAmt == "" {
+			strAmt = "0"
+		}
+
+		newInt, err := NewIntFromString(strAmt)
+		if err != nil {
+			return err
+		}
+
+		d.Amount = *newInt
+	}
 
 	return nil
 }

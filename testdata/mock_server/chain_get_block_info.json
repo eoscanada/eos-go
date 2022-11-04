@@ -1,0 +1,14 @@
+{
+    "block_num": 273283700,
+    "ref_block_num": 64116,
+    "id": "1049fa74670c8d45c83cfd6b54683edb186b5205bf84c66141afe55765499f7c",
+    "timestamp": "2022-10-15T07:13:42.000",
+    "producer": "eosiosg11111",
+    "confirmed": 240,
+    "previous": "1049fa737265f6c2d46428c2ee89cd5be29dc2b9a0615afc6af4c8df6ffa7845",
+    "transaction_mroot": "f7cadbcc33efad01eacc153d2013ce9e50fe4f0d664df657a354a3d06ac569ab",
+    "action_mroot": "0378d11e50e8ee4c8673a06ece81933d672ff0578aec743aad4f6962309dca58",
+    "schedule_version": 2043,
+    "producer_signature": "SIG_K1_KbbKB47LguWUfhYfqcZPNTR6Nd8hgLV4CfF1GSxLf7TBqwaFDbbXdMvDDQKhp5186HSWz1MgmNt2qPHVWdY6KAkZaDbEab",
+    "ref_block_prefix": 1811758280
+}
