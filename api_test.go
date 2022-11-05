@@ -22,7 +22,7 @@ func TestGetAccount(t *testing.T) {
 	actualJSON, err := json.Marshal(acc)
 	assert.NoError(t, err)
 
-	expectedJSON := mockserver.OpenFile("chain_get_account.json")
+	expectedJSON := mockserver.OpenFile(".", "chain_get_account.json")
 
 	assert.JSONEq(t, expectedJSON, string(actualJSON))
 }
@@ -34,7 +34,7 @@ func TestAPIGetInfo(t *testing.T) {
 	actualJSON, err := json.Marshal(info)
 	assert.NoError(t, err)
 
-	expectedJSON := mockserver.OpenFile("chain_get_info.json")
+	expectedJSON := mockserver.OpenFile(".", "chain_get_info.json")
 
 	assert.JSONEq(t, expectedJSON, string(actualJSON))
 }
