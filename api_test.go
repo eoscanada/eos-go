@@ -48,7 +48,7 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
-	mockserver.CreateAndActivateRestMockServer()
+	mockserver.CreateAndActivateRestMockServer(".")
 
 	api = New("http://localhost")
 
