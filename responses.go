@@ -238,7 +238,7 @@ type AccountResp struct {
 	CPULimit               AccountResourceLimit `json:"cpu_limit"`
 	Permissions            []Permission         `json:"permissions"`
 	TotalResources         TotalResources       `json:"total_resources"`
-	SelfDelegatedBandwidth *DelegatedBandwidth  `json:"self_delegated_bandwidth"`
+	SelfDelegatedBandwidth DelegatedBandwidth   `json:"self_delegated_bandwidth"`
 	RefundRequest          *RefundRequest       `json:"refund_request"`
 	VoterInfo              VoterInfo            `json:"voter_info"`
 	HeadBlockNum           uint64               `json:"head_block_num"`            // added since EOSIO/Leap v2.0
