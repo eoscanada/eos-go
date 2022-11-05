@@ -37,28 +37,27 @@ import (
 */
 
 type InfoResp struct {
-	ServerVersion            string         `json:"server_version"` // "2cc40a4e"
-	ChainID                  Checksum256    `json:"chain_id"`
-	HeadBlockNum             uint32         `json:"head_block_num"`              // 2465669,
-	LastIrreversibleBlockNum uint32         `json:"last_irreversible_block_num"` // 2465655
-	LastIrreversibleBlockID  Checksum256    `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
-	HeadBlockID              Checksum256    `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
-	HeadBlockTime            BlockTimestamp `json:"head_block_time"`             //  "2018-02-02T04:19:32"
-	HeadBlockProducer        AccountName    `json:"head_block_producer"`         // "inita"
+	ServerVersion             string         `json:"server_version"` // "2cc40a4e"
+	ChainID                   Checksum256    `json:"chain_id"`
+	HeadBlockNum              uint32         `json:"head_block_num"`               // 2465669,
+	LastIrreversibleBlockNum  uint32         `json:"last_irreversible_block_num"`  // 2465655
+	LastIrreversibleBlockID   Checksum256    `json:"last_irreversible_block_id"`   // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
+	HeadBlockID               Checksum256    `json:"head_block_id"`                // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	HeadBlockTime             BlockTimestamp `json:"head_block_time"`              //  "2018-02-02T04:19:32"
+	HeadBlockProducer         AccountName    `json:"head_block_producer"`          // "inita"
+	EarliestAvailableBlockNum uint64         `json:"earliest_available_block_num"` // added since EOSIO/Leap v2.0
+	ForkDbHeadBlockNum        uint64         `json:"fork_db_head_block_num"`       // added since EOSIO/Leap v2.0
+	ForkDbHeadBlockId         string         `json:"fork_db_head_block_id"`        // added since EOSIO/Leap v2.0
+	LastIrreversibleBlockTime BlockTimestamp `json:"last_irreversible_block_time"` // added since EOSIO/Leap v2.0
 
-	VirtualBlockCPULimit Int64  `json:"virtual_block_cpu_limit"`
-	VirtualBlockNetLimit Int64  `json:"virtual_block_net_limit"`
-	BlockCPULimit        Int64  `json:"block_cpu_limit"`
-	BlockNetLimit        Int64  `json:"block_net_limit"`
-	ServerVersionString  string `json:"server_version_string"`
-
-	EarliestAvailableBlockNum uint64         `json:"earliest_available_block_num"`
-	ServerFullVersionString   string         `json:"server_full_version_string"`
-	ForkDbHeadBlockNum        uint64         `json:"fork_db_head_block_num"`
-	ForkDbHeadBlockId         string         `json:"fork_db_head_block_id"`
-	LastIrreversibleBlockTime BlockTimestamp `json:"last_irreversible_block_time"`
-	TotalCpuWeight            Int64          `json:"total_cpu_weight"`
-	TotalNetWeight            Int64          `json:"total_net_weight"`
+	VirtualBlockCPULimit    Int64  `json:"virtual_block_cpu_limit"`
+	VirtualBlockNetLimit    Int64  `json:"virtual_block_net_limit"`
+	BlockCPULimit           Int64  `json:"block_cpu_limit"`
+	BlockNetLimit           Int64  `json:"block_net_limit"`
+	TotalCpuWeight          Int64  `json:"total_cpu_weight"` // added since EOSIO/Leap v2.0
+	TotalNetWeight          Int64  `json:"total_net_weight"` // added since EOSIO/Leap v2.0
+	ServerVersionString     string `json:"server_version_string"`
+	ServerFullVersionString string `json:"server_full_version_string"` // added since EOSIO/Leap v2.0
 }
 
 type BlockResp struct {
@@ -239,7 +238,7 @@ type AccountResp struct {
 	CPULimit               AccountResourceLimit `json:"cpu_limit"`
 	Permissions            []Permission         `json:"permissions"`
 	TotalResources         TotalResources       `json:"total_resources"`
-	SelfDelegatedBandwidth *DelegatedBandwidth  `json:"self_delegated_bandwidth"`
+	SelfDelegatedBandwidth *DelegatedBandwidth  `json:"self_delegated_bandwidth"` // modified since EOSIO/Leap v2.0 as nullable
 	RefundRequest          *RefundRequest       `json:"refund_request"`
 	VoterInfo              VoterInfo            `json:"voter_info"`
 	HeadBlockNum           uint64               `json:"head_block_num"`            // added since EOSIO/Leap v2.0
