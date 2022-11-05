@@ -84,11 +84,9 @@ type VoterInfo struct {
 	LastVoteWeight    Decimal       `json:"last_vote_weight"`
 	ProxiedVoteWeight Decimal       `json:"proxied_vote_weight"`
 	IsProxy           byte          `json:"is_proxy"`
-
-	// added 2022-11-02
-	Flags1    int64 `json:"flags1"`
-	Reserved2 int64 `json:"reserved2"`
-	Reserved3 Asset `json:"reserved3"`
+	Flags1            int64         `json:"flags1"`    // added since EOSIO/Leap v2.0
+	Reserved2         int64         `json:"reserved2"` // added since EOSIO/Leap v2.0
+	Reserved3         Asset         `json:"reserved3"` // added since EOSIO/Leap v2.0
 }
 
 type RefundRequest struct {
@@ -616,7 +614,7 @@ func (a Asset) MarshalJSON() (data []byte, err error) {
 	return json.Marshal(a.String())
 }
 
-// added 2022-11-02
+// RexInfo was added since EOSIO/Leap v2.0
 type RexInfo struct {
 	Version    uint32      `json:"version"`
 	Owner      AccountName `json:"owner"`
@@ -628,20 +626,17 @@ type RexInfo struct {
 	RexMaturities []interface{} `json:"rex_maturities"`
 }
 
-// added 2022-11-02
+// SimpleAction was added since EOSIO/Leap v2.0
 type SimpleAction struct {
 	Account AccountName `json:"account"`
 	Action  ActionName  `json:"action,omitempty"`
 }
 
 type Permission struct {
-	PermName     string    `json:"perm_name"`
-	Parent       string    `json:"parent"`
-	RequiredAuth Authority `json:"required_auth"`
-
-	// added 2022-11-02
-	// TODO: set the exact type
-	LinkedActions []SimpleAction `json:"linked_actions"`
+	PermName      string         `json:"perm_name"`
+	Parent        string         `json:"parent"`
+	RequiredAuth  Authority      `json:"required_auth"`
+	LinkedActions []SimpleAction `json:"linked_actions"` // added since EOSIO/Leap v2.0, TODO: find the better type from the current implementation
 }
 
 type PermissionLevel struct {
@@ -906,7 +901,8 @@ func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
 	if len(strTime) == len("2006-01-02T15:04:05.5") {
 		strTime += "00"
 	} else if len(strTime) == len("2006-01-02T15:04:05") {
-		// added 2022-11-02
+		// modified since EOSIO/Leap v2.0
+		// force formatting into YYYY-MM-DDTHH:MM:SS.sss
 		strTime += ".000"
 	}
 
@@ -1278,8 +1274,6 @@ func (i *Float128) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// added 2022-11-02
-
 // Int
 // Experimental implementation
 
@@ -1361,7 +1355,6 @@ func unmarshalText(i *big.Int, text string) error {
 	return nil
 }
 
-// added 2022-11-02
 // Decimal
 
 // keep all precision of the number, even trailing zeros even like "0.000000"

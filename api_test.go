@@ -3,7 +3,6 @@ package eos
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"testing"
@@ -21,9 +20,7 @@ func TestGetAccount(t *testing.T) {
 	assert.NoError(t, err)
 
 	actualJSON, err := json.Marshal(acc)
-	if err != nil {
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	expectedJSON := mockserver.OpenFile("chain_get_account.json")
 
@@ -32,16 +29,10 @@ func TestGetAccount(t *testing.T) {
 
 func TestAPIGetInfo(t *testing.T) {
 	info, err := api.GetInfo(context.Background())
-	if err != nil {
-		panic(fmt.Errorf("get info: %w", err))
-	}
-
 	assert.NoError(t, err)
 
 	actualJSON, err := json.Marshal(info)
-	if err != nil {
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	expectedJSON := mockserver.OpenFile("chain_get_info.json")
 

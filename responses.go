@@ -228,8 +228,8 @@ type ProducerChange struct {
 type AccountResp struct {
 	AccountName            AccountName          `json:"account_name"`
 	Privileged             bool                 `json:"privileged"`
-	LastCodeUpdate         BlockTimestamp       `json:"last_code_update"` // modified 2022-11-02
-	Created                BlockTimestamp       `json:"created"`          // modified 2022-11-02
+	LastCodeUpdate         BlockTimestamp       `json:"last_code_update"` // modified since EOSIO/Leap v2.0 YYYY-MM-DDTHH:MM:SS -> YYYY-MM-DDTHH:MM:SS.sss
+	Created                BlockTimestamp       `json:"created"`          // modified since EOSIO/Leap v2.0 YYYY-MM-DDTHH:MM:SS -> YYYY-MM-DDTHH:MM:SS.sss
 	CoreLiquidBalance      Asset                `json:"core_liquid_balance"`
 	RAMQuota               Int64                `json:"ram_quota"`
 	RAMUsage               Int64                `json:"ram_usage"`
@@ -242,15 +242,11 @@ type AccountResp struct {
 	SelfDelegatedBandwidth *DelegatedBandwidth  `json:"self_delegated_bandwidth"`
 	RefundRequest          *RefundRequest       `json:"refund_request"`
 	VoterInfo              VoterInfo            `json:"voter_info"`
-
-	// added 2022-11-02
-	HeadBlockNum           uint64               `json:"head_block_num"`
-	HeadBlockTime          BlockTimestamp       `json:"head_block_time"`
-	RexInfo                *RexInfo             `json:"rex_info,omitempty"`
-	SubjectiveSpuBillLimit AccountResourceLimit `json:"subjective_cpu_bill_limit"`
-
-	// TODO: need to set the exact type
-	EosioAnyLinkedActions []interface{} `json:"eosio_any_linked_actions"`
+	HeadBlockNum           uint64               `json:"head_block_num"`            // added since EOSIO/Leap v2.0
+	HeadBlockTime          BlockTimestamp       `json:"head_block_time"`           // added since EOSIO/Leap v2.0
+	RexInfo                *RexInfo             `json:"rex_info,omitempty"`        // added since EOSIO/Leap v2.0
+	SubjectiveSpuBillLimit AccountResourceLimit `json:"subjective_cpu_bill_limit"` // added since EOSIO/Leap v2.0
+	EosioAnyLinkedActions  []interface{}        `json:"eosio_any_linked_actions"`  // TODO: need to set the exact type
 }
 
 type CurrencyBalanceResp struct {
