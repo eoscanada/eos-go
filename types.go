@@ -902,7 +902,8 @@ func (t BlockTimestamp) MarshalJSON() ([]byte, error) {
 	if len(strTime) == len("2006-01-02T15:04:05.5") {
 		strTime += "00"
 	} else if len(strTime) == len("2006-01-02T15:04:05") {
-		// added 2022-11-02
+		// modified since EOSIO/Leap v2.0
+		// force formatting into YYYY-MM-DDTHH:MM:SS.sss
 		strTime += ".000"
 	}
 
@@ -1294,8 +1295,6 @@ func (i *Float128) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// added 2022-11-02
-
 // Int
 // Experimental implementation
 
@@ -1377,7 +1376,6 @@ func unmarshalText(i *big.Int, text string) error {
 	return nil
 }
 
-// added 2022-11-02
 // Decimal
 
 // keep all precision of the number, even trailing zeros even like "0.000000"
