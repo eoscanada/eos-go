@@ -13,10 +13,9 @@ import (
 
 var api *API
 
-func TestGetAccount(t *testing.T) {
+func TestAPIGetAccount(t *testing.T) {
 	name := AccountName("teamgreymass")
 	acc, err := api.GetAccount(context.Background(), name)
-
 	assert.NoError(t, err)
 
 	actualJSON, err := json.Marshal(acc)

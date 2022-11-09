@@ -3,8 +3,8 @@
     "head_block_num": 273269383,
     "head_block_time": "2022-10-15T05:14:23.500",
     "privileged": false,
-    "last_code_update": "1970-01-01T00:00:00.000",
-    "created": "2018-06-10T13:04:15.000",
+    "last_code_update": "1970-01-01T00:00:00",
+    "created": "2018-06-10T13:04:15",
     "core_liquid_balance": "7255.0883 EOS",
     "ram_quota": 67988,
     "net_weight": 4503251,
@@ -31,9 +31,7 @@
                         "key": "EOS6gqJ7sdPgjHLFLtks9cRPs5qYHa9U3CwK4P2JasTLWKQ9kXZK1",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": []
         },
@@ -47,9 +45,7 @@
                         "key": "EOS6DLD9HxMcwn73U41jjdGsNe9vDFRKB26um6qTAqrtYcJFtED4C",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -68,9 +64,7 @@
                         "key": "EOS7knG7M5TUEdRv1bkVjTPddVoDQnwS7oEZXAgFk3A4hhocA3eJf",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -88,9 +82,7 @@
                         "key": "EOS7CjC7GL71msPzAuAzd2WwiBEAzTcPL47ACrjSuiNmnnGGufYSn",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -109,9 +101,7 @@
                         "key": "EOS88VqmDmJJ9S23eNqdeWYf2zySxv3ckQrWBKy7EvVRCUuhSU4f3",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -130,9 +120,7 @@
                         "key": "EOS8QzGtCea2thiqcTVeXGdyRZpdKYptQznbcWSMj73FD5RgwKN82",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": []
         },
@@ -146,9 +134,7 @@
                         "key": "EOS5JCEciUdfXnQmTyj85T98bXTAZZ1g7Nmajseu7ZWB8DrDa6Etp",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -171,9 +157,7 @@
                         "key": "EOS6RWZ1CmDL4B6LdixuertnzxcRuUDac3NQspJEvMnebGcUwhvfX",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -192,9 +176,7 @@
                         "key": "EOS65NrHPVXaV4voxepQREmYCmnMJm4tAWdxPaK46CbUN1rrVmRzg",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -213,9 +195,7 @@
                         "key": "EOS7pn6P5FftyNAKRfx9VcUzBFMvC4UitNbnoKbfxNe8SShELo2it",
                         "weight": 1
                     }
-                ],
-                "accounts": [],
-                "waits": []
+                ]
             },
             "linked_actions": [
                 {
@@ -235,15 +215,20 @@
         "cpu_weight": "1348314.6060 EOS",
         "ram_bytes": 66588
     },
-    "self_delegated_bandwidth": null,
+    "self_delegated_bandwidth": {
+        "cpu_weight": "20.1500 EOS",
+        "from": "teamgreymass",
+        "net_weight": "2.0500 EOS",
+        "to": "teamgreymass"
+    },
     "refund_request": null,
     "voter_info": {
         "owner": "teamgreymass",
         "proxy": "greymassvote",
         "producers": [],
         "staked": 100202,
-        "last_vote_weight": "697460718699.94543457031250000",
-        "proxied_vote_weight": "0.00000000000000000",
+        "last_vote_weight": "697460718699.945435",
+        "proxied_vote_weight": "0.000000",
         "is_proxy": 0,
         "flags1": 0,
         "reserved2": 0,
@@ -255,12 +240,12 @@
         "vote_stake": "0.0000 EOS",
         "rex_balance": "0.1768 REX",
         "matured_rex": 1768,
-        "rex_maturities": []
+        "rex_maturities": null
     },
     "subjective_cpu_bill_limit": {
         "used": 0,
         "available": 0,
         "max": 0
     },
-    "eosio_any_linked_actions": []
+    "eosio_any_linked_actions": null
 }
