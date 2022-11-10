@@ -626,7 +626,8 @@ type RexInfo struct {
 }
 
 // SimpleAction was added since EOSIO/Leap v2.0
-type SimpleAction struct {
+// chain_plugin/chain_plugin.hpp::eosio::chain_apis::linked_action
+type LinkedAction struct {
 	Account AccountName `json:"account"`
 	Action  ActionName  `json:"action,omitempty"`
 }
@@ -635,7 +636,7 @@ type Permission struct {
 	PermName      string         `json:"perm_name"`
 	Parent        string         `json:"parent"`
 	RequiredAuth  Authority      `json:"required_auth"`
-	LinkedActions []SimpleAction `json:"linked_actions"` // added since EOSIO/Leap v2.0, TODO: find the better type from the current implementation
+	LinkedActions []LinkedAction `json:"linked_actions"` // added since EOSIO/Leap v2.0, TODO: find the better type from the current implementation
 }
 
 type PermissionLevel struct {

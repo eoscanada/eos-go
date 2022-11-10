@@ -245,7 +245,7 @@ type AccountResp struct {
 	HeadBlockTime          BlockTimestamp       `json:"head_block_time"`           // added since EOSIO/Leap v2.0
 	RexInfo                *RexInfo             `json:"rex_info,omitempty"`        // added since EOSIO/Leap v2.0
 	SubjectiveSpuBillLimit AccountResourceLimit `json:"subjective_cpu_bill_limit"` // added since EOSIO/Leap v2.0
-	EosioAnyLinkedActions  []interface{}        `json:"eosio_any_linked_actions"`  // TODO: need to set the exact type
+	EosioAnyLinkedActions  []LinkedAction       `json:"eosio_any_linked_actions"`  // added since EOSIO/Leap v2.0
 }
 
 type CurrencyBalanceResp struct {
