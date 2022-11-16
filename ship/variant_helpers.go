@@ -62,6 +62,14 @@ func (t *TransactionTraceArray) AsTransactionTracesV0() (out []*TransactionTrace
 	return out
 }
 
+func (r TransactionTraceArray) MarshalBinary(enc *eos.Encoder) error {
+	data, err := eos.MarshalBinary(r.Elem)
+	if err != nil {
+		return err
+	}
+	return enc.Encode(data)
+}
+
 func (r *TransactionTraceArray) UnmarshalBinary(decoder *eos.Decoder) error {
 	data, err := decoder.ReadByteArray()
 	if err != nil {
