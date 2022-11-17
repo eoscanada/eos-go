@@ -981,6 +981,21 @@ func (f TimePointSec) AsTime() time.Time {
 	return time.Unix(int64(f), 0).UTC()
 }
 
+// nowadays, big number (especially float) represents as string type in JSON, and parsing it when unmarshaling.
+// but it would be a breaking change against the previous implementation - marshal into the number type
+// the SDK needs to follow the standard, but does not make breaking change
+// between the collision point, we thought that mode setter would be the best solution for today
+// default: number type - as the previous
+var bigIntMarshalToString = false
+
+func SetFloat64MarshalingTypeIntoString() {
+	bigIntMarshalToString = true
+}
+
+func SetFloat64MarshalingTypeIntoNumber() {
+	bigIntMarshalToString = false
+}
+
 type JSONFloat64 = Float64
 
 type Float64 float64
@@ -995,7 +1010,12 @@ func (f *Float64) MarshalJSON() ([]byte, error) {
 		return []byte("\"nan\""), nil
 	default:
 	}
-	return json.Marshal(fmt.Sprintf("%f", float64(*f)))
+
+	if bigIntMarshalToString {
+		return json.Marshal(fmt.Sprintf("%f", float64(*f)))
+	} else {
+		return json.Marshal(float64(*f))
+	}
 }
 
 func (f *Float64) UnmarshalJSON(data []byte) error {

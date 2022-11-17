@@ -47,6 +47,8 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
+	SetFloat64MarshalingTypeIntoString()
+
 	mockserver.CreateAndActivateRestMockServer(".")
 
 	api = New("http://localhost")
