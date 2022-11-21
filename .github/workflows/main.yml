@@ -40,6 +40,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      # Why CI fails?
+      - name: Update dependency
+        run: go mod tidy
+
       # Some of the parts in eos-go renders timezone specific dates and as such,
       # some of our golden files contains them.
       - name: Configure Timezone
