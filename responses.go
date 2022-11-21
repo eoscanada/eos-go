@@ -376,12 +376,12 @@ type PushTransactionFullResp struct {
 	TransactionID string               `json:"transaction_id"`
 	Processed     TransactionProcessed `json:"processed"` // WARN: is an `fc::variant` in server..
 	BlockID       string               `json:"block_id"`
-	BlockNum      uint32               `json:"block_num"`
 }
 
 type TransactionProcessed struct {
 	Status               string      `json:"status"`
 	ID                   Checksum256 `json:"id"`
+        BlockNum             uint32      `json:"block_num"`
 	ActionTraces         []Trace     `json:"action_traces"`
 	DeferredTransactions []string    `json:"deferred_transactions"` // that's not right... dig to find what's there..
 }
