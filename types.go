@@ -83,6 +83,9 @@ type VoterInfo struct {
 	LastVoteWeight    Float64       `json:"last_vote_weight"`
 	ProxiedVoteWeight Float64       `json:"proxied_vote_weight"`
 	IsProxy           byte          `json:"is_proxy"`
+	Flags1            int64         `json:"flags1"`    // added since EOSIO/Leap v2.0
+	Reserved2         int64         `json:"reserved2"` // added since EOSIO/Leap v2.0
+	Reserved3         Asset         `json:"reserved3"` // added since EOSIO/Leap v2.0
 }
 
 type RefundRequest struct {
@@ -610,10 +613,30 @@ func (a Asset) MarshalJSON() (data []byte, err error) {
 	return json.Marshal(a.String())
 }
 
+// RexInfo was added since EOSIO/Leap v2.0
+type RexInfo struct {
+	Version    uint32      `json:"version"`
+	Owner      AccountName `json:"owner"`
+	VoteStake  Asset       `json:"vote_stake"`
+	RexBalance Asset       `json:"rex_balance"`
+	MaturedRex uint64      `json:"matured_rex"`
+
+	// TODO: set the exact type
+	RexMaturities []interface{} `json:"rex_maturities"`
+}
+
+// SimpleAction was added since EOSIO/Leap v2.0
+// chain_plugin/chain_plugin.hpp::eosio::chain_apis::linked_action
+type LinkedAction struct {
+	Account AccountName `json:"account"`
+	Action  ActionName  `json:"action,omitempty"`
+}
+
 type Permission struct {
-	PermName     string    `json:"perm_name"`
-	Parent       string    `json:"parent"`
-	RequiredAuth Authority `json:"required_auth"`
+	PermName      string         `json:"perm_name"`
+	Parent        string         `json:"parent"`
+	RequiredAuth  Authority      `json:"required_auth"`
+	LinkedActions []LinkedAction `json:"linked_actions"` // added since EOSIO/Leap v2.0, TODO: find the better type from the current implementation
 }
 
 type PermissionLevel struct {
@@ -958,6 +981,21 @@ func (f TimePointSec) AsTime() time.Time {
 	return time.Unix(int64(f), 0).UTC()
 }
 
+// nowadays, big number (especially float) represents as string type in JSON, and parsing it when unmarshaling.
+// but it would be a breaking change against the previous implementation - marshal into the number type
+// the SDK needs to follow the standard, but does not make breaking change
+// between the collision point, we thought that mode setter would be the best solution for today
+// default: number type - as the previous
+var bigIntMarshalToString = false
+
+func SetFloat64MarshalingTypeIntoString() {
+	bigIntMarshalToString = true
+}
+
+func SetFloat64MarshalingTypeIntoNumber() {
+	bigIntMarshalToString = false
+}
+
 type JSONFloat64 = Float64
 
 type Float64 float64
@@ -972,7 +1010,12 @@ func (f *Float64) MarshalJSON() ([]byte, error) {
 		return []byte("\"nan\""), nil
 	default:
 	}
-	return json.Marshal(float64(*f))
+
+	if bigIntMarshalToString {
+		return json.Marshal(fmt.Sprintf("%f", float64(*f)))
+	} else {
+		return json.Marshal(float64(*f))
+	}
 }
 
 func (f *Float64) UnmarshalJSON(data []byte) error {

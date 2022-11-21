@@ -1,0 +1,251 @@
+{
+    "account_name": "teamgreymass",
+    "head_block_num": 273269383,
+    "head_block_time": "2022-10-15T05:14:23.500",
+    "privileged": false,
+    "last_code_update": "1970-01-01T00:00:00",
+    "created": "2018-06-10T13:04:15",
+    "core_liquid_balance": "7255.0883 EOS",
+    "ram_quota": 67988,
+    "net_weight": 4503251,
+    "cpu_weight": "13483146060",
+    "net_limit": {
+        "used": 245263,
+        "available": 8227837,
+        "max": 8473100
+    },
+    "cpu_limit": {
+        "used": 958474,
+        "available": 255675,
+        "max": 1214149
+    },
+    "ram_usage": 17086,
+    "permissions": [
+        {
+            "perm_name": "active",
+            "parent": "owner",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS6gqJ7sdPgjHLFLtks9cRPs5qYHa9U3CwK4P2JasTLWKQ9kXZK1",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": []
+        },
+        {
+            "perm_name": "claim",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS6DLD9HxMcwn73U41jjdGsNe9vDFRKB26um6qTAqrtYcJFtED4C",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "eosio",
+                    "action": "claimrewards"
+                }
+            ]
+        },
+        {
+            "perm_name": "decentium",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS7knG7M5TUEdRv1bkVjTPddVoDQnwS7oEZXAgFk3A4hhocA3eJf",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "decentiumorg"
+                }
+            ]
+        },
+        {
+            "perm_name": "killswitch",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS7CjC7GL71msPzAuAzd2WwiBEAzTcPL47ACrjSuiNmnnGGufYSn",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "eosio",
+                    "action": "unregprod"
+                }
+            ]
+        },
+        {
+            "perm_name": "oracle",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS88VqmDmJJ9S23eNqdeWYf2zySxv3ckQrWBKy7EvVRCUuhSU4f3",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "delphioracle",
+                    "action": "write"
+                }
+            ]
+        },
+        {
+            "perm_name": "owner",
+            "parent": "",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS8QzGtCea2thiqcTVeXGdyRZpdKYptQznbcWSMj73FD5RgwKN82",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": []
+        },
+        {
+            "perm_name": "producerjson",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS5JCEciUdfXnQmTyj85T98bXTAZZ1g7Nmajseu7ZWB8DrDa6Etp",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "producerjson",
+                    "action": "set"
+                }
+            ]
+        },
+        {
+            "perm_name": "transfer",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS6AkZZ5YZ6G5eCQGJBAPbkmouEaiSKFkdM289wEMKcf2rnx7mrb",
+                        "weight": 1
+                    },
+                    {
+                        "key": "EOS6RWZ1CmDL4B6LdixuertnzxcRuUDac3NQspJEvMnebGcUwhvfX",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "eosio.token",
+                    "action": "transfer"
+                }
+            ]
+        },
+        {
+            "perm_name": "vote",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS65NrHPVXaV4voxepQREmYCmnMJm4tAWdxPaK46CbUN1rrVmRzg",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "eosio",
+                    "action": "voteproducer"
+                }
+            ]
+        },
+        {
+            "perm_name": "voting",
+            "parent": "active",
+            "required_auth": {
+                "threshold": 1,
+                "keys": [
+                    {
+                        "key": "EOS7pn6P5FftyNAKRfx9VcUzBFMvC4UitNbnoKbfxNe8SShELo2it",
+                        "weight": 1
+                    }
+                ]
+            },
+            "linked_actions": [
+                {
+                    "account": "eosio.forum",
+                    "action": "vote"
+                },
+                {
+                    "account": "eosio.forum",
+                    "action": "unvote"
+                }
+            ]
+        }
+    ],
+    "total_resources": {
+        "owner": "teamgreymass",
+        "net_weight": "450.3251 EOS",
+        "cpu_weight": "1348314.6060 EOS",
+        "ram_bytes": 66588
+    },
+    "self_delegated_bandwidth": {
+        "cpu_weight": "20.1500 EOS",
+        "from": "teamgreymass",
+        "net_weight": "2.0500 EOS",
+        "to": "teamgreymass"
+    },
+    "refund_request": null,
+    "voter_info": {
+        "owner": "teamgreymass",
+        "proxy": "greymassvote",
+        "producers": [],
+        "staked": 100202,
+        "last_vote_weight": "697460718699.945435",
+        "proxied_vote_weight": "0.000000",
+        "is_proxy": 0,
+        "flags1": 0,
+        "reserved2": 0,
+        "reserved3": "0.0000 EOS"
+    },
+    "rex_info": {
+        "version": 0,
+        "owner": "teamgreymass",
+        "vote_stake": "0.0000 EOS",
+        "rex_balance": "0.1768 REX",
+        "matured_rex": 1768,
+        "rex_maturities": null
+    },
+    "subjective_cpu_bill_limit": {
+        "used": 0,
+        "available": 0,
+        "max": 0
+    },
+    "eosio_any_linked_actions": null
+}

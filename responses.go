@@ -12,36 +12,52 @@ import (
 
 /*
 {
-  "server_version": "f537bc50",
-  "head_block_num": 9,
-  "last_irreversible_block_num": 8,
-  "last_irreversible_block_id": "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084",
-  "head_block_id": "00000009ecd0e9fb5719431f4b86f5c9ca1887f6b6f73e5a301aaff740fd6bd3",
-  "head_block_time": "2018-05-19T07:47:31",
-  "head_block_producer": "eosio",
-  "virtual_block_cpu_limit": 100800,
-  "virtual_block_net_limit": 1056996,
-  "block_cpu_limit": 99900,
-  "block_net_limit": 1048576
+    "server_version": "3c9661e6",
+    "chain_id": "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+    "head_block_num": 272466135,
+    "last_irreversible_block_num": 272465804,
+    "last_irreversible_block_id": "103d7f8c633f49f92e7758a41dbe59ea3cb0aca556794b9eb4aeeb9b9d0855ce",
+    "head_block_id": "103d80d744fe357bbb3263289bc85a326d16909d4473a3639b576c035b4bfa5b",
+    "head_block_time": "2022-10-10T13:34:03.500",
+    "head_block_producer": "aus1genereos",
+    "virtual_block_cpu_limit": 200000,
+    "virtual_block_net_limit": 1048576000,
+    "block_cpu_limit": 199001,
+    "block_net_limit": 1048328,
+    "server_version_string": "v3.1.0",
+    "fork_db_head_block_num": 272466135,
+    "fork_db_head_block_id": "103d80d744fe357bbb3263289bc85a326d16909d4473a3639b576c035b4bfa5b",
+    "server_full_version_string": "v3.1.0-3c9661e67e5f66234871f967f28d1662bf1905b6",
+    "total_cpu_weight": "383788472311608",
+    "total_net_weight": "96298870176056",
+    "earliest_available_block_num": 264601643,
+    "last_irreversible_block_time": "2022-10-10T13:31:17.500"
 }
 
 */
 
 type InfoResp struct {
-	ServerVersion            string         `json:"server_version"` // "2cc40a4e"
-	ChainID                  Checksum256    `json:"chain_id"`
-	HeadBlockNum             uint32         `json:"head_block_num"`              // 2465669,
-	LastIrreversibleBlockNum uint32         `json:"last_irreversible_block_num"` // 2465655
-	LastIrreversibleBlockID  Checksum256    `json:"last_irreversible_block_id"`  // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
-	HeadBlockID              Checksum256    `json:"head_block_id"`               // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
-	HeadBlockTime            BlockTimestamp `json:"head_block_time"`             //  "2018-02-02T04:19:32"
-	HeadBlockProducer        AccountName    `json:"head_block_producer"`         // "inita"
+	ServerVersion             string         `json:"server_version"` // "2cc40a4e"
+	ChainID                   Checksum256    `json:"chain_id"`
+	HeadBlockNum              uint32         `json:"head_block_num"`               // 2465669,
+	LastIrreversibleBlockNum  uint32         `json:"last_irreversible_block_num"`  // 2465655
+	LastIrreversibleBlockID   Checksum256    `json:"last_irreversible_block_id"`   // "00000008f98f0580d7efe7abc60abaaf8a865c9428a4267df30ff7d1937a1084"
+	HeadBlockID               Checksum256    `json:"head_block_id"`                // "00259f856bfa142d1d60aff77e70f0c4f3eab30789e9539d2684f9f8758f1b88",
+	HeadBlockTime             BlockTimestamp `json:"head_block_time"`              //  "2018-02-02T04:19:32"
+	HeadBlockProducer         AccountName    `json:"head_block_producer"`          // "inita"
+	EarliestAvailableBlockNum uint64         `json:"earliest_available_block_num"` // added since EOSIO/Leap v2.0
+	ForkDbHeadBlockNum        uint64         `json:"fork_db_head_block_num"`       // added since EOSIO/Leap v2.0
+	ForkDbHeadBlockId         string         `json:"fork_db_head_block_id"`        // added since EOSIO/Leap v2.0
+	LastIrreversibleBlockTime BlockTimestamp `json:"last_irreversible_block_time"` // added since EOSIO/Leap v2.0
 
-	VirtualBlockCPULimit Int64  `json:"virtual_block_cpu_limit"`
-	VirtualBlockNetLimit Int64  `json:"virtual_block_net_limit"`
-	BlockCPULimit        Int64  `json:"block_cpu_limit"`
-	BlockNetLimit        Int64  `json:"block_net_limit"`
-	ServerVersionString  string `json:"server_version_string"`
+	VirtualBlockCPULimit    Int64  `json:"virtual_block_cpu_limit"`
+	VirtualBlockNetLimit    Int64  `json:"virtual_block_net_limit"`
+	BlockCPULimit           Int64  `json:"block_cpu_limit"`
+	BlockNetLimit           Int64  `json:"block_net_limit"`
+	TotalCpuWeight          Int64  `json:"total_cpu_weight"` // added since EOSIO/Leap v2.0
+	TotalNetWeight          Int64  `json:"total_net_weight"` // added since EOSIO/Leap v2.0
+	ServerVersionString     string `json:"server_version_string"`
+	ServerFullVersionString string `json:"server_full_version_string"` // added since EOSIO/Leap v2.0
 }
 
 type BlockResp struct {
@@ -211,8 +227,8 @@ type ProducerChange struct {
 type AccountResp struct {
 	AccountName            AccountName          `json:"account_name"`
 	Privileged             bool                 `json:"privileged"`
-	LastCodeUpdate         JSONTime             `json:"last_code_update"`
-	Created                JSONTime             `json:"created"`
+	LastCodeUpdate         BlockTimestamp       `json:"last_code_update"` // modified since EOSIO/Leap v2.0 YYYY-MM-DDTHH:MM:SS -> YYYY-MM-DDTHH:MM:SS.sss
+	Created                BlockTimestamp       `json:"created"`          // modified since EOSIO/Leap v2.0 YYYY-MM-DDTHH:MM:SS -> YYYY-MM-DDTHH:MM:SS.sss
 	CoreLiquidBalance      Asset                `json:"core_liquid_balance"`
 	RAMQuota               Int64                `json:"ram_quota"`
 	RAMUsage               Int64                `json:"ram_usage"`
@@ -225,6 +241,11 @@ type AccountResp struct {
 	SelfDelegatedBandwidth DelegatedBandwidth   `json:"self_delegated_bandwidth"`
 	RefundRequest          *RefundRequest       `json:"refund_request"`
 	VoterInfo              VoterInfo            `json:"voter_info"`
+	HeadBlockNum           uint64               `json:"head_block_num"`            // added since EOSIO/Leap v2.0
+	HeadBlockTime          BlockTimestamp       `json:"head_block_time"`           // added since EOSIO/Leap v2.0
+	RexInfo                *RexInfo             `json:"rex_info,omitempty"`        // added since EOSIO/Leap v2.0
+	SubjectiveSpuBillLimit AccountResourceLimit `json:"subjective_cpu_bill_limit"` // added since EOSIO/Leap v2.0
+	EosioAnyLinkedActions  []LinkedAction       `json:"eosio_any_linked_actions"`  // added since EOSIO/Leap v2.0
 }
 
 type CurrencyBalanceResp struct {

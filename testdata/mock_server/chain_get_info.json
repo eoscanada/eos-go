@@ -1,0 +1,22 @@
+{
+    "server_version": "3c9661e6",
+    "chain_id": "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906",
+    "head_block_num": 272466135,
+    "last_irreversible_block_num": 272465804,
+    "last_irreversible_block_id": "103d7f8c633f49f92e7758a41dbe59ea3cb0aca556794b9eb4aeeb9b9d0855ce",
+    "head_block_id": "103d80d744fe357bbb3263289bc85a326d16909d4473a3639b576c035b4bfa5b",
+    "head_block_time": "2022-10-10T13:34:03.500",
+    "head_block_producer": "aus1genereos",
+    "virtual_block_cpu_limit": 200000,
+    "virtual_block_net_limit": 1048576000,
+    "block_cpu_limit": 199001,
+    "block_net_limit": 1048328,
+    "server_version_string": "v3.1.0",
+    "fork_db_head_block_num": 272466135,
+    "fork_db_head_block_id": "103d80d744fe357bbb3263289bc85a326d16909d4473a3639b576c035b4bfa5b",
+    "server_full_version_string": "v3.1.0-3c9661e67e5f66234871f967f28d1662bf1905b6",
+    "total_cpu_weight": "383788472311608",
+    "total_net_weight": "96298870176056",
+    "earliest_available_block_num": 264601643,
+    "last_irreversible_block_time": "2022-10-10T13:31:17.500"
+}
