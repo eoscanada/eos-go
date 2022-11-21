@@ -22,8 +22,8 @@ require (
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf // indirect
-	github.com/tidwall/match v1.0.3 // indirect
-	github.com/tidwall/pretty v1.0.2 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	go.opencensus.io v0.22.1 // indirect
 	go.uber.org/atomic v1.5.0 // indirect
 	go.uber.org/multierr v1.3.0 // indirect
