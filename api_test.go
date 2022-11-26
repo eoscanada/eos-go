@@ -112,6 +112,24 @@ func TestAPIGetCurrencyBalance(t *testing.T) {
 	assert.JSONEq(t, expectedJSON, string(actualJSON))
 }
 
+func TestAPIGetCurrencyStats(t *testing.T) {
+	currencyStatResp, err := api.GetCurrencyStats(context.Background(), "eosiochaince", "CET")
+	assert.NoError(t, err)
+
+	actualJSON, err := json.Marshal(currencyStatResp)
+	assert.NoError(t, err)
+
+	expectedIntermediateJSON := mockserver.OpenFile(".", "chain_get_currency_stats.json")
+	cropped := new(map[string]interface{})
+	err = json.Unmarshal([]byte(expectedIntermediateJSON), cropped)
+	assert.NoError(t, err)
+
+	expectedJSON, err := json.Marshal((*cropped)["CET"])
+	assert.NoError(t, err)
+
+	assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+}
+
 func TestMain(m *testing.M) {
 	setUp()
 	code := m.Run()
