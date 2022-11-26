@@ -88,6 +88,18 @@ func TestAPIGetInfo(t *testing.T) {
 	assert.JSONEq(t, expectedJSON, string(actualJSON))
 }
 
+func TestAPIGetAbi(t *testing.T) {
+	abiResp, err := api.GetABI(context.Background(), "tippedtipped")
+	assert.NoError(t, err)
+
+	actualJSON, err := json.MarshalIndent(abiResp, "", "    ")
+	assert.NoError(t, err)
+
+	expectedJSON := mockserver.OpenFile(".", "chain_get_abi.json")
+
+	assert.JSONEq(t, expectedJSON, string(actualJSON))
+}
+
 func TestMain(m *testing.M) {
 	setUp()
 	code := m.Run()
