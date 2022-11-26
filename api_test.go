@@ -100,6 +100,18 @@ func TestAPIGetAbi(t *testing.T) {
 	assert.JSONEq(t, expectedJSON, string(actualJSON))
 }
 
+func TestAPIGetCurrencyBalance(t *testing.T) {
+	balanceResp, err := api.GetCurrencyBalance(context.Background(), "tippedtipped", "CET", "eosiochaince")
+	assert.NoError(t, err)
+
+	actualJSON, err := json.Marshal(balanceResp)
+	assert.NoError(t, err)
+
+	expectedJSON := mockserver.OpenFile(".", "chain_get_currency_balance.json")
+
+	assert.JSONEq(t, expectedJSON, string(actualJSON))
+}
+
 func TestMain(m *testing.M) {
 	setUp()
 	code := m.Run()
