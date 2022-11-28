@@ -491,26 +491,11 @@ type TransactionWithID struct {
 	Packed *PackedTransaction
 }
 
-type TransactionForMarshal struct {
-	ID Checksum256 `json:"id"`
-	PackedTransaction
-}
-
-func (t *TransactionWithID) MarshalJSON() ([]byte, error) {
-	ret := TransactionForMarshal{
-		ID: t.ID,
-	}
-
-	if t.Packed != nil {
-		ret.PackedTransaction = PackedTransaction{
-			Signatures:            t.Packed.Signatures,
-			Compression:           t.Packed.Compression,
-			PackedContextFreeData: t.Packed.PackedContextFreeData,
-			PackedTransaction:     t.Packed.PackedTransaction,
-		}
-	}
-
-	return json.Marshal(ret)
+func (t TransactionWithID) MarshalJSON() ([]byte, error) {
+	return json.Marshal([]interface{}{
+		t.ID,
+		t.Packed,
+	})
 }
 
 func (t *TransactionWithID) UnmarshalJSON(data []byte) error {
