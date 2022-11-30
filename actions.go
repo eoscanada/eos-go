@@ -79,8 +79,8 @@ func (a *ActionData) SetToServer(toServer bool) {
 	a.toServer = toServer
 }
 
-//  jsonActionToServer represents what /v1/chain/push_transaction
-//  expects, which isn't allllways the same everywhere.
+// jsonActionToServer represents what /v1/chain/push_transaction
+// expects, which isn't allllways the same everywhere.
 type jsonActionToServer struct {
 	Account       AccountName       `json:"account"`
 	Name          ActionName        `json:"name"`

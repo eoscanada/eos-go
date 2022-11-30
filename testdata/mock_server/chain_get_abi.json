@@ -2,7 +2,6 @@
     "account_name": "tippedtipped",
     "abi": {
         "version": "eosio::abi/1.1",
-        "types": [],
         "structs": [
             {
                 "name": "account",
@@ -234,15 +233,8 @@
             {
                 "name": "accounts",
                 "index_type": "i64",
-                "key_names": [],
-                "key_types": [],
                 "type": "account"
             }
-        ],
-        "ricardian_clauses": [],
-        "error_messages": [],
-        "abi_extensions": [],
-        "variants": [],
-        "action_results": []
+        ]
     }
 }

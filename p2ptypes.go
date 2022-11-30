@@ -269,11 +269,12 @@ func (c *PairAccountNameBlockNum) UnmarshalBinary(decoder *Decoder) error {
 }
 
 // FIXME: This structure supports both EOS 1.8.x as well as EOS 2.0.x. However, the binary encoding
-//        format does only support the 2.0.x version for now. It's not clear how we would do thing
-//        to propagate the information that encoding/decoding of binary should be performed with one
-//        variant or the other. When this comment was added, the binary encoding/decoding was not
-//        working for either version, so supporting EOS 2.0.x only is a fair improvements. Will need
-//        to understand better if this is required for other chains for example.
+//
+//	format does only support the 2.0.x version for now. It's not clear how we would do thing
+//	to propagate the information that encoding/decoding of binary should be performed with one
+//	variant or the other. When this comment was added, the binary encoding/decoding was not
+//	working for either version, so supporting EOS 2.0.x only is a fair improvements. Will need
+//	to understand better if this is required for other chains for example.
 type BlockState struct {
 	BlockNum                         uint32 `json:"block_num"`
 	DPoSProposedIrreversibleBlockNum uint32 `json:"dpos_proposed_irreversible_blocknum"`

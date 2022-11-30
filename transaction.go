@@ -344,6 +344,8 @@ type PackedTransaction struct {
 	Compression           CompressionType `json:"compression"` // in C++, it's an enum, not sure how it Binary-marshals..
 	PackedContextFreeData HexBytes        `json:"packed_context_free_data"`
 	PackedTransaction     HexBytes        `json:"packed_trx"`
+	ContextFreeData       []string        `json:"context_free_data,omitempty" eos:"-"`
+	Transaction           *Transaction    `json:"transaction,omitempty" eos:"-"`
 
 	wasPackedLocally bool
 }
