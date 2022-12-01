@@ -8,8 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added `action_trace_v1` field
 * Added `AsTime` helper functions to convert `TimePoint` and `TimePointSec` to `time.Time`
 * Added support for decoding action results
+* Raised the minimum supporting Go version 1.13 -> 1.17
+* Added unit tests of REST API
+* Added `earliest_available_block_num`, `fork_db_head_block_num`, `fork_db_head_block_id`, `last_irreversible_block_time`, `total_cpu_weight`, `total_net_weight`, & `server_full_version_string` fields in `InfoResp`
+* Added `head_block_num`, `head_block_time`, `rex_info`, `subjective_cpu_bill_limit`, & `eosio_any_linked_actions` fields in `AccountResp`
+* Added the new type `RexInfo`, `LinkedAction`
+* Added `linked_actions` in `Permission`
+* Added `context_free_data` & `transaction` fields in `PackedTransaction`
 
 #### Breaking Changes
+
+* `AccountResp.last_code_update` & `AccountResp.created` in `AccountResp` are now `BlockTimestamp`, were previously `JSONTime`
 
 #### Added
 
