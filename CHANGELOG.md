@@ -49,13 +49,21 @@ Fix NewPrivateKey correctly working with PVT_K1 keys (#177)
 #### Added
 
 * Add EOSIO Testnet symbol (#165)
+
 * Update ActionResp (#166)
 
 #### Changed
 
+* Updated to latest version of `github.com/streamingfast/logging` library.
+
+* `eos.MarshalBinary` will now refuses to serialize a `map[K]V` if `K`'s type is not comparable.
+
 #### Fixed
 
+* Fixed serialization of `map[K]V` types by sorting the keys to have a stable order.
+
 * Bugfix StringToSymbol (44b6fbd)
+
 * Fixed built-in examples (pointing by default to EOS Nation API nodes) (36114bd)
 
 #### Deprecated

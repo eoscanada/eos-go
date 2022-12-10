@@ -76,7 +76,7 @@ func (a *ABI) Decode(binaryDecoder *Decoder, structName string) ([]byte, error) 
 }
 
 func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]interface{}, error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("decode struct", zap.String("name", structName))
 	}
 
@@ -87,12 +87,12 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]inte
 
 	builtStruct := map[string]interface{}{}
 	if structure.Base != "" {
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("struct has base struct", zap.String("name", structName), zap.String("base", structure.Base))
 		}
 
 		baseName, isAlias := a.TypeNameForNewTypeName(structure.Base)
-		if isAlias && traceEnabled {
+		if isAlias && tracer.Enabled() {
 			zlog.Debug("base is an alias", zap.String("from", structure.Base), zap.String("to", baseName))
 		}
 
@@ -137,7 +137,7 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 	fieldType, isOptional, isArray, isBinaryExtension := analyzeFieldType(initialFieldType)
 	//fmt.Println("resolveField", isOptional, isArray, initialFieldType, fieldType)
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("analyzed field",
 			zap.String("field_type", fieldType),
 			zap.Bool("is_optional", isOptional),
@@ -149,7 +149,7 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 	// check if this field is an alias
 	aliasFieldType, isAlias := a.TypeNameForNewTypeName(fieldType)
 	if isAlias {
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("type is an alias",
 				zap.String("from", fieldType),
 				zap.String("to", aliasFieldType),
@@ -160,7 +160,7 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 
 	// check if the field is a binary extension
 	if isBinaryExtension && !binaryDecoder.hasRemaining() {
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("type is a binary extension and no more data, skipping field", zap.String("type", fieldType))
 		}
 		return skipField, nil
@@ -174,7 +174,7 @@ func (a *ABI) resolveField(binaryDecoder *Decoder, initialFieldType string) (out
 		}
 
 		if b == 0 {
-			if traceEnabled {
+			if tracer.Enabled() {
 				zlog.Debug("field is not present")
 			}
 			if !a.fitNodeos {
@@ -245,12 +245,12 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		}
 
 		variantFieldType := variant.Types[variantIndex]
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("field is a variant", zap.String("type", variantFieldType))
 		}
 
 		resolvedVariantFieldType, isAlias := a.TypeNameForNewTypeName(variantFieldType)
-		if isAlias && traceEnabled {
+		if isAlias && tracer.Enabled() {
 			zlog.Debug("variant type is an alias", zap.String("from", fieldType), zap.String("to", resolvedVariantFieldType))
 		}
 
@@ -396,7 +396,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		return nil, fmt.Errorf("read: %w", err)
 	}
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("set field value",
 			zap.Reflect("value", value),
 		)

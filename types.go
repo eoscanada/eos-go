@@ -672,6 +672,10 @@ func NewPermissionLevel(in string) (out PermissionLevel, err error) {
 	return
 }
 
+func (p PermissionLevel) String() string {
+	return fmt.Sprintf("%s@%s", p.Actor, p.Permission)
+}
+
 type PermissionLevelWeight struct {
 	Permission PermissionLevel `json:"permission"`
 	Weight     uint16          `json:"weight"` // weight_type

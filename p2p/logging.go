@@ -4,14 +4,9 @@ import (
 	"fmt"
 
 	"github.com/streamingfast/logging"
-	"go.uber.org/zap"
 )
 
-var zlog = zap.NewNop()
-
-func init() {
-	logging.Register("github.com/eoscanada/eos-go/p2p", &zlog)
-}
+var zlog, _ = logging.PackageLogger("eos-go", "github.com/eoscanada/eos-go/p2p")
 
 // SyncLogger sync logger, should `defer SyncLogger()` when use p2p package
 func SyncLogger() {

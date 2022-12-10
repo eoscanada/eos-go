@@ -8,6 +8,7 @@ import (
 
 	"github.com/eoscanada/eos-go/p2p"
 	"github.com/streamingfast/logging"
+	"go.uber.org/zap/zapcore"
 )
 
 var peer1 = flag.String("peer1", "localhost:9876", "peer 1")
@@ -21,7 +22,7 @@ func main() {
 	fmt.Println("P2P Proxy")
 
 	if *showLog {
-		logging.Set(logging.MustCreateLogger(), "github.com/eoscanada/eos-go/p2p")
+		logging.InstantiateLoggers(logging.WithDefaultLevel(zapcore.InfoLevel))
 	}
 	defer p2p.SyncLogger()
 

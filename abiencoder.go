@@ -68,7 +68,7 @@ func (a *ABI) EncodeStruct(structName string, json []byte) ([]byte, error) {
 }
 
 func (a *ABI) encode(binaryEncoder *Encoder, structName string, json []byte) error {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("abi encode struct", zap.String("name", structName))
 	}
 
@@ -78,7 +78,7 @@ func (a *ABI) encode(binaryEncoder *Encoder, structName string, json []byte) err
 	}
 
 	if structure.Base != "" {
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("struct has base struct", zap.String("struct", structName), zap.String("base", structure.Base))
 		}
 		err := a.encode(binaryEncoder, structure.Base, json)
@@ -91,7 +91,7 @@ func (a *ABI) encode(binaryEncoder *Encoder, structName string, json []byte) err
 }
 func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byte) error {
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		defer func(prev *zap.Logger) { zlog = prev }(zlog)
 		zlog = zlog.Named("fields")
 		defer func(prev *zap.Logger) { zlog = prev }(zlog)
@@ -100,14 +100,14 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 
 	for _, field := range fields {
 
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("encode field", zap.String("name", field.Name), zap.String("type", field.Type))
 		}
 
 		fieldType, isOptional, isArray, _ := analyzeFieldType(field.Type)
 		typeName, isAlias := a.TypeNameForNewTypeName(fieldType)
 		fieldName := field.Name
-		if isAlias && traceEnabled {
+		if isAlias && tracer.Enabled() {
 			zlog.Debug("type is an alias", zap.String("from", field.Type), zap.String("to", typeName))
 		}
 
@@ -121,21 +121,21 @@ func (a *ABI) encodeFields(binaryEncoder *Encoder, fields []FieldDef, json []byt
 
 func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType string, isOptional bool, isArray bool, json []byte) (err error) {
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("encode field json", zap.ByteString("json", json))
 	}
 
 	value := gjson.GetBytes(json, fieldName)
 	if isOptional {
 		if value.Exists() {
-			if traceEnabled {
+			if tracer.Enabled() {
 				zlog.Debug("field is optional and present", zap.String("name", fieldName), zap.String("type", fieldType))
 			}
 			if e := binaryEncoder.writeByte(1); e != nil {
 				return e
 			}
 		} else {
-			if traceEnabled {
+			if tracer.Enabled() {
 				zlog.Debug("field is optional and *not* present", zap.String("name", fieldName), zap.String("type", fieldType))
 			}
 			return binaryEncoder.writeByte(0)
@@ -147,7 +147,7 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 
 	if isArray {
 
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("field is an array", zap.String("name", fieldName), zap.String("type", fieldType))
 		}
 		if !value.IsArray() {
@@ -169,13 +169,13 @@ func (a *ABI) encodeField(binaryEncoder *Encoder, fieldName string, fieldType st
 
 func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType string, value gjson.Result) error {
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write field", zap.String("name", fieldName), zap.String("type", fieldType), zap.String("json", value.Raw))
 	}
 
 	structure := a.StructForName(fieldType)
 	if structure != nil {
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("field is a struct", zap.String("name", fieldName))
 		}
 
@@ -391,7 +391,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 		return fmt.Errorf("writing field of type [%s]: unknown type", fieldType)
 	}
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write object", zap.Reflect("value", object))
 	}
 

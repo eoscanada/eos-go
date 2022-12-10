@@ -9,6 +9,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/eoscanada/eos-go/ecc"
@@ -182,7 +183,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Array:
 			l := t.Len()
 
-			if traceEnabled {
+			if tracer.Enabled() {
 				defer func(prev *zap.Logger) { zlog = prev }(zlog)
 				zlog = zlog.Named("array")
 				zlog.Debug("encode: array", zap.Int("length", l), typeField("type", v))
@@ -199,7 +200,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 				return
 			}
 
-			if traceEnabled {
+			if tracer.Enabled() {
 				defer func(prev *zap.Logger) { zlog = prev }(zlog)
 				zlog = zlog.Named("slice")
 				zlog.Debug("encode: slice", zap.Int("length", l), typeField("type", v))
@@ -213,7 +214,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 		case reflect.Struct:
 			l := rv.NumField()
 
-			if traceEnabled {
+			if tracer.Enabled() {
 				zlog.Debug("encode: struct", zap.Int("fields", l), typeField("type", v))
 				defer func(prev *zap.Logger) { zlog = prev }(zlog)
 				zlog = zlog.Named("struct")
@@ -221,7 +222,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 
 			for i := 0; i < l; i++ {
 				field := t.Field(i)
-				if traceEnabled {
+				if tracer.Enabled() {
 					zlog.Debug("field", zap.String("field", field.Name))
 				}
 
@@ -248,19 +249,43 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 			}
 
 		case reflect.Map:
-			keyCount := len(rv.MapKeys())
+			keys := rv.MapKeys()
+			keyCount := len(keys)
+			keyType := t.Key()
 
-			if traceEnabled {
-				zlog.Debug("encode: map", zap.Int("key_count", keyCount), typeField("key_type", t.Key()), typeField("value_type", rv.Elem()))
+			if tracer.Enabled() {
+				zlog.Debug("encode: map", zap.Int("key_count", keyCount), typeField("key_type", keyType))
 				defer func(prev *zap.Logger) { zlog = prev }(zlog)
-				zlog = zlog.Named("struct")
+				zlog = zlog.Named("map")
 			}
 
 			if err = e.writeUVarInt(keyCount); err != nil {
 				return
 			}
 
-			for _, mapKey := range rv.MapKeys() {
+			if keyCount == 0 {
+				return
+			}
+
+			keyKind, errCompare := basicKindFromReflect(keyType.Kind())
+			if errCompare != nil {
+				return fmt.Errorf("encode map: key of type %t must be comparable: %w", keyType, errCompare)
+			}
+
+			sort.Slice(keys, func(i, j int) bool {
+				left := keys[i]
+				right := keys[j]
+
+				// We have validate most of this already, only case that can still happens is in error in coverage
+				isLower, err := lt(keyKind, left, right)
+				if err != nil {
+					panic(fmt.Errorf("encode map: unable to compare keys: %w", err))
+				}
+
+				return isLower
+			})
+
+			for _, mapKey := range keys {
 				if err = e.Encode(mapKey.Interface()); err != nil {
 					return
 				}
@@ -281,7 +306,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 func (e *Encoder) toWriter(bytes []byte) (err error) {
 	e.count += len(bytes)
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("    appending", zap.Stringer("hex", HexBytes(bytes)), zap.Int("pos", e.count))
 	}
 
@@ -290,7 +315,7 @@ func (e *Encoder) toWriter(bytes []byte) (err error) {
 }
 
 func (e *Encoder) writeByteArray(b []byte) error {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write byte array", zap.Int("len", len(b)))
 	}
 	if err := e.writeUVarInt(len(b)); err != nil {
@@ -300,7 +325,7 @@ func (e *Encoder) writeByteArray(b []byte) error {
 }
 
 func (e *Encoder) writeUVarInt(v int) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write uvarint", zap.Int("val", v))
 	}
 
@@ -310,7 +335,7 @@ func (e *Encoder) writeUVarInt(v int) (err error) {
 }
 
 func (e *Encoder) writeUVarInt32(v uint32) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write varuint32", zap.Uint32("val", v))
 	}
 
@@ -320,7 +345,7 @@ func (e *Encoder) writeUVarInt32(v uint32) (err error) {
 }
 
 func (e *Encoder) writeVarInt(v int) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write varint", zap.Int("val", v))
 	}
 
@@ -330,7 +355,7 @@ func (e *Encoder) writeVarInt(v int) (err error) {
 }
 
 func (e *Encoder) writeVarInt32(v int32) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write varint32", zap.Int32("val", v))
 	}
 
@@ -340,14 +365,14 @@ func (e *Encoder) writeVarInt32(v int32) (err error) {
 }
 
 func (e *Encoder) writeByte(b byte) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write byte", zap.Uint8("val", b))
 	}
 	return e.toWriter([]byte{b})
 }
 
 func (e *Encoder) writeBool(b bool) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write bool", zap.Bool("val", b))
 	}
 	var out byte
@@ -358,7 +383,7 @@ func (e *Encoder) writeBool(b bool) (err error) {
 }
 
 func (e *Encoder) writeUint16(i uint16) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write uint16", zap.Uint16("val", i))
 	}
 	buf := make([]byte, TypeSize.Uint16)
@@ -367,21 +392,21 @@ func (e *Encoder) writeUint16(i uint16) (err error) {
 }
 
 func (e *Encoder) writeInt16(i int16) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write int16", zap.Int16("val", i))
 	}
 	return e.writeUint16(uint16(i))
 }
 
 func (e *Encoder) writeInt32(i int32) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write int32", zap.Int32("val", i))
 	}
 	return e.writeUint32(uint32(i))
 }
 
 func (e *Encoder) writeUint32(i uint32) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write uint32", zap.Uint32("val", i))
 	}
 	buf := make([]byte, TypeSize.Uint32)
@@ -390,14 +415,14 @@ func (e *Encoder) writeUint32(i uint32) (err error) {
 }
 
 func (e *Encoder) writeInt64(i int64) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write int64", zap.Int64("val", i))
 	}
 	return e.writeUint64(uint64(i))
 }
 
 func (e *Encoder) writeUint64(i uint64) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write uint64", zap.Uint64("val", i))
 	}
 	buf := make([]byte, TypeSize.Uint64)
@@ -406,7 +431,7 @@ func (e *Encoder) writeUint64(i uint64) (err error) {
 }
 
 func (e *Encoder) writeUint128(i Uint128) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write uint128", zap.Stringer("hex", i), zap.Uint64("lo", i.Lo), zap.Uint64("hi", i.Hi))
 	}
 	buf := make([]byte, TypeSize.Uint128)
@@ -416,7 +441,7 @@ func (e *Encoder) writeUint128(i Uint128) (err error) {
 }
 
 func (e *Encoder) writeFloat32(f float32) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write float32", zap.Float32("val", f))
 	}
 	i := math.Float32bits(f)
@@ -426,7 +451,7 @@ func (e *Encoder) writeFloat32(f float32) (err error) {
 	return e.toWriter(buf)
 }
 func (e *Encoder) writeFloat64(f float64) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write float64", zap.Float64("val", f))
 	}
 	i := math.Float64bits(f)
@@ -437,14 +462,14 @@ func (e *Encoder) writeFloat64(f float64) (err error) {
 }
 
 func (e *Encoder) writeString(s string) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write string", zap.String("val", s))
 	}
 	return e.writeByteArray([]byte(s))
 }
 
 func (e *Encoder) writeChecksum160(checksum Checksum160) error {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write Checksum160", zap.Stringer("hex", HexBytes(checksum)))
 	}
 	if len(checksum) == 0 {
@@ -454,7 +479,7 @@ func (e *Encoder) writeChecksum160(checksum Checksum160) error {
 }
 
 func (e *Encoder) writeChecksum256(checksum Checksum256) error {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write Checksum256", zap.Stringer("hex", HexBytes(checksum)))
 	}
 	if len(checksum) == 0 {
@@ -464,7 +489,7 @@ func (e *Encoder) writeChecksum256(checksum Checksum256) error {
 }
 
 func (e *Encoder) writeChecksum512(checksum Checksum512) error {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write Checksum512", zap.Stringer("hex", HexBytes(checksum)))
 	}
 	if len(checksum) == 0 {
@@ -474,7 +499,7 @@ func (e *Encoder) writeChecksum512(checksum Checksum512) error {
 }
 
 func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write public key", zap.Stringer("pubkey", pk))
 	}
 
@@ -491,7 +516,7 @@ func (e *Encoder) writePublicKey(pk ecc.PublicKey) (err error) {
 }
 
 func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write signature", zap.Stringer("sig", s))
 	}
 
@@ -508,7 +533,7 @@ func (e *Encoder) writeSignature(s ecc.Signature) (err error) {
 }
 
 func (e *Encoder) writeTstamp(t Tstamp) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write tstamp", zap.Time("time", t.Time))
 	}
 	n := uint64(t.UnixNano())
@@ -516,7 +541,7 @@ func (e *Encoder) writeTstamp(t Tstamp) (err error) {
 }
 
 func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write block timestamp", zap.Time("time", bt.Time))
 	}
 
@@ -529,7 +554,7 @@ func (e *Encoder) writeBlockTimestamp(bt BlockTimestamp) (err error) {
 func (e *Encoder) writeCurrencyName(currency CurrencyName) (err error) {
 	// FIXME: this isn't really used.. we should implement serialization for the Symbol
 	// type only instead.
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write currency", zap.String("name", string(currency)))
 	}
 	out := make([]byte, 7, 7)
@@ -539,7 +564,7 @@ func (e *Encoder) writeCurrencyName(currency CurrencyName) (err error) {
 }
 
 func (e *Encoder) writeAsset(asset Asset) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write asset", zap.Stringer("value", asset))
 	}
 	e.writeUint64(uint64(asset.Amount))
@@ -552,14 +577,14 @@ func (e *Encoder) writeAsset(asset Asset) (err error) {
 }
 
 func (e *Encoder) writeJSONTime(tm JSONTime) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("write json time", zap.Time("time", tm.Time))
 	}
 	return e.writeUint32(uint32(tm.Unix()))
 }
 
 func (e *Encoder) writeBlockP2PMessageEnvelope(envelope Packet) (err error) {
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("p2p: write message envelope")
 	}
 
@@ -576,7 +601,7 @@ func (e *Encoder) writeBlockP2PMessageEnvelope(envelope Packet) (err error) {
 
 	messageLen := uint32(len(envelope.Payload) + 1)
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("p2p: message length", zap.Uint32("len", messageLen))
 	}
 
@@ -597,7 +622,7 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 		//	log.Fatal("pas cool")
 		//}
 
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("entering action data", typeField("type", actionData))
 		}
 		var d interface{}
@@ -616,18 +641,87 @@ func (e *Encoder) writeActionData(actionData ActionData) (err error) {
 
 		}
 
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("encoding action data", typeField("type", d))
 		}
 		raw, err := MarshalBinary(d)
 		if err != nil {
 			return err
 		}
-		if traceEnabled {
+		if tracer.Enabled() {
 			zlog.Debug("writing action data", typeField("type", d))
 		}
 		return e.writeByteArray(raw)
 	}
 
 	return e.writeByteArray(actionData.HexData)
+}
+
+// lt evaluates the comparison a < b.
+//
+// Copied from text/template in Golang 1.19.2
+func lt(valueKind kind, arg1, arg2 reflect.Value) (bool, error) {
+	arg1 = indirectInterface(arg1)
+	arg2 = indirectInterface(arg2)
+
+	truth := false
+
+	switch valueKind {
+	case floatKind:
+		truth = arg1.Float() < arg2.Float()
+	case intKind:
+		truth = arg1.Int() < arg2.Int()
+	case stringKind:
+		truth = arg1.String() < arg2.String()
+	case uintKind:
+		truth = arg1.Uint() < arg2.Uint()
+	default:
+		panic("invalid kind")
+	}
+
+	return truth, nil
+}
+
+// indirectInterface returns the concrete value in an interface value,
+// or else the zero reflect.Value.
+// That is, if v represents the interface value x, the result is the same as reflect.ValueOf(x):
+// the fact that x was an interface value is forgotten.
+func indirectInterface(v reflect.Value) reflect.Value {
+	if v.Kind() != reflect.Interface {
+		return v
+	}
+	if v.IsNil() {
+		return reflect.Value{}
+	}
+	return v.Elem()
+}
+
+type kind int
+
+const (
+	invalidKind kind = iota
+	boolKind
+	complexKind
+	intKind
+	floatKind
+	stringKind
+	uintKind
+)
+
+func basicKindFromReflect(v reflect.Kind) (kind, error) {
+	switch v {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return intKind, nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return uintKind, nil
+	case reflect.Float32, reflect.Float64:
+		return floatKind, nil
+	case reflect.String:
+		return stringKind, nil
+	}
+	return invalidKind, fmt.Errorf("invalid type %s for comparison", v)
+}
+
+func basicKind(v reflect.Value) (kind, error) {
+	return basicKindFromReflect(v.Kind())
 }
