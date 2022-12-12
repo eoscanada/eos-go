@@ -26,7 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 
-Fix NewPrivateKey correctly working with PVT_K1 keys (#177)
+* Fixed serialization of `map[K]V` when using `eos.MarshalBinary` so that ordering in which the keys are serialized is in lexicographical order, just like JSON serialization.
+
+* Updated to latest version of `github.com/streamingfast/logging` library.
+
+* Fix NewPrivateKey correctly working with PVT_K1 keys (#177)
 
 #### Deprecated
 
