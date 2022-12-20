@@ -470,14 +470,15 @@ type Global struct {
 }
 
 type Producer struct {
-	Owner         Name          `json:"owner"`
-	TotalVotes    Float64       `json:"total_votes,string"`
-	ProducerKey   ecc.PublicKey `json:"producer_key"`
-	IsActive      Bool          `json:"is_active"`
-	URL           string        `json:"url"`
-	UnpaidBlocks  int           `json:"unpaid_blocks"`
-	LastClaimTime JSONTime      `json:"last_claim_time"`
-	Location      int           `json:"location"`
+	Owner             Name                   `json:"owner"`
+	TotalVotes        Float64                `json:"total_votes,string"`
+	ProducerKey       ecc.PublicKey          `json:"producer_key"`
+	IsActive          Bool                   `json:"is_active"`
+	URL               string                 `json:"url"`
+	UnpaidBlocks      int                    `json:"unpaid_blocks"`
+	LastClaimTime     BlockTimestamp         `json:"last_claim_time"`
+	Location          int                    `json:"location"`
+	ProducerAuthority *BlockSigningAuthority `json:"producer_authority,omitempty"` // added since EOSIO/Leap v2.0
 }
 
 type ProducersResp struct {
