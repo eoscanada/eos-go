@@ -394,6 +394,11 @@ func (d *Decoder) Decode(v interface{}, options ...DecodeOption) (err error) {
 		symbol, err = d.ReadSymbol()
 		rv.Set(reflect.ValueOf(*symbol))
 		return
+	case *SymbolCode:
+		var sc SymbolCode
+		sc, err = d.ReadSymbolCode()
+		rv.Set(reflect.ValueOf(sc))
+		return
 	case *Asset:
 		var asset Asset
 		asset, err = d.ReadAsset()
