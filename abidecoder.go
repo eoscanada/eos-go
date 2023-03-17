@@ -80,6 +80,14 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]inte
 		zlog.Debug("decode struct", zap.String("name", structName))
 	}
 
+	if variant := a.VariantForName(structName); variant != nil {
+		out, err := binaryDecoder.ReadUvarint32()
+		if err != nil {
+			zlog.Error("error reading variant", zap.Error(err))
+		}
+		structName = variant.Types[out]
+	}
+
 	structure := a.StructForName(structName)
 	if structure == nil {
 		return nil, fmt.Errorf("structure [%s] not found in abi", structName)

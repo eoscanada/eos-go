@@ -150,6 +150,64 @@ func TestABI_DecodeTable(t *testing.T) {
 
 }
 
+func Test_DecodeTableRowVariant(t *testing.T) {
+
+	abiString := `
+{
+  "version": "eosio::abi/1.3",
+  "types": [],
+  "structs": [
+    {
+      "name": "account_v0",
+      "base": "",
+      "fields": [
+        {
+          "name": "owner",
+          "type": "name"
+        },
+        {
+          "name": "balance",
+          "type": "asset"
+        }
+      ]
+    }
+  ],
+  "actions": [],
+  "tables": [
+    {
+      "name": "account",
+      "index_type": "i64",
+      "type": "variant<account_v0>"
+    }
+  ],
+  "ricardian_clauses": [],
+  "variants": [
+    {
+      "name": "variant<account_v0>",
+      "types": [
+        "account_v0"
+      ]
+    }
+  ]
+}
+`
+
+	abi, err := NewABI(strings.NewReader(abiString))
+	require.NoError(t, err)
+
+	tableDef := abi.TableForName("account")
+	require.NotNil(t, tableDef)
+
+	data, err := hex.DecodeString(`00000000005c95b191198a8abe0000000004454f5300000000`)
+	require.NoError(t, err)
+
+	res, err := abi.DecodeTableRowTyped(tableDef.Type, data)
+	require.NoError(t, err)
+
+	assert.Equal(t, "master", gjson.GetBytes(res, "owner").String())
+	assert.Equal(t, "319675.0361 EOS", gjson.GetBytes(res, "balance").String())
+}
+
 func TestABI_DecodeTableRowMissingTable(t *testing.T) {
 
 	abiReader := strings.NewReader(abiString)
