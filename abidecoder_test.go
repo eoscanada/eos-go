@@ -150,7 +150,7 @@ func TestABI_DecodeTable(t *testing.T) {
 
 }
 
-func Test_ExampleABI_DecodeTableRowVariant(t *testing.T) {
+func Test_DecodeTableRowVariant(t *testing.T) {
 
 	abiString := `
 {
