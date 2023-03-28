@@ -532,11 +532,6 @@ func NewFixedSymbolAssetFromString(symbol Symbol, input string) (out Asset, err 
 
 func newAssetFromString(in string) (out Asset, err error) {
 
-	// special case for "0 " which is a valid representation of an empty Asset
-	if strings.TrimSpace(in) == "0" {
-		return Asset{}, nil
-	}
-
 	integralPart, decimalPart, symbolPart, err := splitAsset(in)
 	if err != nil {
 		return out, err

@@ -655,7 +655,7 @@ func TestNewAssetFromString(t *testing.T) {
 		{"0.1 TEST", 1, 1, "TEST", nil},
 		{".1 TEST", 1, 1, "TEST", nil},
 		{"0", 0, 0, "", nil},
-		{"  0  ", 0, 0, "", nil},
+		{"0 ", 0, 0, "", nil},
 
 		{"", 0, 0, "", errors.New("input cannot be empty")},
 		{"1", 0, 0, "", errors.New("invalid format \"1\", expected an amount and a currency symbol")},
