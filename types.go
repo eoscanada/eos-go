@@ -371,6 +371,10 @@ func (s Symbol) String() string {
 	return fmt.Sprintf("%d,%s", s.Precision, s.Symbol)
 }
 
+func (s Symbol) IsZero() bool {
+	return s.Symbol == "" && s.Precision == 0 && s.symbolCode == 0
+}
+
 func (s *Symbol) UnmarshalJSON(data []byte) error {
 	var str string
 	err := json.Unmarshal(data, &str)
@@ -465,17 +469,17 @@ func NewAsset(in string) (out Asset, err error) {
 	return NewAssetFromString(in)
 }
 
-// NewAssetFromString reads a string an decode it to an eos.Asset
-// structure if possible. The input must contains an amount and
-// a symbol. The precision is inferred based on the actual number
-// of decimals present.
+// NewAssetFromString reads a string and decodes it to an eos.Asset
+// structure if possible. The input must contain an amount and
+// a symbol, unless an empty asset is given in the form of "0".
+// The precision is inferred based on the actual number of decimals present.
 func NewAssetFromString(in string) (out Asset, err error) {
 	out, err = newAssetFromString(in)
 	if err != nil {
 		return out, err
 	}
 
-	if out.Symbol.Symbol == "" {
+	if out.Symbol.Symbol == "" && !out.IsZero() {
 		return out, fmt.Errorf("invalid format %q, expected an amount and a currency symbol", in)
 	}
 
@@ -527,6 +531,7 @@ func NewFixedSymbolAssetFromString(symbol Symbol, input string) (out Asset, err 
 }
 
 func newAssetFromString(in string) (out Asset, err error) {
+
 	integralPart, decimalPart, symbolPart, err := splitAsset(in)
 	if err != nil {
 		return out, err
@@ -590,6 +595,10 @@ func splitAssetAmount(input string) (integralPart, decimalPart string, err error
 	}
 
 	return
+}
+
+func (a *Asset) IsZero() bool {
+	return a.Amount == 0 && a.Symbol.IsZero()
 }
 
 func (a *Asset) UnmarshalJSON(data []byte) error {

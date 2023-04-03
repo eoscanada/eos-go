@@ -654,8 +654,11 @@ func TestNewAssetFromString(t *testing.T) {
 		{"1.0001 TEST", 10001, 4, "TEST", nil},
 		{"0.1 TEST", 1, 1, "TEST", nil},
 		{".1 TEST", 1, 1, "TEST", nil},
+		{"0", 0, 0, "", nil},
+		{"0 ", 0, 0, "", nil},
 
 		{"", 0, 0, "", errors.New("input cannot be empty")},
+		{"1", 0, 0, "", errors.New("invalid format \"1\", expected an amount and a currency symbol")},
 		{".00.001", 0, 0, "", errors.New(`invalid asset amount ".00.001", expected amount to have at most a single dot`)},
 		{"1 ABCDEFGH", 0, 0, "", errors.New(`invalid asset "1 ABCDEFGH", symbol should have less than 7 characters`)},
 		{"1 A AND B", 0, 0, "", errors.New(`invalid asset "1 A AND B", expecting an amount alone or an amount and a currency symbol`)},
