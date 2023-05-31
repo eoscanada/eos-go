@@ -399,7 +399,14 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 }
 
 func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error) {
-	i, err := strconv.ParseInt(value.Raw, 10, bitSize)
+	s := value.Raw
+	if len(s) > 0 && s[0] == '"' {
+		s = s[1:]
+	}
+	if len(s) > 0 && s[len(s)-1] == '"' {
+		s = s[:len(s)-1]
+	}
+	i, err := strconv.ParseInt(s, 10, bitSize)
 	if err != nil {
 		return i, fmt.Errorf("writing field: [%s] type int%d : %w", fieldName, bitSize, err)
 	}
@@ -407,7 +414,14 @@ func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error
 }
 
 func valueToUint(fieldName string, value gjson.Result, bitSize int) (uint64, error) {
-	i, err := strconv.ParseUint(value.Raw, 10, bitSize)
+	s := value.Raw
+	if len(s) > 0 && s[0] == '"' {
+		s = s[1:]
+	}
+	if len(s) > 0 && s[len(s)-1] == '"' {
+		s = s[:len(s)-1]
+	}
+	i, err := strconv.ParseUint(s, 10, bitSize)
 	if err != nil {
 		return i, fmt.Errorf("writing field: [%s] type uint%d : %w", fieldName, bitSize, err)
 	}
@@ -415,7 +429,14 @@ func valueToUint(fieldName string, value gjson.Result, bitSize int) (uint64, err
 }
 
 func valueToFloat(fieldName string, value gjson.Result, bitSize int) (float64, error) {
-	switch value.Raw {
+	s := value.Raw
+	if len(s) > 0 && s[0] == '"' {
+		s = s[1:]
+	}
+	if len(s) > 0 && s[len(s)-1] == '"' {
+		s = s[:len(s)-1]
+	}
+	switch s {
 	case "inf":
 		return math.Inf(1), nil
 	case "-inf":
@@ -425,7 +446,7 @@ func valueToFloat(fieldName string, value gjson.Result, bitSize int) (float64, e
 	default:
 	}
 
-	f, err := strconv.ParseFloat(value.Raw, bitSize)
+	f, err := strconv.ParseFloat(s, bitSize)
 	if err != nil {
 		return f, fmt.Errorf("writing field: [%s] type float%d : %w", fieldName, bitSize, err)
 	}
