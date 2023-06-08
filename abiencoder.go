@@ -399,6 +399,7 @@ func (a *ABI) writeField(binaryEncoder *Encoder, fieldName string, fieldType str
 }
 
 func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error) {
+	// Compatible with conversion of quoted strings to int
 	i, err := strconv.ParseInt(strings.Trim(value.Raw, `"`), 10, bitSize)
 	if err != nil {
 		return i, fmt.Errorf("writing field: [%s] type int%d : %w", fieldName, bitSize, err)
@@ -407,6 +408,7 @@ func valueToInt(fieldName string, value gjson.Result, bitSize int) (int64, error
 }
 
 func valueToUint(fieldName string, value gjson.Result, bitSize int) (uint64, error) {
+	// Compatible with conversion of quoted strings to uint
 	i, err := strconv.ParseUint(strings.Trim(value.Raw, `"`), 10, bitSize)
 	if err != nil {
 		return i, fmt.Errorf("writing field: [%s] type uint%d : %w", fieldName, bitSize, err)
@@ -424,7 +426,7 @@ func valueToFloat(fieldName string, value gjson.Result, bitSize int) (float64, e
 		return math.NaN(), nil
 	default:
 	}
-
+	// Compatible with conversion of quoted strings to float
 	f, err := strconv.ParseFloat(strings.Trim(value.Raw, `"`), bitSize)
 	if err != nil {
 		return f, fmt.Errorf("writing field: [%s] type float%d : %w", fieldName, bitSize, err)
