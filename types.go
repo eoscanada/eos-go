@@ -94,8 +94,8 @@ type VoterInfo struct {
 type RefundRequest struct {
 	Owner       AccountName `json:"owner"`
 	RequestTime JSONTime    `json:"request_time"` //         {"name":"request_time", "type":"time_point_sec"},
-	NetAmount   Asset       `json:"net_amount"`
-	CPUAmount   Asset       `json:"cpu_amount"`
+	// ultra-keisuke-kanao --- BLOCK-1421 investigate preprod dfuse ultra.test account doesn't show in explorer
+	PowerAmount Asset       `json:"power_amount"`
 }
 
 type CompressionType uint8
