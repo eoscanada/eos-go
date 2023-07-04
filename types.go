@@ -95,7 +95,7 @@ type RefundRequest struct {
 	Owner       AccountName `json:"owner"`
 	RequestTime JSONTime    `json:"request_time"` //         {"name":"request_time", "type":"time_point_sec"},
 	// ultra-keisuke-kanao --- BLOCK-1421 investigate preprod dfuse ultra.test account doesn't show in explorer
-    // Note that removing NetAmount and CPUAmount would require additional updates on github.com/eoscanada/eosc package.
+	// Note that removing NetAmount and CPUAmount would require additional updates on github.com/eoscanada/eosc package.
 	PowerAmount Asset       `json:"power_amount"`
 	NetAmount   Asset       `json:"net_amount"`
 	CPUAmount   Asset       `json:"cpu_amount"`
