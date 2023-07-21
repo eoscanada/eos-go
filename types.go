@@ -22,6 +22,8 @@ import (
 var symbolRegex = regexp.MustCompile("^[0-9],[A-Z]{1,7}$")
 var symbolCodeRegex = regexp.MustCompile("^[A-Z]{1,7}$")
 
+var LegacyJSON4Asset = true
+
 // For reference:
 // https://github.com/mithrilcoin-io/EosCommander/blob/master/app/src/main/java/io/mithrilcoin/eoscommander/data/remote/model/types/EosByteWriter.java
 
@@ -62,23 +64,23 @@ type AccountResourceLimit struct {
 }
 
 type DelegatedBandwidth struct {
-	From      AccountName `json:"from"`
-	To        AccountName `json:"to"`
-//ultra-andrey-bezrukov --- BLOCK-80 Integrate ultra power into dfuse and remove rex related tables
-//NetWeight and CPUWeight are left inplace (moved to bottom) in order to avoid unimportant changes in eosc and bringing in a new repo
-	PowerWeight Asset     `json:"power_weight"`
-	NetWeight Asset       `json:"net_weight"`
-	CPUWeight Asset       `json:"cpu_weight"`
+	From AccountName `json:"from"`
+	To   AccountName `json:"to"`
+	//ultra-andrey-bezrukov --- BLOCK-80 Integrate ultra power into dfuse and remove rex related tables
+	//NetWeight and CPUWeight are left inplace (moved to bottom) in order to avoid unimportant changes in eosc and bringing in a new repo
+	PowerWeight Asset `json:"power_weight"`
+	NetWeight   Asset `json:"net_weight"`
+	CPUWeight   Asset `json:"cpu_weight"`
 }
 
 type TotalResources struct {
-	Owner     AccountName `json:"owner"`
-//ultra-andrey-bezrukov --- BLOCK-80 Integrate ultra power into dfuse and remove rex related tables
-//NetWeight and CPUWeight are left inplace (moved to bottom) in order to avoid unimportant changes in eosc and bringing in a new repo
-	PowerWeight Asset     `json:"power_weight"`
-	RAMBytes  Int64       `json:"ram_bytes"`
-	NetWeight Asset       `json:"net_weight"`
-	CPUWeight Asset       `json:"cpu_weight"`
+	Owner AccountName `json:"owner"`
+	//ultra-andrey-bezrukov --- BLOCK-80 Integrate ultra power into dfuse and remove rex related tables
+	//NetWeight and CPUWeight are left inplace (moved to bottom) in order to avoid unimportant changes in eosc and bringing in a new repo
+	PowerWeight Asset `json:"power_weight"`
+	RAMBytes    Int64 `json:"ram_bytes"`
+	NetWeight   Asset `json:"net_weight"`
+	CPUWeight   Asset `json:"cpu_weight"`
 }
 
 type VoterInfo struct {
@@ -96,9 +98,9 @@ type RefundRequest struct {
 	RequestTime JSONTime    `json:"request_time"` //         {"name":"request_time", "type":"time_point_sec"},
 	// ultra-keisuke-kanao --- BLOCK-1421 investigate preprod dfuse ultra.test account doesn't show in explorer
 	// Note that removing NetAmount and CPUAmount would require additional updates on github.com/eoscanada/eosc package.
-	PowerAmount Asset       `json:"power_amount"`
-	NetAmount   Asset       `json:"net_amount"`
-	CPUAmount   Asset       `json:"cpu_amount"`
+	PowerAmount Asset `json:"power_amount"`
+	NetAmount   Asset `json:"net_amount"`
+	CPUAmount   Asset `json:"cpu_amount"`
 }
 
 type CompressionType uint8
@@ -590,7 +592,17 @@ func (a *Asset) UnmarshalJSON(data []byte) error {
 }
 
 func (a Asset) MarshalJSON() (data []byte, err error) {
-	return json.Marshal(a.String())
+	if LegacyJSON4Asset {
+		return json.Marshal(a.String())
+	} else {
+		ratAmount := big.NewRat(int64(a.Amount), int64(math.Pow10(int(a.Symbol.Precision))))
+		amount, _ := ratAmount.Float64()
+		return json.Marshal(map[string]interface{}{
+			"amount":    amount,
+			"symbol":    a.Symbol.Symbol,
+			"precision": a.Symbol.Precision,
+		})
+	}
 }
 
 type Permission struct {
@@ -1493,8 +1505,9 @@ func (t fcVariantType) String() string {
 }
 
 // FIXME: Ideally, we would re-use `BaseVariant` but that requires some
-//        re-thinking of the decoder to make it efficient to read FCVariant types. For now,
-//        let's re-code it a bit to make it as efficient as possible.
+//
+//	re-thinking of the decoder to make it efficient to read FCVariant types. For now,
+//	let's re-code it a bit to make it as efficient as possible.
 type fcVariant struct {
 	TypeID fcVariantType
 	Impl   interface{}
@@ -1508,7 +1521,8 @@ func (a fcVariant) IsNil() bool {
 // and object, turning everything along the way in Go primitives types.
 //
 // **Note** For `Int64` and `Uint64`, we return `eos.Int64` and `eos.Uint64` types
-//          so that JSON marshalling is done correctly for large numbers
+//
+//	so that JSON marshalling is done correctly for large numbers
 func (a fcVariant) ToNative() interface{} {
 	if a.TypeID == fcVariantNullType ||
 		a.TypeID == fcVariantDoubleType ||
