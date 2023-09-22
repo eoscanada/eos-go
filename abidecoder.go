@@ -278,11 +278,19 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 	case "int64":
 		var val int64
 		val, err = binaryDecoder.ReadInt64()
-		value = Int64(val)
+		if NativeType {
+			value = val
+		} else {
+			value = Int64(val)
+		}
 	case "uint64":
 		var val uint64
 		val, err = binaryDecoder.ReadUint64()
-		value = Uint64(val)
+		if NativeType {
+			value = val
+		} else {
+			value = Uint64(val)
+		}
 	case "int128":
 		v, e := binaryDecoder.ReadInt128()
 		if e == nil {
@@ -310,23 +318,31 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 	case "float32":
 		v, e := binaryDecoder.ReadFloat32()
 		if e == nil {
-			if a.fitNodeos {
-				value = strconv.FormatFloat(float64(v), 'f', 17, 32)
+			if NativeType {
+				value = v
 			} else {
-				value = json.RawMessage(strconv.FormatFloat(float64(v), 'f', -1, 64)) // as sjson does
+				if a.fitNodeos {
+					value = strconv.FormatFloat(float64(v), 'f', 17, 32)
+				} else {
+					value = json.RawMessage(strconv.FormatFloat(float64(v), 'f', -1, 64)) // as sjson does
+				}
 			}
 		}
 		err = e
 	case "float64":
 		v, e := binaryDecoder.ReadFloat64()
 		if e == nil {
-			value = formatFloat(v, a.fitNodeos)
+			if NativeType {
+				value = v
+			} else {
+				value = formatFloat(v, a.fitNodeos)
+			}
 		}
 		err = e
 	case "float128":
 		value, err = binaryDecoder.ReadUint128("float128")
 	case "bool":
-		if a.fitNodeos {
+		if a.fitNodeos && !NativeType {
 			value, err = binaryDecoder.ReadByte()
 		} else {
 			value, err = binaryDecoder.ReadBool()
@@ -366,7 +382,7 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		value, err = binaryDecoder.ReadName()
 	case "bytes":
 		value, err = binaryDecoder.ReadByteArray()
-		if err == nil {
+		if err == nil && !NativeType {
 			value = hex.EncodeToString(value.([]byte))
 		}
 	case "string":
@@ -385,7 +401,11 @@ func (a *ABI) read(binaryDecoder *Decoder, fieldType string) (interface{}, error
 		symbol, e := binaryDecoder.ReadSymbol()
 		err = e
 		if err == nil {
-			value = fmt.Sprintf("%d,%s", symbol.Precision, symbol.Symbol)
+			if NativeType {
+				value = symbol
+			} else {
+				value = fmt.Sprintf("%d,%s", symbol.Precision, symbol.Symbol)
+			}
 		}
 	case "symbol_code":
 		value, err = binaryDecoder.ReadSymbolCode()
