@@ -83,7 +83,9 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]inte
 	if variant := a.VariantForName(structName); variant != nil {
 		out, err := binaryDecoder.ReadUvarint32()
 		if err != nil {
-			zlog.Error("error reading variant", zap.Error(err))
+			return nil, fmt.Errorf("error reading variant: %v", err)
+		} else if int(out) >= len(variant.Types) { // we shouldn't trust any data from chain, so we double-check the slice bounds
+			return nil, fmt.Errorf("invalid variant type, index is out of bound: %d", out)
 		}
 		structName = variant.Types[out]
 	}
