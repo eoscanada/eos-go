@@ -29,6 +29,10 @@ func (a *ABI) DecodeAction(data []byte, actionName ActionName) ([]byte, error) {
 
 }
 
+/*ultra-Adam---BLOCK-1831 make user group integration user-friendly ---start/end*/
+const  OR 		uint64 = 0X1000_0000_0000_0000   // 0: AND, 1: OR
+const  NEGATION uint64 = 0X2000_0000_0000_0000   // 0: no negation, 1: Negation
+
 func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
 	binaryDecoder := NewDecoder(data)
 	tbl := a.TableForName(tableName)
@@ -40,6 +44,43 @@ func (a *ABI) DecodeTableRow(tableName TableName, data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	/*ultra-Adam---BLOCK-1831 make user group integration user-friendly ---start/end*/
+	// check if table name is 1st hand purchase, convert integers to a string of logical expression
+	if tableName == "fctrprchs.a" {
+		
+		groupRestrictionValue, exists := builtStruct["group_restriction"]
+
+		if exists {
+			groupRestrictionSlice, isSlice := groupRestrictionValue.([]uint64);
+			if  isSlice && len(groupRestrictionSlice) > 0 {
+				groupRestrictionStr := ""
+				for i,v := range groupRestrictionSlice{
+					if (v&OR) == OR { // OR
+						if i != 0 { // Ignore first OR
+							groupRestrictionStr += "|"
+						}
+					} else { // AND
+						if i != 0 { // Ignore first AND
+							groupRestrictionStr += "&"
+						}
+					}
+
+					if (v & NEGATION) == NEGATION { // NEGATION
+						groupRestrictionStr += "~"
+					}
+
+					// Extract group ID
+					groupID := v & ^(NEGATION + OR)
+					groupRestrictionStr += strconv.FormatUint(groupID, 10)
+				}
+				builtStruct["group_restriction"] = groupRestrictionStr;
+			}
+		}
+
+	}
+	/*ultra-Adam---BLOCK-1831 make user group integration user-friendly ---end*/
+
 	return json.Marshal(builtStruct)
 
 }
