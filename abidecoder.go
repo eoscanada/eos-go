@@ -81,11 +81,13 @@ func (a *ABI) decode(binaryDecoder *Decoder, structName string) (map[string]inte
 	}
 
 	if variant := a.VariantForName(structName); variant != nil {
-		out, err := binaryDecoder.ReadUvarint32()
+		variantIndex, err := binaryDecoder.ReadUvarint32()
 		if err != nil {
-			zlog.Error("error reading variant", zap.Error(err))
+			return nil, fmt.Errorf("error reading variant: %w", err)
+		} else if int(variantIndex) >= len(variant.Types) {
+			return nil, fmt.Errorf("variant type index is unknown, got type index %d, know up to index %d", variantIndex, len(variant.Types)-1)
 		}
-		structName = variant.Types[out]
+		structName, _ = a.TypeNameForNewTypeName(variant.Types[variantIndex])
 	}
 
 	structure := a.StructForName(structName)
