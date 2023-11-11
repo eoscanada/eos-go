@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -264,18 +266,23 @@ func (p *Peer) SendTime() error {
 }
 
 func (p *Peer) SendHandshake(info *HandshakeInfo) error {
-	publicKey, err := ecc.NewPublicKey("PUB_K1_1111111111111111111111111111111114T1Anm")
+	privateKey, err := ecc.NewRandomPrivateKey()
 	if err != nil {
-		return fmt.Errorf("sending handshake to %s: create public key: %w", p.Address, err)
+		return fmt.Errorf("sending handshake to %s: create private key: %w", p.Address, err)
 	}
+	publicKey := privateKey.PublicKey()
 
 	zlog.Debug("SendHandshake", zap.String("peer", p.Address), zap.Object("info", info))
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	signature := ecc.Signature{
-		Curve:   ecc.CurveK1,
-		Content: make([]byte, 65, 65),
+	timestampBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(timestampBytes, uint64(tstamp.Time.UnixNano()))
+
+	token := sha256.Sum256(timestampBytes)
+	signature, err := privateKey.Sign(token[:])
+	if err != nil {
+		return fmt.Errorf("sending handshake to %s: sign timestamp: %w", p.Address, err)
 	}
 
 	handshake := &eos.HandshakeMessage{
@@ -284,7 +291,7 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 		NodeID:                   p.NodeID,
 		Key:                      publicKey,
 		Time:                     tstamp,
-		Token:                    make([]byte, 32, 32),
+		Token:                    token[:],
 		Signature:                signature,
 		P2PAddress:               p.Name,
 		LastIrreversibleBlockNum: info.LastIrreversibleBlockNum,
