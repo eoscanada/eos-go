@@ -631,6 +631,10 @@ func (d *Decoder) ReadByteArray() (out []byte, err error) {
 		return nil, err
 	}
 
+	if l > math.MaxInt || d.pos > math.MaxInt-int(l) {
+		return nil, errors.New("byte array: varlen is overflowing int")
+	}
+
 	if len(d.data) < d.pos+int(l) {
 		return nil, fmt.Errorf("byte array: varlen=%d, missing %d bytes", l, d.pos+int(l)-len(d.data))
 	}
