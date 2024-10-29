@@ -5,6 +5,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Unreleased
 
+* Added a check for int overflows in `ReadByteArray`
 * Changed valueToInt, valueToUint, valueToFload function in abiencode.go for compatible with double quoted string to number.
 * Changed `NewAssetFromString` validation to allow parsing of empty assets
 * Added `action_trace_v1` field
