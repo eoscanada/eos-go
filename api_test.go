@@ -3,10 +3,12 @@ package eos
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"testing"
 
+	"github.com/eoscanada/eos-go/ecc"
 	mockserver "github.com/eoscanada/eos-go/testdata/mock_server"
 	"github.com/stretchr/testify/assert"
 )
@@ -128,6 +130,66 @@ func TestAPIGetCurrencyStats(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+}
+
+func TestAPIGetProducers(t *testing.T) {
+	producers, err := api.GetProducers(context.Background())
+	assert.NoError(t, err)
+
+	type tempProducers struct {
+		Owner             Name                   `json:"owner"`
+		TotalVotes        Float64                `json:"total_votes,string"`
+		ProducerKey       ecc.PublicKey          `json:"producer_key"`
+		IsActive          int                    `json:"is_active"`
+		URL               string                 `json:"url"`
+		UnpaidBlocks      int                    `json:"unpaid_blocks"`
+		LastClaimTime     BlockTimestamp         `json:"last_claim_time"`
+		Location          int                    `json:"location"`
+		ProducerAuthority *BlockSigningAuthority `json:"producer_authority,omitempty"` // added since EOSIO/Leap v2.0
+	}
+
+	type tempProducerResp struct {
+		Producers               []tempProducers `json:"rows"`
+		TotalProducerVoteWeight Float64         `json:"total_producer_vote_weight,string"`
+		More                    Name            `json:"more"`
+	}
+
+	parsedResp := tempProducerResp{
+		Producers:               []tempProducers{},
+		TotalProducerVoteWeight: producers.TotalProducerVoteWeight,
+		More:                    producers.More,
+	}
+
+	for _, item := range producers.Producers {
+		newItem := tempProducers{
+			item.Owner,
+			item.TotalVotes,
+			item.ProducerKey,
+			1,
+			item.URL,
+			item.UnpaidBlocks,
+			item.LastClaimTime,
+			item.Location,
+			item.ProducerAuthority,
+		}
+
+		if item.IsActive {
+			newItem.IsActive = 1
+		} else {
+			newItem.IsActive = 0
+		}
+
+		parsedResp.Producers = append(parsedResp.Producers, newItem)
+	}
+
+	actualJSON, err := json.Marshal(parsedResp)
+	assert.NoError(t, err)
+
+	expectedJSON := mockserver.OpenFile(".", "chain_get_producers.json")
+
+	assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+
+	fmt.Println("totalvote: ", producers.TotalProducerVoteWeight)
 }
 
 func TestMain(m *testing.M) {
