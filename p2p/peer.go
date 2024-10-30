@@ -272,10 +272,11 @@ func (p *Peer) SendHandshake(info *HandshakeInfo) error {
 
 	tstamp := eos.Tstamp{Time: info.HeadBlockTime}
 
-	signature := ecc.Signature{
-		Curve:   ecc.CurveK1,
-		Content: make([]byte, 65, 65),
-	}
+	data := make([]byte, 66)
+
+	data[0] = byte(ecc.CurveK1)
+
+	signature, _ := ecc.NewSignatureFromData(data)
 
 	handshake := &eos.HandshakeMessage{
 		NetworkVersion:           1206,
