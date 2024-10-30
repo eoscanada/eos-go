@@ -65,6 +65,7 @@ func (p *PrivateKey) Sign(hash []byte) (*Signature, error) {
 
 // SignCanonical goes through signatures and returns only a canonical
 // representations.  This matches the EOS blockchain expectations.
+// do isCanonical before compactSig, for performance improvement
 func (p *PrivateKey) SignCanonical(curve *KoblitzCurve, hash []byte) ([]byte, error) {
 	for i := 0; i < 25; i++ {
 		sig, err := signRFC6979(p, hash, i)
@@ -72,14 +73,15 @@ func (p *PrivateKey) SignCanonical(curve *KoblitzCurve, hash []byte) ([]byte, er
 			return nil, err
 		}
 
+		if !isCanonicalSig(sig.R.Bytes(), sig.S.Bytes()) {
+			continue
+		}
+
 		compactSig, err := makeCompact(curve, sig, p, hash, true)
 		if err != nil {
 			continue
 		}
-
-		if isCanonical(compactSig) {
-			return compactSig, nil
-		}
+		return compactSig, nil
 	}
 	return nil, errors.New("couldn't find a canonical signature")
 }
@@ -108,5 +110,16 @@ func isCanonical(compactSig []byte) bool {
 	t2 := !(d[1] == 0 && ((d[2] & 0x80) == 0))
 	t3 := (d[33] & 0x80) == 0
 	t4 := !(d[33] == 0 && ((d[34] & 0x80) == 0))
+	return t1 && t2 && t3 && t4
+}
+
+// add function for original signature, do isCanonical before compactSig
+func isCanonicalSig(r []byte, s []byte) bool {
+	rlen := len(r)
+	slen := len(s)
+	t1 := rlen < 32 || (r[0] & 0x80) == 0
+	t2 := !( (rlen < 32 || r[0] == 0) && ((rlen >= 31 && (r[rlen-31] & 0x80) == 0) || rlen < 31) )
+	t3 := slen < 32 || (s[0] & 0x80) == 0
+	t4 := !( (slen < 32 || s[0] == 0) && ((slen >= 31 && (s[slen-31] & 0x80) == 0) || slen < 31) )
 	return t1 && t2 && t3 && t4
 }
